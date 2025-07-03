@@ -1,0 +1,302 @@
+@font-face {
+    font-family: 'KouzanBrushFontOTF';
+    src: url('../fonts/KouzanBrushFontOTF.otf') format('opentype');
+}
+
+body {
+    margin: 0;
+    font-family: 'Noto Sans TC', sans-serif; 
+    background-color: #F3F0EC;
+    color: #333; 
+    position: relative; 
+}
+
+
+
+
+
+/* 2. 固定不動的浮水印 */
+body::before {
+    content: ''; /* 偽元素必須要有 content 屬性 */
+    position: fixed; /* 固定在畫面上，不隨滾動移動 */
+    
+    /* 將圖片置中 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    /* 設定圖片路徑和樣式 */
+    /* 注意：這個路徑是相對於 CSS 檔案的位置 */
+    background-image: url('../images/pages/index/BG-cloud.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain; /* 讓圖片完整顯示 */
+    
+    /* 設定浮水印大小*/
+    width: 95vw; /* 95% 的可視範圍寬度 */
+    height: 95vh; /* 95% 的可視範圍高度 */
+
+    /* 設定透明度 */
+    opacity: 0.25;
+
+    /* 將浮水印放在最底層，才不會蓋住內容 */
+    z-index: -1;
+}
+.main-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+}
+
+/* 【修正】導覽列本體樣式，完全採用您的設計規格 */
+.main-nav {
+    /* 玻璃效果 (來自您的規格) */
+    background: rgba(255, 255, 255, 0.50);
+    box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
+    backdrop-filter: blur(7.5px);
+    -webkit-backdrop-filter: blur(7.5px); /* 針對 Safari 瀏覽器的相容性 */
+    
+    /* 邊框 (使用您指定的 border-bottom) */
+    /* border: 4px solid #E6BA67;  <-- 舊的 */
+    border-bottom: 4px solid #E6BA67; /* <-- 新的，只保留底線 */
+    
+    border-radius: 10px; 
+    
+    /* Flexbox 佈局 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    
+    /* 尺寸與內邊距 */
+    width: 95%; 
+    max-width: 1200px; 
+    height: 101px;
+    box-sizing: border-box;
+    padding: 0 25px;
+    margin: 20px auto; 
+}
+
+/* Logo 圖片樣式 */
+.nav-logo img {
+    width: 84px; /* 以高度為基準，寬度會自動縮放 */
+    height: 84px;
+    display: block; /* 移除圖片下方的奇怪空隙 */
+}
+
+/* 漢堡選單按鈕 */
+.nav-toggle {
+    background: none; /* 移除按鈕預設背景 */
+    border: none; /* 移除按鈕預設邊框 */
+    cursor: pointer; /* 讓滑鼠移上去時顯示為手形 */
+    padding: 0;
+
+    /* 用 Flexbox 來排列三條線 */
+    display: flex;
+    flex-direction: column; /* 垂直排列 */
+    gap: 8px; /* 設定線條之間的間距 */
+}
+/* === 首頁主視覺區 (Hero Section) === */
+.hero-section {
+    width: 100%;
+    /* 我們讓 section 的高度由內部的圖片來決定 */
+    /* 背景色依然保留，用於電腦版的兩側留白 */
+    background-color: #F3F0EC;
+    /* 讓內部的圖片水平置中 */
+    text-align: center;
+}
+
+/* 這是我們新增的圖片樣式 */
+.hero-image {
+    display: block; /* 或者 inline-block 也可以 */
+    
+    /* 在手機上，寬度為 100% */
+    width: 100%; 
+    
+    /* 【需求 #2】在所有裝置上，最大寬度就是 1170px */
+    max-width: 800px; 
+    
+    /* 高度設為 auto，讓它能維持正確的長寬比，永不變形 */
+    height: auto; 
+    
+    /* 因為圖片是置中，所以當它達到最大寬度時，需要 margin auto 來實現水平置中 */
+    margin-left: auto;
+    margin-right: auto;
+    
+    /* object-fit 已經不再需要 */
+}
+/* public/css/style.css */
+
+/* 【新增】通用內容區塊樣式 */
+.about-section,
+.news-section,
+.services-section,
+.declaration-section {
+    /* 讓內部的標題等 inline-block 元素能水平置中 */
+    text-align: center; 
+    /* 為每個區塊提供統一的上邊距，增加呼吸感 */
+    margin-top: 80px;
+    /* 統一的左右內邊距 */
+    padding: 0 20px; 
+}
+
+.section-title {
+    font-family: 'KouzanBrushFontOTF', sans-serif;
+    font-size: clamp(24px, 5vw, 40px);
+    color: #333;
+    position: relative; 
+    display: inline-block; 
+    
+    /* 【修正重點 #1】將左右 padding 從 3em 縮小為 2.5em，讓「保留席」變小 */
+    padding: 20px 1.9em; 
+    letter-spacing: 0.1em;
+    text-align: center;
+    margin: 0 auto 15px;
+}
+.section-title::before,
+.section-title::after {
+    width: 2em;
+    height: 2em;
+    
+    content: ''; 
+    display: block;
+    position: absolute; 
+    top: 50%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* 左元寶樣式 (更新) */
+.section-title::before {
+    left: 0;
+    transform: translateY(-50%);
+    background-image: url('../images/pages/index/title-yuanbao-left.png');
+}
+
+/* 右元寶樣式 (更新) */
+.section-title::after {
+    right: 0;
+    transform: translateY(-50%);
+    background-image: url('../images/pages/index/title-yuanbao-right.png');
+}
+/* === 最新消息區塊 === */
+
+
+.news-card {
+    border-radius: 15px;
+    border: 2px solid #E6BA67;
+    background: rgba(255, 255, 255, 0.50);
+    box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
+    backdrop-filter: blur(7.5px);
+    -webkit-backdrop-filter: blur(7.5px);
+
+    /* 【修正重點】移除上邊距，只保留左右 auto 來置中 */
+    margin: 0 auto;
+    
+    /* ... padding, width, max-width 等其他屬性維持不變 ... */
+    padding: 20px 30px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+
+.news-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    /* 【需求】設定固定高度並產生滾動條 */
+    height: 300px; 
+    overflow-y: auto; /* 當內容超過高度時，顯示垂直滾動條 */
+}
+
+.news-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(196, 137, 69, 0.4); /* 分隔線 */
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.news-item:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.news-item:last-child {
+    border-bottom: none; /* 最後一項不需要分隔線 */
+}
+
+.news-date {
+    /* 【需求】輔助字 14px */
+    font-size: 14px;
+    color: #665434; /* 深一點的咖啡色 */
+    margin-right: 15px;
+}
+
+.news-title {
+    margin: 0;
+    /* 【需求】響應式字體 */
+    font-size: clamp(16px, 2.5vw, 18px); 
+}
+
+.news-avatar {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+    width: 130px; /* 您可以自行調整大小 */
+    height: auto;
+    opacity: 0.8;
+}
+
+/* === 公告彈窗 (Modal) === */
+.announcement-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 200;
+    display: none; /* 預設為隱藏 */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    /* 您的玻璃效果設計 */
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
+    backdrop-filter: blur(7.5px);
+    -webkit-backdrop-filter: blur(7.5px);
+
+    padding: 40px 30px;
+    width: 90%;
+    max-width: 450px;
+    position: relative;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #C48945;
+    border: 1px solid #D9B88A;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    color: white;
+    font-size: 20px;
+    line-height: 35px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* 彈窗內的文字樣式 */
+.modal-date { font-size: 14px; color: #666; }
+.modal-title { font-size: 22px; margin-top: 5px; }
+.modal-body { margin-top: 20px; line-height: 1.8; }
