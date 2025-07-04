@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>承天中承府</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    
+    <header class="main-header">
+        <nav class="main-nav">
+            <a href="{{ url_for('home') }}" class="nav-logo">
+                <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="承天中承府 Logo">
+            </a>
+
+            <button class="nav-toggle" aria-label="開啟選單">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="6" viewBox="0 0 36 6" fill="none">
+                    <path d="M3 3H33" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="6" viewBox="0 0 36 6" fill="none">
+                    <path d="M3 2.66666H33" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="21" height="6" viewBox="0 0 21 6" fill="none">
+                    <path d="M3.33334 3L18 3" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </nav>
+    </header>
+
+<main>
+    <section class="hero-section">
+        <img class="hero-image" src="{{ url_for('static', filename='images/pages/index/banner.png') }}" alt="承天中承府主視覺">
+    </section>
+
+    <section class="news-section">
+        <h2 class="section-title">最新消息</h2>
+        <div class="news-card">
+            <ul class="news-list" id="news-list">
+            </ul>
+            <img class="news-avatar" src="{{ url_for('static', filename='images/avatars/news-avator.png') }}" alt="裝飾圖">
+        </div>
+    </section>
+    <section class="about-section">
+        <h2 class="section-title">關於帥府</h2>
+
+            <div class="photo-gallery activity-gallery">
+                <img src="{{ url_for('static', filename='images/pages/index/activity1.jpg') }}" alt="活動照片1">
+                <img src="{{ url_for('static', filename='images/pages/index/activity2.jpg') }}" alt="活動照片2">
+                <img src="{{ url_for('static', filename='images/pages/index/activity3.jpg') }}" alt="活動照片3">
+                <img src="{{ url_for('static', filename='images/pages/index/activity4.jpg') }}" alt="活動照片4">
+                <img src="{{ url_for('static', filename='images/pages/index/activity5.jpg') }}" alt="活動照片5">
+                <img src="{{ url_for('static', filename='images/pages/index/activity6.jpg') }}" alt="活動照片6">
+                <img src="{{ url_for('static', filename='images/pages/index/activity7.jpg') }}" alt="活動照片7">
+                <img src="{{ url_for('static', filename='images/pages/index/activity8.jpg') }}" alt="活動照片8">
+                <img src="{{ url_for('static', filename='images/pages/index/activity9.jpg') }}" alt="活動照片9">
+            </div>
+
+            <div class="about-text">
+                <p>承天中承府座落於嘉義市東區新生路，主祀「煙島中壇元帥」。元帥因儀表堂堂、性格正直爽朗，故稱為「煙島」，象徵其獨特非凡、天上地下難得一見之神威風采。</p>
+                <p></p>
+                <p>府內供奉神明：</p>
+    <div class="deity-carousel">
+        <div class="deity-grid-track">
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god0.jpg') }}" alt="煙島元帥"><div class="deity-info"><p class="temple-name">承天中承府</p><p class="deity-name">煙島元帥</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god1.jpg') }}" alt="王母娘娘"><div class="deity-info"><p class="temple-name">花蓮勝安宮</p><p class="deity-name">王母娘娘</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god2.jpg') }}" alt="地母至尊"><div class="deity-info"><p class="temple-name">埔里寶湖宮</p><p class="deity-name">地母至尊</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god3.jpg') }}" alt="天上聖母"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">天上聖母</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god4.jpg') }}" alt="玄天上帝"><div class="deity-info"><p class="temple-name">梅山玉<span class="font-fallback">虛</span>宮</p><p class="deity-name">玄天上帝</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god5.jpg') }}" alt="文財神"><div class="deity-info"><p class="temple-name">嘉義文財殿</p><p class="deity-name">文財神</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god6.jpg') }}" alt="武財神"><div class="deity-info"><p class="temple-name">北港武德宮</p><p class="deity-name">武財神</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god7.jpg') }}" alt="關聖帝君"><div class="deity-info"><p class="temple-name">四湖參天宮</p><p class="deity-name">關聖帝君</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god8.jpg') }}" alt="福德正神"><div class="deity-info"><p class="temple-name">世賢路福德宮</p><p class="deity-name">福德正神</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god9.jpg') }}" alt="山軍尊神（虎爺）"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">山軍尊神（虎爺）</p></div></div>
+            
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god0.jpg') }}" alt="煙島元帥"><div class="deity-info"><p class="temple-name">承天中承府</p><p class="deity-name">煙島元帥</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god1.jpg') }}" alt="王母娘娘"><div class="deity-info"><p class="temple-name">花蓮勝安宮</p><p class="deity-name">王母娘娘</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god2.jpg') }}" alt="地母至尊"><div class="deity-info"><p class="temple-name">埔里寶湖宮</p><p class="deity-name">地母至尊</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god3.jpg') }}" alt="天上聖母"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">天上聖母</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god4.jpg') }}" alt="玄天上帝"><div class="deity-info"><p class="temple-name"> 梅山玉<span class="font-fallback">虛</span>宮</p><p class="deity-name">玄天上帝</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god5.jpg') }}" alt="文財神"><div class="deity-info"><p class="temple-name">嘉義文財殿</p><p class="deity-name">文財神</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god6.jpg') }}" alt="武財神"><div class="deity-info"><p class="temple-name">北港武德宮</p><p class="deity-name">武財神</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god7.jpg') }}" alt="關聖帝君"><div class="deity-info"><p class="temple-name">四湖參天宮</p><p class="deity-name">關聖帝君</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god8.jpg') }}" alt="福德正神"><div class="deity-info"><p class="temple-name">世賢路福德宮</p><p class="deity-name">福德正神</p></div></div>
+            <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god9.jpg') }}" alt="山軍尊神（虎爺）"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">山軍尊神（虎爺）</p></div></div>
+        </div>
+    </div>
+            <div class="deity-list-no-shrine">
+                <p>（無神尊）</p>
+                <p>觀音佛祖、大士爺、清水祖師、濟公活佛</p>
+                <p>池府王爺、閻羅天子</p>
+            </div>
+
+    </section>
+
+<section class="services-section">
+    <h2 class="section-title">服務項目</h2>
+    <div class="services-grid">
+        <div class="service-item">
+            <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon1.png') }}" alt="公壇與收驚服務">
+            <div class="service-buttons">
+                <a href="gongtan.html" class="btn btn--brown">公壇</a>
+                <a href="shoujing.html" class="btn btn--brown">收驚</a>
+            </div>
+        </div>
+        <div class="service-item">
+            <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon2.jpg') }}" alt="手工香品服務">
+            <div class="service-buttons">
+                <a href="https://myship.7-11.com.tw/general/detail/GM2505178228918?fbclid=PAZXh0bgNhZW0CMTEAAadGKExriCOZ2aPb_SnuB1j8m00wDUigPOtS2UPXfkP3de0h01XaLrhZ07hU9w_aem_XDV7aPTjQJB5l_o6-fKcVw" class="btn btn--brown">香品賣場</a>
+                <a href="incense.html" class="btn btn--brown">手宮香介紹</a>
+                <a href="https://line.me/ti/g2/VaT0XB3OFjzvv6agfLPYjmdzhwRO7_AVW5P06A?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" class="btn btn--brown">LINE討論群</a>
+            </div>
+        </div>
+        <div class="service-item">
+            <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon3.jpg') }}" alt="力曼與LINE服務">
+            <div class="service-buttons">
+                <a href="https://mall.riman.tw/products/detail/227" class="btn btn--brown">產品介紹</a>
+                <a href="https://myship.7-11.com.tw/seller/profile?id=GM2506280563444&fbclid=PAZXh0bgNhZW0CMTEAAaeXR43IGh1yewhvQr5U95W2kzNlqrWsiU0ChMWSzNkL-f6xbAWxqxgBJQmUiw_aem_wBodr4lG7gDACTfYqEXrFg" class="btn btn--brown">力曼賣場</a>
+                <a href="https://line.me/ti/g2/IZLa6j8onzyhM04zFqjq2GFLTL5SQ3qOuM0scg?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" class="btn btn--brown">LINE討論群</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="declaration-section">
+    <h2 class="section-title">帥府聲明</h2>
+    <div class="declaration-box">
+        <div class="declaration-text">
+            <ol>
+                <li>1. 所有神務僅限「承天中承府」元帥娘或授權義工執行。除元帥娘及義工外，任何對外靈務皆非本府授權，請勿誤信冒用神威之言行。</li>
+                <li>2. 欲靜心感受承天中承府之氣場，請於最前方桌前就座，勿靠近神桌與神尊，並使用椅子勿席地而坐。</li>
+                <li>3. 請勿直接透過社群媒體聯繫元帥娘或要求立即處理相關事宜。若有任何需求，敬請親自蒞臨帥府參拜，向元帥稟告祈求，感謝配合。</li>
+            </ol>
+        </div>
+        <img class="declaration-avatar" src="{{ url_for('static', filename='images/avatars/declare-avator.png') }}" alt="帥府聲明代表圖">
+    </div>
+</section>
+
+    <div class="announcement-modal" id="announcementModal">
+        <div class="modal-content">
+            <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+            <div class="modal-date">2025/6/18</div>
+            <h3 class="modal-title">參拜時間改至早上11:00至晚上11:00</h3>
+            <div class="modal-body">
+                <p>內容：「元帥娘夜禁進修」，即日起至7/16參拜時間有所變更！</p>
+                <p>變更為以下時間請各位信徒留意參拜時間！感謝</p>
+                <p>參拜時間：早上11:00至晚上11:00</p>
+                <p>⚠時間到就會請各位信徒停止參拜 謝謝⚠</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+
+
+<footer class="main-footer">
+  <div class="footer-box">
+    <div class="footer-content">
+      <div class="footer-col footer-col-left">
+        <h3 class="footer-title">承天中承府</h3>
+        <p>地址：嘉義市新生路337號八八菸酒</p>
+        <p>營業時間：上午10:30～凌晨3:00</p>
+      </div>
+      <div class="footer-col footer-col-center">
+        <img src="{{ url_for('static', filename='images/common/footer-ill.png') }}" alt="元寶裝飾" class="footer-illustration center-yuanbao">
+      </div>
+      <div class="footer-col footer-col-right">
+        <div class="footer-social">
+          <a href="https://line.me/ti/g2/xEqS4PCOod0NtEpVEtNx09KmQ-lyb9jeAIRxTA?utm_source=invitation&utm_medium=link_copy&utm_campaign=default&fbclid=PAZXh0bgNhZW0CMTEAAadxtO1AsE20gmcU0We8TsfeOJZu8BVFN8uvsqFxxTdjCwAgqHVijzLtGhrdlQ_aem_tN8JZPZ16Xys1lElvMyxsQ" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE"></a>
+          <a href="https://www.tiktok.com/@money__5288?_t=8qodRcliisq&_r=1&fbclid=PAZXh0bgNhZW0CMTEAAafLRNBzAD1VWzaKFbs1Twr7lXgFpV1I_QOQe6XEDsYMbp_arVVdsN1Ez_3etw_aem_tgMHFVGSXmrjwIxUBIcdmQ" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
+          <a href="https://www.instagram.com/money__5288?utm_source=ig_web_button_share_sheet&igsh=dWZmZnIxNzY1dXdu" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
+          <a href="https://www.facebook.com/man.ge.77" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
+          <a href="https://youtube.com/channel/UCTgrt6ztH6fnOajuZERAhkw?si=pdvsuyExcCww5vEQ" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
+        </div>
+        <div class="footer-copyright">&copy; All copyright reserved | Elior design</div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+<a href="#" class="back-to-top-btn" aria-label="回到頂端">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="10" viewBox="0 0 16 10" fill="none">
+        <path d="M14.5962 8.42871L8.71097 2.54349C8.32044 2.153 7.68728 2.153 7.29676 2.54349L1.41154 8.42871" stroke="#C48945" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    <span>TOP</span>
+</a>
+</body>
+</html>
