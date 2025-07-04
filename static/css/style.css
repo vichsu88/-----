@@ -653,6 +653,10 @@ body::before {
     width: 90%;
     max-width: 450px;
     position: relative;
+    /* --- 以下為新增的樣式 --- */
+    max-height: 80vh; /* 設定最大高度為視窗的 80% */
+    display: flex; /* 使用 Flexbox 來幫助內部佈局 */
+    flex-direction: column; /* 讓標題和內文垂直排列 */
 }
 
 .modal-close-btn {
@@ -674,7 +678,13 @@ body::before {
 
 .modal-date { font-size: 14px; color: #666; }
 .modal-title { font-size: 22px; margin-top: 5px; }
-.modal-body { margin-top: 20px; line-height: 1.8; }
+.modal-body {
+    margin-top: 20px;
+    line-height: 1.8;
+    /* --- 以下為新增的樣式 --- */
+    overflow-y: auto; /* 當內容垂直溢出時，自動顯示捲軸 */
+    padding-right: 15px; /* 增加一點右邊距，避免捲軸跟文字黏在一起 */
+}
 @media (min-width: 1024px) {
     .news-card {
         width: 70%;

@@ -1,41 +1,46 @@
-# app.py (整合前端的最終版本)
+# app.py (天地人三界通用 - 最終版)
 
-from flask import Flask, jsonify, render_template # <--- 引入 render_template
+import os
+from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson import json_util, ObjectId
 import json
 from datetime import datetime
 import traceback
-import os
+from dotenv import load_dotenv # <--- 引入 dotenv 工具
+
+load_dotenv() # <--- 在程式最上方執行，它會自動讀取 .env 檔案
 
 app = Flask(__name__)
 CORS(app)
 
+# 這行程式碼現在會：
+# 1. 在本地電腦上，因為 load_dotenv()，成功讀到 .env 裡的 MONGO_URI
+# 2. 在 Render 上，因為 Render 系統的環境變數，也成功讀到 MONGO_URI
 MONGO_URI = os.environ.get('MONGO_URI')
 
+db = None # 先宣告 db
 try:
-    client = MongoClient(MONGO_URI)
-    db = client['ChentienTempleDB'] 
-    print("--- MongoDB 連線成功 ---")
+    if MONGO_URI:
+        client = MongoClient(MONGO_URI)
+        db = client['ChentienTempleDB'] 
+        print("--- MongoDB 連線成功 ---")
+    else:
+        print("--- 警告：未找到 MONGO_URI，資料庫無法連線 ---")
 except Exception as e:
     print(f"--- MongoDB 連線失敗: {e} ---")
-    db = None
 
-# 【修改這裡】讓根目錄 '/' 回傳 index.html
+# ... (所有 @app.route 的內容維持不變) ...
+
 @app.route('/')
 def home():
-    # 這會去 templates 資料夾裡尋找並回傳 index.html
     return render_template('index.html')
 
-# ... (其他的 API 路由，例如 /api/announcements 維持不變) ...
-
-# 【功能一】獲取所有公告 (維持不變)
 @app.route('/api/announcements', methods=['GET'])
 def get_announcements():
-    # ... (此處程式碼不變)
     if db is None:
-        return jsonify({"error": "資料庫連線失敗"}), 500
+        return jsonify({"error": "資料庫未連線或連線失敗"}), 500
     try:
         announcements_cursor = db.announcements.find().sort([("isPinned", -1), ("date", -1)])
         results = []
@@ -47,8 +52,6 @@ def get_announcements():
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": f"在處理公告時發生嚴重錯誤: {str(e)}"}), 500
-
-# ... (其他 API 路由也維持不變)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
