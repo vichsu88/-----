@@ -1,40 +1,64 @@
-// public/js/main.js
 
-// 等待 HTML 頁面都載入完成後再執行
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // 找到所有可以點擊的消息項目
-    const newsItems = document.querySelectorAll('.news-item');
-    // 找到彈窗本身
+    const newsList = document.getElementById('news-list');
     const modal = document.getElementById('announcementModal');
-    // 找到關閉按鈕
-    const closeBtn = document.getElementById('modalCloseBtn');
+    const modalDate = modal.querySelector('.modal-date');
+    const modalTitle = modal.querySelector('.modal-title');
+    const modalBody = modal.querySelector('.modal-body');
+    const closeModalBtn = document.getElementById('modalCloseBtn');
+    let allNewsData = []; // 用來儲存從 API 獲取的完整資料
 
-    // 如果頁面上有彈窗，才執行以下程式碼
-    if (modal) {
-        // 為每一個消息項目加上點擊事件
-        newsItems.forEach(item => {
-            item.addEventListener('click', function() {
-                // 這裡未來會從後端抓取真實資料，現在先用假資料填充
-                // document.querySelector('.modal-date').textContent = ...
-                // document.querySelector('.modal-title').textContent = ...
-                // document.querySelector('.modal-body').innerHTML = ...
-                
-                // 顯示彈窗
-                modal.style.display = 'flex';
+    // 從後端 API 獲取最新消息
+    fetch('http://127.0.0.1:5000/api/announcements')
+    .then(response => response.json())
+        .then(data => {
+            allNewsData = data; // 儲存資料
+            newsList.innerHTML = ''; // 清空現有內容
+
+            // 遍歷資料，生成消息列表
+            data.forEach((news, index) => {
+                const newsItem = document.createElement('li');
+                newsItem.className = 'news-item';
+                // 將索引存儲在 data-index 屬性中，方便後續查找
+                newsItem.dataset.index = index; 
+
+                newsItem.innerHTML = `
+                    <span class="news-date">${news.date}</span>
+                    <p class="news-title">${news.title}</p>
+                `;
+
+                // 為每個消息項目添加點擊事件監聽器
+                newsItem.addEventListener('click', () => {
+                    // 從 allNewsData 中找到對應的完整資料
+                    const newsData = allNewsData[index];
+
+                    // 更新彈出視窗的內容
+                    modalDate.textContent = newsData.date;
+                    modalTitle.textContent = newsData.title;
+                    // 將內容中的換行符號 \n 轉換為 <br>
+                    modalBody.innerHTML = newsData.content.replace(/\n/g, '<br>');
+
+                    // 顯示彈出視窗
+                    modal.style.display = 'flex';
+                });
+
+                newsList.appendChild(newsItem);
             });
+        })
+        .catch(error => {
+            console.error('Error fetching news:', error);
+            newsList.innerHTML = '<li class="news-item"><p class="news-title">消息載入失敗，請稍後再試。</p></li>';
         });
 
-        // 為關閉按鈕加上點擊事件
-        closeBtn.addEventListener('click', function() {
-            modal.style.display = 'none'; // 隱藏彈窗
-        });
+    // 關閉彈出視窗的按鈕事件
+    closeModalBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
 
-        // 點擊彈窗的灰色背景區域也可以關閉
-        modal.addEventListener('click', function(event) {
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-    }
+    // 點擊彈出視窗外部區域也可關閉
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
 });
