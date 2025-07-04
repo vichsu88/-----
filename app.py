@@ -1,19 +1,19 @@
-# --- 1. 引入所有必要的函式庫 ---
-from flask import Flask, jsonify, request
+# app.py (整合前端的最終版本)
+
+from flask import Flask, jsonify, render_template # <--- 引入 render_template
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson import json_util, ObjectId
 import json
 from datetime import datetime
-import traceback # 引入追蹤錯誤的強力工具
+import traceback
 import os
 
-# --- 2. 建立 Flask 應用程式 ---
 app = Flask(__name__)
 CORS(app)
 
-# --- 3. 設定資料庫連線 ---
-MONGO_URI = os.environ.get('MONGO_URI') 
+MONGO_URI = os.environ.get('MONGO_URI')
+
 try:
     client = MongoClient(MONGO_URI)
     db = client['ChentienTempleDB'] 
@@ -22,52 +22,33 @@ except Exception as e:
     print(f"--- MongoDB 連線失敗: {e} ---")
     db = None
 
-# --- 4. 撰寫 API 端點 ---
+# 【修改這裡】讓根目錄 '/' 回傳 index.html
 @app.route('/')
-def index():
-    return "<h1>承天中承府 後端 API 已啟動</h1>"
+def home():
+    # 這會去 templates 資料夾裡尋找並回傳 index.html
+    return render_template('index.html')
 
-# 【功能一】獲取所有公告 (植入偵錯儀的最終版本)
+# ... (其他的 API 路由，例如 /api/announcements 維持不變) ...
+
+# 【功能一】獲取所有公告 (維持不變)
 @app.route('/api/announcements', methods=['GET'])
 def get_announcements():
-    print("\n--- 收到獲取公告請求 ---")
+    # ... (此處程式碼不變)
     if db is None:
-        print("錯誤：資料庫未連線")
         return jsonify({"error": "資料庫連線失敗"}), 500
-        
     try:
-        print("步驟1: 準備查詢資料庫...")
         announcements_cursor = db.announcements.find().sort([("isPinned", -1), ("date", -1)])
-        print("步驟2: 成功從資料庫查詢到資料，準備遍歷...")
-        
         results = []
-        for i, doc in enumerate(announcements_cursor):
-            print(f"  正在處理第 {i+1} 筆資料, ID: {doc.get('_id')}")
-            
-            # 將 ObjectId 轉成字串
+        for doc in announcements_cursor:
             doc['_id'] = str(doc['_id'])
-            
-            # 檢查日期欄位
             if 'date' in doc and isinstance(doc['date'], datetime):
-                print(f"    偵測到日期為 datetime 物件，進行格式化...")
                 doc['date'] = doc['date'].strftime('%Y/%m/%d')
-            else:
-                print(f"    日期為文字或不存在，直接使用原值: {doc.get('date')}")
-
             results.append(doc)
-            
-        print("步驟3: 所有資料處理完畢，準備回傳。")
         return jsonify(results)
-
     except Exception as e:
-        print(f"\n!!!!!!!! 發生嚴重錯誤 !!!!!!!!")
-        print(f"錯誤類型: {type(e).__name__}, 錯誤訊息: {str(e)}")
-        # 打印完整的錯誤堆疊，這是最強的除錯線索
-        traceback.print_exc()
         return jsonify({"error": f"在處理公告時發生嚴重錯誤: {str(e)}"}), 500
 
-# ... 其他 API 端點維持不變 ...
+# ... (其他 API 路由也維持不變)
 
-# --- 5. 啟動伺服器 ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
