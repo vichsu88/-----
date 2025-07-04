@@ -148,7 +148,6 @@ body::before {
     position: relative; 
     display: inline-block; 
     
-    /* 【修正重點 #1】將左右 padding 從 3em 縮小為 2.5em，讓「保留席」變小 */
     padding: 20px 1.9em; 
     letter-spacing: 0.1em;
     text-align: center;
@@ -240,6 +239,7 @@ body::before {
     margin: 0;
     /* 【需求】響應式字體 */
     font-size: clamp(16px, 2.5vw, 18px); 
+    letter-spacing: 1.2px;
 }
 
 .news-avatar {
