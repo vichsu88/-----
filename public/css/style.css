@@ -481,3 +481,87 @@ body::before {
         align-items: flex-start;
     }
 }
+/* === 陪祀神明網格列表 === */
+/* === 陪祀神明輪播 === */
+
+/* 輪播的外層容器，用來隱藏超出範圍的卡片 */
+.deity-carousel {
+    max-width: 100%;
+    overflow-x: hidden; /* 隱藏水平滾動條 */
+    margin: 40px 0; /* 上下留出間距 */
+    /* 為了讓左右兩側有淡出效果，可以加上一個遮罩 */
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+}
+
+/* 輪播的軌道，這是真正移動的元素 */
+.deity-grid-track {
+    display: flex; /* 讓所有卡片水平排列 */
+    width: fit-content; /* 寬度由內容決定 */
+    gap: 30px; /* 卡片之間的間距 */
+    /* 套用動畫 */
+    animation: marquee 60s linear infinite;
+}
+
+/* 當滑鼠移到軌道上時，暫停動畫 */
+.deity-grid-track:hover {
+    animation-play-state: paused;
+}
+
+/* 定義動畫本身 */
+@keyframes marquee {
+    from {
+        transform: translateX(0%);
+    }
+    to {
+        /* 將軌道向左移動其一半的寬度（也就是一整組卡片的寬度） */
+        transform: translateX(-50%);
+    }
+}
+
+
+/* 卡片本身樣式維持不變 */
+.deity-card {
+    text-align: center;
+    width: 220px; /* 給卡片一個固定的寬度 */
+    flex-shrink: 0; /* 防止卡片在 flex 容器中被壓縮 */
+}
+
+.deity-card img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.deity-info {
+    margin-top: 15px;
+}
+
+/* 【修正 #2】為字體加上備援(Fallback) */
+.deity-info p {
+    margin: 5px 0;
+    font-family: 'KouzanBrushFontOTF', 'BiauKai', '標楷體', sans-serif;
+}
+
+/* 宮廟與神尊名稱的樣式維持不變 */
+.temple-name {
+    font-size: clamp(24px, 3vw, 35px);
+    color: #C48945;
+}
+
+.deity-name {
+    font-size: clamp(18px, 2.5vw, 25px);
+    color: #231815;
+}
+/* public/css/style.css */
+
+/* 當螢幕寬度大於 1024px 時 (大型桌面螢幕)，套用以下樣式 */
+@media (min-width: 1024px) {
+    .deity-carousel {
+        width: 80%; /* 將輪播容器的寬度設為螢幕的 80% */
+        margin-left: auto; /* 搭配下一行，讓它在畫面中水平置中 */
+        margin-right: auto;
+    }
+}
