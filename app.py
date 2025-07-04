@@ -6,14 +6,14 @@ from bson import json_util, ObjectId
 import json
 from datetime import datetime
 import traceback # 引入追蹤錯誤的強力工具
+import os
 
 # --- 2. 建立 Flask 應用程式 ---
 app = Flask(__name__)
 CORS(app)
 
 # --- 3. 設定資料庫連線 ---
-MONGO_URI = "mongodb+srv://yuanshuaiadmin:yuanshuaiadmin260@news.irew4nn.mongodb.net/?retryWrites=true&w=majority&appName=news"
-
+MONGO_URI = os.environ.get('MONGO_URI') 
 try:
     client = MongoClient(MONGO_URI)
     db = client['ChentienTempleDB'] 
