@@ -1,6 +1,8 @@
-/* public/css/style.css */
+/* ==========================================================================
+   承天中承府 全站樣式 (Refactored by Gemini)
+   ========================================================================== */
 
-/* CSS Reset & Universal Box-Sizing */
+/* === 全域設定與字體 === */
 *,
 *::before,
 *::after {
@@ -15,48 +17,43 @@
 body {
     margin: 0;
     font-family: 'Noto Sans TC', sans-serif; 
-    background-color: #F3F0EC; /* 主要的背景底色 */
+    background-color: #F3F0EC;
     color: #333; 
     min-width: 390px;
-    position: relative; /* 作為 ::before 的定位基準 */
+    position: relative;
 }
-
 
 body::before {
     content: '';
     position: fixed;
-    width: 90vw; /* 寬度為螢幕的 90% */
-    height: 90vh; /* 高度為螢幕的 90% */
+    width: 90vw;
+    height: 90vh;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); /* 絕對精確的置中 */
+    transform: translate(-50%, -50%);
     z-index: -1;
-    opacity: 0.25; /* 透明度調淡一些 */
-    
+    opacity: 0.25;
     background-image: url('../images/pages/index/BG-cloud.png');
     background-repeat: no-repeat;
     background-position: center;
-    background-size: contain; /* 讓圖片在容器內完整顯示 */
+    background-size: contain;
 }
 
-/* 電腦版樣式 (螢幕寬度大於 1024px 時) */
 @media (min-width: 1024px) {
     body::before {
-        /* 還原定位設定 */
         top: 0;
         left: 0;
         transform: none;
         width: 100%;
         height: 100%;
-        
-        /* 【核心修正】分別設定左右兩個背景圖 */
         background-image: url('../images/pages/index/BG-cloud.png'), url('../images/pages/index/BG-cloud.png');
         background-repeat: no-repeat, no-repeat;
-        background-position: center left, center right; /* 第一張圖置中靠左，第二張置中靠右 */
-        background-size: 650px auto, 650px auto; /* 為兩張圖分別設定大小，您可以微調 500px */
+        background-position: center left, center right;
+        background-size: 650px auto, 650px auto;
     }
 }
 
+/* === 導覽列 Header === */
 .main-header {
     position: sticky;
     top: 0;
@@ -65,26 +62,16 @@ body::before {
     z-index: 100;
 }
 
-/* 【修正】導覽列本體樣式，完全採用您的設計規格 */
 .main-nav {
-    /* 玻璃效果 (來自您的規格) */
     background: rgba(255, 255, 255, 0.50);
     box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
     backdrop-filter: blur(7.5px);
-    -webkit-backdrop-filter: blur(7.5px); /* 針對 Safari 瀏覽器的相容性 */
-    
-    /* 邊框 (使用您指定的 border-bottom) */
-    /* border: 4px solid #E6BA67;  <-- 舊的 */
-    border-bottom: 4px solid #E6BA67; /* <-- 新的，只保留底線 */
-    
+    -webkit-backdrop-filter: blur(7.5px);
+    border-bottom: 4px solid #E6BA67;
     border-radius: 10px; 
-    
-    /* Flexbox 佈局 */
     display: flex;
     justify-content: space-between;
     align-items: center; 
-    
-    /* 尺寸與內邊距 */
     width: 95%; 
     max-width: 1200px; 
     height: 101px;
@@ -93,65 +80,44 @@ body::before {
     margin: 20px auto; 
 }
 
-/* Logo 圖片樣式 */
 .nav-logo img {
-    width: 84px; /* 以高度為基準，寬度會自動縮放 */
+    width: 84px;
     height: 84px;
-    display: block; /* 移除圖片下方的奇怪空隙 */
+    display: block;
 }
 
-/* 漢堡選單按鈕 */
 .nav-toggle {
-    background: none; /* 移除按鈕預設背景 */
-    border: none; /* 移除按鈕預設邊框 */
-    cursor: pointer; /* 讓滑鼠移上去時顯示為手形 */
+    background: none;
+    border: none;
+    cursor: pointer;
     padding: 0;
-
-    /* 用 Flexbox 來排列三條線 */
     display: flex;
-    flex-direction: column; /* 垂直排列 */
-    gap: 8px; /* 設定線條之間的間距 */
+    flex-direction: column;
+    gap: 8px;
 }
-/* === 首頁主視覺區 (Hero Section) === */
-.hero-section {
-    width: 100%;
-    /* 我們讓 section 的高度由內部的圖片來決定 */
-    /* 讓內部的圖片水平置中 */
+
+/* === 通用區塊與標題樣式 === */
+.hero-section,
+.news-section,
+.about-section,
+.services-section,
+.declaration-section {
+    padding: 0 20px;
+    margin-top: 80px;
     text-align: center;
 }
 
-/* 這是我們新增的圖片樣式 */
-.hero-image {
-    display: block; /* 或者 inline-block 也可以 */
-    
-    /* 在手機上，寬度為 100% */
-    width: 100%; 
-    
-    /* 【需求 #2】在所有裝置上，最大寬度就是 1170px */
-    max-width: 800px; 
-    
-    /* 高度設為 auto，讓它能維持正確的長寬比，永不變形 */
-    height: auto; 
-    
-    /* 因為圖片是置中，所以當它達到最大寬度時，需要 margin auto 來實現水平置中 */
-    margin-left: auto;
-    margin-right: auto;
-    
-    /* object-fit 已經不再需要 */
+.hero-section {
+    margin-top: 0;
+    padding: 0;
 }
-/* public/css/style.css */
 
-/* 【新增】通用內容區塊樣式 */
-.about-section,
-.news-section,
-.services-section,
-.declaration-section {
-    /* 讓內部的標題等 inline-block 元素能水平置中 */
-    text-align: center; 
-    /* 為每個區塊提供統一的上邊距，增加呼吸感 */
-    margin-top: 80px;
-    /* 統一的左右內邊距 */
-    padding: 0 20px; 
+.hero-image {
+    display: block;
+    width: 100%; 
+    max-width: 800px; 
+    height: auto; 
+    margin: 0 auto;
 }
 
 .section-title {
@@ -160,42 +126,36 @@ body::before {
     color: #333;
     position: relative; 
     display: inline-block; 
-    
     padding: 20px 1.9em; 
     letter-spacing: 0.1em;
-    text-align: center;
-    margin: 0 auto 15px;
+    margin: 0 auto 40px;
 }
+
 .section-title::before,
 .section-title::after {
+    content: ''; 
     width: 2em;
     height: 2em;
-    
-    content: ''; 
     display: block;
     position: absolute; 
     top: 50%;
+    transform: translateY(-50%);
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
 }
 
-/* 左元寶樣式 (更新) */
 .section-title::before {
     left: 0;
-    transform: translateY(-50%);
     background-image: url('../images/pages/index/title-yuanbao-left.png');
 }
 
-/* 右元寶樣式 (更新) */
 .section-title::after {
     right: 0;
-    transform: translateY(-50%);
     background-image: url('../images/pages/index/title-yuanbao-right.png');
 }
-/* === 最新消息區塊 === */
 
-
+/* === 最新消息 News Section === */
 .news-card {
     border-radius: 15px;
     border: 2px solid #E6BA67;
@@ -203,33 +163,26 @@ body::before {
     box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
     backdrop-filter: blur(7.5px);
     -webkit-backdrop-filter: blur(7.5px);
-
-    /* 【修正重點】移除上邊距，只保留左右 auto 來置中 */
     margin: 0 auto;
-    
-    /* ... padding, width, max-width 等其他屬性維持不變 ... */
     padding: 20px 30px;
     width: 90%;
     max-width: 500px;
     position: relative;
 }
 
-
 .news-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    /* 【需求】設定固定高度並產生滾動條 */
     height: 300px; 
-    overflow-y: auto; /* 當內容超過高度時，顯示垂直滾動條 */
+    overflow-y: auto;
 }
 
 .news-item {
     display: flex;
-    flex-direction: column; /* <-- 讓日期和標題垂直堆疊 */
-    align-items: flex-start; /* <-- 讓它們向左對齊 */
-    gap: 5px; /* 在日期和標題之間加上一點點垂直間距 */
-    
+    flex-direction: column; 
+    align-items: flex-start;
+    gap: 5px;
     padding: 20px 0;
     border-bottom: 1px solid rgba(196, 137, 69, 0.4); 
     cursor: pointer;
@@ -246,150 +199,73 @@ body::before {
 
 .news-date {
     font-size: 14px;
-    color: #665434; /* 深一點的咖啡色 */
+    color: #665434;
 }
 
 .news-title {
     margin: 0;
     font-size: clamp(16px, 2.5vw, 18px); 
     letter-spacing: 1.2px;
-    text-align: left; /* 確保長標題換行時也是靠左對齊 */
+    text-align: left;
 }
-/* 當螢幕寬度大於 768px 時 (電腦版)，套用以下樣式 */
-@media (min-width: 768px) {
-    .news-item {
-        flex-direction: row; /* <-- 改回水平排列 */
-        align-items: center; /* <-- 讓日期和標題垂直置中對齊 */
-        gap: 15px; /* 恢復水平間距 */
-    }
 
-    .news-title {
-        /* 在電腦版上，標題可以稍微大一點 */
-        font-size: clamp(16px, 1.2vw, 20px);
-    }
-}
 .news-avatar {
     position: absolute;
     right: 15px;
     bottom: 15px;
-    width: 130px; /* 您可以自行調整大小 */
+    width: 130px;
     height: auto;
     opacity: 0.8;
 }
 
-/* === 公告彈窗 (Modal) === */
-.announcement-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 200;
-    display: none; /* 預設為隱藏 */
-    justify-content: center;
-    align-items: center;
+@media (min-width: 768px) {
+    .news-item {
+        flex-direction: row;
+        align-items: center;
+        gap: 15px;
+    }
+    .news-title {
+        font-size: clamp(16px, 1.2vw, 20px);
+    }
 }
 
-.modal-content {
-    /* 您的玻璃效果設計 */
-    border-radius: 15px;
-    background: rgba(255, 255, 255, 0.8);
-    box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
-    backdrop-filter: blur(7.5px);
-    -webkit-backdrop-filter: blur(7.5px);
-
-    padding: 40px 30px;
-    width: 90%;
-    max-width: 450px;
-    position: relative;
+/* === 關於帥府 About Section === */
+.about-section {
+    padding-left: 0;
+    padding-right: 0;
 }
 
-.modal-close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: #C48945;
-    border: 1px solid #D9B88A;
-    border-radius: 50%;
-    width: 35px;
-    height: 35px;
-    color: white;
-    font-size: 20px;
-    line-height: 35px;
-    text-align: center;
-    cursor: pointer;
-    padding: 0;
-}
-
-/* 彈窗內的文字樣式 */
-.modal-date { font-size: 14px; color: #666; }
-.modal-title { font-size: 22px; margin-top: 5px; }
-.modal-body { margin-top: 20px; line-height: 1.8; }
-/* === 關於帥府區塊 === */
-.about-section .section-title {
-    margin-bottom: 30px; /* 讓標題和下方內容的距離拉開一點 */
-}
-
-/* 滾動照片藝廊 */
 .photo-gallery {
-    display: flex; /* 讓圖片水平排列 */
-    overflow-x: auto; /* 當圖片超出容器時，產生水平滾動條 */
-    gap: 20px; /* 圖片之間的間距 */
-    padding: 10px 0; /* 上下留點空間 */
-    /* 隱藏醜醜的滾動條，但保留滾動功能 */
+    display: flex;
+    overflow-x: auto;
+    gap: 20px;
+    padding: 10px 20px; /* 在此補回左右邊距 */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE */
 }
+
 .photo-gallery::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
 }
 
 .photo-gallery img {
-    border-radius: 10px; /* 讓照片有點圓角 */
-    width: auto; /* 寬度自動，以高度為準 */
-    flex-shrink: 0; /* 防止圖片在 flex 容器中被壓縮 */
+    border-radius: 10px;
+    width: auto;
+    flex-shrink: 0;
 }
 
-/* 活動照片尺寸 */
 .activity-gallery img {
     height: 200px;
 }
 
-/* 神明照片尺寸 */
-.deity-gallery img {
-    height: 140px;
-}
-
-/* 介紹內文 */
 .about-text {
-    max-width: 650px; /* 設定最大寬度，讓內文好讀 */
-    margin: 30px auto; /* 上下間距、水平置中 */
-    font-size: clamp(16px, 2.5vw, 18px);
-    color: #231815;
-    line-height: 1.8; /* 1.3 的行距太擠，1.6-1.8 會更舒服 */
-    letter-spacing: 0.1em; /* 5%太大，0.05em-0.1em 是比較合適的值 */
-}
-
-/* 陪祀神明列表 */
-.deity-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* 建立兩欄式佈局 */
-    gap: 10px 20px; /* 行間距、欄間距 */
     max-width: 650px;
     margin: 30px auto;
+    padding: 0 20px; /* 在此補回左右邊距 */
     font-size: clamp(16px, 2.5vw, 18px);
-}
-
-.deity-list p {
-    margin: 0;
-    text-align: left;
-}
-
-.deity-location {
-    color: #C48945; /* 您指定的顏色 */
-    font-weight: bold;
-    margin-right: 1em; /* 讓宮廟和神明之間有點距離 */
+    color: #231815;
+    line-height: 1.8;
+    letter-spacing: 0.1em;
 }
 
 .deity-list-no-shrine {
@@ -397,102 +273,25 @@ body::before {
     margin-top: 30px;
 }
 
-/* 電腦版樣式 */
+.font-fallback {
+    font-family: "Noto Sans TC", sans-serif;
+}
+
 @media (min-width: 768px) {
     .activity-gallery img {
         height: 350px;
     }
-    .deity-gallery img {
-        height: 250px;
-    }
 }
 
-.services-section .section-title {
-    margin-bottom: 40px; /* 讓標題和下方卡片距離拉開 */
-}
-
-.services-grid {
-    display: flex;
-    flex-direction: column; /* 手機版垂直排列 */
-    align-items: center;
-    gap: 50px; /* 每個服務項目之間的間距 */
-}
-
-.service-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px; /* 圖片和按鈕之間的間距 */
-}
-
-.service-image {
-    width: 264px; /* 手機版尺寸 */
-    height: 264px; /* 手機版尺寸 */
-    border-radius: 50%; /* 關鍵：讓圖片變圓形 */
-    object-fit: cover; /* 確保圖片在圓形中不變形 */
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-/* === 全域通用按鈕樣式 === */
-
-/* 基礎按鈕 .btn (定義所有按鈕共用的尺寸、字體、間距等) */
-.btn {
-    display: inline-block;
-    height: 42px;
-    line-height: 42px; /* 讓文字垂直置中 */
-    padding: 0 20px; /* 左右內邊距，讓寬度隨內容自適應 */
-    border-radius: 15px;
-    
-    /* 文字樣式 */
-    color: white;
-    text-decoration: none; /* 移除預設底線 */
-    letter-spacing: 1.7px;
-    font-size: 16px;
-    font-weight:bold;
-    text-align: center;
-    
-    cursor: pointer; /* 滑鼠移上去時顯示為手形 */
-    transition: transform 0.2s ease-out; /* 加上一個簡單的點擊動畫 */
-}
-
-.btn:hover {
-    transform: scale(1.05); /* 滑鼠移上去時稍微放大 */
-}
-
-/* 咖啡色按鈕 .btn--brown (只定義顏色和特殊效果) */
-.btn--brown {
-    background: rgba(196, 137, 69, 0.65);
-    box-shadow: -2px 2px 3px 0px #FFF inset, 2px -2px 3px 0px rgba(0, 0, 0, 0.25) inset;
-}
-
-/* 電腦版樣式 */
-@media (min-width: 768px) {
-    .service-image {
-        width: 330px;
-        height: 330px;
-    }
-}
-
-/* 更大的電腦螢幕，可以考慮水平排列 */
-@media (min-width: 1024px) {
-    .services-grid {
-        flex-direction: row;
-        justify-content: center;
-        align-items: flex-start;
-    }
-}
-/* === 陪祀神明輪播 (修正版) === */
-
-/* 輪播的外層容器 (手機與平板的預設樣式) */
+/* === 陪祀神明輪播 Deity Carousel === */
 .deity-carousel {
-    width: 95%; /* 在小螢幕上保留一些邊距，避免太滿 */
+    width: 100%; /* 手機版滿版 */
     margin: 40px auto; 
     overflow: hidden;
     -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
     mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
 }
 
-/* 輪播的軌道 */
 .deity-grid-track {
     display: flex; 
     width: fit-content; 
@@ -504,17 +303,15 @@ body::before {
     animation-play-state: paused;
 }
 
-/* 輪播動畫 */
 @keyframes marquee {
     from { transform: translateX(0%); }
     to { transform: translateX(-50%); }
 }
 
-/* 輪播卡片 */
 .deity-card {
     text-align: center;
     width: 220px;
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
 
 .deity-card img {
@@ -544,69 +341,112 @@ body::before {
     color: #231815;
 }
 
-/* === 桌機全幅把神尊拉出來 === */
 @media (min-width: 1024px) {
-  /* ① 讓 section 滿版 */
-  .about-section {
-    max-width: none;     /* 把可能的 max-width 鎖鏈剪斷 */
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  /* ② 輪播滿整支螢幕再置中 */
-  .deity-carousel {
-    width: 100vw;        /* 真・螢幕寬 */
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  /* ③ 卡片變瘦一點，間距也減少，畫面一次塞 6~7 張 */
-  .deity-grid-track {
-    gap: 20px;           /* 原本 30 → 20 */
-  }
-  .deity-card {
-    width: 160px;        /* 原本 220 → 160 */
-  }
-  .deity-card img {
-    height: 240px;       /* 比例同步調整 */
-  }
-}
-.font-fallback{
-  font-family: "Noto Sans TC", sans-serif;
-}
-/* === 帥府聲明區塊 === */
-
-.declaration-section .section-title {
-    margin-bottom: 40px; 
+    /* 輪播在桌機上改為橫向滿版 */
+    .about-section {
+        max-width: none;
+    }
+    .deity-carousel {
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    /* 卡片變小，間距縮減，一次塞更多張 */
+    .deity-grid-track {
+        gap: 20px;
+    }
+    .deity-card {
+        width: 160px;
+    }
+    .deity-card img {
+        height: 240px;
+    }
 }
 
-/* 聲明內容的卡片容器 */
+/* === 服務項目 Services Section === */
+.services-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 50px;
+}
+
+.service-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.service-image {
+    width: 264px;
+    height: 264px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* 全域通用按鈕 */
+.btn {
+    display: inline-block;
+    height: 42px;
+    line-height: 42px;
+    padding: 0 20px;
+    border-radius: 15px;
+    color: white;
+    text-decoration: none;
+    letter-spacing: 1.7px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease-out;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+}
+
+.btn--brown {
+    background: rgba(196, 137, 69, 0.65);
+    box-shadow: -2px 2px 3px 0px #FFF inset, 2px -2px 3px 0px rgba(0, 0, 0, 0.25) inset;
+}
+
+@media (min-width: 768px) {
+    .service-image {
+        width: 330px;
+        height: 330px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .services-grid {
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-start;
+    }
+}
+
+/* === 帥府聲明 Declaration Section === */
 .declaration-box {
-    /* 沿用你喜歡的玻璃擬態樣式 */
     border-radius: 15px;
     border: 2px solid #E6BA67;
     background: rgba(255, 255, 255, 0.50);
     box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
     backdrop-filter: blur(7.5px);
     -webkit-backdrop-filter: blur(7.5px);
-    
-    /* Flexbox 佈局 (手機版預設：文字在上，圖片在下) */
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 20px;
-
-    /* 尺寸與內邊距 (手機版) */
     padding: 30px;
     width: 90%;
     margin: 0 auto;
 }
 
-/* 聲明文字的區塊 */
 .declaration-text {
     width: 100%;
-    /* 完全複製 .about-text 的字距與行距，達成你的要求 */
     font-size: clamp(16px, 2.5vw, 18px);
     color: #231815;
     line-height: 1.8;
@@ -614,7 +454,6 @@ body::before {
     text-align: left;
 }
 
-/* 移除列表的預設樣式，我們用 CSS 重新打造編號 */
 .declaration-text ol {
     padding-left: 0;
     margin: 0;
@@ -622,58 +461,56 @@ body::before {
 }
 
 .declaration-text li {
-    margin-bottom: 1.5em; /* 項目之間的垂直間距 */
+    margin-bottom: 1.5em;
 }
 
 .declaration-text li:last-child {
     margin-bottom: 0;
 }
 
-/* 右側的圖片 */
 .declaration-avatar {
     height: 200px;
     width: auto;
-    flex-shrink: 0; /* 防止圖片在 flex 容器中被壓縮 */
+    flex-shrink: 0;
 }
 
-/* 電腦版樣式 (寬度大於 1024px) */
 @media (min-width: 1024px) {
     .declaration-box {
-        flex-direction: row;     /* 改為水平排列：文字在左，圖片在右 */
-        align-items: flex-start; /* 讓文字和圖片頂部對齊 */
-        width: 60%;              /* 電腦版寬度佔 60% */
-        max-width: 900px;        /* 限制最大寬度，避免在大螢幕過寬 */
+        flex-direction: row;
+        align-items: flex-start;
+        width: 60%;
+        max-width: 900px;
         padding: 40px;
     }
 }
-/* === Footer === */
+
+/* === 頁尾 Footer === */
 .main-footer {
-    padding: 80px 20px; /* 提供足夠的垂直空間來容納頁尾方塊 */
-    margin-top: 80px;   /* 和上方「帥府聲明」區塊的間距 */
-}
-
-.footer-box {
-    /* 尺寸與定位 */
-    width: 100%;             /* 在手機上寬度為 100% */
-    margin: 0 auto;          /* 使方塊在頁面上水平置中 */
-    position: relative;      /* 作為元寶絕對定位的基準點 */
-
-    /* 外觀樣式 */
-    border: 4px solid #E6BA67;
+    padding: 4rem 0 2rem 0; /* [cite: 69] */
+    margin-top: 5px;
+    border-top: 4px solid #E6BA67; /* 這是您設計中已有的上方線條  */
+    border-bottom: 4px solid #E6BA67; /* 這是新增的下方線條 */
     background: #3E3E3E;
-    color: #FFFFFF;
-    
-    /* 內部佈局 */
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* 讓主內容和版權文字上下分開 */
 }
+
 
 .footer-content {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: flex-start; /* 讓左邊資訊和右邊圖示頂部對齊 */
+    padding: 0 3rem;
+    gap: 2rem;
+    position: relative; /* 關鍵：讓絕對定位依據這個容器 */
+    max-width: 1200px; /* 與導覽列對齊 */
+    margin: 0 auto;
+}
+
+/* 左欄：宮廟資訊 */
+.footer-col-left {
+    flex: 1 1 0;
+    color: #fff;
+    position: relative;
+    z-index: 2; /* 確保文字在元寶之上 */
 }
 
 .footer-title {
@@ -690,64 +527,96 @@ body::before {
     opacity: 0.9;
 }
 
+/* 中欄：元寶圖 (桌機版置中) */
+.footer-col-center {
+    flex: 0 0 140px; /* 固定寬度不壓縮 */
+}
+
+.center-yuanbao {
+    width: 120px;
+    height: auto;
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1; /* 在文字之下 */
+}
+
+/* 右欄：社群與版權 */
+.footer-col-right {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.7rem;
+    min-width: 180px;
+    position: relative;
+    z-index: 2; /* 確保文字在元寶之上 */
+}
+
 .footer-social {
     display: flex;
-    gap: 16px; /* 你指定的 1.2 item-spacing -> 12px */
-    padding-top: 5px; /* 微調，讓圖示和左邊標題看起來更對齊 */
+    gap: 15px;
 }
 
 .footer-social img {
-    height: 28px; /* CTA 圖示高度 */
+    height: 28px;
     width: auto;
-    transition: transform 0.2s ease-out;
+    transition: transform 0.2s;
 }
 
 .footer-social a:hover img {
-    transform: scale(1.15); /* 滑鼠移上去時放大 */
+    transform: scale(1.15);
 }
 
 .footer-copyright {
-    font-family: 'Noto Sans TC', sans-serif;
+    color: #fff;
+    opacity: .7;
+    font-size: 1rem;
+    margin-top: 0.3rem;
     text-align: right;
-    font-size: 12px;
-    opacity: 0.7;
-    margin: 0;
 }
 
-.footer-illustration {
-    position: absolute;
-    width: 130px; /* 元寶大小 */
-    height: auto;
-    left: 20px;
-    bottom: -35px; /* 關鍵：使用負值讓元寶往下超出邊框 */
+/* Footer 手機版響應式 */
+@media (max-width: 991px) {
+    .main-footer {
+        padding: 2.5rem 1.2rem 1.2rem 1.2rem; /* [cite: 83] */
+    }
+    .footer-content {
+        flex-direction: column;
+        gap: 1.2rem;
+        padding: 0;
+    }
+    .footer-col-left,
+    .footer-col-right {
+        width: 100%;
+        text-align: center;
+        align-items: center;
+    }
+    .center-yuanbao {
+        position: static; /* 還原定位 */
+        transform: none;
+        margin: 0.5rem auto 1rem auto;
+    }
 }
 
-
-/* === Back to Top Button === */
+/* === 回到頂端 Back to Top Button === */
 .back-to-top-btn {
-    /* 定位：固定在畫面右下角 */
     position: fixed;
     bottom: 30px;
     right: 30px;
-    z-index: 1000; /* 確保在最上層 */
-
-    /* 尺寸 */
+    z-index: 1000;
     width: 85px;
     height: 48px;
-    
-    /* 外觀 */
-    background-color: rgba(255, 255, 255, 0.8); /* 帶透明度的白色 */
+    background-color: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(5px);
     border: 1px solid #C48945;
-    border-radius: 24px; /* 圓角 */
-    
-    /* 內部圖文排版 */
+    border-radius: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-
-    /* 文字與連結樣式 */
     text-decoration: none;
     color: #C48945;
     font-weight: bold;
@@ -756,37 +625,59 @@ body::before {
 }
 
 .back-to-top-btn:hover {
-    transform: scale(1.05); /* 滑鼠移上去時放大 */
-    background-color: rgba(255, 255, 255, 1); /* 背景變不透明 */
+    transform: scale(1.05);
+    background-color: rgba(255, 255, 255, 1);
 }
 
-/* === 響應式調整 (手機版) === */
-@media (max-width: 480px) {
-    .footer-box {
-        height: auto; /* 在手機上讓高度自動，避免內容爆掉 */
-        padding: 20px;
-    }
-    .footer-content {
-        flex-direction: column; /* 主要內容改為垂直排列 */
-        align-items: center;    /* 置中對齊 */
-        gap: 20px;
-        text-align: center;
-    }
-    .footer-social {
-        padding-top: 0;
-    }
-    .footer-copyright {
-        text-align: center;
-        margin-top: 25px;
-    }
-    .footer-illustration {
-        width: 100px;
-        left: 5px;
-        bottom: -30px; /* 手機上稍微調整位置 */
-    }
+/* === 公告彈窗 Modal === */
+.announcement-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 200;
+    display: none;
+    justify-content: center;
+    align-items: center;
 }
-@media (min-width: 992px){              /* 只在桌機生效 */
-    .footer-info p{                    /* 地址＋營業時間兩行 */
-        padding-left: 13ch;            /* 往右推「10 個字元」寬 */
+
+.modal-content {
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
+    backdrop-filter: blur(7.5px);
+    -webkit-backdrop-filter: blur(7.5px);
+    padding: 40px 30px;
+    width: 90%;
+    max-width: 450px;
+    position: relative;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #C48945;
+    border: 1px solid #D9B88A;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    color: white;
+    font-size: 20px;
+    line-height: 35px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.modal-date { font-size: 14px; color: #666; }
+.modal-title { font-size: 22px; margin-top: 5px; }
+.modal-body { margin-top: 20px; line-height: 1.8; }
+@media (min-width: 1024px) {
+    .news-card {
+        width: 70%;
+        max-width: 900px; /* 您可以依據設計需求調整最大寬度 */
     }
 }
