@@ -1,3 +1,12 @@
+/* public/css/style.css */
+
+/* CSS Reset & Universal Box-Sizing */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 @font-face {
     font-family: 'KouzanBrushFontOTF';
     src: url('../fonts/KouzanBrushFontOTF.otf') format('opentype');
@@ -143,7 +152,7 @@ body::before {
 
 .section-title {
     font-family: 'KouzanBrushFontOTF', sans-serif;
-    font-size: clamp(24px, 5vw, 40px);
+    font-size: clamp(28px, 5vw, 40px);
     color: #333;
     position: relative; 
     display: inline-block; 
@@ -213,9 +222,9 @@ body::before {
 
 .news-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start; 
     padding: 15px 0;
-    border-bottom: 1px solid rgba(196, 137, 69, 0.4); /* 分隔線 */
+    border-bottom: 1px solid rgba(196, 137, 69, 0.4); 
     cursor: pointer;
     transition: background-color 0.2s;
 }
