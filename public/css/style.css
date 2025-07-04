@@ -406,7 +406,7 @@ body::before {
         height: 250px;
     }
 }
-/* === 服務項目區塊 === */
+
 .services-section .section-title {
     margin-bottom: 40px; /* 讓標題和下方卡片距離拉開 */
 }
@@ -481,50 +481,40 @@ body::before {
         align-items: flex-start;
     }
 }
-/* === 陪祀神明網格列表 === */
-/* === 陪祀神明輪播 === */
+/* === 陪祀神明輪播 (修正版) === */
 
-/* 輪播的外層容器，用來隱藏超出範圍的卡片 */
+/* 輪播的外層容器 (手機與平板的預設樣式) */
 .deity-carousel {
-    max-width: 100%;
-    overflow-x: hidden; /* 隱藏水平滾動條 */
-    margin: 40px 0; /* 上下留出間距 */
-    /* 為了讓左右兩側有淡出效果，可以加上一個遮罩 */
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
-    mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+    width: 95%; /* 在小螢幕上保留一些邊距，避免太滿 */
+    margin: 40px auto; 
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
 }
 
-/* 輪播的軌道，這是真正移動的元素 */
+/* 輪播的軌道 */
 .deity-grid-track {
-    display: flex; /* 讓所有卡片水平排列 */
-    width: fit-content; /* 寬度由內容決定 */
-    gap: 30px; /* 卡片之間的間距 */
-    /* 套用動畫 */
+    display: flex; 
+    width: fit-content; 
+    gap: 30px; 
     animation: marquee 60s linear infinite;
 }
 
-/* 當滑鼠移到軌道上時，暫停動畫 */
 .deity-grid-track:hover {
     animation-play-state: paused;
 }
 
-/* 定義動畫本身 */
+/* 輪播動畫 */
 @keyframes marquee {
-    from {
-        transform: translateX(0%);
-    }
-    to {
-        /* 將軌道向左移動其一半的寬度（也就是一整組卡片的寬度） */
-        transform: translateX(-50%);
-    }
+    from { transform: translateX(0%); }
+    to { transform: translateX(-50%); }
 }
 
-
-/* 卡片本身樣式維持不變 */
+/* 輪播卡片 */
 .deity-card {
     text-align: center;
-    width: 220px; /* 給卡片一個固定的寬度 */
-    flex-shrink: 0; /* 防止卡片在 flex 容器中被壓縮 */
+    width: 220px;
+    flex-shrink: 0; 
 }
 
 .deity-card img {
@@ -539,15 +529,13 @@ body::before {
     margin-top: 15px;
 }
 
-/* 【修正 #2】為字體加上備援(Fallback) */
 .deity-info p {
     margin: 5px 0;
     font-family: 'KouzanBrushFontOTF', 'BiauKai', '標楷體', sans-serif;
 }
 
-/* 宮廟與神尊名稱的樣式維持不變 */
 .temple-name {
-    font-size: clamp(24px, 3vw, 35px);
+    font-size: clamp(22px, 3vw, 24px);
     color: #C48945;
 }
 
@@ -555,13 +543,250 @@ body::before {
     font-size: clamp(18px, 2.5vw, 25px);
     color: #231815;
 }
-/* public/css/style.css */
 
-/* 當螢幕寬度大於 1024px 時 (大型桌面螢幕)，套用以下樣式 */
+/* === 桌機全幅把神尊拉出來 === */
 @media (min-width: 1024px) {
-    .deity-carousel {
-        width: 80%; /* 將輪播容器的寬度設為螢幕的 80% */
-        margin-left: auto; /* 搭配下一行，讓它在畫面中水平置中 */
-        margin-right: auto;
+  /* ① 讓 section 滿版 */
+  .about-section {
+    max-width: none;     /* 把可能的 max-width 鎖鏈剪斷 */
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* ② 輪播滿整支螢幕再置中 */
+  .deity-carousel {
+    width: 100vw;        /* 真・螢幕寬 */
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* ③ 卡片變瘦一點，間距也減少，畫面一次塞 6~7 張 */
+  .deity-grid-track {
+    gap: 20px;           /* 原本 30 → 20 */
+  }
+  .deity-card {
+    width: 160px;        /* 原本 220 → 160 */
+  }
+  .deity-card img {
+    height: 240px;       /* 比例同步調整 */
+  }
+}
+.font-fallback{
+  font-family: "Noto Sans TC", sans-serif;
+}
+/* === 帥府聲明區塊 === */
+
+.declaration-section .section-title {
+    margin-bottom: 40px; 
+}
+
+/* 聲明內容的卡片容器 */
+.declaration-box {
+    /* 沿用你喜歡的玻璃擬態樣式 */
+    border-radius: 15px;
+    border: 2px solid #E6BA67;
+    background: rgba(255, 255, 255, 0.50);
+    box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
+    backdrop-filter: blur(7.5px);
+    -webkit-backdrop-filter: blur(7.5px);
+    
+    /* Flexbox 佈局 (手機版預設：文字在上，圖片在下) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+
+    /* 尺寸與內邊距 (手機版) */
+    padding: 30px;
+    width: 90%;
+    margin: 0 auto;
+}
+
+/* 聲明文字的區塊 */
+.declaration-text {
+    width: 100%;
+    /* 完全複製 .about-text 的字距與行距，達成你的要求 */
+    font-size: clamp(16px, 2.5vw, 18px);
+    color: #231815;
+    line-height: 1.8;
+    letter-spacing: 0.1em;
+    text-align: left;
+}
+
+/* 移除列表的預設樣式，我們用 CSS 重新打造編號 */
+.declaration-text ol {
+    padding-left: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.declaration-text li {
+    margin-bottom: 1.5em; /* 項目之間的垂直間距 */
+}
+
+.declaration-text li:last-child {
+    margin-bottom: 0;
+}
+
+/* 右側的圖片 */
+.declaration-avatar {
+    height: 200px;
+    width: auto;
+    flex-shrink: 0; /* 防止圖片在 flex 容器中被壓縮 */
+}
+
+/* 電腦版樣式 (寬度大於 1024px) */
+@media (min-width: 1024px) {
+    .declaration-box {
+        flex-direction: row;     /* 改為水平排列：文字在左，圖片在右 */
+        align-items: flex-start; /* 讓文字和圖片頂部對齊 */
+        width: 60%;              /* 電腦版寬度佔 60% */
+        max-width: 900px;        /* 限制最大寬度，避免在大螢幕過寬 */
+        padding: 40px;
+    }
+}
+/* === Footer === */
+.main-footer {
+    padding: 80px 20px; /* 提供足夠的垂直空間來容納頁尾方塊 */
+    margin-top: 80px;   /* 和上方「帥府聲明」區塊的間距 */
+}
+
+.footer-box {
+    /* 尺寸與定位 */
+    width: 100%;             /* 在手機上寬度為 100% */
+    margin: 0 auto;          /* 使方塊在頁面上水平置中 */
+    position: relative;      /* 作為元寶絕對定位的基準點 */
+
+    /* 外觀樣式 */
+    border: 4px solid #E6BA67;
+    background: #3E3E3E;
+    color: #FFFFFF;
+    
+    /* 內部佈局 */
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* 讓主內容和版權文字上下分開 */
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* 讓左邊資訊和右邊圖示頂部對齊 */
+}
+
+.footer-title {
+    font-family: 'KouzanBrushFontOTF', '標楷體', sans-serif;
+    font-size: 30px;
+    margin: 0 0 10px 0;
+    font-weight: normal;
+}
+
+.footer-info p {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    margin: 5px 0;
+    opacity: 0.9;
+}
+
+.footer-social {
+    display: flex;
+    gap: 16px; /* 你指定的 1.2 item-spacing -> 12px */
+    padding-top: 5px; /* 微調，讓圖示和左邊標題看起來更對齊 */
+}
+
+.footer-social img {
+    height: 28px; /* CTA 圖示高度 */
+    width: auto;
+    transition: transform 0.2s ease-out;
+}
+
+.footer-social a:hover img {
+    transform: scale(1.15); /* 滑鼠移上去時放大 */
+}
+
+.footer-copyright {
+    font-family: 'Noto Sans TC', sans-serif;
+    text-align: right;
+    font-size: 12px;
+    opacity: 0.7;
+    margin: 0;
+}
+
+.footer-illustration {
+    position: absolute;
+    width: 130px; /* 元寶大小 */
+    height: auto;
+    left: 20px;
+    bottom: -35px; /* 關鍵：使用負值讓元寶往下超出邊框 */
+}
+
+
+/* === Back to Top Button === */
+.back-to-top-btn {
+    /* 定位：固定在畫面右下角 */
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000; /* 確保在最上層 */
+
+    /* 尺寸 */
+    width: 85px;
+    height: 48px;
+    
+    /* 外觀 */
+    background-color: rgba(255, 255, 255, 0.8); /* 帶透明度的白色 */
+    backdrop-filter: blur(5px);
+    border: 1px solid #C48945;
+    border-radius: 24px; /* 圓角 */
+    
+    /* 內部圖文排版 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    /* 文字與連結樣式 */
+    text-decoration: none;
+    color: #C48945;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.2s ease-out;
+}
+
+.back-to-top-btn:hover {
+    transform: scale(1.05); /* 滑鼠移上去時放大 */
+    background-color: rgba(255, 255, 255, 1); /* 背景變不透明 */
+}
+
+/* === 響應式調整 (手機版) === */
+@media (max-width: 480px) {
+    .footer-box {
+        height: auto; /* 在手機上讓高度自動，避免內容爆掉 */
+        padding: 20px;
+    }
+    .footer-content {
+        flex-direction: column; /* 主要內容改為垂直排列 */
+        align-items: center;    /* 置中對齊 */
+        gap: 20px;
+        text-align: center;
+    }
+    .footer-social {
+        padding-top: 0;
+    }
+    .footer-copyright {
+        text-align: center;
+        margin-top: 25px;
+    }
+    .footer-illustration {
+        width: 100px;
+        left: 5px;
+        bottom: -30px; /* 手機上稍微調整位置 */
+    }
+}
+@media (min-width: 992px){              /* 只在桌機生效 */
+    .footer-info p{                    /* 地址＋營業時間兩行 */
+        padding-left: 13ch;            /* 往右推「10 個字元」寬 */
     }
 }
