@@ -18,8 +18,9 @@ body {
     background-color: #F3F0EC;
     color: #333; 
     position: relative; 
+    
+    min-width: 390px;
 }
-
 
 
 
@@ -222,35 +223,48 @@ body::before {
 
 .news-item {
     display: flex;
-    align-items: flex-start; 
-    padding: 15px 0;
+    flex-direction: column; /* <-- 讓日期和標題垂直堆疊 */
+    align-items: flex-start; /* <-- 讓它們向左對齊 */
+    gap: 5px; /* 在日期和標題之間加上一點點垂直間距 */
+    
+    padding: 20px 0;
     border-bottom: 1px solid rgba(196, 137, 69, 0.4); 
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
 .news-item:hover {
-    background-color: rgba(255,255,255,0.1);
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .news-item:last-child {
-    border-bottom: none; /* 最後一項不需要分隔線 */
+    border-bottom: none;
 }
 
 .news-date {
-    /* 【需求】輔助字 14px */
     font-size: 14px;
     color: #665434; /* 深一點的咖啡色 */
-    margin-right: 15px;
 }
 
 .news-title {
     margin: 0;
-    /* 【需求】響應式字體 */
     font-size: clamp(16px, 2.5vw, 18px); 
     letter-spacing: 1.2px;
+    text-align: left; /* 確保長標題換行時也是靠左對齊 */
 }
+/* 當螢幕寬度大於 768px 時 (電腦版)，套用以下樣式 */
+@media (min-width: 768px) {
+    .news-item {
+        flex-direction: row; /* <-- 改回水平排列 */
+        align-items: center; /* <-- 讓日期和標題垂直置中對齊 */
+        gap: 15px; /* 恢復水平間距 */
+    }
 
+    .news-title {
+        /* 在電腦版上，標題可以稍微大一點 */
+        font-size: clamp(16px, 1.2vw, 20px);
+    }
+}
 .news-avatar {
     position: absolute;
     right: 15px;
