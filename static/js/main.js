@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let allNewsData = []; // 用來儲存從 API 獲取的完整資料
 
     // 從後端 API 獲取最新消息
-    fetch('http://127.0.0.1:5000/api/announcements')
+    fetch('/api/announcements')
     .then(response => response.json())
         .then(data => {
             allNewsData = data; // 儲存資料
