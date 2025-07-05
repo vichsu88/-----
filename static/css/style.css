@@ -11,7 +11,7 @@
 
 @font-face {
     font-family: 'KouzanBrushFontOTF';
-    src: url('../fonts/KouzanBrushFontOTF.otf') format('opentype');
+    src: url('../fonts/KouzanBrushFontOTF.otf') format('woff2');
 }
 
 body {
