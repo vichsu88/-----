@@ -79,16 +79,16 @@
                 <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon2.jpg') }}" alt="手工香品服務">
                 <div class="service-buttons">
                     <a href="{{ url_for('incense_page') }}" class="btn btn--brown">手工香介紹</a>
-                    <a href="https://myship.7-11.com.tw/general/detail/GM2505178228918?fbclid=PAZXh0bgNhZW0CMTEAAadGKExriCOZ2aPb_SnuB1j8m00wDUigPOtS2UPXfkP3de0h01XaLrhZ07hU9w_aem_XDV7aPTjQJB5l_o6-fKcVw" class="btn btn--brown">香品賣場</a>
-                    <a href="https://line.me/ti/g2/VaT0XB3OFjzvv6agfLPYjmdzhwRO7_AVW5P06A?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" class="btn btn--brown">LINE討論群</a>
+                    <a href="{{ links['手工香賣場'] or '#' }}" class="btn btn--brown" target="_blank">香品賣場</a>
+                    <a href="{{ links['手工香LINE群'] or '#' }}" class="btn btn--brown" target="_blank">手工香LINE討論群</a>
                 </div>
             </div>
             <div class="service-item">
                 <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon3.jpg') }}" alt="力曼與LINE服務">
                 <div class="service-buttons">
-                    <a href="https://mall.riman.tw/products/detail/227" class="btn btn--brown">產品介紹</a>
-                    <a href="https://myship.7-11.com.tw/seller/profile?id=GM2506280563444&fbclid=PAZXh0bgNhZW0CMTEAAaeXR43IGh1yewhvQr5U95W2kzNlqrWsiU0ChMWSzNkL-f6xbAWxqxgBJQmUiw_aem_wBodr4lG7gDACTfYqEXrFg" class="btn btn--brown">力曼賣場</a>
-                    <a href="https://line.me/ti/g2/IZLa6j8onzyhM04zFqjq2GFLTL5SQ3qOuM0scg?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" class="btn btn--brown">LINE討論群</a>
+                    <a href="{{ links['力曼官網'] or '#' }}" class="btn btn--brown" target="_blank">產品介紹</a>
+                    <a href="{{ links['力曼賣場'] or '#' }}" class="btn btn--brown" target="_blank">力曼賣場</a>
+                    <a href="{{ links['力曼LINE討論群'] or '#'}}" class="btn btn--brown" target="_blank">力曼LINE討論群</a>
                 </div>
             </div>
         </div>

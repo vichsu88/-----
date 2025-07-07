@@ -52,14 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
             links.forEach(link => {
                 const item = document.createElement('div');
                 item.className = 'link-item';
-                item.innerHTML = `
-                    <span>${link.name}</span>
-                    <div>
-                        <input type="text" value="${link.url}" readonly style="width: 300px; border:none; background:transparent;">
-                        <button class="edit-btn" data-id="${link._id}">修改</button>
-                    </div>
-                `;
-                linksListDiv.appendChild(item);
+            // 我們移除了外層的 div，讓三個元素各自獨立
+            item.innerHTML = `
+                <span class="link-name-display">${link.name}</span>
+                <input class="link-url-display" type="text" value="${link.url}" readonly>
+                <button class="edit-btn btn" data-id="${link._id}">修改</button>
+            `;
+            linksListDiv.appendChild(item);
             });
         } catch (error) {
             console.error('Error:', error);

@@ -50,11 +50,11 @@
                 </div>
                 <div class="footer-col footer-col-right">
                     <div class="footer-social">
-                        <a id="footer-line-link" href="#" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE"></a>
-                        <a href="https://www.tiktok.com/@money__5288?_t=8qodRcliisq&_r=1" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
-                        <a href="https://www.instagram.com/money__5288" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
-                        <a href="https://www.facebook.com/man.ge.77" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
-                        <a href="https://youtube.com/channel/UCTgrt6ztH6fnOajuZERAhkw" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
+                        <a href="{{ links['煙島元帥社群'] or '#' }}" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE"></a>
+                        <a href="{{ links['TikTok'] or '#' }}" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
+                        <a href="{{ links['IG'] or '#' }}" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
+                        <a href="{{ links['FB'] or '#' }}" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
+                         <a href="{{ links['YouTube'] or '#' }}" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
                     </div>
                     <div class="footer-copyright">&copy; All copyright reserved | Elior design</div>
                 </div>
@@ -72,11 +72,11 @@
         </ul>
         <img src="{{ url_for('static', filename='images/avatars/menu-avator.png') }}" alt="元帥聖像" class="overlay-avatar">
         <div class="overlay-social">
-            <a href="#" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
-            <a href="#" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
-            <a href="#" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE"></a>
-            <a href="#" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
-            <a href="#" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
+            <a href="{{ links['FB'] or '#' }}" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
+            <a href="{{ links['IG'] or '#' }}" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
+            <a href="{{ links['元帥娘官方LINE'] or '#' }}" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE"></a>
+            <a href="{{ links['TikTok'] or '#' }}" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
+            <a href="{{ links['YouTube'] or '#' }}" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
         </div>
     </div>
 

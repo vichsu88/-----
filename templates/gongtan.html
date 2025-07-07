@@ -1,76 +1,104 @@
 {% extends "base.html" %}
 
-{% block title %}承天中承府 - 收驚服務{% endblock %}
-
-{# 建議為這個頁面建立專屬的 CSS 樣式，或在主樣式表中加入以下 class 的定義 #}
+{% block title %}承天中承府 - 公壇問事{% endblock %}
 
 {% block content %}
-<main class="page-container shoujing-page">
+<style>
+    /* 這部分的 CSS 與 shoujing.html 幾乎相同，只微調了主圖的樣式 */
+    .gongtan-page-wrapper {
+        padding: 40px 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .gongtan-title-wrapper {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    .gongtan-process-wrapper {
+    display: flex;
+    justify-content: center; /* 水平置中 */
+    align-items: center;     /* 垂直置中 */
+    gap: 30px;
+    max-width: 900px;        /* 限制最大寬度 */
+    margin: 0 auto;          /* 讓整個區塊在頁面中水平置中 */
+    padding: 0 20px;
+}
+    
+    /* 1. 主圖替換與尺寸 */
+    .gongtan-main-image-wrapper {
+    flex: 0 0 160px;
+    }
+    .gongtan-main-image-wrapper img {
+    width: 100%;
+    height: auto;
+    }
+    
+    .gongtan-process-steps {
+    text-align: left;
+    }
+    .step-item-gongtan { margin-bottom: 25px; }
+    .step-item-gongtan:last-child { margin-bottom: 0; }
+    .step-item-gongtan h3 { font-size: clamp(18px, 4vw, 22px); color: #C48945; margin: 0 0 8px 0; }
+    .step-item-gongtan p { font-size: clamp(14px, 3vw, 16px); line-height: 1.7; margin: 0 0 12px 0; }
+    
+    /* 為步驟中的圖片設定樣式 */
+    .step-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
 
-    {# 主要視覺區塊，您可以在這裡放上收驚的代表圖或 Banner #}
-    <section class="hero-section">
-        {# 如果有主圖可以放在這裡，沒有則省略 #}
-    </section>
 
-    {# 收驚流程區塊 #}
-    <section class="process-section" id="shoujing-process">
-        <h2 class="section-title">收驚流程</h2>
-        
-        {# 這部分可以用 div 或 ol>li 結構來呈現步驟感 #}
-        <div class="process-steps-container">
-            
-            <div class="step-item">
-                <div class="step-number">01</div>
-                <div class="step-content">
-                    <h3>準備收驚衣服</h3>
-                    <p>每件衣服夾帶紅紙，寫下個人資訊！</p>
-                    {# 提醒：連結目標(href)待功能完成後，再填上對應的頁面或彈窗ID #}
-                    <a href="#" class="btn btn--brown">填寫教學</a>
-                </div>
-            </div>
+</style>
 
-            <div class="step-item">
-                <div class="step-number">02</div>
-                <div class="step-content">
-                    <h3>送件</h3>
-                    <p>領送：衣物與資料親送至「八八菸酒」<br>寄送：衣物與資料一同郵寄至帥府。</p>
-                    <a href="#" class="btn btn--brown">寄件資訊</a>
-                </div>
-            </div>
-
-            <div class="step-item">
-                <div class="step-number">03</div>
-                <div class="step-content">
-                    <h3>領取</h3>
-                    <p>收驚完成後於 LINE 群組公告已完成的領取編號。<br>自取：至「八八菸酒」領取件。<br>寄回：下單安排到付貨運。</p>
-                    <a href="#" class="btn btn--brown">黑貓下單教學</a>
-                </div>
-            </div>
-
+<div class="gongtan-page-wrapper">
+    <div class="gongtan-title-wrapper">
+        <h2 class="section-title">公壇流程</h2>
+    </div>
+    <div class="gongtan-process-wrapper">
+        <div class="gongtan-main-image-wrapper">
+             <img src="{{ url_for('static', filename='images/pages/gongtan/road-4.png') }}" alt="公壇流程圖">
         </div>
-    </section>
 
-    {# 帥府聲明區塊 #}
-    <section class="declaration-section" id="shoujing-declaration">
+        <div class="gongtan-process-steps">
+            <div class="step-item-gongtan">
+                <h3>報名公告</h3>
+                <p>關注官方 LINE 群組，公布下個月的公壇日期、報名日期及開放名額。<br>每人限加1群違者踢群。</p>
+                <a href="{{ links['煙島元帥社群'] or '#' }}" class="btn btn--brown" target="_blank">加入LINE群搶公壇</a>
+            </div>
+            <div class="step-item-gongtan">
+                <h3>線上報名</h3>
+                <p>報名日群組中發布「報名開始」後，需立即在群組留言「+1」，額滿即止。</p>
+                <img src="{{ url_for('static', filename='images/pages/gongtan/signuppic.jpg') }}" alt="線上報名範例" class="step-image">
+            </div>
+            <div class="step-item-gongtan">
+                <h3>名單公告</h3>
+                <p>義工核對後會於官方 LINE 群組中，公告本次所有報名成功的信眾名單。</p>
+            </div>
+            <div class="step-item-gongtan">
+                <h3>現場問事</h3>
+                <p>報名成功後，請依照公告時間親臨本府。將有義工協助您順利完成問事。</p>
+            </div>
+        </div>
+    </div>
+    <section class="declaration-section" style="margin-top: 80px;">
         <h2 class="section-title">帥府聲明</h2>
         <div class="declaration-box">
             <div class="declaration-text">
-                <p>注意事項：</p>
                 <ol>
-                    <li>因元帥諭及義工皆有本業在身，無法隨時執行內部繞境及臨時服務，故本府之收驚服務採「衣物收驚」方式進行。</li>
-                    <li>注意完成後將於群組公告領取編號，請自行核對與領回。</li>
-                    <li>凡信徒欲一次寄送多件衣物需寄回，每件衣物皆須個別備註「需寄回」並填寫完整地址，否則視為不需寄回處理。</li>
-                    <li>未於半年內領回之衣物，將統一回收處理，恕不另行通知。</li>
+                    <li>所有神務僅限「承天中承府」元帥娘或授權義工執行。除元帥娘及義工外，任何對外靈務皆非本府授權，請勿誤信冒用神威之言行。</li>
+                    <li>欲靜心感受承天中承府之氣場，請於最前方桌前就座，勿靠近神桌與神尊，並使用椅子勿席地而坐。</li>
+                    <li>請勿直接透過社群媒體聯繫元帥娘或要求立即處理相關事宜。若有任何需求，敬請親自蒞臨帥府參拜，向元帥稟告祈求，感謝配合。</li>
                 </ol>
             </div>
+            <img class="declaration-avatar" src="{{ url_for('static', filename='images/avatars/declare-avator.png') }}" alt="帥府聲明代表圖">
+        </div>
+        <div class="action-buttons" style="margin-top: 40px;">
+        <a href="{{ url_for('shoujing_page') }}" class="btn btn--brown">收驚</a>
+        <a href="{{ url_for('feedback_page') }}" class="btn btn--brown">信徒回饋</a>
         </div>
     </section>
+</div>
 
-    {# 行動號召按鈕區塊 #}
-    <section class="action-buttons-section">
-         <a href="#" class="btn">公壇報名</a>
-         <a href="#" class="btn">信徒回饋</a>
-    </section>
-
-</main>
 {% endblock %}

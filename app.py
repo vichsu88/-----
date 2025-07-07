@@ -40,6 +40,16 @@ def login_required(f):
             return redirect(url_for('admin_page'))
         return f(*args, **kwargs)
     return decorated_function
+@app.context_processor
+def inject_links():
+    if db is None:
+        return dict(links={}) # 資料庫未連線時回傳空字典
+    
+    links_from_db = db.links.find({})
+    # 將資料轉換成 "名稱: 網址" 的字典格式，方便模板取用
+    links_dict = {link['name']: link['url'] for link in links_from_db}
+    
+    return dict(links=links_dict)
 
 
 # --- 前台頁面路由 ---

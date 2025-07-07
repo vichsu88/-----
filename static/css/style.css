@@ -444,6 +444,14 @@ body::before {
     width: 90%;
     margin: 0 auto;
 }
+/* 你可以把這段加到 css.txt 中，例如放在 .declaration-box 樣式後面 */
+.action-buttons {
+    margin-top: 40px;
+    text-align: center; /* 也可以順便加上置中 */
+    display: flex; /* 讓按鈕並排且有間距 */
+    justify-content: center;
+    gap: 20px;
+}
 
 .declaration-text {
     width: 100%;
@@ -478,7 +486,7 @@ body::before {
     .declaration-box {
         flex-direction: row;
         align-items: flex-start;
-        width: 60%;
+        width: 75%;
         max-width: 900px;
         padding: 40px;
     }
@@ -835,4 +843,150 @@ body::before {
     /* 這個數值，就是我們為頂部導覽列預留的空間 */
     /* 您可以根據導覽列的實際高度微調這個數值 */
     scroll-margin-top: 130px; 
+}
+    /*收驚*/
+    /* --- 最終簡化版樣式 --- */
+    .shoujing-page-wrapper {
+        padding: 40px 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .shoujing-title-wrapper {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    /* 內容區：圖片與文字水平排列 */
+    .shoujing-process-flex-container {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        flex-wrap: nowrap
+    }
+    .shoujing-process-image-wrapper {
+        flex: 0 0 150px;
+    }
+    .shoujing-process-image-wrapper img {
+        width: 100%;
+        height: auto;
+    }
+    .shoujing-process-steps {
+        text-align: left;
+    }
+    .step-item-shoujing { margin-bottom: 25px; }
+    .step-item-shoujing:last-child { margin-bottom: 0; }
+    .step-item-shoujing h3 { font-size: clamp(18px, 4vw, 22px); color: #C48945; margin: 0 0 8px 0; }
+    .step-item-shoujing p { font-size: clamp(14px, 3vw, 16px); line-height: 1.7; margin: 0 0 12px 0; }
+
+    /* --- ↓↓↓ 唯一的彈窗樣式 (電腦與手機共用) ↓↓↓ --- */
+    #info-modal-container {
+        display: none; /* 預設隱藏 */
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.70);
+        backdrop-filter: blur(7.5px);
+    }
+    #info-modal-container.is-visible {
+        display: flex;
+    }
+    
+    /* 文字型彈窗的內容樣式 */
+    .info-modal-content {
+        position: relative; background: #fff; border-radius: 15px;
+        padding: 40px 30px; width: 90%; max-width: 450px; max-height: 80vh;
+        overflow-y: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        color: #333; line-height: 1.8; letter-spacing: 0.1em;
+    }
+    .info-modal-content h3 { text-align: center; margin-top: 0; margin-bottom: 20px; font-size: 20px; }
+    .info-modal-content ol { padding-left: 20px; }
+    .info-modal-content li { margin-bottom: 1em; }
+    .modal-close-btn {
+        position: absolute; top: 15px; right: 15px; background: #C48945;
+        border: 1px solid #D9B88A; border-radius: 50%; width: 35px; height: 35px;
+        color: white; font-size: 20px; line-height: 35px; text-align: center;
+        cursor: pointer; padding: 0;
+    }
+
+    /* 圖片型彈窗的特殊樣式 (燈箱效果) */
+    .image-modal {
+        width: 100vw; height: 100vh;
+        max-width: none; max-height: none;
+        padding: 25px;
+        background: rgba(0,0,0,.82);
+        overflow: hidden;
+    }
+    .image-modal img {
+        max-width: 100%; max-height: 100%;
+        object-fit: contain;
+    }
+    .image-modal .modal-close-btn {
+        position: fixed; top: 20px; right: 20px;
+        z-index: 2000; width: 40px; height: 40px;
+        font-size: 28px; line-height: 40px;
+    }
+
+
+    /* css.txt */
+
+/* === 收驚頁面 - 電腦版右側資訊面板 === */
+#desktop-info-panel {
+    /* 預設在手機上完全隱藏 */
+    display: none; 
+}
+
+@media (min-width: 1024px) {
+    #desktop-info-panel {
+        /* 在電腦版上顯示為一個區塊 */
+        display: block; 
+
+        /* 讓它佔據剩餘空間，設定最小寬度以防被過度擠壓 */
+        flex: 0 0 500px;
+        min-width: 300px; 
+
+        /* 讓它在內容超出時可以滾動，且有自己的高度 */
+        align-self: stretch; 
+        max-height: 480px; /* 根據流程圖高度估算，可微調 */
+        overflow-y: auto;
+
+        /* 外觀樣式 */
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid #D9B88A;
+        border-radius: 15px;
+        padding: 30px 25px;
+
+        /* 文字樣式 */
+        color: #333; 
+        line-height: 1.8; 
+        letter-spacing: 0.1em;
+
+        /* 過渡效果 */
+        transition: all 0.3s ease;
+    }
+
+    #desktop-info-panel h3 {
+        text-align: center; 
+        margin-top: 0; 
+        margin-bottom: 20px; 
+        font-size: 20px; 
+    }
+
+    #desktop-info-panel ol {
+        padding-left: 20px; 
+    }
+
+    #desktop-info-panel li {
+        margin-bottom: 1em; 
+    }
+}
+
+/* === 手機版流程圖圖片寬度限制 (修正版) === */
+@media (max-width: 768px) {
+    .shoujing-process-image-wrapper {
+        /* 這裡使用 flex-basis 來精準控制寬度，同時也設定 max-width */
+        flex: 0 0 130px;
+        max-width: 130px;
+    }
 }

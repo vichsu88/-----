@@ -2,75 +2,166 @@
 
 {% block title %}承天中承府 - 收驚服務{% endblock %}
 
-{# 建議為這個頁面建立專屬的 CSS 樣式，或在主樣式表中加入以下 class 的定義 #}
-
 {% block content %}
-<main class="page-container shoujing-page">
 
-    {# 主要視覺區塊，您可以在這裡放上收驚的代表圖或 Banner #}
-    <section class="hero-section">
-        {# 如果有主圖可以放在這裡，沒有則省略 #}
-    </section>
 
-    {# 收驚流程區塊 #}
-    <section class="process-section" id="shoujing-process">
-        <h2 class="section-title">收驚流程</h2>
-        
-        {# 這部分可以用 div 或 ol>li 結構來呈現步驟感 #}
-        <div class="process-steps-container">
-            
-            <div class="step-item">
-                <div class="step-number">01</div>
-                <div class="step-content">
-                    <h3>準備收驚衣服</h3>
-                    <p>每件衣服夾帶紅紙，寫下個人資訊！</p>
-                    {# 提醒：連結目標(href)待功能完成後，再填上對應的頁面或彈窗ID #}
-                    <a href="#" class="btn btn--brown">填寫教學</a>
-                </div>
-            </div>
+<div class="shoujing-page-wrapper">
+   <div class="shoujing-title-wrapper">
+    <h2 class="section-title">收驚流程</h2>
+</div>
 
-            <div class="step-item">
-                <div class="step-number">02</div>
-                <div class="step-content">
-                    <h3>送件</h3>
-                    <p>領送：衣物與資料親送至「八八菸酒」<br>寄送：衣物與資料一同郵寄至帥府。</p>
-                    <a href="#" class="btn btn--brown">寄件資訊</a>
-                </div>
-            </div>
+<div class="shoujing-process-flex-container">
 
-            <div class="step-item">
-                <div class="step-number">03</div>
-                <div class="step-content">
-                    <h3>領取</h3>
-                    <p>收驚完成後於 LINE 群組公告已完成的領取編號。<br>自取：至「八八菸酒」領取件。<br>寄回：下單安排到付貨運。</p>
-                    <a href="#" class="btn btn--brown">黑貓下單教學</a>
-                </div>
-            </div>
+    <div class="shoujing-process-image-wrapper">
+        <img src="{{ url_for('static', filename='images/pages/shoujing/road-3.png') }}" alt="收驚流程圖">
+    </div>
 
+    <div class="shoujing-process-steps">
+        <div class="step-item-shoujing">
+            <h3>準備收驚衣服</h3>
+            <p>每件衣服夾帶紅紙，寫下個人資訊！</p>
+            <a href="#" class="btn btn--brown" data-modal-target="#modal-fill-in-content">填寫教學</a>
         </div>
-    </section>
+        <div class="step-item-shoujing">
+            <h3>送件</h3>
+            <p>親送：衣物與資料親送至「八八菸酒」<br>郵寄： 將衣物與資料一同郵寄至帥府。</p>
+            <a href="#" class="btn btn--brown" data-modal-target="#modal-shipping-info-content">寄件資訊</a>
+        </div>
+        <div class="step-item-shoujing">
+            <h3>領取</h3>
+            <p>收驚完成後於 LINE 群組公告已完成的領取編號<br>自取：自行核對編號取件。<br>寄回：下單安排到付貨運。</p>
+            <a href="#" class="btn btn--brown" data-modal-target="#modal-black-cat-content">黑貓下單教學</a>
+        </div>
+    </div>
 
-    {# 帥府聲明區塊 #}
-    <section class="declaration-section" id="shoujing-declaration">
+    <div id="desktop-info-panel" aria-live="polite"></div>
+
+</div>
+
+    <section class="declaration-section">
         <h2 class="section-title">帥府聲明</h2>
         <div class="declaration-box">
             <div class="declaration-text">
-                <p>注意事項：</p>
                 <ol>
-                    <li>因元帥諭及義工皆有本業在身，無法隨時執行內部繞境及臨時服務，故本府之收驚服務採「衣物收驚」方式進行。</li>
-                    <li>注意完成後將於群組公告領取編號，請自行核對與領回。</li>
-                    <li>凡信徒欲一次寄送多件衣物需寄回，每件衣物皆須個別備註「需寄回」並填寫完整地址，否則視為不需寄回處理。</li>
-                    <li>未於半年內領回之衣物，將統一回收處理，恕不另行通知。</li>
+                    <li>因元帥娘及義工皆有本業在身，無法時時駐守府內提供即時服務，故本府之收驚服務採「衣物收驚」方式進行。</li>
+                    <li><strong>注意事項：</strong></li>
+                    <li>1. 收驚完成後將於群組公告領取編號，請自行核對與取回。</li>
+                    <li>2. 如同一家人有多件衣物需寄回，每件衣物皆須個別備註「需寄回」並填寫完整地址，否則視為不需寄回處理。</li>
+                    <li>3. 未於半年內領回之衣物，將統一回收處理，恕不另行通知。</li>
                 </ol>
             </div>
+            <img class="declaration-avatar" src="{{ url_for('static', filename='images/avatars/declare-avator.png') }}" alt="帥府聲明代表圖">
+        </div>
+        <div class="action-buttons">
+            <a href="{{ url_for('gongtan_page') }}" class="btn btn--brown">公壇報名</a>
+            <a href="{{ url_for('feedback_page') }}" class="btn btn--brown">信徒回饋</a>
         </div>
     </section>
+</div>
 
-    {# 行動號召按鈕區塊 #}
-    <section class="action-buttons-section">
-         <a href="#" class="btn">公壇報名</a>
-         <a href="#" class="btn">信徒回饋</a>
-    </section>
+<div id="info-modal-container" class="info-modal-container"></div>
 
-</main>
+
+<div style="display: none;">
+    <div id="modal-fill-in-content">
+        <h3>準備紅包袋或紅紙填寫收驚資料</h3>
+        <ol>
+            <li>姓名：</li>
+            <li>出生年月日：請以阿拉伯數字書寫，並註明國曆或農曆</li>
+            <li>出生時辰：一律填寫「吉時」</li>
+            <li>生肖</li>
+            <li>地址：通訊地址或戶籍地址</li>
+            <li>填寫日期／寄送日期：標註於紙張左上角</li>
+            <li>備註欄：如需寄回者請註明，若未註明將視為不需寄回</li>
+        </ol>
+    </div>
+    <div id="modal-shipping-info-content">
+        <h3>衣物收驚寄件資料</h3>
+        <p>收件人：八八菸酒</p>
+        <p>宅配地址：嘉義市新生路337號</p>
+        <p>寄出前確認每件衣服皆夾帶紅單。</p>
+    </div>
+    <div id="modal-black-cat-content" class="modal-image-content">
+        <img src="{{ url_for('static', filename='images/pages/gongtan/shipping.jpg') }}" alt="黑貓下單教學">
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM 元素宣告 ---
+    const modalContainer = document.getElementById('info-modal-container');
+    const modalTriggers = document.querySelectorAll('[data-modal-target]');
+    const desktopPanel = document.getElementById('desktop-info-panel'); // 新增的桌面面板
+
+    // --- 函式定義 ---
+
+    /**
+     * 功能：在右側面板顯示內容 (電腦版專用)
+     * @param {HTMLElement} contentTemplate - 包含內容的模板元素
+     */
+    function showInPanel(contentTemplate) {
+        if (desktopPanel && contentTemplate) {
+            desktopPanel.innerHTML = contentTemplate.innerHTML;
+        }
+    }
+
+    /**
+     * 功能：開啟全螢幕覆蓋彈窗 (手機版 & 電腦版圖片)
+     * @param {HTMLElement} contentTemplate - 包含內容的模板元素
+     */
+    function openOverlay(contentTemplate) {
+        if (!modalContainer || !contentTemplate) return;
+
+        const isImageModal = contentTemplate.classList.contains('modal-image-content');
+        const contentHTML = `
+          <div class="info-modal-content ${isImageModal ? 'image-modal' : ''}">
+              <button class="modal-close-btn">&times;</button>
+              ${contentTemplate.innerHTML}
+          </div>`;
+
+        modalContainer.innerHTML = contentHTML;
+        modalContainer.classList.add('is-visible');
+    }
+
+    /**
+     * 功能：關閉全螢幕覆蓋彈窗
+     */
+    function closeOverlay() {
+        modalContainer.classList.remove('is-visible');
+        // 增加延遲清空內容，讓淡出效果更平滑
+        setTimeout(() => {
+            modalContainer.innerHTML = '';
+        }, 300);
+    }
+
+    // --- 事件監聽器綁定 ---
+
+    // 綁定所有觸發按鈕
+    modalTriggers.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = button.getAttribute('data-modal-target');
+            const contentTemplate = document.querySelector(targetId);
+            const isImageModal = contentTemplate.classList.contains('modal-image-content');
+            const isDesktop = window.innerWidth >= 1024;
+
+            // 核心判斷邏輯
+            if (isDesktop && !isImageModal) {
+                // 電腦版 & 非圖片 -> 顯示在右側面板
+                showInPanel(contentTemplate);
+            } else {
+                // 手機版或圖片 -> 開啟全螢幕彈窗
+                openOverlay(contentTemplate);
+            }
+        });
+    });
+
+    // 綁定關閉彈窗事件 (透過事件委派)
+    document.body.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-close-btn') || e.target.id === 'info-modal-container') {
+            closeOverlay();
+        }
+    });
+});
+</script>
 {% endblock %}
