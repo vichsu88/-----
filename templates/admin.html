@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帥府後台管理</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .admin-container { width: 100%; max-width: 500px; padding: 20px; }
+        #login-container, #admin-content { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+        .tab-btn { padding: 10px 15px; border: none; background: #f0f0f0; cursor: pointer; border-radius: 8px 8px 0 0; }
+        .tab-btn.active { background: #fff; border: 2px solid #ddd; border-bottom: 2px solid #fff; margin-bottom: -2px;}
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .link-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        #logout-btn { float: right; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div id="login-container">
+            <h2 style="text-align: center;">帥府後台登入</h2>
+            <form id="login-form">
+                <input type="password" id="admin-password" placeholder="請輸入管理密碼" required style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px;">
+                <button type="submit" style="width: 100%; padding: 10px;">登入</button>
+                <p id="login-error" style="color: red; text-align: center; margin-top: 10px;"></p>
+            </form>
+        </div>
+
+        <div id="admin-content" style="display: none;">
+            <button id="logout-btn">登出</button>
+            <h2 style="text-align: center;">後台管理</h2>
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="tab-links">連結</button>
+                <button class="tab-btn" data-tab="tab-announcements">公告</button>
+                <button class="tab-btn" data-tab="tab-feedback">回饋</button>
+                <button class="tab-btn" data-tab="tab-qa">問答</button>
+            </div>
+            <div id="tab-links" class="tab-content active">
+                <h3>外部連結管理</h3>
+                <div id="links-list"></div>
+            </div>
+            </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

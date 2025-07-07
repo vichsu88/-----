@@ -26,9 +26,9 @@
             
             <ul class="nav-links-desktop">
                 <li><a href="{{ url_for('home') }}">首頁</a></li>
-                <li><a href="#services-section">服務項目</a></li>
-                <li><a href="#">信徒回饋</a></li>
-                <li><a href="#">常見問題</a></li>
+                <li><a href="/#services-section">服務項目</a></li>
+                <li><a href="{{ url_for('feedback_page') }}">信徒回饋</a></li>
+                <li><a href="{{ url_for('faq_page') }}">常見問題</a></li>
             </ul>
         </nav>
     </header>
@@ -66,9 +66,9 @@
         <button class="overlay-close-btn" id="overlay-close-btn" aria-label="關閉選單">&times;</button>
         <ul class="overlay-nav-links">
             <li><a href="{{ url_for('home') }}">首頁</a></li>
-            <li><a href="#services-section">服務項目</a></li>
-            <li><a href="#">信徒回饋</a></li>
-            <li><a href="#">常見問題</a></li>
+            <li><a href="/#services-section">服務項目</a></li>
+            <li><a href="{{ url_for('feedback_page') }}">信徒回饋</a></li>
+            <li><a href="{{ url_for('faq_page') }}">常見問題</a></li>
         </ul>
         <img src="{{ url_for('static', filename='images/avatars/menu-avator.png') }}" alt="元帥聖像" class="overlay-avatar">
         <div class="overlay-social">
