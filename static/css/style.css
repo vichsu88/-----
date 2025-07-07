@@ -691,3 +691,144 @@ body::before {
         max-width: 900px; /* 您可以依據設計需求調整最大寬度 */
     }
 }
+/* === 手機版 Overlay 選單樣式 === */
+.mobile-nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* 複雜背景設定 */
+    background-color: lightgray; /* 備用顏色 */
+    background-image: linear-gradient(180deg, #FFF 0%, #8E532C 75.48%), url('../images/pages/index/BG-cloud.png');
+    background-repeat: no-repeat;
+    background-position: center, center;
+    background-size: contain, cover;
+
+    z-index: 9999;
+    padding: 60px 40px;
+    padding-bottom: 25px; 
+    box-sizing: border-box;
+
+    /* 預設狀態為隱藏 (移出畫面右側) */
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); /* 滑入滑出動畫 */
+
+    /* 使用 Flexbox 進行內部佈局 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* 將內容推向頂部與底部 */
+    align-items: center;
+}
+
+/* 當選單被觸發時，新增這個 class 讓它滑入畫面 */
+.mobile-nav-overlay.is-visible {
+    transform: translateX(0);
+}
+
+/* 關閉按鈕 */
+.overlay-close-btn {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    background: none;
+    border: none;
+    color: #FFF;
+    font-size: 48px;
+    line-height: 1;
+    cursor: pointer;
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+/* 選單連結列表 */
+.overlay-nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+}
+
+.overlay-nav-links li {
+    margin-bottom: 20px;
+}
+
+.overlay-nav-links a {
+    text-decoration: none;
+    font-family: 'KouzanBrushFontOTF', sans-serif;
+    font-size: 28px; /* 放大字體以利點擊 */
+    color: #EFCB52;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* 元帥頭像 */
+.overlay-avatar {
+    max-width: 220px; /* 限制頭像最大寬度 */
+    height: auto;
+}
+
+/* 底部社群連結 */
+.overlay-social {
+    display: flex;
+    justify-content: center;
+    gap: 23px; /* 依照您的要求設定間距 */
+    width: 100%; /* 確保容器佔滿寬度 */
+    margin-top: 20px; /* 與上方元帥頭像的間距 */
+}
+
+.overlay-social img {
+    height: 32px;
+}
+/* === 回應式導覽列樣式 (修正版) === */
+
+/* 預設狀態 (手機版) */
+.nav-links-desktop {
+    display: none; /* 電腦版選單在手機上預設隱藏 */
+}
+
+/* 漢堡選單在手機上預設顯示 (您原本的 .nav-toggle 樣式已經是 flex，所以這裡不用再寫) */
+
+
+/* --- 媒體查詢：當螢幕寬度大於或等於 1024px 時 (電腦版) --- */
+@media (min-width: 1024px) {
+    /* 隱藏手機版的漢堡按鈕 */
+    .nav-toggle {
+        display: none;
+    }
+
+    /* 顯示電腦版的文字選單 */
+    .nav-links-desktop {
+        display: flex; /* 讓列表項目水平排列 */
+        align-items: center; /* 垂直置中 */
+        gap: 28px; /* 連結之間的間距 */
+        list-style: none; /* 移除項目符號 */
+        margin: 0;
+        padding: 0;
+    }
+
+    /* 電腦版文字連結樣式 */
+    .nav-links-desktop a {
+        text-decoration: none;
+        font-family: 'KouzanBrushFontOTF', sans-serif;
+        font-size: 26px; /* 您要求的字體大小 */
+        color: #4b2c1c; /* 您要求的字體顏色 */
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* 您要求的陰影 */
+        transition: color 0.3s ease, transform 0.3s ease; /* 平滑過渡效果 */
+        display: inline-block; /* 讓 transform 生效 */
+    }
+
+    /* 電腦版文字連結滑鼠懸停效果 */
+    .nav-links-desktop a:hover {
+        color: #ddbd26;
+        transform: translateY(-2px); /* 向上浮動一點 */
+    }
+}
+/* === 修正錨點連結被導覽列遮擋的問題 === */
+.news-section,
+.about-section,
+.services-section,
+.declaration-section {
+    /* 這個數值，就是我們為頂部導覽列預留的空間 */
+    /* 您可以根據導覽列的實際高度微調這個數值 */
+    scroll-margin-top: 130px; 
+}

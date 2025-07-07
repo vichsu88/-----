@@ -62,3 +62,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+/* === 手機版 Overlay 選單互動 (升級版) === */
+document.addEventListener('DOMContentLoaded', function() {
+    // 抓取需要的 HTML 元素
+    const navToggleBtn = document.querySelector('.nav-toggle');
+    const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+    const closeOverlayBtn = document.getElementById('overlay-close-btn');
+    // 【新增】抓取選單中的所有連結
+    const overlayLinks = document.querySelectorAll('.overlay-nav-links a');
+
+    // 只有當這些元素都存在時，才綁定事件
+    if (navToggleBtn && mobileNavOverlay && closeOverlayBtn) {
+
+        // 點擊漢堡按鈕時，顯示 Overlay 選單
+        navToggleBtn.addEventListener('click', function() {
+            mobileNavOverlay.classList.add('is-visible');
+        });
+
+        // 點擊關閉按鈕時，隱藏 Overlay 選單
+        closeOverlayBtn.addEventListener('click', function() {
+            mobileNavOverlay.classList.remove('is-visible');
+        });
+
+        // 【新增】為每一個選單連結加上點擊事件
+        overlayLinks.forEach(function(link) {
+            link.addEventListener('click', function() {
+                // 點擊任何一個連結後，都隱藏 Overlay 選單
+                mobileNavOverlay.classList.remove('is-visible');
+            });
+        });
+    }
+});

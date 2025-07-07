@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}承天中承府{% endblock %}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    
+    <header class="main-header">
+        <nav class="main-nav">
+            <a href="{{ url_for('home') }}" class="nav-logo">
+                <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="承天中承府 Logo">
+            </a>
+
+            <button class="nav-toggle" aria-label="開啟選單">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="6" viewBox="0 0 36 6" fill="none"><path d="M3 3H33" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="6" viewBox="0 0 36 6" fill="none"><path d="M3 2.66666H33" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="21" height="6" viewBox="0 0 21 6" fill="none"><path d="M3.33334 3L18 3" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/></svg>
+            </button>
+            
+            <ul class="nav-links-desktop">
+                <li><a href="{{ url_for('home') }}">首頁</a></li>
+                <li><a href="#services-section">服務項目</a></li>
+                <li><a href="#">信徒回饋</a></li>
+                <li><a href="#">常見問題</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="main-footer">
+        <div class="footer-box">
+            <div class="footer-content">
+                <div class="footer-col footer-col-left">
+                    <h3 class="footer-title">承天中承府</h3>
+                    <p>地址：嘉義市新生路337號八八菸酒</p>
+                    <p>營業時間：上午10:30～凌晨3:00</p>
+                </div>
+                <div class="footer-col footer-col-center">
+                    <img src="{{ url_for('static', filename='images/common/footer-ill.png') }}" alt="元寶裝飾" class="footer-illustration center-yuanbao">
+                </div>
+                <div class="footer-col footer-col-right">
+                    <div class="footer-social">
+                        <a id="footer-line-link" href="#" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE"></a>
+                        <a href="https://www.tiktok.com/@money__5288?_t=8qodRcliisq&_r=1" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
+                        <a href="https://www.instagram.com/money__5288" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
+                        <a href="https://www.facebook.com/man.ge.77" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
+                        <a href="https://youtube.com/channel/UCTgrt6ztH6fnOajuZERAhkw" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
+                    </div>
+                    <div class="footer-copyright">&copy; All copyright reserved | Elior design</div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+        <button class="overlay-close-btn" id="overlay-close-btn" aria-label="關閉選單">&times;</button>
+        <ul class="overlay-nav-links">
+            <li><a href="{{ url_for('home') }}">首頁</a></li>
+            <li><a href="#services-section">服務項目</a></li>
+            <li><a href="#">信徒回饋</a></li>
+            <li><a href="#">常見問題</a></li>
+        </ul>
+        <img src="{{ url_for('static', filename='images/avatars/menu-avator.png') }}" alt="元帥聖像" class="overlay-avatar">
+        <div class="overlay-social">
+            <a href="#" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
+            <a href="#" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
+            <a href="#" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE"></a>
+            <a href="#" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
+            <a href="#" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
+        </div>
+    </div>
+
+    <a href="#" class="back-to-top-btn" aria-label="回到頂端">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="10" viewBox="0 0 16 10" fill="none">
+            <path d="M14.5962 8.42871L8.71097 2.54349C8.32044 2.153 7.68728 2.153 7.29676 2.54349L1.41154 8.42871" stroke="#C48945" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <span>TOP</span>
+    </a>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
