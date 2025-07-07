@@ -202,7 +202,7 @@ line-height: 1;
     grid-template-columns: repeat(4, 1fr);
   }
 }
-/* --- 購買須知區塊樣式 --- */
+/* --- 購買須知區塊樣式 (最終版) --- */
   .incense-purchase-section {
     padding: 80px 20px;
     max-width: 1200px;
@@ -210,19 +210,23 @@ line-height: 1;
   }
   
   .purchase-info-box {
+    /* 【新增】讓外框本身有最大寬度限制，並置中 */
+    max-width: 400px;
+    margin: 0 auto;
+    box-sizing: border-box; /* 確保 padding 不會讓寬度溢出 */
+
     border-radius: 15px;
     background: rgba(255, 255, 255, 0.50);
     box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
     backdrop-filter: blur(7.5px);
     -webkit-backdrop-filter: blur(7.5px);
-    padding: 40px 15px 0 15px; /* 頂部多留白，底部因圖片而設為0 */
-    text-align: center; /* 讓內部元素預設置中 */
+    padding: 40px 25px 0 25px; /* 稍微增加左右內距，讓文字舒服點 */
+    text-align: center;
   }
 
-  /* 將文字內容包起來，方便控制邊距 */
   .purchase-text-content {
-    max-width: 550px; /* 限制文字最大寬度，避免在電腦上太寬 */
-    margin: 0 auto; /* 水平置中 */
+    /* 【移除】這裡不再需要 max-width，因為寬度由父層的 .purchase-info-box 控制 */
+    margin: 0 auto;
   }
   
   .purchase-subtitle {
@@ -230,7 +234,7 @@ line-height: 1;
     text-align: center;
     font-family: "Noto Sans TC", sans-serif;
     font-size: 20px;
-    font-weight: 500; /* 稍微加粗一點比較清晰 */
+    font-weight: 500;
     line-height: 35px;
     margin-bottom: 30px;
   }
@@ -240,30 +244,25 @@ line-height: 1;
     font-family: "Noto Sans TC", sans-serif;
     font-size: 16px;
     font-weight: 400;
-    line-height: 28px; /* 稍微拉開行高比較易讀 */
-    text-align: left; /* 列表文字靠左對齊 */
-    padding-left: 25px; /* 讓列表編號有空間 */
+    line-height: 28px;
+    text-align: left;
+    padding-left: 25px;
   }
   
   .purchase-list li {
-    margin-bottom: 15px; /* 每個列表項目的間距 */
+    margin-bottom: 15px;
   }
 
   .purchase-end-illustration {
     display: block;
-    width: 100%;
-    max-width: 400px;
-    margin: 20px auto 0 auto; /* 與上方按鈕的間距，並水平置中 */
+    /* 讓圖片寬度 100% 填滿父層的內容區 */
+    width: 100%; 
+    /* max-width 依然保留，作為最後防線 */
+    max-width: 400px; 
+    margin: 20px auto 0 auto;
   }
   
-  @media (min-width: 768px) {
-    .purchase-info-box {
-      padding: 50px 40px 0 40px;
-    }
-    .purchase-list {
-      padding-left: 30px;
-    }
-  }
+  /* 電腦版的 @media 區塊已不再需要，因為 max-width 已經限制了寬度 */
 </style>
 
 <main>
