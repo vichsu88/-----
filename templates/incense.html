@@ -1,76 +1,366 @@
 {% extends "base.html" %}
 
-{% block title %}承天中承府 - 收驚服務{% endblock %}
-
-{# 建議為這個頁面建立專屬的 CSS 樣式，或在主樣式表中加入以下 class 的定義 #}
+{% block title %}承天中承府 - 手工香品{% endblock %}
 
 {% block content %}
-<main class="page-container shoujing-page">
 
-    {# 主要視覺區塊，您可以在這裡放上收驚的代表圖或 Banner #}
-    <section class="hero-section">
-        {# 如果有主圖可以放在這裡，沒有則省略 #}
+<style>
+  /* --- 1. 覆蓋 Body 背景 --- */
+  body {
+    /* 【最終版】起點為不透明的純黑 #000000 */
+    background: linear-gradient(180deg, #000000 0%, rgba(142, 83, 44, 0.50) 41%, #EFCB52 100%);
+    
+    background-repeat: no-repeat;
+    /* 讓漸層跟著頁面滾動並填滿 */
+    min-height: 100vh;
+  }
+
+  /* 關鍵：隱藏從 base.html 繼承來的雲霧背景偽元素 */
+  body::before {
+    display: none !important;
+  }
+
+  /* 【關鍵】我們已經將之前覆蓋 .main-nav 的樣式全部刪除。
+    這樣 Header 就會自動恢復它在 base.html 中定義的原始樣式。
+  */
+
+
+  /* --- 3. 頁面內容樣式 (其餘不變) --- */
+  .incense-hero-section {
+    position: relative;
+    width: 100%;
+    height: auto;
+    /* 【微調】讓主圖與 Header 不要黏在一起，增加一點呼吸空間 */
+    margin-top: 20px;
+    margin-bottom: 40px;
+  }
+  
+  .incense-hero-image {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .incense-hero-title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    writing-mode: vertical-rl;
+    color: #EFCB52;
+    text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.40);
+    font-family: 'KouzanBrushFontOTF', '標楷體', sans-serif;
+    font-size: 32px;
+    font-weight: 400;
+    letter-spacing: 0.3em; 
+    line-height: 2; 
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .incense-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 0 20px;
+  }
+
+  .incense-story-section {
+    padding: 80px 25px;
+    display: flex;
+    flex-direction: column; 
+    gap: 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .story-block {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .story-block .story-text,
+  .story-block .story-image {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .story-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+  }
+
+  .story-text {
+    writing-mode: vertical-rl;
+    font-family: 'KouzanBrushFontOTF', '標楷體', sans-serif;
+    font-size: 24px;
+    color: #FFF;
+    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
+    line-height: 2.2;
+    letter-spacing: 0.2em;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .incense-hero-section {
+      height: 400px; 
+      background-color: #3E3E3E;
+      overflow: hidden;
+    }
+    .incense-hero-image {
+      height: 100%;
+      object-fit: cover; 
+    }
+    .incense-hero-title {
+      font-size: 40px;
+      letter-spacing: 0.5em;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .incense-story-section {
+      flex-direction: row;
+    }
+    .story-text {
+      font-size: 28px;
+    }
+  }
+/* --- 商品列表區塊樣式 (最終修正版) --- */
+.incense-products-section {
+  padding: 80px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.products-title-badge {
+  /* 【修正-1】使用你原本提供的 goldbadge.png 作為背景 */
+  background-image: url("{{ url_for('static', filename='images/pages/incense/goldbadge.png') }}");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  height: 60px;
+  max-width: 350px;
+  margin: 0 auto 50px auto;
+  
+  /* 【修正-2】使用 Flexbox 將內部的 H2 文字垂直水平置中 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 【修正-3】將文字樣式加回來，應用在 H2 標籤上 */
+.products-title-badge h1 {
+  color: #000;
+  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  font-family: 'KouzanBrushFontOTF', '標楷體', sans-serif;
+  font-size: 40px; /* 在小螢幕上可能會略大，可視情況調整 */
+  font-weight: 400;
+  /* 【修改】將 line-height: normal 改為 1 */
+line-height: 1;
+  /* 【新增】以下兩行，手動微調位置 */
+  position: relative;
+  top: 3px; 
+  margin: 0;
+  padding: 0; }
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px 20px;
+}
+
+.product-item {
+  text-align: center;
+}
+
+.product-item img {
+  width: 100%;
+  height: auto;
+  max-width: 250px;
+}
+
+/* --- 響應式：手機版最後一個項目置中 --- */
+@media (max-width: 767px) {
+  .products-grid .product-item:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+  /* 在小螢幕上縮小標題字體，避免跑版 */
+  .products-title-badge h1 {
+    font-size: 36px;
+  }
+}
+
+/* --- 響應式：電腦版改為 4 欄 --- */
+@media (min-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+/* --- 購買須知區塊樣式 --- */
+  .incense-purchase-section {
+    padding: 80px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .purchase-info-box {
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.50);
+    box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
+    backdrop-filter: blur(7.5px);
+    -webkit-backdrop-filter: blur(7.5px);
+    padding: 40px 15px 0 15px; /* 頂部多留白，底部因圖片而設為0 */
+    text-align: center; /* 讓內部元素預設置中 */
+  }
+
+  /* 將文字內容包起來，方便控制邊距 */
+  .purchase-text-content {
+    max-width: 550px; /* 限制文字最大寬度，避免在電腦上太寬 */
+    margin: 0 auto; /* 水平置中 */
+  }
+  
+  .purchase-subtitle {
+    color: #000;
+    text-align: center;
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 20px;
+    font-weight: 500; /* 稍微加粗一點比較清晰 */
+    line-height: 35px;
+    margin-bottom: 30px;
+  }
+  
+  .purchase-list {
+    color: #231815;
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 28px; /* 稍微拉開行高比較易讀 */
+    text-align: left; /* 列表文字靠左對齊 */
+    padding-left: 25px; /* 讓列表編號有空間 */
+  }
+  
+  .purchase-list li {
+    margin-bottom: 15px; /* 每個列表項目的間距 */
+  }
+
+  .purchase-end-illustration {
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    margin: 20px auto 0 auto; /* 與上方按鈕的間距，並水平置中 */
+  }
+  
+  @media (min-width: 768px) {
+    .purchase-info-box {
+      padding: 50px 40px 0 40px;
+    }
+    .purchase-list {
+      padding-left: 30px;
+    }
+  }
+</style>
+
+<main>
+    <section class="incense-hero-section">
+        <img src="{{ url_for('static', filename='images/pages/incense/incenseimage.png') }}" alt="手工香品主視覺" class="incense-hero-image">
+        <h2 class="incense-hero-title">
+            做的不只是香<br>是信仰的分寸
+        </h2>
     </section>
 
-    {# 收驚流程區塊 #}
-    <section class="process-section" id="shoujing-process">
-        <h2 class="section-title">收驚流程</h2>
-        
-        {# 這部分可以用 div 或 ol>li 結構來呈現步驟感 #}
-        <div class="process-steps-container">
-            
-            <div class="step-item">
-                <div class="step-number">01</div>
-                <div class="step-content">
-                    <h3>準備收驚衣服</h3>
-                    <p>每件衣服夾帶紅紙，寫下個人資訊！</p>
-                    {# 提醒：連結目標(href)待功能完成後，再填上對應的頁面或彈窗ID #}
-                    <a href="#" class="btn btn--brown">填寫教學</a>
-                </div>
-            </div>
+    <div class="incense-actions">
+        <a href="{{ links['手工香賣場'] or '#' }}" class="btn btn--brown" target="_blank">前往賣場</a>
+        <a href="{{ links['手工香LINE群'] or '#' }}" class="btn btn--brown" target="_blank">手工香LINE討論群</a>
+    </div>
 
-            <div class="step-item">
-                <div class="step-number">02</div>
-                <div class="step-content">
-                    <h3>送件</h3>
-                    <p>領送：衣物與資料親送至「八八菸酒」<br>寄送：衣物與資料一同郵寄至帥府。</p>
-                    <a href="#" class="btn btn--brown">寄件資訊</a>
-                </div>
-            </div>
-
-            <div class="step-item">
-                <div class="step-number">03</div>
-                <div class="step-content">
-                    <h3>領取</h3>
-                    <p>收驚完成後於 LINE 群組公告已完成的領取編號。<br>自取：至「八八菸酒」領取件。<br>寄回：下單安排到付貨運。</p>
-                    <a href="#" class="btn btn--brown">黑貓下單教學</a>
-                </div>
-            </div>
+    <section class="incense-story-section">
+      <div class="story-block">
+        <div class="story-text">
+          凌晨四點，老師傅就起身備料<br>
+          揉粉、輾香、日曬<br>
+          是他二十多年來從不怠慢的日常。
+        </div>
+        <div class="story-image">
+          <img src="{{ url_for('static', filename='images/pages/incense/story1.jpg') }}" alt="老師傅製香過程">
+        </div>
+      </div>
+      <div class="story-block">
+        <div class="story-image">
+          <img src="{{ url_for('static', filename='images/pages/incense/story2.jpg') }}" alt="元帥娘與信眾和香品合照">
+        </div>
+        <div class="story-text">
+        元帥娘說：香對了，心才安得下來。<br>
+        從茶竹到煙升起的一瞬<br>
+        都被用心守護、被信仰祝福。
+        </div>
+      </div>
+    </section>
+<section class="incense-products-section">
+      <div class="products-title-badge">
+            <h1>商品列表</h1>
 
         </div>
-    </section>
 
-    {# 帥府聲明區塊 #}
-    <section class="declaration-section" id="shoujing-declaration">
-        <h2 class="section-title">帥府聲明</h2>
-        <div class="declaration-box">
-            <div class="declaration-text">
-                <p>注意事項：</p>
-                <ol>
-                    <li>因元帥諭及義工皆有本業在身，無法隨時執行內部繞境及臨時服務，故本府之收驚服務採「衣物收驚」方式進行。</li>
-                    <li>注意完成後將於群組公告領取編號，請自行核對與領回。</li>
-                    <li>凡信徒欲一次寄送多件衣物需寄回，每件衣物皆須個別備註「需寄回」並填寫完整地址，否則視為不需寄回處理。</li>
-                    <li>未於半年內領回之衣物，將統一回收處理，恕不另行通知。</li>
-                </ol>
-            </div>
+      <div class="products-grid">
+        <div class="product-item">
+          <img src="{{ url_for('static', filename='images/pages/incense/product1.png') }}" alt="降真">
         </div>
-    </section>
+        <div class="product-item">
+          <img src="{{ url_for('static', filename='images/pages/incense/product2.png') }}" alt="手工香">
+        </div>
+        <div class="product-item">
+          <img src="{{ url_for('static', filename='images/pages/incense/product3.png') }}" alt="香環">
+        </div>
+        <div class="product-item">
+          <img src="{{ url_for('static', filename='images/pages/incense/product4.png') }}" alt="元寶香">
+        </div>
+        <div class="product-item">
+          <img src="{{ url_for('static', filename='images/pages/incense/product5.png') }}" alt="貢末">
+        </div>
+        <div class="product-item">
+          <img src="{{ url_for('static', filename='images/pages/incense/product6.png') }}" alt="雲香">
+        </div>
+        <div class="product-item">
+          <img src="{{ url_for('static', filename='images/pages/incense/product7.png') }}" alt="花茶">
+        </div>
+      </div>
 
-    {# 行動號召按鈕區塊 #}
-    <section class="action-buttons-section">
-         <a href="#" class="btn">公壇報名</a>
-         <a href="#" class="btn">信徒回饋</a>
+      <div class="incense-actions" style="margin-top: 50px;">
+        <a href="{{ links['手工香賣場'] or '#' }}" class="btn btn--brown" target="_blank">前往賣場</a>
+        <a href="{{ links['手工香LINE群'] or '#' }}" class="btn btn--brown" target="_blank">手工香LINE討論群</a>
+      </div>
     </section>
+    <section class="incense-purchase-section">
+      <div class="products-title-badge">
+        <h1>購買須知</h1>
+      </div>
 
+      <div class="purchase-info-box">
+        <div class="purchase-text-content">
+          <p class="purchase-subtitle">
+            元帥指定香品 X 手工品質保證<br>
+            頂級茶竹無化學添加
+          </p>
+          <ol class="purchase-list">
+            <li>下單前務必確認購買的商品、金額、寄送資料，下單預購商品視同接受等待時間。</li>
+            <li>下單後7工作天內出貨，缺貨將於社群公告。</li>
+            <li>為保購買權益請遵守取貨規則，未取貨將列為黑名單。</li>
+            <li>商品皆為老師傅親手製作，純天然原料成品在顏色、形狀、紋理各異，下單視同接受。</li>
+            <li>欲購買「1尺6」手工香或15件商品以上的顧客,請私訊官方line訂購宅配。</li>
+            <li>1尺6手工香或購買達15盒以上商品，請私訊元帥娘官方LINE下單，使用物流宅配寄出。(ID:@money__5288)</li>
+          </ol>
+          <div class="incense-actions" style="margin-top: 30px;">
+            <a href="{{ links['元帥娘官方LINE'] or '#' }}" class="btn btn--brown" target="_blank">官方LINE</a>
+          </div>
+        </div>
+        <img src="{{ url_for('static', filename='images/pages/incense/incenseend.png') }}" alt="元帥與元帥娘插圖" class="purchase-end-illustration">
+      </div>
+    </section>
 </main>
 {% endblock %}
