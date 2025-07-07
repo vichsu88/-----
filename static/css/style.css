@@ -757,8 +757,12 @@ body::before {
     text-decoration: none;
     font-family: 'KouzanBrushFontOTF', sans-serif;
     font-size: 28px; /* 放大字體以利點擊 */
-    color: #EFCB52;
+    color: #4b2c1c;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.overlay-nav-links a:active {
+    color: #ddbd26;
 }
 
 /* 元帥頭像 */
