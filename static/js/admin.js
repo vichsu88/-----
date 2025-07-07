@@ -318,8 +318,302 @@ document.getElementById('view-modal').addEventListener('click', (e) => {
     closeDetailModal();
   }
 });
+// -------------- FAQ 管理區 --------------
 
-    // --- 啟動！ ---
+// 1. 元素綁定
+const faqListDiv = document.getElementById('faq-list');
+const faqCategoryBtnsDiv = document.getElementById('faq-category-btns');
+const addFaqBtn = document.getElementById('add-faq-btn');
+const faqModal = document.getElementById('faq-modal');
+const faqForm = document.getElementById('faq-form');
+const faqModalCategoryBtns = document.getElementById('faq-modal-category-btns');
+
+// 2. 狀態
+let faqCategories = [];
+let currentFaqCategory = '';  // '' 代表全部
+
+// 3. FAQ 主流程
+async function fetchFaqCategories() {
+  const res = await fetch('/api/faq/categories');
+  faqCategories = await res.json();
+}
+
+// FAQ 分類按鈕渲染
+function renderFaqCategoryBtns() {
+  let html = `<button class="sub-tab-btn faq-category-btn" data-category="">全部</button>`;
+  faqCategories.forEach(cat => {
+    html += `<button class="sub-tab-btn faq-category-btn" data-category="${cat}">${cat}</button>`;
+  });
+  faqCategoryBtnsDiv.innerHTML = html;
+  // 綁定事件
+  faqCategoryBtnsDiv.querySelectorAll('.faq-category-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentFaqCategory = btn.dataset.category;
+      renderFaqCategoryBtns();  // 切換active
+      btn.classList.add('active');
+      fetchAndRenderFaqs();
+    });
+  });
+  // 設定active
+  faqCategoryBtnsDiv.querySelectorAll('.faq-category-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.category === currentFaqCategory);
+  });
+}
+
+// FAQ 卡片渲染
+async function fetchAndRenderFaqs() {
+  let url = '/api/faq';
+  if (currentFaqCategory) url += '?category=' + encodeURIComponent(currentFaqCategory);
+  const res = await fetch(url);
+  const faqs = await res.json();
+  if (!Array.isArray(faqs) || faqs.length === 0) {
+    faqListDiv.innerHTML = `<p>目前沒有問答。</p>`;
+    return;
+  }
+  faqListDiv.innerHTML = faqs.map(faq => `
+    <div class="feedback-card" style="border-color:${faq.isPinned ? '#E6BA67' : '#ddd'};">
+      <div class="feedback-card__content">
+        <b>Q：</b>${faq.question}<br>
+        <b>A：</b>${faq.answer}
+      </div>
+      <div class="feedback-card__actions">
+        <button class="btn btn--brown delete-faq-btn" data-id="${faq._id}">刪除</button>
+      </div>
+    </div>
+  `).join('');
+  // 綁定刪除
+  faqListDiv.querySelectorAll('.delete-faq-btn').forEach(btn => {
+    btn.onclick = async () => {
+      if (!confirm('確定要刪除這則問答？')) return;
+      if (!confirm('真的要永久刪除？此操作無法復原。')) return;
+      await fetch(`/api/faq/${btn.dataset.id}`, {method:'DELETE'});
+      fetchAndRenderFaqs();
+      fetchFaqCategories().then(renderFaqCategoryBtns);
+    };
+  });
+}
+
+// 新增 FAQ 按鈕
+addFaqBtn.addEventListener('click', async () => {
+  faqForm.reset();
+  // 分類按鈕同步現有
+  faqModalCategoryBtns.innerHTML = faqCategories.map(cat => 
+    `<button type="button" class="btn btn--brown modal-cat-btn" data-cat="${cat}">${cat}</button>`
+  ).join('');
+  faqModal.classList.add('is-visible');
+
+  // 單選切換
+  faqModalCategoryBtns.querySelectorAll('.modal-cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // 選到後直接填到 other_category 並 disable
+      faqForm.other_category.value = btn.textContent;
+      faqForm.other_category.disabled = true;
+      faqModalCategoryBtns.querySelectorAll('.modal-cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // 若使用者點空白自訂分類則啟用
+  faqForm.other_category.addEventListener('focus', () => {
+    faqForm.other_category.disabled = false;
+    faqModalCategoryBtns.querySelectorAll('.modal-cat-btn').forEach(b => b.classList.remove('active'));
+    faqForm.other_category.value = '';
+  });
+});
+
+// FAQ 浮層關閉
+faqModal.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-close-btn') || e.target.id === 'faq-modal') {
+    faqModal.classList.remove('is-visible');
+  }
+});
+
+// FAQ 新增表單提交
+faqForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const question = faqForm.question.value.trim();
+  const answer = faqForm.answer.value.trim();
+  const category = faqForm.other_category.value.trim();
+  const isPinned = faqForm.isPinned.checked;
+  if (!question || !answer || !category) {
+    alert('請完整填寫');
+    return;
+  }
+  // 驗證分類只能中文
+  if (!/^[\u4e00-\u9fff]+$/.test(category)) {
+    alert('分類只能輸入中文！');
+    return;
+  }
+  await fetch('/api/faq', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({question, answer, category, isPinned})
+  });
+  faqModal.classList.remove('is-visible');
+  fetchAndRenderFaqs();
+  fetchFaqCategories().then(renderFaqCategoryBtns);
+});
+
+// 切到問答分頁自動載入
+document.querySelector('.tab-btn[data-tab="tab-qa"]').addEventListener('click', async ()=>{
+  await fetchFaqCategories();
+  renderFaqCategoryBtns();
+  fetchAndRenderFaqs();
+});
+
+// 預設先載入一次 FAQ
+fetchFaqCategories().then(renderFaqCategoryBtns);
+fetchAndRenderFaqs();
+// --- 公告管理區 (V2 - 查看/刪除模式) ---
+
+// 1. 元素綁定
+const announcementsListDiv = document.getElementById('announcements-list');
+const addAnnouncementBtn = document.getElementById('add-announcement-btn');
+
+// 新增/編輯用的表單彈窗
+const announcementFormModal = document.getElementById('announcement-modal');
+const announcementForm = document.getElementById('announcement-form');
+const announcementFormTitle = document.getElementById('announcement-modal-title');
+
+// 【全新】查看詳情用的彈窗
+const announcementViewModal = document.getElementById('announcement-view-modal');
+const announcementViewModalBody = document.getElementById('announcement-view-modal-body');
+const deleteAnnouncementFromModalBtn = document.getElementById('delete-announcement-from-modal-btn');
+
+
+// 2. 渲染公告列表
+async function fetchAndRenderAnnouncements() {
+    try {
+        const response = await fetch('/api/announcements');
+        if (!response.ok) throw new Error('無法獲取公告');
+        const announcements = await response.json();
+
+        if (announcements.length === 0) {
+            announcementsListDiv.innerHTML = '<p>目前沒有任何公告。</p>';
+            return;
+        }
+
+        announcementsListDiv.innerHTML = announcements.map(item => `
+            <div class="feedback-card" style="border-left: 4px solid ${item.isPinned ? '#C48945' : '#ddd'};">
+                <div class="feedback-card__header">
+                    <span class="feedback-card__info">${item.date}</span>
+                    ${item.isPinned ? '<span style="color: #C48945; font-weight: bold;">置頂</span>' : ''}
+                </div>
+                <p class="feedback-card__content" style="font-weight: bold; font-size: 1.1em; margin-bottom: 10px;">${item.title}</p>
+                <div class="feedback-card__actions">
+                    <button class="btn btn--brown view-announcement-btn" data-id="${item._id}">查看</button>
+                </div>
+            </div>
+        `).join('');
+
+        // 【全新】為每個「查看」按鈕綁定事件
+        announcementsListDiv.querySelectorAll('.view-announcement-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const announcementData = announcements.find(a => a._id === btn.dataset.id);
+                if (announcementData) {
+                    showAnnouncementDetailModal(announcementData);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error fetching announcements:', error);
+        announcementsListDiv.innerHTML = '<p style="color: red;">載入公告失敗。</p>';
+    }
+}
+
+// 3. 【全新】顯示公告詳情彈窗的函式
+function showAnnouncementDetailModal(item) {
+    const formattedText = `
+【公告日期】${item.date}
+【是否置頂】${item.isPinned ? '是' : '否'}
+
+【標題】
+${item.title}
+
+【內文】
+${item.content}
+    `;
+    announcementViewModalBody.textContent = formattedText.trim();
+    
+    // 為彈窗內的刪除按鈕設置點擊事件
+    deleteAnnouncementFromModalBtn.onclick = async () => {
+        if (!confirm('確定要永久刪除這則公告嗎？此操作無法復原。')) return;
+
+        try {
+            const response = await fetch(`/api/announcements/${item._id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('刪除失敗');
+            
+            closeAnnouncementDetailModal(); // 關閉彈窗
+            fetchAndRenderAnnouncements();  // 重新整理列表
+        } catch (error) {
+            console.error(error);
+            alert('刪除時發生錯誤。');
+        }
+    };
+
+    announcementViewModal.classList.add('is-visible');
+}
+
+// 4. 【全新】關閉詳情彈窗的函式
+function closeAnnouncementDetailModal() {
+    announcementViewModal.classList.remove('is-visible');
+}
+
+// 5. 新增按鈕的邏輯 (不變)
+addAnnouncementBtn.addEventListener('click', () => {
+    announcementFormTitle.textContent = '新增公告';
+    announcementForm.reset();
+    announcementForm.announcementId.value = '';
+    announcementFormModal.classList.add('is-visible');
+});
+
+// 6. 新增表單的提交邏輯 (不變, 只處理新增)
+announcementForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = { /* ... 省略，這部分邏輯與之前相同，只處理新增 ... */
+        date: announcementForm.date.value.trim(),
+        title: announcementForm.title.value.trim(),
+        content: announcementForm.content.value.trim(),
+        isPinned: announcementForm.isPinned.checked
+    };
+    // ... 表單驗證 ...
+    if (!formData.date || !formData.title || !formData.content) {
+        alert('日期、標題和內文為必填欄位。');
+        return;
+    }
+    // ... 提交到 POST ...
+    try {
+        const response = await fetch('/api/announcements', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        if (!response.ok) throw new Error('新增失敗');
+        announcementFormModal.classList.remove('is-visible');
+        fetchAndRenderAnnouncements();
+    } catch (error) {
+        alert(`儲存失敗：${error.message}`);
+    }
+});
+
+// 7. 關閉彈出視窗的通用邏輯
+// 關閉「新增」彈窗
+announcementFormModal.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-close-btn') || e.target.id === 'announcement-modal') {
+        announcementFormModal.classList.remove('is-visible');
+    }
+});
+// 關閉「查看」彈窗
+announcementViewModal.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-close-btn') || e.target.id === 'announcement-view-modal') {
+        closeAnnouncementDetailModal();
+    }
+});
+
+
+// 8. 切換到公告分頁時，自動載入
+document.querySelector('.tab-btn[data-tab="tab-announcements"]').addEventListener('click', fetchAndRenderAnnouncements);    // --- 啟動！ ---
     checkSession();
     setupTabs();
 });

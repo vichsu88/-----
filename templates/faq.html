@@ -1,76 +1,88 @@
 {% extends "base.html" %}
 
-{% block title %}承天中承府 - 收驚服務{% endblock %}
-
-{# 建議為這個頁面建立專屬的 CSS 樣式，或在主樣式表中加入以下 class 的定義 #}
+{% block title %}承天中承府 - 常見問題{% endblock %}
 
 {% block content %}
-<main class="page-container shoujing-page">
+<main style="max-width: 860px; margin: 0 auto; padding: 54px 20px 36px 20px;">
 
-    {# 主要視覺區塊，您可以在這裡放上收驚的代表圖或 Banner #}
-    <section class="hero-section">
-        {# 如果有主圖可以放在這裡，沒有則省略 #}
-    </section>
-
-    {# 收驚流程區塊 #}
-    <section class="process-section" id="shoujing-process">
-        <h2 class="section-title">收驚流程</h2>
-        
-        {# 這部分可以用 div 或 ol>li 結構來呈現步驟感 #}
-        <div class="process-steps-container">
-            
-            <div class="step-item">
-                <div class="step-number">01</div>
-                <div class="step-content">
-                    <h3>準備收驚衣服</h3>
-                    <p>每件衣服夾帶紅紙，寫下個人資訊！</p>
-                    {# 提醒：連結目標(href)待功能完成後，再填上對應的頁面或彈窗ID #}
-                    <a href="#" class="btn btn--brown">填寫教學</a>
-                </div>
-            </div>
-
-            <div class="step-item">
-                <div class="step-number">02</div>
-                <div class="step-content">
-                    <h3>送件</h3>
-                    <p>領送：衣物與資料親送至「八八菸酒」<br>寄送：衣物與資料一同郵寄至帥府。</p>
-                    <a href="#" class="btn btn--brown">寄件資訊</a>
-                </div>
-            </div>
-
-            <div class="step-item">
-                <div class="step-number">03</div>
-                <div class="step-content">
-                    <h3>領取</h3>
-                    <p>收驚完成後於 LINE 群組公告已完成的領取編號。<br>自取：至「八八菸酒」領取件。<br>寄回：下單安排到付貨運。</p>
-                    <a href="#" class="btn btn--brown">黑貓下單教學</a>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    {# 帥府聲明區塊 #}
-    <section class="declaration-section" id="shoujing-declaration">
-        <h2 class="section-title">帥府聲明</h2>
-        <div class="declaration-box">
-            <div class="declaration-text">
-                <p>注意事項：</p>
-                <ol>
-                    <li>因元帥諭及義工皆有本業在身，無法隨時執行內部繞境及臨時服務，故本府之收驚服務採「衣物收驚」方式進行。</li>
-                    <li>注意完成後將於群組公告領取編號，請自行核對與領回。</li>
-                    <li>凡信徒欲一次寄送多件衣物需寄回，每件衣物皆須個別備註「需寄回」並填寫完整地址，否則視為不需寄回處理。</li>
-                    <li>未於半年內領回之衣物，將統一回收處理，恕不另行通知。</li>
-                </ol>
-            </div>
-        </div>
-    </section>
-
-    {# 行動號召按鈕區塊 #}
-    <section class="action-buttons-section">
-         <a href="#" class="btn">公壇報名</a>
-         <a href="#" class="btn">信徒回饋</a>
-    </section>
+  <div style="text-align: center;">
+    <h2 class="section-title">常見問題</h2>
+    <div id="faq-category-btns" style="margin-bottom: 34px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;"></div>
+  </div>
+  
+  <div id="faq-list">
+      </div>
 
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const faqListDiv = document.getElementById('faq-list');
+    const faqCategoryBtnsDiv = document.getElementById('faq-category-btns');
+    let faqCategories = [];
+    let currentFaqCategory = '';
+
+    async function fetchFaqCategories() {
+        try {
+            const res = await fetch('/api/faq/categories');
+            if (!res.ok) throw new Error('無法取得分類');
+            faqCategories = await res.json();
+        } catch (error) {
+            console.error(error);
+            faqCategoryBtnsDiv.innerHTML = `<p style="text-align:center; color: red;">分類載入失敗</p>`;
+        }
+    }
+
+    function renderFaqCategoryBtns() {
+        const baseClasses = 'btn btn--brown';
+        let html = `<button class="${baseClasses}${currentFaqCategory === '' ? ' active' : ''}" data-category="">全部</button>`;
+        faqCategories.forEach(cat => {
+            html += `<button class="${baseClasses}${cat === currentFaqCategory ? ' active' : ''}" data-category="${cat}">${cat}</button>`;
+        });
+        faqCategoryBtnsDiv.innerHTML = html;
+        faqCategoryBtnsDiv.querySelectorAll('.btn').forEach(btn => {
+            btn.onclick = () => {
+                currentFaqCategory = btn.dataset.category;
+                renderFaqCategoryBtns();
+                fetchAndRenderFaqs();
+            };
+        });
+    }
+
+    async function fetchAndRenderFaqs() {
+        let url = '/api/faq';
+        if (currentFaqCategory) url += '?category=' + encodeURIComponent(currentFaqCategory);
+        
+        faqListDiv.innerHTML = `<p style="text-align:center;">載入中...</p>`; // 增加載入中提示
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('無法取得問答');
+            const faqs = await res.json();
+            
+            if (!Array.isArray(faqs) || faqs.length === 0) {
+                faqListDiv.innerHTML = `<p style="text-align:center;">目前沒有此分類的問答。</p>`;
+                return;
+            }
+
+            // 【已修改】為每一筆 FAQ 都建立一個獨立的 .faq-item-card
+            faqListDiv.innerHTML = faqs.map(faq => `
+                <div class="faq-item-card">
+                    <div class="faq-q">Q：${faq.question}</div>
+                    <div class="faq-a">A：${faq.answer}</div>
+                </div>
+            `).join('');
+
+        } catch (error) {
+            console.error(error);
+            faqListDiv.innerHTML = `<p style="text-align:center; color: red;">問答載入失敗，請稍後再試</p>`;
+        }
+    }
+
+    fetchFaqCategories().then(() => {
+        renderFaqCategoryBtns();
+        fetchAndRenderFaqs();
+    });
+});
+</script>
 {% endblock %}

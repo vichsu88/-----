@@ -402,6 +402,8 @@ body::before {
     text-align: center;
     cursor: pointer;
     transition: transform 0.2s ease-out;
+    border: none; /* <-- 新增這一行來移除按鈕的預設黑框 */
+
 }
 
 .btn:hover {
@@ -980,6 +982,42 @@ body::before {
     #desktop-info-panel li {
         margin-bottom: 1em; 
     }
+}
+    /* === FAQ 頁面 - 單一問答卡片樣式 === */
+.faq-item-card {
+    /* 複製 declaration-box 的外觀 */
+    border-radius: 15px; /* */
+    border: 2px solid #E6BA67; /* */
+    background: rgba(255, 255, 255, 0.50); /* */
+    box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset; /* */
+    backdrop-filter: blur(7.5px); /* */
+    -webkit-backdrop-filter: blur(7.5px); /* */
+    
+    /* 內部與外部空間 */
+    padding: 20px 25px;
+    margin-bottom: 20px; /* 每張卡片之間的間距 */
+
+    /* 【關鍵】處理自動換行 */
+    overflow-wrap: break-word;
+    word-wrap: break-word; /* 舊版瀏覽器相容 */
+    word-break: break-all; /* 確保在任何點都可以斷行 */
+}
+
+.faq-item-card:last-child {
+    margin-bottom: 0; /* 最後一張卡片不用底部間距 */
+}
+
+/* 卡片內的 Q&A 標題與內容樣式 */
+.faq-item-card .faq-q {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #C48945;
+    margin: 0 0 10px 0;
+}
+
+.faq-item-card .faq-a {
+    margin: 0;
+    line-height: 1.8;
 }
 
 /* === 手機版流程圖圖片寬度限制 (修正版) === */

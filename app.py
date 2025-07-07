@@ -315,8 +315,105 @@ def update_link(link_id):
     if result.matched_count == 0:
         return jsonify({"error": "找不到指定的連結"}), 404
     return jsonify({"success": True}), 200
+@app.route('/api/faq', methods=['POST'])
+@login_required
+def add_faq():
+    if db is None:
+        return jsonify({"error": "資料庫未連線"}), 500
 
+    data = request.get_json()
+    # 檢查必填欄位
+    required_fields = ['question', 'answer', 'category']
+    if not all(field in data and data[field].strip() for field in required_fields):
+        return jsonify({"error": "請填寫完整資訊"}), 400
 
+    # 只能有中文字（正則表達式，前端也要做）
+    import re
+    if not re.match(r'^[\u4e00-\u9fff]+$', data['category']):
+        return jsonify({"error": "分類只能是中文"}), 400
+
+    new_faq = {
+        "question": data['question'].strip(),
+        "answer": data['answer'].strip(),
+        "category": data['category'].strip(),
+        "isPinned": bool(data.get('isPinned', False)),
+        "createdAt": datetime.utcnow(),
+    }
+    db.faq.insert_one(new_faq)
+    return jsonify({"success": True})
+@app.route('/api/faq', methods=['GET'])
+def get_faqs():
+    if db is None:
+        return jsonify({"error": "資料庫未連線"}), 500
+    # 可選參數：分類過濾
+    category = request.args.get('category')
+    query = {}
+    if category:
+        query['category'] = category
+
+    # 先依 isPinned 降冪，再依建立時間降冪
+    faqs = db.faq.find(query).sort([('isPinned', -1), ('createdAt', -1)])
+    result = []
+    for faq in faqs:
+        faq['_id'] = str(faq['_id'])
+        faq['createdAt'] = faq['createdAt'].strftime('%Y-%m-%d %H:%M:%S')
+        result.append(faq)
+    return jsonify(result)
+@app.route('/api/faq/categories', methods=['GET'])
+def get_faq_categories():
+    if db is None:
+        return jsonify({"error": "資料庫未連線"}), 500
+    categories = db.faq.distinct('category')
+    return jsonify(categories)
+@app.route('/api/faq/<faq_id>', methods=['DELETE'])
+@login_required
+def delete_faq(faq_id):
+    if db is None:
+        return jsonify({"error": "資料庫未連線"}), 500
+    result = db.faq.delete_one({'_id': ObjectId(faq_id)})
+    if result.deleted_count == 0:
+        return jsonify({"error": "找不到此問答"}), 404
+    return jsonify({"success": True})
+
+# --- 公告管理 API (Admin) ---
+
+@app.route('/api/announcements', methods=['POST'])
+@login_required
+def add_announcement():
+    if db is None: return jsonify({"error": "資料庫未連線"}), 500
+    data = request.get_json()
+    
+    # 欄位驗證
+    if not all(k in data for k in ['date', 'title', 'content']):
+        return jsonify({"error": "缺少必要欄位"}), 400
+    
+    try:
+        # 將前端傳來的 YYYY/MM/DD 字串轉換為 datetime 物件
+        date_obj = datetime.strptime(data['date'], '%Y/%m/%d')
+    except ValueError:
+        return jsonify({"error": "日期格式錯誤，應為 YYYY/MM/DD"}), 400
+
+    new_announcement = {
+        "date": date_obj,
+        "title": data['title'],
+        "content": data['content'],
+        "isPinned": data.get('isPinned', False),
+        "createdAt": datetime.utcnow()
+    }
+    db.announcements.insert_one(new_announcement)
+    return jsonify({"success": True, "message": "公告新增成功"}), 201
+
+@app.route('/api/announcements/<announcement_id>', methods=['DELETE'])
+@login_required
+def delete_announcement(announcement_id):
+    if db is None: return jsonify({"error": "資料庫未連線"}), 500
+    
+    result = db.announcements.delete_one({'_id': ObjectId(announcement_id)})
+    
+    if result.deleted_count == 0:
+        return jsonify({"error": "找不到指定公告或已被刪除"}), 404
+        
+    return jsonify({"success": True, "message": "公告刪除成功"})
 # --- 啟動伺服器 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
