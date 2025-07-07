@@ -1,76 +1,450 @@
 {% extends "base.html" %}
 
-{% block title %}承天中承府 - 收驚服務{% endblock %}
-
-{# 建議為這個頁面建立專屬的 CSS 樣式，或在主樣式表中加入以下 class 的定義 #}
+{% block title %}承天中承府 - 信徒回饋{% endblock %}
 
 {% block content %}
-<main class="page-container shoujing-page">
+<style>
+    /* --- 本頁專屬樣式 (懸浮按鈕版) --- */
+    .feedback-page-wrapper {
+        padding: 40px 20px;
+        max-width: 900px;
+        margin: 0 auto;
+        /* 為懸浮按鈕預留空間 */
+        position: relative;
+    }
 
-    {# 主要視覺區塊，您可以在這裡放上收驚的代表圖或 Banner #}
-    <section class="hero-section">
-        {# 如果有主圖可以放在這裡，沒有則省略 #}
-    </section>
+    /* 1. 標題置中: 直接使用 style.css 中的 .section-title 樣式即可 */
+    .feedback-header {
+        text-align: center; /* 確保標題置中 */
+        margin-bottom: 40px;
+    }
 
-    {# 收驚流程區塊 #}
-    <section class="process-section" id="shoujing-process">
-        <h2 class="section-title">收驚流程</h2>
-        
-        {# 這部分可以用 div 或 ol>li 結構來呈現步驟感 #}
-        <div class="process-steps-container">
+    /* 2. 全新「我要回饋」懸浮按鈕樣式 */
+    .feedback-action-btn {
+        /* a. 定位到畫面右上角，像 TOP 按鈕一樣 */
+        position: fixed;
+        top:auto;               /* 取消 top:130px; */
+        right:auto;             /* 取消 right:30px; */
+        z-index: 997;
+        bottom:100px;           /* 與 #top-btn 預留同樣的距離，可依需要調 */
+        right:25px;  
+
+        /* b. 按鈕本身的外觀 */
+        width: 90px;  /* 放大按鈕 */
+        height: 90px;
+        border-radius: 25px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: transform 0.2s ease-out;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden; /* 將超出的圖片部分隱藏 */
+    }
+
+    .feedback-action-btn:hover {
+        transform: scale(1.05);
+    }
+
+    /* 3. 讓圖片填滿整個按鈕，作為背景 */
+    .feedback-action-btn img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* 確保圖片填滿且不變形 */
+        z-index: 1;
+    }
+
+    /* 4. 將文字加上陰影，疊在圖片之上 */
+    .feedback-action-btn span {
+        position: relative;
+        z-index: 2; /* 確保文字在圖片之上 */
+        color: white;
+        font-weight: bold;
+        letter-spacing: 1.7px;
+        font-size: 16px;
+        text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.8); /* 加上清晰的文字陰影 */
+    }
+
+
+    /* 回饋卡片的樣式 (維持不變) */
+    .feedback-card {
+        padding: 25px 30px;
+        margin: 0 auto 20px auto;
+        max-width: 600px;
+        border-radius: 30px;
+        border: 2px solid #E6BA67;
+        background: rgba(255, 255, 255, 0.50);
+        box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
+        backdrop-filter: blur(7.5px);
+    }
+    .feedback-card__header {
+        font-family: 'KouzanBrushFontOTF', sans-serif;
+        font-size: 24px;
+        color: #C48945;
+        margin-bottom: 10px;
+    }
+    .feedback-card__content {
+        line-height: 1.8;
+        letter-spacing: 0.1em;
+        color: #333;
+    }
+    
+    /* 回饋表單彈窗的樣式 (維持不變) */
+    .feedback-form-modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 1000;
+        background: rgba(0,0,0,0.6);
+        justify-content: center;
+        align-items: center;
+    }
+    .feedback-form-modal.is-visible {
+        display: flex;
+    }
+    .feedback-form-content {
+        background: #F3F0EC; padding: 30px; border-radius: 15px;
+        width: 90%; max-width: 500px; position: relative;
+    }
+    .feedback-form-content h3 { text-align: center; margin-top: 0; }
+    .modal-close-btn {
+        position: absolute; top: 15px; right: 15px; background: #C48945;
+        border: 1px solid #D9B88A; border-radius: 50%; width: 35px; height: 35px;
+        color: white; font-size: 20px; line-height: 35px; text-align: center;
+        cursor: pointer; padding: 0;
+    }
+    /* 說明文字 */
+.feedback-note{
+  line-height:1.7;
+  letter-spacing:.05em;
+  text-align:left;          /* 前兩行置中已靠 <strong>；條列靠左 */
+  margin-bottom:18px;
+}
+
+/* 橘框 */
+.form-fieldset{
+  padding:20px 18px;
+  border-radius:35px;
+  border:2px solid #E6BA67;
+  background:rgba(255,255,255,.50);
+  box-shadow:0 0 5px rgba(255,255,255,.50) inset;
+  backdrop-filter:blur(7.5px);
+}
+
+.form-fieldset label,
+.single-choice{display:block;margin-bottom:12px;font-size:15px;}
+
+.form-fieldset input[type=text],
+.form-fieldset input[type=tel],
+.form-fieldset textarea{
+  width:100%;border:1px solid #ccc;border-radius:6px;padding:6px 8px;
+  font-size:15px;box-sizing:border-box;
+}
+
+/* 單選橫排 */
+.single-choice label{margin-right:10px;font-weight:normal;}
+
+/* 同意條款 */
+.agree-box{display:block;margin:15px 0;font-size:14px;line-height:1.6;}
+
+/* 送出按鈕：沿用回饋懸浮的配色，但去掉背景圖 */
+.btn-primary{
+  width:100%;max-width:200px;margin:0 auto;display:block;
+  background:#C48945;color:#fff;font-size:17px;font-weight:bold;
+  border:none;border-radius:25px;padding:10px 0;cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+  transition:opacity .2s;
+}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+
+.feedback-form-content{ width:90%; /* 原本就有 */ max-width:600px; /* 手機 */ max-height:90vh; /* 視窗 90% 高 */ overflow-y:auto; /* 內容超出時出現垂直捲軸 */ }
+ @media (min-width: 768px){ .feedback-form-content{ width:80%; /* 留些左右邊距 */ max-width:720px; } } 
+ @media (min-width: 1200px){ .feedback-form-content{ width:70%; max-width:820px; } }
+/* 讓 feedback-note 裡的 <strong> 樣式與 .step-item-shoujing h3 一致 */
+.feedback-note strong{
+    display:block;                           /* 讓 margin-bottom 生效，並獨立一行 */
+    font-size:clamp(18px,4vw,22px);
+    color:#C48945;
+    margin:0 0 8px 0;
+}
+.feedback-card{
+  font-family:'Noto Sans TC', sans-serif;   /* 內文 & 標題皆使用 */
+}
+
+/* 標題沿用卡片字型，並保持原本尺寸與顏色 */
+.feedback-card__header{
+  font-family:inherit;          /* 跟隨 .feedback-card 設定 */
+  font-weight:700;              /* 粗體更醒目，保留原來的筆觸感 */
+}
+
+/* 內文可自動折行、保留原本換列 */
+.feedback-card__content{
+  white-space:pre-wrap;         /* 保留 <br> 與 \n 斷行 */
+  overflow-wrap:anywhere;       /* 長字串 / 連續數字強制換行 */
+}
+/* ==== 前台回饋卡片：統一為後台風格 ==== */
+.feedback-card{
+    font-family:'Noto Sans TC', sans-serif;     /* 和後台一致 */
+    border:2px solid #E6BA67;                  /* 保留金色邊框 */
+    border-radius:30px;
+    padding:20px 24px;                         /* 比原先小一點，空白更剛好 */
+    margin:0 auto 25px auto;
+    background:#FFF;                           /* 去掉半透明，閱讀性更好 */
+}
+
+/* 標題（暱稱 / 類別） */
+.feedback-card__header{
+    margin:0 0 12px 0;                         /* 移除預設上方  h3 margin → 空白消失 */
+    font-size:22px;                            /* 後台 header 大小 (24→22) */
+    font-weight:bold;
+    color:#C48945;                             /* 主色 */
+    line-height:1.3;
+}
+.feedback-card__header .nickname{
+    color:#C48945;                             /* 與後台一致，如要不同可再改 */
+}
+
+/* 內容：保留換行、自動斷行 */
+.feedback-card__content{
+    font-size:16px;
+    line-height:1.9;
+    color:#555;
+    white-space:pre-wrap;      /* 保留 \n / <br> */
+    word-break:break-all;      /* 長字串自動折行 */
+}
+.feedback-action-btn {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    width: 90px;
+    height: 90px;
+    border-radius: 25px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.2s ease-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    z-index: 997;
+}
+
+.feedback-action-btn img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+.feedback-action-btn .btn-label {
+    position: relative;
+    z-index: 2;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
+    line-height: 1.2;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    pointer-events: none;
+    padding: 2px 6px;
+}
+
+
+</style>
+
+<main class="feedback-page-wrapper">
+
+    <div class="feedback-header">
+        <h2 class="section-title">信徒回饋</h2>
+    </div>
+
+    <a href="#" id="show-feedback-form-btn" class="feedback-action-btn">
+    <img src="{{ url_for('static', filename='images/avatars/feedbackavator.png') }}" alt="">
+    <span class="btn-label">我要回饋</span>
+    </a>
+
+
+    <div id="feedback-list-container">
+        </div>
+
+        </main>
+
+        <div id="feedback-form-modal" class="feedback-form-modal">
+            <div class="feedback-form-content">
+                <button class="modal-close-btn">&times;</button>
+                <form id="feedback-form" class="feedback-create-form">
+        <!-- 標題（保留元寶裝飾，用同一組 class） -->
+        <h2 class="section-title" style="margin-top:0">我要回饋</h2>
+
+        <!-- 說明文字 -->
+        <p class="feedback-note">
+            <strong>一份善緣，一份心意</strong><br>
+            每一份感動、每一次在生活中受到的護佑，都是元帥慈悲的珍貴見證。<br>
+            1. 回饋內容送出後，視為同意授權公開刊登於本府網站。<br>
+            2. 回饋將於通過審核後方能刊登，敬請耐心等候。<br>
+            3. 未經審核通過者恕不另行通知與回覆。<br>
+            4. 個人資料僅用於寄送贈品與必要聯繫，不作其他用途，敬請安心填寫。<br>
+            5. 平安符須由元帥娘親自審核與開符，故每位信眾僅限領取乙份。
+        </p>
+
+        <!-- 橘框輸入區 -->
+        <div class="form-fieldset">
+            <label>真實姓名：
+            <input type="text" name="realName" required>
+            </label>
+
+            <label>暱稱：
+            <input type="text" name="nickname" required>
+            </label>
+
+            <div class="single-choice">
+            <p>類別（擇一）：</p>
+            <label><input type="radio" name="category" value="運途" required> 運途</label>
+            <label><input type="radio" name="category" value="事業"> 事業</label>
+            <label><input type="radio" name="category" value="財運"> 財運</label>
+            <label><input type="radio" name="category" value="身體"> 身體</label>
+            <label><input type="radio" name="category" value="姻緣"> 姻緣</label>
+            <label><input type="radio" name="category" value="收驚"> 收驚</label>
+            <label><input type="radio" name="category" value="其他"> 其他</label>
+            </div>
+
+            <label>回饋內容（至少 100 字）：
+            <textarea name="content" rows="6" minlength="100" required></textarea>
+            </label>
+
+            <label>寄件地址：
+            <input type="text" name="address">
+            </label>
+
+            <label>聯絡電話：
+            <input type="tel" name="phone">
+            </label>
+        </div>
+
+        <!-- 同意條款 -->
+        <label class="agree-box">
+            <input type="checkbox" name="agreed" required>
+            我已詳閱並同意上述授權與注意事項，並願意提供回饋供本府公開刊登。
+        </label>
+
+        <!-- 送出按鈕 -->
+        <button type="submit" id="submit-feedback-btn" class="btn-primary" disabled>提交回饋</button>
+        </form>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* ---------- 1. 動態載入回饋卡片 ---------- */
+  const feedbackListContainer = document.getElementById('feedback-list-container');
+
+  async function fetchAndRenderFeedback() {
+    try {
+      const res = await fetch('/api/feedback/approved');
+      if (!res.ok) throw new Error('讀取回饋資料失敗');
+      const data = await res.json();
+
+      feedbackListContainer.innerHTML = '';
+
+      if (data.length === 0) {
+        feedbackListContainer.innerHTML =
+          '<p style="text-align:center;">目前沒有已刊登的信徒回饋。</p>';
+        return;
+      }
+
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'feedback-card';
+        card.innerHTML = `
+            <h3 class="feedback-card__header">
+                <span class="nickname">${item.nickname}</span> / ${item.category.join(', ')}
+            </h3>
+            <p class="feedback-card__content">${item.content.replace(/\n/g, '<br>')}</p>
             
-            <div class="step-item">
-                <div class="step-number">01</div>
-                <div class="step-content">
-                    <h3>準備收驚衣服</h3>
-                    <p>每件衣服夾帶紅紙，寫下個人資訊！</p>
-                    {# 提醒：連結目標(href)待功能完成後，再填上對應的頁面或彈窗ID #}
-                    <a href="#" class="btn btn--brown">填寫教學</a>
-                </div>
-            </div>
+`;
+  feedbackListContainer.appendChild(card);
 
-            <div class="step-item">
-                <div class="step-number">02</div>
-                <div class="step-content">
-                    <h3>送件</h3>
-                    <p>領送：衣物與資料親送至「八八菸酒」<br>寄送：衣物與資料一同郵寄至帥府。</p>
-                    <a href="#" class="btn btn--brown">寄件資訊</a>
-                </div>
-            </div>
+});
 
-            <div class="step-item">
-                <div class="step-number">03</div>
-                <div class="step-content">
-                    <h3>領取</h3>
-                    <p>收驚完成後於 LINE 群組公告已完成的領取編號。<br>自取：至「八八菸酒」領取件。<br>寄回：下單安排到付貨運。</p>
-                    <a href="#" class="btn btn--brown">黑貓下單教學</a>
-                </div>
-            </div>
+    } catch (err) {
+      console.error(err);
+      feedbackListContainer.innerHTML =
+        '<p style="text-align:center;">讀取資料時發生錯誤，請稍後再試。</p>';
+    }
+  }
 
-        </div>
-    </section>
+  /* ---------- 2. 彈窗開關 ---------- */
+  const showFormBtn = document.getElementById('show-feedback-form-btn');
+  const formModal   = document.getElementById('feedback-form-modal');
 
-    {# 帥府聲明區塊 #}
-    <section class="declaration-section" id="shoujing-declaration">
-        <h2 class="section-title">帥府聲明</h2>
-        <div class="declaration-box">
-            <div class="declaration-text">
-                <p>注意事項：</p>
-                <ol>
-                    <li>因元帥諭及義工皆有本業在身，無法隨時執行內部繞境及臨時服務，故本府之收驚服務採「衣物收驚」方式進行。</li>
-                    <li>注意完成後將於群組公告領取編號，請自行核對與領回。</li>
-                    <li>凡信徒欲一次寄送多件衣物需寄回，每件衣物皆須個別備註「需寄回」並填寫完整地址，否則視為不需寄回處理。</li>
-                    <li>未於半年內領回之衣物，將統一回收處理，恕不另行通知。</li>
-                </ol>
-            </div>
-        </div>
-    </section>
+  showFormBtn.addEventListener('click', e => {
+    e.preventDefault();
+    formModal.classList.add('is-visible');
+  });
 
-    {# 行動號召按鈕區塊 #}
-    <section class="action-buttons-section">
-         <a href="#" class="btn">公壇報名</a>
-         <a href="#" class="btn">信徒回饋</a>
-    </section>
+  formModal.addEventListener('click', e => {
+    if (e.target.classList.contains('modal-close-btn') ||
+        e.target.id === 'feedback-form-modal') {
+      formModal.classList.remove('is-visible');
+    }
+  });
 
-</main>
+  /* ---------- 3. 表單檢核 & 送出 ---------- */
+  const feedbackForm = document.getElementById('feedback-form');
+  const submitBtn    = document.getElementById('submit-feedback-btn');
+  const minWords     = 100;
+
+  // 即時檢查字數 / 勾選
+  feedbackForm.addEventListener('input', () => {
+    const okWords = feedbackForm.content.value.trim().length >= minWords;
+    const okAgree = feedbackForm.agreed.checked;
+    submitBtn.disabled = !(okWords && okAgree);
+  });
+
+  // 送出
+  feedbackForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+
+    const payload = {
+      realName : feedbackForm.realName.value.trim(),
+      nickname : feedbackForm.nickname.value.trim(),
+      category : [feedbackForm.category.value],   // 後端收陣列
+      content  : feedbackForm.content.value.trim(),
+      address  : feedbackForm.address.value.trim(),
+      phone    : feedbackForm.phone.value.trim(),
+      agreed   : feedbackForm.agreed.checked
+    };
+
+    try {
+      const res   = await fetch('/api/feedback', {
+        method : 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body   : JSON.stringify(payload)
+      });
+      const data  = await res.json();
+      if (!res.ok) throw new Error(data.error || '送出失敗');
+
+      alert('送出成功！待審核後將刊登。');
+      formModal.classList.remove('is-visible');
+      feedbackForm.reset();
+      submitBtn.disabled = true;
+      fetchAndRenderFeedback();   // 即時更新列表
+    } catch (err) {
+      alert(err.message);
+      submitBtn.disabled = false;
+    }
+  });
+
+  /* ---------- 4. 首次載入 ---------- */
+  fetchAndRenderFeedback();
+
+});
+</script>
 {% endblock %}

@@ -1,6 +1,6 @@
 import os
 from functools import wraps
-from flask import Flask, jsonify, render_template, request, session, redirect, url_for, flash
+from flask import Flask, jsonify, render_template, request, session, redirect, url_for, flash, Response
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId

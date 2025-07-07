@@ -162,11 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <p class="feedback-card__content">${item.content}</p>
                     <div class="feedback-card__actions">
-                        <button class="btn mark-feedback-btn" data-id="${item._id}" data-marked="${isMarked}" style="background-color: ${isMarked ? '#28a745' : '#6c757d'}">
-                            ${isMarked ? '✓ 已標記' : '標記'}
-                        </button>
+                        <button class="btn btn--brown view-feedback-btn" data-id="${item._id}">查看</button>
                     </div>
                 `;
+                card.querySelector('.view-feedback-btn').addEventListener('click', () => {
+                    showDetailModal(item); // 把這筆資料顯示在 modal 裡
+                });
                 approvedListContainer.appendChild(card);
             });
         } catch (error) { console.error('Error fetching approved feedback:', error); }
@@ -208,13 +209,29 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchApprovedFeedback();
     });
 
-    // 輸出寄件資訊按鈕
-    exportBtn.addEventListener('click', async () => {
+// --- 修改後的輸出寄件資訊邏輯 ---
+const exportModal = document.getElementById('export-modal');
+const exportTextareaInModal = document.getElementById('export-output-textarea');
+
+exportBtn.addEventListener('click', async () => {
+    try {
         const response = await fetch('/api/feedback/export-unmarked');
         const textData = await response.text();
-        exportOutputContainer.style.display = 'block';
-        exportTextarea.value = textData;
-    });
+        exportTextareaInModal.value = textData; // 將文字填入彈窗中的 textarea
+        exportModal.classList.add('is-visible'); // 顯示彈窗
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        alert('導出時發生錯誤');
+    }
+});
+
+// 讓彈窗可以被關閉
+exportModal.addEventListener('click', (e) => {
+    // 如果點擊的是關閉按鈕，或是彈窗的背景
+    if (e.target.classList.contains('modal-close-btn') || e.target.id === 'export-modal') {
+        exportModal.classList.remove('is-visible');
+    }
+});
 
     // --- 主頁籤與子頁籤切換邏輯 ---
     function setupTabs() {
@@ -253,6 +270,54 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+function showDetailModal(feedback) {
+  const modal = document.getElementById('view-modal');
+  const body = document.getElementById('view-modal-body');
+
+  const text = `
+【真實姓名】${feedback.realName || '(未填)'}
+【暱稱】${feedback.nickname}
+【類別】${feedback.category.join(', ')}
+【寄件地址】${feedback.address || '(未填)'}
+【聯絡電話】${feedback.phone || '(未填)'}
+【填寫時間】${feedback.createdAt}
+
+【回饋內容】
+${feedback.content}
+  `;
+
+  body.textContent = text;
+  modal.classList.add('is-visible');
+
+  // ✅ 綁定刪除按鈕
+  const deleteBtn = document.getElementById('delete-feedback-btn');
+  deleteBtn.onclick = async () => {
+    const confirmed = confirm('確定要刪除這則回饋嗎？此操作無法復原。');
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/feedback/${feedback._id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error('刪除失敗');
+      alert('已成功刪除該筆回饋');
+      closeDetailModal();
+      fetchApprovedFeedback();  // 重新載入列表
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+}
+
+function closeDetailModal() {
+  document.getElementById('view-modal').classList.remove('is-visible');
+}
+// 讓查看 modal 也能關閉
+document.getElementById('view-modal').addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-close-btn') || e.target.id === 'view-modal') {
+    closeDetailModal();
+  }
+});
 
     // --- 啟動！ ---
     checkSession();
