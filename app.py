@@ -3,7 +3,7 @@ import os
 from functools import wraps
 from flask import Flask, jsonify, render_template, request, session, redirect, url_for, Response
 from flask_cors import CORS
-from flask_wtf.csrf import CSRFProtect, csrf # 導入 csrf 以使用 exempt
+from flask_wtf.csrf import CSRFProtect # 只需要導入 CSRFProtect
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime, timedelta
@@ -13,12 +13,9 @@ from werkzeug.security import check_password_hash
 # --- 應用程式初始化與設定 ---
 load_dotenv()
 app = Flask(__name__)
-
+csrf = CSRFProtect(app) 
 # 1. 設定 SECRET_KEY，若 .env 未提供，則使用隨機值確保不報錯
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
-
-# 2. 啟用 CSRF 保護
-csrf.init_app(app)
 
 # 3. 設定 Session 有效期為 8 小時
 app.permanent_session_lifetime = timedelta(hours=8)
