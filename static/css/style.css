@@ -107,17 +107,26 @@ body::before {
     text-align: center;
 }
 
+/* === 全新 Banner 樣式 (V2) === */
 .hero-section {
-    margin-top: 0;
-    padding: 0;
+    /* 設定手機上的 Banner 高度 */
+    height: 300px; 
+
+    /* 讓 Banner 寬度永遠是 100% */
+    width: 100%;
+
+    /* 關鍵：設定背景圖片 */
+    background-image: url('../images/pages/index/banner.png');
+    background-size: cover; /* 讓圖片永遠填滿容器，多餘部分會被裁切 */
+    background-position: center; /* 不論如何裁切，都以圖片中心為焦點 */
+    background-repeat: no-repeat; /* 確保圖片不重複 */
 }
 
-.hero-image {
-    display: block;
-    width: 100%; 
-    max-width: 800px; 
-    height: auto; 
-    margin: 0 auto;
+/* 當螢幕寬度大於 1024px (例如電腦) 時，使用圖片的原始高度 */
+@media (min-width: 1024px) {
+    .hero-section {
+        height: 600px;
+    }
 }
 
 .section-title {
