@@ -796,11 +796,10 @@ body::before {
     justify-content: center;
     gap: 23px; /* 依照您的要求設定間距 */
     width: 100%; /* 確保容器佔滿寬度 */
-    margin-top: 20px; /* 與上方元帥頭像的間距 */
 }
 
 .overlay-social img {
-    height: 32px;
+    height: 50px;
 }
 /* === 回應式導覽列樣式 (修正版) === */
 
@@ -1100,21 +1099,20 @@ body::before {
         letter-spacing: 0.5em; /* 電腦版空間更大，字距可再拉開 */
     }
 }
-/* === 新增：客製化頁尾與選單標題 === */
+/* === 新增：外部連結標題樣式 === */
+.custom-link-title {
+  /* 字體設定 */
+  font-family: 'Noto Sans TC', sans-serif; /* 改回 Noto Sans TC */
+  font-size: 16px;       /* 設定一個適中的字體大小 */
+  font-weight: 700;      /* 加粗以示強調 */
+  color: #FFFFFF;        /* 維持白色 */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* 加上細微陰影增加質感 */
 
-/* 1. 頁尾的「外部連結」標題樣式 */
-.footer-title-custom {
-  font-size: 22px; /* 調整成適合頁尾的字體大小 */
-  color: #FFFFFF; /* 設定為白色以搭配深色背景 */
-  margin: 0 auto 20px; /* 調整與下方 icon 的間距 */
-  padding: 10px 1.8em; /* 縮小一點內距，讓元寶更靠近文字 */
+  /* 間距設定，讓它和下方的 icon 貼齊 */
+  margin: 0 0 10px 0;    /* 移除左右和上方的 margin，只保留 10px 的下方間距 */
+  padding: 0;            /* 移除所有內距 */
 }
-
-/* 2. 手機選單的「外部連結」標題樣式 */
-.overlay-title-custom {
-  font-size: 24px; /* 調整成適合手機選單的字體大小 */
-  color: #FFFFFF; /* 設定為白色以搭配漸層背景 */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 加上文字陰影以增加清晰度 */
-  margin: 20px auto 15px; /* 調整與上下元素的間距 */
-  padding: 10px 1.8em;
+.mobile-nav-overlay .custom-link-title {
+    margin-top: 25px;    /* 調整標題與上方頭像的距離 */
+    margin-bottom: 1px; /* 調整標題與下方 icon 的距離 */
 }

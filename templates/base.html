@@ -55,9 +55,8 @@
         </div>
 
         <div class="footer-col footer-col-right">
-          <h4 class="section-title footer-title-custom">外部連結</h4>
-
-          <div class="footer-social">
+        <h4 class="custom-link-title">官方社群</h4>
+        <div class="footer-social">
             <a href="{{ links['煙島元帥社群'] or '#' }}" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE" loading="lazy"></a>
             <a href="{{ links['TikTok'] or '#' }}" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok" loading="lazy"></a>
             <a href="{{ links['IG'] or '#' }}" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram" loading="lazy"></a>
@@ -80,7 +79,7 @@
     </ul>
 
     <img src="{{ url_for('static', filename='images/avatars/menu-avator.png') }}" alt="元帥聖像" class="overlay-avatar" loading="lazy">
-    <h4 class="section-title overlay-title-custom">外部連結</h4>
+    <h4 class="custom-link-title">官方社群</h4>
     <div class="overlay-social">
        <a href="{{ links['FB'] or '#' }}" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook" loading="lazy"></a>
        <a href="{{ links['IG'] or '#' }}" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram" loading="lazy"></a>
