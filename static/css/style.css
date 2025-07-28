@@ -580,7 +580,7 @@ body::before {
 }
 
 .footer-social img {
-    height: 28px;
+    height: 32px;
     width: auto;
     transition: transform 0.2s;
 }
@@ -600,7 +600,7 @@ body::before {
 /* Footer 手機版響應式 */
 @media (max-width: 991px) {
     .main-footer {
-        padding: 2.5rem 1.2rem 1.2rem 1.2rem; /* [cite: 83] */
+        padding: 2rem 1rem 1rem 1rem; /* [cite: 83] */
     }
     .footer-content {
         flex-direction: column;
@@ -769,13 +769,13 @@ body::before {
 }
 
 .overlay-nav-links li {
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 .overlay-nav-links a {
     text-decoration: none;
     font-family: 'KouzanBrushFontOTF', sans-serif;
-    font-size: 28px; /* 放大字體以利點擊 */
+    font-size: 30px; /* 放大字體以利點擊 */
     color: #4b2c1c;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
 }
@@ -786,9 +786,27 @@ body::before {
 
 /* 元帥頭像 */
 .overlay-avatar {
-    max-width: 220px; /* 限制頭像最大寬度 */
+    max-width: 230px; /* 限制頭像最大寬度 */
     height: auto;
 }
+
+.custom-link-title {
+  /* 字體設定 */
+  font-family: 'Noto Sans TC', sans-serif; /* 改回 Noto Sans TC */
+  font-size: 16px;       /* 設定一個適中的字體大小 */
+  font-weight: 400;      /* 加粗以示強調 */
+  color: #FFFFFF;        /* 維持白色 */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* 加上細微陰影增加質感 */
+
+  /* 間距設定，讓它和下方的 icon 貼齊 */
+  margin: 0 0 0 0;    /* 移除左右和上方的 margin，只保留 10px 的下方間距 */
+  padding: 0.5px;            /* 移除所有內距 */
+}
+.mobile-nav-overlay .custom-link-title {
+    margin-top: 15px;    /* 調整標題與上方頭像的距離 */
+    margin-bottom: 1px; /* 調整標題與下方 icon 的距離 */
+}
+
 
 /* 底部社群連結 */
 .overlay-social {
@@ -796,6 +814,7 @@ body::before {
     justify-content: center;
     gap: 23px; /* 依照您的要求設定間距 */
     width: 100%; /* 確保容器佔滿寬度 */
+    margin-top: 0
 }
 
 .overlay-social img {
@@ -1098,21 +1117,4 @@ body::before {
         font-size: 40px;
         letter-spacing: 0.5em; /* 電腦版空間更大，字距可再拉開 */
     }
-}
-/* === 新增：外部連結標題樣式 === */
-.custom-link-title {
-  /* 字體設定 */
-  font-family: 'Noto Sans TC', sans-serif; /* 改回 Noto Sans TC */
-  font-size: 16px;       /* 設定一個適中的字體大小 */
-  font-weight: 700;      /* 加粗以示強調 */
-  color: #FFFFFF;        /* 維持白色 */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* 加上細微陰影增加質感 */
-
-  /* 間距設定，讓它和下方的 icon 貼齊 */
-  margin: 0 0 10px 0;    /* 移除左右和上方的 margin，只保留 10px 的下方間距 */
-  padding: 0;            /* 移除所有內距 */
-}
-.mobile-nav-overlay .custom-link-title {
-    margin-top: 25px;    /* 調整標題與上方頭像的距離 */
-    margin-bottom: 1px; /* 調整標題與下方 icon 的距離 */
 }
