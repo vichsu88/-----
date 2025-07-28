@@ -613,6 +613,9 @@ body::before {
         text-align: center;
         align-items: center;
     }
+    .footer-social img {
+        height: 41px;  /* 想要多大就調這裡 */
+    }
     .center-yuanbao {
         position: static; /* 還原定位 */
         transform: none;
