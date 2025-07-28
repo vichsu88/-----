@@ -1,20 +1,35 @@
+# --- app.py (最終安全版) ---
 import os
 from functools import wraps
-from flask import Flask, jsonify, render_template, request, session, redirect, url_for, flash, Response
+from flask import Flask, jsonify, render_template, request, session, redirect, url_for, Response
 from flask_cors import CORS
+from flask_wtf.csrf import CSRFProtect, csrf # 導入 csrf 以使用 exempt
 from pymongo import MongoClient
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from werkzeug.security import check_password_hash
 
 # --- 應用程式初始化與設定 ---
 load_dotenv()
 app = Flask(__name__)
-CORS(app)
 
-# 從 .env 讀取密鑰與密碼
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD') # <--- 錯誤發生就是因為缺少了這一行
+# 1. 設定 SECRET_KEY，若 .env 未提供，則使用隨機值確保不報錯
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
+
+# 2. 啟用 CSRF 保護
+csrf.init_app(app)
+
+# 3. 設定 Session 有效期為 8 小時
+app.permanent_session_lifetime = timedelta(hours=8)
+
+# 4. 限制 CORS，未來部署後應限制 origins
+# 部署後請將 "origins": "*" 改為 "origins": "https://您的網域名稱"
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+
+# 5. 從 .env 讀取加密後的密碼
+ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH')
+
 
 # --- 資料庫連線 ---
 MONGO_URI = os.environ.get('MONGO_URI')
@@ -40,48 +55,34 @@ def login_required(f):
             return redirect(url_for('admin_page'))
         return f(*args, **kwargs)
     return decorated_function
+
 @app.context_processor
 def inject_links():
     if db is None:
-        return dict(links={}) # 資料庫未連線時回傳空字典
-    
+        return dict(links={})
     links_from_db = db.links.find({})
-    # 將資料轉換成 "名稱: 網址" 的字典格式，方便模板取用
     links_dict = {link['name']: link['url'] for link in links_from_db}
-    
     return dict(links=links_dict)
 
 
-# --- 前台頁面路由 ---
+# --- 前台頁面路由 (維持不變) ---
 @app.route('/')
-def home():
-    return render_template('index.html')
-
+def home(): return render_template('index.html')
 @app.route('/gongtan')
-def gongtan_page():
-    return render_template('gongtan.html')
-
+def gongtan_page(): return render_template('gongtan.html')
 @app.route('/shoujing')
-def shoujing_page():
-    return render_template('shoujing.html')
-
+def shoujing_page(): return render_template('shoujing.html')
 @app.route('/incense')
-def incense_page():
-    return render_template('incense.html')
-
+def incense_page(): return render_template('incense.html')
 @app.route('/feedback')
-def feedback_page():
-    return render_template('feedback.html')
-
+def feedback_page(): return render_template('feedback.html')
 @app.route('/faq')
-def faq_page():
-    return render_template('faq.html')
+def faq_page(): return render_template('faq.html')
 
 
-# --- 後台頁面路由 ---
+# --- 後台頁面路由 (維持不變) ---
 @app.route('/admin')
-def admin_page():
-    return render_template('admin.html')
+def admin_page(): return render_template('admin.html')
 
 
 # --- 後台與 API 路由 ---
@@ -91,11 +92,14 @@ def session_check():
         return jsonify({"logged_in": True})
     return jsonify({"logged_in": False})
 
+# 【關鍵修改】豁免 /api/login 的 CSRF 檢查，因為使用者此時還沒有 token
+@csrf.exempt
 @app.route('/api/login', methods=['POST'])
 def api_login():
     password = request.json.get('password')
-    if password == ADMIN_PASSWORD:
+    if ADMIN_PASSWORD_HASH and check_password_hash(ADMIN_PASSWORD_HASH, password):
         session['logged_in'] = True
+        session.permanent = True
         return jsonify({"success": True, "message": "登入成功！"})
     return jsonify({"success": False, "message": "密碼錯誤"}), 401
 
@@ -103,8 +107,6 @@ def api_login():
 def api_logout():
     session.pop('logged_in', None)
     return jsonify({"success": True, "message": "已成功登出"})
-# app.py (在 "後台與 API 路由" 區塊新增)
-
 # API: 接收前端新的回饋
 @app.route('/api/feedback', methods=['POST'])
 def add_feedback():
