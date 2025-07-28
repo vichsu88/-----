@@ -814,7 +814,8 @@ body::before {
     justify-content: center;
     gap: 23px; /* 依照您的要求設定間距 */
     width: 100%; /* 確保容器佔滿寬度 */
-    margin-top: 0
+    margin-bottom: 30px;
+
 }
 
 .overlay-social img {
