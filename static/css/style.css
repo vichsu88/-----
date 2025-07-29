@@ -1050,49 +1050,29 @@ body::before {
     margin: 0;
     line-height: 1.8;
 }
-/* === 手工香品頁面 (incense.html) 專屬樣式 === */
-/* === 手工香品頁面 (incense.html) 專屬樣式 (V3) === */
-
+/* === 手工香品頁面 Banner 樣式 (最終版) === */
 .incense-hero-section {
-    position: relative;
+    /* 手機上的預設高度 */
+    height: 300px;
     width: 100%;
-    margin-bottom: 40px;
-    /* 【手機版】移除固定的 height，讓容器高度由圖片的 auto 高度決定 */
+
+    /* 關鍵：設定新的背景圖片 */
+    background-image: url('../images/pages/incense/incenseimage.png');
+
+    /* 讓圖片永遠填滿容器，並以中心點對齊 */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
-.incense-hero-image {
-    display: block;
-    /* 【手機版】寬度100%，高度依長寬比自動調整 */
-    width: 100%;
-    height: auto;
-    /* 移除 object-fit，讓圖片自然顯示 */
+/* 當螢幕寬度大於 1024px (電腦版) 時，使用 600px 高度 */
+@media (min-width: 1024px) {
+    .incense-hero-section {
+        height: 600px;
+    }
 }
 
-.incense-hero-title {
-    position: absolute;
-    top: 50%;
-    
-    /* 【置中】關鍵修改：從 right 改為 left: 50%，並用 transform 校正位置 */
-    left: 50%;
-    transform: translate(-50%, -50%);
-
-    writing-mode: vertical-rl;
-    color: #EFCB52;
-    text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.40);
-    font-family: 'KouzanBrushFontOTF', '標楷體', sans-serif;
-    font-size: 32px;
-    font-weight: 400;
-    
-    /* 【拉高-1】增加字間距 (垂直空間) */
-    letter-spacing: 0.3em; 
-    
-    /* 【拉高-2】增加行高 (兩行文字之間的水平空間) */
-    line-height: 2; 
-
-    text-align: center;
-    white-space: nowrap; /* 確保文字本身不換行 */
-}
-
+/* (這裡保留 incense-actions 的樣式，因為它跟 Banner 無關且是需要的) */
 .incense-actions {
     display: flex;
     justify-content: center;
@@ -1101,24 +1081,11 @@ body::before {
     flex-wrap: wrap;
     padding: 0 20px;
 }
-
-/* --- 響應式調整：當螢幕寬度大於 768px (電腦版) --- */
-@media (min-width: 768px) {
-    .incense-hero-section {
-        /* 【電腦版】恢復固定的高度，創造橫幅效果 */
-        height: 400px; 
-        background-color: #3E3E3E;
-        overflow: hidden;
-    }
-
-    .incense-hero-image {
-        /* 【電腦版】讓圖片高度 100% 填滿容器，並使用 cover 模式 */
-        height: 100%;
-        object-fit: cover; 
-    }
-    
-    .incense-hero-title {
-        font-size: 40px;
-        letter-spacing: 0.5em; /* 電腦版空間更大，字距可再拉開 */
-    }
+/* === 新增：Instagram 嵌入樣式 === */
+.instagram-embed-wrapper {
+  max-width: 540px;  /* Instagram 官方建議的最大寬度 */
+  width: 100%;       /* 在小螢幕上會自動縮小 */
+  margin: 40px auto; /* 上下保留 40px 間距，並水平置中 */
+  border-radius: 8px;  /* 加上一點圓角讓視覺更柔和 */
+  overflow: hidden;    /* 確保內容不會超出圓角範圍 */
 }

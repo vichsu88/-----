@@ -5,361 +5,248 @@
 {% block content %}
 
 <style>
-  /* --- 1. 覆蓋 Body 背景 --- */
-  body {
-    /* 【最終版】起點為不透明的純黑 #000000 */
-    background: linear-gradient(180deg, #000000 0%, rgba(142, 83, 44, 0.50) 41%, #EFCB52 100%);
-    
-    background-repeat: no-repeat;
-    /* 讓漸層跟著頁面滾動並填滿 */
-    min-height: 100vh;
+  /* ===============================
+     1. 全頁背景
+  =============================== */
+  body{
+    background:linear-gradient(180deg,#F3F0EC 0%,#EFCB52 100%);
+    background-repeat:no-repeat;
+    min-height:100vh;
+  }
+  body::before{display:none!important;}
+
+  /* ===============================
+     2. Hero 區
+  =============================== */
+  .incense-hero-section{
+    position:relative;width:100%;height:300px;overflow:hidden;
+    margin:20px 0 40px;
+  }
+  .incense-hero-image{width:100%;height:100%;object-fit:cover;}
+  @media (min-width:768px){.incense-hero-section{height:600px;}}
+
+  /* ===============================
+     3. 行動按鈕
+  =============================== */
+  .incense-actions{
+    display:flex;justify-content:center;align-items:center;
+    gap:20px;flex-wrap:wrap;padding:0 20px;
   }
 
-  /* 關鍵：隱藏從 base.html 繼承來的雲霧背景偽元素 */
-  body::before {
-    display: none !important;
+  /* ===============================
+     4. 故事區（圖文並排 & 間距最佳化）
+  =============================== */
+  .incense-story-section{
+    padding:80px 25px;display:flex;flex-direction:column;
+    gap:60px;max-width:1200px;margin:0 auto;
+  }
+  .story-block{
+    display:flex;align-items:center;justify-content:center;
+    gap:20px;flex-direction:row;max-width:100%;
+  }
+  .story-block:nth-child(even){flex-direction:row-reverse;}
+
+  .story-text{
+    flex:0 0 45%;writing-mode:vertical-rl;
+    font-family:'KouzanBrushFontOTF','標楷體',sans-serif;
+    font-size:24px;line-height:2.2;letter-spacing:.2em;
+    color:#231815;text-shadow:0 2px 4px rgba(0,0,0,.5);
+    white-space:nowrap;text-align:center;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .story-image{flex:0 0 45%;overflow:hidden;}
+  .story-image img{
+    width:100%;height:auto;object-fit:cover;object-position:center;
+    max-height:420px;border-radius:8px;
   }
 
-  /* 【關鍵】我們已經將之前覆蓋 .main-nav 的樣式全部刪除。
-    這樣 Header 就會自動恢復它在 base.html 中定義的原始樣式。
-  */
-
-
-  /* --- 3. 頁面內容樣式 (其餘不變) --- */
-  .incense-hero-section {
-    position: relative;
-    width: 100%;
-    height: auto;
-    /* 【微調】讓主圖與 Header 不要黏在一起，增加一點呼吸空間 */
-    margin-top: 20px;
-    margin-bottom: 40px;
-  }
-  
-  .incense-hero-image {
-    display: block;
-    width: 100%;
-    height: auto;
+  @media (max-width:767px){
+    .incense-story-section{padding-top:40px;padding-bottom:40px;}
+    .story-block{gap:12px;}
+    .story-image img{max-height:340px;}
   }
 
-  .incense-hero-title {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    writing-mode: vertical-rl;
-    color: #EFCB52;
-    text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.40);
-    font-family: 'KouzanBrushFontOTF', '標楷體', sans-serif;
-    font-size: 32px;
-    font-weight: 400;
-    letter-spacing: 0.3em; 
-    line-height: 2; 
-    text-align: center;
-    white-space: nowrap;
+  /* ===============================
+     5. 商品列表
+  =============================== */
+  .incense-products-section{padding:80px 20px;max-width:1200px;margin:0 auto;}
+  .products-title-badge{
+    background:url("{{ url_for('static', filename='images/pages/incense/goldbadge.png') }}")
+               center/contain no-repeat;
+    height:60px;max-width:350px;margin:0 auto 50px;display:flex;align-items:center;justify-content:center;
   }
-
-  .incense-actions {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    flex-wrap: wrap;
-    padding: 0 20px;
+  .products-title-badge h1{
+    margin:0;font-size:40px;line-height:1;font-weight:400;
+    font-family:'KouzanBrushFontOTF','標楷體',sans-serif;
+    color:#000;text-shadow:0 4px 4px rgba(0,0,0,.25);
   }
-
-  .incense-story-section {
-    padding: 80px 25px;
-    display: flex;
-    flex-direction: column; 
-    gap: 60px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .story-block {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .story-block .story-text,
-  .story-block .story-image {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .story-image img {
-    width: 100%;
-    height: auto;
-    display: block;
-    border-radius: 8px;
-  }
-
-  .story-text {
-    writing-mode: vertical-rl;
-    font-family: 'KouzanBrushFontOTF', '標楷體', sans-serif;
-    font-size: 24px;
-    color: #FFF;
-    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
-    line-height: 2.2;
-    letter-spacing: 0.2em;
-    margin: 0 auto;
-  }
-
-  @media (min-width: 768px) {
-    .incense-hero-section {
-      height: 400px; 
-      background-color: #3E3E3E;
-      overflow: hidden;
-    }
-    .incense-hero-image {
-      height: 100%;
-      object-fit: cover; 
-    }
-    .incense-hero-title {
-      font-size: 40px;
-      letter-spacing: 0.5em;
+  .products-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:30px 20px;}
+  .product-item{text-align:center;}
+  .product-item img{max-width:250px;width:100%;height:auto;}
+  @media (max-width:767px){
+    .products-title-badge h1{font-size:36px;}
+    .products-grid .product-item:last-child:nth-child(odd){
+      grid-column:1 / -1;justify-self:center;
     }
   }
+  @media (min-width:768px){.products-grid{grid-template-columns:repeat(4,1fr);} }
 
-  @media (min-width: 992px) {
-    .incense-story-section {
-      flex-direction: row;
+  /* ===============================
+     6. IG 影片 + 推薦圖文
+  =============================== */
+  .promo-section{
+    max-width:1200px;margin:60px auto;padding:0 20px;
+    display:flex;flex-direction:column;gap:30px;align-items:center;
+  }
+  .promo-item{flex:1;width:100%;display:flex;justify-content:center;align-items:center;}
+  .instagram-embed-wrapper{max-width:540px;width:100%;border-radius:8px;overflow:hidden;}
+  .promo-image{width:100%;border-radius:8px;overflow:hidden;}
+  .promo-image img{
+    width:100%;height:300px;object-fit:cover;object-position:center;
+  }
+  @media (min-width:992px){
+    .promo-section{flex-direction:row;gap:40px;}
+    .promo-item.promo-video{flex:3;}
+    .promo-item.promo-image{flex:7;}
+    .promo-image img{height:auto;}
+  }
+
+  /* ===============================
+     7. 顧客見證圖
+  =============================== */
+  .customer-image-section{padding:0 20px;margin:80px auto;text-align:center;}
+  .customer-image-section img{
+    width:100%;height:300px;object-fit:cover;object-position:center;border-radius:8px;
+  }
+  @media (min-width:768px){
+    .customer-image-section img{height:auto;max-width:1200px;}
+  }
+
+  /* ===============================
+     8. 購買須知
+  =============================== */
+  .incense-purchase-section{padding:80px 20px;max-width:1200px;margin:0 auto;}
+  .purchase-info-box{
+    width:70%;max-width:70%;margin:0 auto;
+    padding:40px 25px 0;border-radius:15px;
+    background:rgba(255,255,255,.5);
+    box-shadow:0 0 5px rgba(255,255,255,.5) inset;
+    backdrop-filter:blur(7.5px);-webkit-backdrop-filter:blur(7.5px);
+    text-align:center;
+  }
+
+  /* 🔹 手機版：透明框寬度 95% */
+  @media (max-width:767px){
+    .purchase-info-box{
+      width:95%;
+      max-width:95%;
     }
-    .story-text {
-      font-size: 28px;
-    }
-  }
-/* --- 商品列表區塊樣式 (最終修正版) --- */
-.incense-products-section {
-  padding: 80px 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.products-title-badge {
-  /* 【修正-1】使用你原本提供的 goldbadge.png 作為背景 */
-  background-image: url("{{ url_for('static', filename='images/pages/incense/goldbadge.png') }}");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  height: 60px;
-  max-width: 350px;
-  margin: 0 auto 50px auto;
-  
-  /* 【修正-2】使用 Flexbox 將內部的 H2 文字垂直水平置中 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 【修正-3】將文字樣式加回來，應用在 H2 標籤上 */
-.products-title-badge h1 {
-  color: #000;
-  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-  font-family: 'KouzanBrushFontOTF', '標楷體', sans-serif;
-  font-size: 40px; /* 在小螢幕上可能會略大，可視情況調整 */
-  font-weight: 400;
-  /* 【修改】將 line-height: normal 改為 1 */
-line-height: 1;
-  /* 【新增】以下兩行，手動微調位置 */
-  position: relative;
-  top: 3px; 
-  margin: 0;
-  padding: 0; }
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 30px 20px;
-}
-
-.product-item {
-  text-align: center;
-}
-
-.product-item img {
-  width: 100%;
-  height: auto;
-  max-width: 250px;
-}
-
-/* --- 響應式：手機版最後一個項目置中 --- */
-@media (max-width: 767px) {
-  .products-grid .product-item:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-    justify-self: center;
-  }
-  /* 在小螢幕上縮小標題字體，避免跑版 */
-  .products-title-badge h1 {
-    font-size: 36px;
-  }
-}
-
-/* --- 響應式：電腦版改為 4 欄 --- */
-@media (min-width: 768px) {
-  .products-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-/* --- 購買須知區塊樣式 (最終版) --- */
-  .incense-purchase-section {
-    padding: 80px 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .purchase-info-box {
-    /* 【新增】讓外框本身有最大寬度限制，並置中 */
-    max-width: 400px;
-    margin: 0 auto;
-    box-sizing: border-box; /* 確保 padding 不會讓寬度溢出 */
-
-    border-radius: 15px;
-    background: rgba(255, 255, 255, 0.50);
-    box-shadow: 0px 0px 5px 0px rgba(255, 255, 255, 0.50) inset;
-    backdrop-filter: blur(7.5px);
-    -webkit-backdrop-filter: blur(7.5px);
-    padding: 40px 25px 0 25px; /* 稍微增加左右內距，讓文字舒服點 */
-    text-align: center;
   }
 
-  .purchase-text-content {
-    /* 【移除】這裡不再需要 max-width，因為寬度由父層的 .purchase-info-box 控制 */
-    margin: 0 auto;
-  }
-  
-  .purchase-subtitle {
-    color: #000;
-    text-align: center;
-    font-family: "Noto Sans TC", sans-serif;
-    font-size: 20px;
-    font-weight: 500;
-    line-height: 35px;
-    margin-bottom: 30px;
-  }
-  
-  .purchase-list {
-    color: #231815;
-    font-family: "Noto Sans TC", sans-serif;
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 28px;
-    text-align: left;
-    padding-left: 25px;
-  }
-  
-  .purchase-list li {
-    margin-bottom: 15px;
-  }
-
-  .purchase-end-illustration {
-    display: block;
-    /* 讓圖片寬度 100% 填滿父層的內容區 */
-    width: 100%; 
-    /* max-width 依然保留，作為最後防線 */
-    max-width: 400px; 
-    margin: 20px auto 0 auto;
-  }
-  
-  /* 電腦版的 @media 區塊已不再需要，因為 max-width 已經限制了寬度 */
+  .purchase-subtitle{font:500 20px/35px "Noto Sans TC",sans-serif;color:#000;margin-bottom:30px;}
+  .purchase-list{font:16px/28px "Noto Sans TC",sans-serif;color:#231815;text-align:left;padding-left:25px;}
+  .purchase-list li{margin-bottom:15px;}
 </style>
 
 <main>
-    <section class="incense-hero-section">
-        <img src="{{ url_for('static', filename='images/pages/incense/incenseimage.png') }}" alt="手工香品主視覺" class="incense-hero-image">
-        <h2 class="incense-hero-title">
-            做的不只是香<br>是信仰的分寸
-        </h2>
-    </section>
+  {# -------------- Hero 區 -------------- #}
+  <section class="incense-hero-section" aria-label="手工香品主視覺">
+    <img src="{{ url_for('static', filename='images/pages/incense/incenseimage.png') }}"
+         alt="手工香品主視覺" class="incense-hero-image">
+  </section>
 
-    <div class="incense-actions">
-        <a href="{{ links['手工香賣場'] or '#' }}" class="btn btn--brown" target="_blank">前往賣場</a>
-        <a href="{{ links['手工香LINE群'] or '#' }}" class="btn btn--brown" target="_blank">手工香LINE討論群</a>
+  {# -------------- 行動按鈕 -------------- #}
+  <div class="incense-actions">
+    <a href="{{ links['手工香賣場'] or '#' }}" class="btn btn--brown" target="_blank">點我購買</a>
+    <a href="{{ links['手工香LINE群'] or '#' }}" class="btn btn--brown" target="_blank">手工香LINE討論群</a>
+  </div>
+
+  {# -------------- IG + 推薦圖 -------------- #}
+  <section class="promo-section">
+    <div class="promo-item promo-video">
+      <div class="instagram-embed-wrapper">
+        <blockquote class="instagram-media"
+                    data-instgrm-permalink="https://www.instagram.com/reel/DK5I7bfhxCe/"
+                    data-instgrm-version="14">
+          <a href="https://www.instagram.com/reel/DK5I7bfhxCe/"></a>
+        </blockquote>
+      </div>
     </div>
+    <div class="promo-item promo-image">
+      <img src="{{ url_for('static', filename='images/pages/incense/recommend.png') }}"
+           alt="推薦產品">
+    </div>
+  </section>
 
-    <section class="incense-story-section">
-      <div class="story-block">
-        <div class="story-text">
-          凌晨四點，老師傅就起身備料<br>
-          揉粉、輾香、日曬<br>
-          是他二十多年來從不怠慢的日常。
-        </div>
-        <div class="story-image">
-          <img src="{{ url_for('static', filename='images/pages/incense/story1.jpg') }}" alt="老師傅製香過程">
-        </div>
+  {# -------------- 故事區 -------------- #}
+  <section class="incense-story-section">
+    <div class="story-block">
+      <div class="story-text">
+        凌晨四點，老師傅就起身備料<br>揉粉、輾香、日曬<br>是他二十多年來從不怠慢的日常。
       </div>
-      <div class="story-block">
-        <div class="story-image">
-          <img src="{{ url_for('static', filename='images/pages/incense/story2.jpg') }}" alt="元帥娘與信眾和香品合照">
-        </div>
-        <div class="story-text">
-        元帥娘說：香對了，心才安得下來。<br>
-        從茶竹到煙升起的一瞬<br>
-        都被用心守護、被信仰祝福。
-        </div>
+      <div class="story-image">
+        <img src="{{ url_for('static', filename='images/pages/incense/story1.jpg') }}"
+             alt="老師傅製香過程">
       </div>
-    </section>
-<section class="incense-products-section">
-      <div class="products-title-badge">
-            <h1>商品列表</h1>
+    </div>
+    <div class="story-block">
+      <div class="story-text">
+        元帥娘說：香對了，心才安得下來。<br>從茶竹到煙升起的一瞬<br>都被用心守護、被信仰祝福。
+      </div>
+      <div class="story-image">
+        <img src="{{ url_for('static', filename='images/pages/incense/story2.jpg') }}"
+             alt="元帥娘與信眾和香品合照">
+      </div>
+    </div>
+  </section>
 
-        </div>
+  {# -------------- 商品列表 -------------- #}
+  <section class="incense-products-section">
+    <div class="products-title-badge"><h1>商品列表</h1></div>
+    <div class="products-grid">
+      <div class="product-item"><img src="{{ url_for('static', filename='images/pages/incense/product1.png') }}" alt="降真"></div>
+      <div class="product-item"><img src="{{ url_for('static', filename='images/pages/incense/product2.png') }}" alt="手工香"></div>
+      <div class="product-item"><img src="{{ url_for('static', filename='images/pages/incense/product3.png') }}" alt="香環"></div>
+      <div class="product-item"><img src="{{ url_for('static', filename='images/pages/incense/product4.png') }}" alt="元寶香"></div>
+      <div class="product-item"><img src="{{ url_for('static', filename='images/pages/incense/product5.png') }}" alt="貢末"></div>
+      <div class="product-item"><img src="{{ url_for('static', filename='images/pages/incense/product6.png') }}" alt="雲香"></div>
+      <div class="product-item"><img src="{{ url_for('static', filename='images/pages/incense/product7.png') }}" alt="花茶"></div>
+    </div>
+    <div class="incense-actions" style="margin-top:50px;">
+      <a href="{{ links['手工香賣場'] or '#' }}" class="btn btn--brown" target="_blank">點我購買</a>
+      <a href="{{ links['手工香LINE群'] or '#' }}" class="btn btn--brown" target="_blank">手工香LINE討論群</a>
+    </div>
+  </section>
 
-      <div class="products-grid">
-        <div class="product-item">
-          <img src="{{ url_for('static', filename='images/pages/incense/product1.png') }}" alt="降真">
-        </div>
-        <div class="product-item">
-          <img src="{{ url_for('static', filename='images/pages/incense/product2.png') }}" alt="手工香">
-        </div>
-        <div class="product-item">
-          <img src="{{ url_for('static', filename='images/pages/incense/product3.png') }}" alt="香環">
-        </div>
-        <div class="product-item">
-          <img src="{{ url_for('static', filename='images/pages/incense/product4.png') }}" alt="元寶香">
-        </div>
-        <div class="product-item">
-          <img src="{{ url_for('static', filename='images/pages/incense/product5.png') }}" alt="貢末">
-        </div>
-        <div class="product-item">
-          <img src="{{ url_for('static', filename='images/pages/incense/product6.png') }}" alt="雲香">
-        </div>
-        <div class="product-item">
-          <img src="{{ url_for('static', filename='images/pages/incense/product7.png') }}" alt="花茶">
-        </div>
-      </div>
+  {# -------------- 顧客見證圖 -------------- #}
+  <section class="customer-image-section">
+    <img src="{{ url_for('static', filename='images/pages/incense/customer.png') }}"
+         alt="顧客使用推薦">
+  </section>
 
-      <div class="incense-actions" style="margin-top: 50px;">
-        <a href="{{ links['手工香賣場'] or '#' }}" class="btn btn--brown" target="_blank">前往賣場</a>
-        <a href="{{ links['手工香LINE群'] or '#' }}" class="btn btn--brown" target="_blank">手工香LINE討論群</a>
+  {# -------------- 購買須知 -------------- #}
+  <section class="incense-purchase-section">
+    <div class="products-title-badge"><h1>購買須知</h1></div>
+    <div class="purchase-info-box">
+      <p class="purchase-subtitle">
+        元帥指定香品 × 手工品質保證<br>頂級茶竹無化學添加
+      </p>
+      <ol class="purchase-list">
+        <li>下單前務必確認購買的商品、金額、寄送資料，下單預購商品視同接受等待時間。</li>
+        <li>下單後 7 工作天內出貨，缺貨將於社群公告。</li>
+        <li>為保購買權益請遵守取貨規則，未取貨將列為黑名單。</li>
+        <li>商品皆為老師傅親手製作，純天然原料成品在顏色、形狀、紋理各異，下單視同接受。</li>
+        <li>欲購買「1尺6」手工香或 15 件以上商品，請私訊官方 LINE 訂購宅配。</li>
+        <li>1尺6 手工香或購買達 15 盒以上商品，請私訊元帥娘官方 LINE 下單，使用物流宅配寄出。(ID:@money__5288)</li>
+      </ol>
+      <div class="incense-actions" style="margin-top:30px;">
+        <a href="{{ links['元帥娘官方LINE'] or '#' }}" class="btn btn--brown" target="_blank">官方LINE</a>
       </div>
-    </section>
-    <section class="incense-purchase-section">
-      <div class="products-title-badge">
-        <h1>購買須知</h1>
-      </div>
-
-      <div class="purchase-info-box">
-        <div class="purchase-text-content">
-          <p class="purchase-subtitle">
-            元帥指定香品 X 手工品質保證<br>
-            頂級茶竹無化學添加
-          </p>
-          <ol class="purchase-list">
-            <li>下單前務必確認購買的商品、金額、寄送資料，下單預購商品視同接受等待時間。</li>
-            <li>下單後7工作天內出貨，缺貨將於社群公告。</li>
-            <li>為保購買權益請遵守取貨規則，未取貨將列為黑名單。</li>
-            <li>商品皆為老師傅親手製作，純天然原料成品在顏色、形狀、紋理各異，下單視同接受。</li>
-            <li>欲購買「1尺6」手工香或15件商品以上的顧客,請私訊官方line訂購宅配。</li>
-            <li>1尺6手工香或購買達15盒以上商品，請私訊元帥娘官方LINE下單，使用物流宅配寄出。(ID:@money__5288)</li>
-          </ol>
-          <div class="incense-actions" style="margin-top: 30px;">
-            <a href="{{ links['元帥娘官方LINE'] or '#' }}" class="btn btn--brown" target="_blank">官方LINE</a>
-          </div>
-        </div>
-        <img src="{{ url_for('static', filename='images/pages/incense/incenseend.png') }}" alt="元帥與元帥娘插圖" class="purchase-end-illustration">
-      </div>
-    </section>
+    </div>
+  </section>
 </main>
+
+<!-- Instagram embed -->
+<script async defer src="https://www.instagram.com/embed.js"></script>
+
 {% endblock %}
