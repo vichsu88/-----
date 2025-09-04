@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function() {
     const newsList = document.getElementById('news-list');
     const modal = document.getElementById('announcementModal');
@@ -7,6 +6,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalBody = modal.querySelector('.modal-body');
     const closeModalBtn = document.getElementById('modalCloseBtn');
     let allNewsData = []; // 用來儲存從 API 獲取的完整資料
+
+    /**
+     * 這是一個小工具，可以把 "文字($'網址'$)" 變成真正的連結
+     */
+    function parseContentForLinks(text) {
+        if (!text) {
+            return '';
+        }
+        const regex = /(.+?)\(\$\'(.+?)\'\$\)/g;
+        const replacement = '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #007bff; text-decoration: underline;">$1</a>';
+        return text.replace(regex, replacement);
+    }
 
     // 從後端 API 獲取最新消息
     fetch('/api/announcements')
@@ -35,8 +46,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 更新彈出視窗的內容
                     modalDate.textContent = newsData.date;
                     modalTitle.textContent = newsData.title;
-                    // 將內容中的換行符號 \n 轉換為 <br>
-                    modalBody.innerHTML = newsData.content.replace(/\n/g, '<br>');
+                    
+                    // 【關鍵修改】
+                    // 1. 先用我們的工具轉換內容中的特殊連結語法
+                    const parsedContent = parseContentForLinks(newsData.content);
+                    // 2. 再將處理過的內容（包含HTML連結）放進視窗，並處理換行
+                    modalBody.innerHTML = parsedContent.replace(/\n/g, '<br>');
 
                     // 顯示彈出視窗
                     modal.style.display = 'flex';
