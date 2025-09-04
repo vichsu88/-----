@@ -2,7 +2,19 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. 共用工具函式 ---
-
+// --- ↓↓↓ 這是一個連結轉換工具，請複製這段程式碼 ↓↓↓ ---
+/**
+ * 這是一個小工具，可以把 "文字($'網址'$)" 變成真正的連結
+ */
+function parseContentForLinks(text) {
+    if (!text) {
+        return '';
+    }
+    const regex = /(.+?)\(\$\'(.+?)\'\$\)/g;
+    const replacement = '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #007bff; text-decoration: underline;">$1</a>';
+    return text.replace(regex, replacement);
+}
+// --- ↑↑↑ 複製到這裡為止 ↑↑↑ ---
     /**
      * 從 <meta> 標籤獲取 CSRF Token
      * @returns {string} CSRF Token
@@ -484,21 +496,36 @@ async function apiFetch(url, options = {}) {
         } catch (error) { console.error('抓取公告失敗:', error); }
     }
 
-    function showAnnouncementDetailModal(item) {
-        announcementViewModalBody.textContent = `
-    【公告日期】${item.date}
-    【是否置頂】${item.isPinned ? '是' : '否'}
-    【標題】\n${item.title}
-    【內文】\n${item.content}`;
-        deleteAnnouncementFromModalBtn.onclick = async () => {
-            if (!confirm('確定要永久刪除這則公告嗎？')) return;
-            await apiFetch(`/api/announcements/${item._id}`, { method: 'DELETE' });
-            closeAnnouncementDetailModal();
-            fetchAndRenderAnnouncements();
-        };
-        announcementViewModal.classList.add('is-visible');
-    }
+// --- ↓↓↓ 這是新的 showAnnouncementDetailModal 函式，請複製它 ↓↓↓ ---
+function showAnnouncementDetailModal(item) {
+    // 使用我們剛剛新增的工具來處理內文
+    const parsedContent = parseContentForLinks(item.content);
 
+    // 準備要顯示的內容，這裡會把換行和連結都處理好
+    const modalHtml = `
+        <div style="line-height: 1.8;">
+            <p><b>【公告日期】</b> ${item.date}</p>
+            <p><b>【是否置頂】</b> ${item.isPinned ? '是' : '否'}</p>
+            <p><b>【標題】</b><br>${item.title.replace(/\n/g, '<br>')}</p>
+            <hr style="margin: 15px 0;">
+            <p><b>【內文】</b></p>
+            <div>${parsedContent.replace(/\n/g, '<br>')}</div>
+        </div>
+    `;
+    
+    // 把處理好的內容放進視窗，讓連結可以點擊
+    announcementViewModalBody.innerHTML = modalHtml;
+
+    // --- 下面的程式碼維持不變，只是跟著一起貼上 ---
+    deleteAnnouncementFromModalBtn.onclick = async () => {
+        if (!confirm('確定要永久刪除這則公告嗎？')) return;
+        await apiFetch(`/api/announcements/${item._id}`, { method: 'DELETE' });
+        closeAnnouncementDetailModal();
+        fetchAndRenderAnnouncements();
+    };
+    announcementViewModal.classList.add('is-visible');
+}
+// --- ↑↑↑ 複製到這裡為止 ↑↑↑ ---
     function closeAnnouncementDetailModal() {
         announcementViewModal.classList.remove('is-visible');
     }
