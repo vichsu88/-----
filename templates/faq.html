@@ -7,36 +7,18 @@
 
   <div style="text-align: center;">
     <h2 class="section-title">常見問題</h2>
-    {% extends "base.html" %}
+    
+    <div class="search-container" style="margin-bottom: 20px;">
+        <input type="text" id="faqSearch" class="faq-search-input" placeholder="🔍 搜尋問題關鍵字..." style="width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
 
-{% block title %}承天中承府 - 常見問題{% endblock %}
-
-{% block content %}
-    <section class="faq-section">
-        <h2 class="section-title">常見問題</h2>
-        
-        <div class="search-container">
-            <input type="text" id="faqSearch" class="faq-search-input" placeholder="&#x1F50D; 搜尋">
+    <div id="faq-category-btns" style="margin-bottom: 34px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;">
         </div>
-        <div class="faq-list" id="faq-list-container">
-            {% for faq in faqs %}
-            <div class="faq-item-card">
-                <p class="faq-q">Q：{{ faq.question }}</p>
-                <p class="faq-a">A：{{ faq.answer }}</p>
-            </div>
-            {% endfor %}
-            
-            <div id="no-result-msg" style="display: none; text-align: center; color: #666; margin-top: 20px;">
-                查無相關問題，請嘗試其他關鍵字。
-            </div>
-        </div>
-    </section>
-
-    <div id="faq-category-btns" style="margin-bottom: 34px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;"></div>
   </div>
   
-  <div id="faq-list">
-      </div>
+  <div id="faq-list" class="faq-list">
+      <p style="text-align:center;">載入中...</p>
+  </div>
 
 </main>
 
@@ -44,59 +26,65 @@
 document.addEventListener('DOMContentLoaded', () => {
     const faqListDiv = document.getElementById('faq-list');
     const faqCategoryBtnsDiv = document.getElementById('faq-category-btns');
-    let faqCategories = [];
+    const searchInput = document.getElementById('faqSearch');
+    
     let currentFaqCategory = '';
+    let allFaqsData = []; // 用來儲存目前分類下的所有資料，供搜尋過濾使用
 
+    // 1. 取得分類
     async function fetchFaqCategories() {
         try {
             const res = await fetch('/api/faq/categories');
             if (!res.ok) throw new Error('無法取得分類');
-            faqCategories = await res.json();
+            const categories = await res.json();
+            renderFaqCategoryBtns(categories);
         } catch (error) {
             console.error(error);
             faqCategoryBtnsDiv.innerHTML = `<p style="text-align:center; color: red;">分類載入失敗</p>`;
         }
     }
 
-    function renderFaqCategoryBtns() {
-        const baseClasses = 'btn btn--brown';
+    // 2. 渲染分類按鈕
+    function renderFaqCategoryBtns(categories) {
+        const baseClasses = 'btn btn--brown'; // 請確保你的 CSS 有這個 class
+        // "全部" 按鈕
         let html = `<button class="${baseClasses}${currentFaqCategory === '' ? ' active' : ''}" data-category="">全部</button>`;
-        faqCategories.forEach(cat => {
+        
+        // 其他分類按鈕
+        categories.forEach(cat => {
             html += `<button class="${baseClasses}${cat === currentFaqCategory ? ' active' : ''}" data-category="${cat}">${cat}</button>`;
         });
+
         faqCategoryBtnsDiv.innerHTML = html;
-        faqCategoryBtnsDiv.querySelectorAll('.btn').forEach(btn => {
-            btn.onclick = () => {
+
+        // 綁定點擊事件
+        faqCategoryBtnsDiv.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 更新按鈕樣式
+                faqCategoryBtnsDiv.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // 更新當前分類並重新抓取
                 currentFaqCategory = btn.dataset.category;
-                renderFaqCategoryBtns();
-                fetchAndRenderFaqs();
-            };
+                searchInput.value = ''; // 切換分類時清空搜尋框
+                fetchFaqs(); 
+            });
         });
     }
 
-    async function fetchAndRenderFaqs() {
+    // 3. 取得 FAQ 資料
+    async function fetchFaqs() {
         let url = '/api/faq';
         if (currentFaqCategory) url += '?category=' + encodeURIComponent(currentFaqCategory);
         
-        faqListDiv.innerHTML = `<p style="text-align:center;">載入中...</p>`; // 增加載入中提示
+        faqListDiv.innerHTML = `<p style="text-align:center;">載入中...</p>`;
 
         try {
             const res = await fetch(url);
             if (!res.ok) throw new Error('無法取得問答');
-            const faqs = await res.json();
+            allFaqsData = await res.json(); // 將資料存入全域變數
             
-            if (!Array.isArray(faqs) || faqs.length === 0) {
-                faqListDiv.innerHTML = `<p style="text-align:center;">目前沒有此分類的問答。</p>`;
-                return;
-            }
-
-            // 【已修改】為每一筆 FAQ 都建立一個獨立的 .faq-item-card
-            faqListDiv.innerHTML = faqs.map(faq => `
-                <div class="faq-item-card">
-                    <div class="faq-q">Q：${faq.question}</div>
-                    <div class="faq-a">A：${faq.answer}</div>
-                </div>
-            `).join('');
+            renderFaqs(allFaqsData); // 初始渲染全部
 
         } catch (error) {
             console.error(error);
@@ -104,10 +92,82 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    fetchFaqCategories().then(() => {
-        renderFaqCategoryBtns();
-        fetchAndRenderFaqs();
-    });
+    // 4. 渲染 FAQ 列表 (包含搜尋過濾邏輯)
+    function renderFaqs(data) {
+        if (!Array.isArray(data) || data.length === 0) {
+            faqListDiv.innerHTML = `<div id="no-result-msg" style="text-align: center; color: #666; margin-top: 20px;">目前沒有此分類的問答。</div>`;
+            return;
+        }
+
+        // 產生 HTML
+        const html = data.map(faq => `
+            <div class="faq-item-card">
+                <div class="faq-q">Q：${faq.question}</div>
+                <div class="faq-a">A：${faq.answer}</div>
+            </div>
+        `).join('');
+        
+        faqListDiv.innerHTML = html;
+    }
+
+    // 5. 搜尋功能監聽
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.trim().toLowerCase();
+            
+            // 從 allFaqsData 中過濾符合標題或內容的項目
+            const filteredData = allFaqsData.filter(faq => {
+                const q = faq.question ? faq.question.toLowerCase() : '';
+                const a = faq.answer ? faq.answer.toLowerCase() : '';
+                return q.includes(searchTerm) || a.includes(searchTerm);
+            });
+
+            // 重新渲染過濾後的結果
+            if (filteredData.length > 0) {
+                renderFaqs(filteredData);
+            } else {
+                faqListDiv.innerHTML = `<div id="no-result-msg" style="text-align: center; color: #666; margin-top: 20px;">查無相關問題，請嘗試其他關鍵字。</div>`;
+            }
+        });
+    }
+
+    // 初始化
+    fetchFaqCategories();
+    fetchFaqs();
 });
 </script>
+
+<style>
+/* 簡單補強一些樣式，確保按鈕有回饋感 */
+.btn--brown {
+    padding: 8px 16px;
+    border: 1px solid #8b5a2b;
+    background-color: white;
+    color: #8b5a2b;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+.btn--brown:hover, .btn--brown.active {
+    background-color: #8b5a2b;
+    color: white;
+}
+.faq-item-card {
+    background: #fff;
+    border: 1px solid #eee;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.faq-q {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+.faq-a {
+    color: #555;
+    white-space: pre-line; /* 讓換行符號正常顯示 */
+}
+</style>
 {% endblock %}
