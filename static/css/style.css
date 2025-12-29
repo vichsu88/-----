@@ -464,7 +464,7 @@ body::before {
     align-items: center;
     gap: 20px;
     padding: 30px;
-    width: 90%;
+    width: 95%;
     margin: 0 auto;
 }
 /* 你可以把這段加到 css.txt 中，例如放在 .declaration-box 樣式後面 */
@@ -509,8 +509,8 @@ body::before {
     .declaration-box {
         flex-direction: row;
         align-items: flex-start;
-        width: 75%;
-        max-width: 900px;
+        width: 95%;
+        max-width: none;
         padding: 40px;
     }
 }
