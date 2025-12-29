@@ -1,11 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const introOverlay = document.getElementById('intro-overlay');
-    if (introOverlay) {
-        // 設定 2500 毫秒 (2.5秒) 後開始淡出
-        setTimeout(() => {
-            introOverlay.classList.add('fade-out');
-        }, 2500); 
-    }
     const newsList = document.getElementById('news-list');
     const modal = document.getElementById('announcementModal');
     const modalDate = modal.querySelector('.modal-date');
@@ -13,7 +6,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalBody = modal.querySelector('.modal-body');
     const closeModalBtn = document.getElementById('modalCloseBtn');
     let allNewsData = []; // 用來儲存從 API 獲取的完整資料
-
+    const introOverlay = document.getElementById('intro-overlay');
+    if (introOverlay) {
+        // 檢查瀏覽器是否已經有 "hasSeenIntro" 的紀錄
+        if (sessionStorage.getItem('hasSeenIntro')) {
+            // 如果有(代表看過了)，直接強制隱藏，不要播動畫
+            introOverlay.style.display = 'none';
+        } else {
+            // 如果沒有(代表第一次來)，等待 2.5 秒後淡出
+            setTimeout(() => {
+                introOverlay.classList.add('fade-out');
+                
+                // 動畫播完後，在 sessionStorage 記上一筆「我看過了」
+                sessionStorage.setItem('hasSeenIntro', 'true');
+            }, 2500); 
+        }
+    }
     /**
      * 這是一個小工具，可以把 "文字($'網址'$)" 變成真正的連結
      */
