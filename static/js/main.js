@@ -1,12 +1,21 @@
 document.addEventListener('DOMContentLoaded', function() {
+    /* ==============================
+       1. 變數定義與初始化
+       ============================== */
     const newsList = document.getElementById('news-list');
     const modal = document.getElementById('announcementModal');
-    const modalDate = modal.querySelector('.modal-date');
-    const modalTitle = modal.querySelector('.modal-title');
-    const modalBody = modal.querySelector('.modal-body');
-    /* === FAQ 搜尋功能 === */
+    // 確認 modal 存在才去抓內部的元素，避免報錯
+    const modalDate = modal ? modal.querySelector('.modal-date') : null;
+    const modalTitle = modal ? modal.querySelector('.modal-title') : null;
+    const modalBody = modal ? modal.querySelector('.modal-body') : null;
+    const closeModalBtn = document.getElementById('modalCloseBtn');
+    
+    let allNewsData = []; // 用來儲存從 API 獲取的完整資料
+
+    /* ==============================
+       2. FAQ 搜尋功能
+       ============================== */
     const searchInput = document.getElementById('faqSearch');
-    // 抓取所有的問題卡片 (請確認你的 class 名稱是 .faq-item-card)
     const faqCards = document.querySelectorAll('.faq-item-card');
     const noResultMsg = document.getElementById('no-result-msg');
 
@@ -16,148 +25,126 @@ document.addEventListener('DOMContentLoaded', function() {
             let hasResult = false;
 
             faqCards.forEach(card => {
-                // 抓取問題(Q)與回答(A)的文字內容
                 const questionText = card.querySelector('.faq-q')?.textContent || '';
                 const answerText = card.querySelector('.faq-a')?.textContent || '';
                 const fullText = (questionText + answerText).toLowerCase();
 
-                // 比對是否包含關鍵字
                 if (fullText.includes(searchTerm)) {
-                    card.style.display = ''; // 顯示
+                    card.style.display = ''; 
                     hasResult = true;
                 } else {
-                    card.style.display = 'none'; // 隱藏
+                    card.style.display = 'none'; 
                 }
             });
 
-            // 控制「查無資料」的訊息顯示
             if (noResultMsg) {
                 noResultMsg.style.display = hasResult ? 'none' : 'block';
             }
         });
-    const closeModalBtn = document.getElementById('modalCloseBtn');
-    let allNewsData = []; // 用來儲存從 API 獲取的完整資料
-    /* === 新增：控制進場動畫 (擴散版) === */
+    } // <--- 【修正點 1】原本這裡少了一個 }，導致後面的程式碼被卡住
+
+    /* ==============================
+       3. 進場動畫 (Intro Overlay)
+       ============================== */
     const introOverlay = document.getElementById('intro-overlay');
     if (introOverlay) {
         if (sessionStorage.getItem('hasSeenIntro')) {
-            // 如果看過了，直接隱藏
             introOverlay.style.display = 'none';
         } else {
-            // === 修改這裡 ===
-            // 1. 先讓圖片靜止顯示 1 秒 (1000毫秒)
             setTimeout(() => {
-                // 2. 加 class 開始執行 CSS 的「擴散 + 淡出」動畫
                 introOverlay.classList.add('fade-out');
-                
-                // 3. 記錄已看過
                 sessionStorage.setItem('hasSeenIntro', 'true');
-            }, 1000); 
+            }, 1000);
         }
     }
-    
 
-    /**
-     * 這是一個小工具，可以把 "文字($'網址'$)" 變成真正的連結
-     */
+    /* ==============================
+       4. 最新消息 (Fetch API)
+       ============================== */
+    // 小工具：解析連結
     function parseContentForLinks(text) {
-        if (!text) {
-            return '';
-        }
+        if (!text) return '';
         const regex = /(.+?)\(\$\'(.+?)\'\$\)/g;
         const replacement = '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #007bff; text-decoration: underline;">$1</a>';
         return text.replace(regex, replacement);
     }
 
-    // 從後端 API 獲取最新消息
-    fetch('/api/announcements')
-    .then(response => response.json())
-        .then(data => {
-            allNewsData = data; // 儲存資料
-            newsList.innerHTML = ''; // 清空現有內容
+    // 只有當 newsList 存在時才執行 Fetch，避免在非首頁報錯
+    if (newsList) {
+        fetch('/api/announcements')
+            .then(response => response.json())
+            .then(data => {
+                allNewsData = data;
+                newsList.innerHTML = '';
 
-            // 遍歷資料，生成消息列表
-            data.forEach((news, index) => {
-                const newsItem = document.createElement('li');
-                newsItem.className = 'news-item';
-                // 將索引存儲在 data-index 屬性中，方便後續查找
-                newsItem.dataset.index = index; 
+                data.forEach((news, index) => {
+                    const newsItem = document.createElement('li');
+                    newsItem.className = 'news-item';
+                    newsItem.dataset.index = index;
 
-                newsItem.innerHTML = `
-                    <span class="news-date">${news.date}</span>
-                    <p class="news-title">${news.title}</p>
-                `;
+                    newsItem.innerHTML = `
+                        <span class="news-date">${news.date}</span>
+                        <p class="news-title">${news.title}</p>
+                    `;
 
-                // 為每個消息項目添加點擊事件監聽器
-                newsItem.addEventListener('click', () => {
-                    // 從 allNewsData 中找到對應的完整資料
-                    const newsData = allNewsData[index];
+                    newsItem.addEventListener('click', () => {
+                        // 確保 Modal 相關元素都存在
+                        if (modal && modalDate && modalTitle && modalBody) {
+                            const newsData = allNewsData[index];
+                            modalDate.textContent = newsData.date;
+                            modalTitle.textContent = newsData.title;
 
-                    // 更新彈出視窗的內容
-                    modalDate.textContent = newsData.date;
-                    modalTitle.textContent = newsData.title;
-                    
-                    // 【關鍵修改】
-                    // 1. 先用我們的工具轉換內容中的特殊連結語法
-                    const parsedContent = parseContentForLinks(newsData.content);
-                    // 2. 再將處理過的內容（包含HTML連結）放進視窗，並處理換行
-                    modalBody.innerHTML = parsedContent.replace(/\n/g, '<br>');
+                            const parsedContent = parseContentForLinks(newsData.content);
+                            modalBody.innerHTML = parsedContent.replace(/\n/g, '<br>');
 
-                    // 顯示彈出視窗
-                    modal.style.display = 'flex';
+                            modal.style.display = 'flex';
+                        }
+                    });
+
+                    newsList.appendChild(newsItem);
                 });
-
-                newsList.appendChild(newsItem);
+            })
+            .catch(error => {
+                console.error('Error fetching news:', error);
+                newsList.innerHTML = '<li class="news-item"><p class="news-title">消息載入失敗，請稍後再試。</p></li>';
             });
-        })
-        .catch(error => {
-            console.error('Error fetching news:', error);
-            newsList.innerHTML = '<li class="news-item"><p class="news-title">消息載入失敗，請稍後再試。</p></li>';
+    }
+
+    // Modal 關閉邏輯 (需確認按鈕與 Modal 存在)
+    if (closeModalBtn && modal) {
+        closeModalBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
         });
 
-    // 關閉彈出視窗的按鈕事件
-    closeModalBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
 
-    // 點擊彈出視窗外部區域也可關閉
-    modal.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
-});
-/* === 手機版 Overlay 選單互動 (升級版) === */
-document.addEventListener('DOMContentLoaded', function() {
-    // 抓取需要的 HTML 元素
+    /* ==============================
+       5. 手機版 Overlay 選單互動
+       ============================== */
+    // 【修正點 2】直接合併在同一個 DOMContentLoaded 裡
     const navToggleBtn = document.querySelector('.nav-toggle');
-    
     const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
     const closeOverlayBtn = document.getElementById('overlay-close-btn');
-    // 【新增】抓取選單中的所有連結
     const overlayLinks = document.querySelectorAll('.overlay-nav-links a');
 
-    // 只有當這些元素都存在時，才綁定事件
     if (navToggleBtn && mobileNavOverlay && closeOverlayBtn) {
-
-        // 點擊漢堡按鈕時，顯示 Overlay 選單
         navToggleBtn.addEventListener('click', function() {
             mobileNavOverlay.classList.add('is-visible');
         });
 
-        // 點擊關閉按鈕時，隱藏 Overlay 選單
         closeOverlayBtn.addEventListener('click', function() {
             mobileNavOverlay.classList.remove('is-visible');
         });
 
-        // 【新增】為每一個選單連結加上點擊事件
         overlayLinks.forEach(function(link) {
             link.addEventListener('click', function() {
-                // 點擊任何一個連結後，都隱藏 Overlay 選單
                 mobileNavOverlay.classList.remove('is-visible');
             });
-            
         });
     }
-}); 
-    
+});

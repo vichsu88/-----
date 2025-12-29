@@ -7,6 +7,31 @@
 
   <div style="text-align: center;">
     <h2 class="section-title">常見問題</h2>
+    {% extends "base.html" %}
+
+{% block title %}承天中承府 - 常見問題{% endblock %}
+
+{% block content %}
+    <section class="faq-section">
+        <h2 class="section-title">常見問題</h2>
+        
+        <div class="search-container">
+            <input type="text" id="faqSearch" class="faq-search-input" placeholder="&#x1F50D; 搜尋">
+        </div>
+        <div class="faq-list" id="faq-list-container">
+            {% for faq in faqs %}
+            <div class="faq-item-card">
+                <p class="faq-q">Q：{{ faq.question }}</p>
+                <p class="faq-a">A：{{ faq.answer }}</p>
+            </div>
+            {% endfor %}
+            
+            <div id="no-result-msg" style="display: none; text-align: center; color: #666; margin-top: 20px;">
+                查無相關問題，請嘗試其他關鍵字。
+            </div>
+        </div>
+    </section>
+
     <div id="faq-category-btns" style="margin-bottom: 34px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;"></div>
   </div>
   
