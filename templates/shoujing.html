@@ -1,164 +1,237 @@
 {% extends "base.html" %}
 
-{% block title %}承天中承府 - 收驚服務{% endblock %}
+{% block title %}承天中承府 - 遠距收驚{% endblock %}
 
 {% block content %}
-
-
-<div class="shoujing-page-wrapper">
-   <div class="shoujing-title-wrapper">
-    <h2 class="section-title">收驚流程</h2>
-</div>
-
-
-
-
-    <div class="shoujing-process-steps">
-        <div class="step-item-shoujing">
-            <h3>準備收驚衣服</h3>
-            <p>每件衣服夾帶紅紙，寫下個人資訊！</p>
-            <a href="#" class="btn btn--brown" data-modal-target="#modal-fill-in-content">填寫教學</a>
-        </div>
-        <div class="step-item-shoujing">
-            <h3>送件</h3>
-            <p>親送：衣物與資料親送至「八八菸酒」<br>郵寄： 將衣物與資料一同郵寄至帥府。</p>
-            <a href="#" class="btn btn--brown" data-modal-target="#modal-shipping-info-content">寄件資訊</a>
-        </div>
-        <div class="step-item-shoujing">
-            <h3>領取</h3>
-            <p>關注群組通知的收驚進度<br>自取：收驚完成後將於群組公告領取編號，請自行核對與取回。<br>寄回：自行安排到付快遞。</p>
-            <a href="#" class="btn btn--brown" data-modal-target="#modal-black-cat-content">黑貓下單教學</a>
-        </div>
+<main class="shoujing-page-wrapper">
+    
+    <div class="shoujing-title-wrapper">
+        <h2 class="section-title">收驚流程</h2>
+        <p style="text-align: center; max-width: 600px; margin: 0 auto 40px auto; color: #555; line-height: 1.6;">
+            請依序完成以下三個步驟，點擊卡片下方的按鈕可查看詳細說明與注意事項。
+        </p>
     </div>
 
-    <div id="desktop-info-panel" aria-live="polite"></div>
-
-
-
-    <section class="declaration-section">
-        <h2 class="section-title">帥府聲明</h2>
-        <div class="declaration-box">
-            <div class="declaration-text">
-                <ol>
-                    <li>本府之收驚服務採「衣物收驚」方式進行。</li>
-                    <li><strong>注意事項：</strong></li>
-
-                    <li>未於半年內領回之衣物，將統一回收處理，恕不另行通知。</li>
-                </ol>
+    <div class="process-card-container">
+        
+        <div class="process-card">
+            <div class="card-title">步驟一：準備衣物</div>
+            <div class="card-desc">
+                準備需要收驚者的穿過衣物（輕薄為主），並確認相關禁忌。
             </div>
-            <img class="declaration-avatar" src="{{ url_for('static', filename='images/common/declare-avator.png') }}" alt="帥府聲明代表圖">
+            <div class="card-image-box">
+                <img src="{{ url_for('static', filename='images/pages/shoujing/card1.png') }}" alt="步驟一圖片" onerror="this.style.display='none';">
+            </div>
+            <button class="btn btn--brown card-btn" onclick="openStepModal(1)">詳細說明</button>
         </div>
-        <div class="action-buttons">
-            <a href="{{ url_for('gongtan_page') }}" class="btn btn--brown">公壇報名</a>
-            <a href="{{ url_for('feedback_page') }}" class="btn btn--brown">信徒回饋</a>
+
+        <div class="process-card">
+            <div class="card-title">步驟二：寄送衣物</div>
+            <div class="card-desc">
+                將衣物寄送至指定超商或地址，並妥善包裝。
+            </div>
+            <div class="card-image-box">
+                <img src="{{ url_for('static', filename='images/pages/shoujing/card2.png') }}" alt="步驟二圖片" onerror="this.style.display='none';">
+            </div>
+            <button class="btn btn--brown card-btn" onclick="openStepModal(2)">寄件資訊</button>
         </div>
-    </section>
-</div>
 
-<div id="info-modal-container" class="info-modal-container"></div>
+        <div class="process-card">
+            <div class="card-title">步驟三：匯款與回報</div>
+            <div class="card-desc">
+                完成匯款後，請至官方 LINE 回報末五碼以完成程序。
+            </div>
+            <div class="card-image-box">
+                <img src="{{ url_for('static', filename='images/pages/shoujing/card3.png') }}" alt="步驟三圖片" onerror="this.style.display='none';">
+            </div>
+            <button class="btn btn--brown card-btn" onclick="openStepModal(3)">匯款帳號</button>
+        </div>
 
+    </div>
 
-<div style="display: none;">
-    <div id="modal-fill-in-content">
-        <h3>拿紅紙填寫以下收驚資料後夾帶於衣服中，<strong>每件都要寫！</strong></h3>
-        <ol>
-            <li>姓名：</li>
-            <li>出生年月日：請以阿拉伯數字書寫，並註明國曆或農曆</li>
-            <li>出生時辰：一律填寫「吉時」</li>
-            <li>生肖</li>
-            <li>地址：通訊地址或戶籍地址</li>
-            <li>填寫日期／寄送日期：標註於紙張左上角</li>
-            <li>備註欄：如需寄回者請註明，若未註明將視為不需寄回</li>
-            <li>*有多件衣物需寄回，每件衣物皆須個別備註「需寄回」並填寫完整地址，否則視為不需寄回處理。</li>
-        </ol>
+    <div id="step-modal-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closeStepModal()">×</button>
+            <h3 id="modal-title" class="modal-title">標題</h3>
+            <div id="modal-body" class="modal-body">
+                </div>
+        </div>
     </div>
-    <div id="modal-shipping-info-content">
-        <h3>衣物收驚寄件資料</h3>
-        <p>收件人：八八菸酒</p>
-        <p>宅配地址：嘉義市新生路337號</p>
-        <p>寄出前確認每件衣服皆夾帶紅單。</p>
-    </div>
-    <div id="modal-black-cat-content" class="modal-image-content">
-        <img src="{{ url_for('static', filename='images/pages/shoujing/shipping.jpg') }}" alt="黑貓下單教學">
-    </div>
-</div>
+
+</main>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM 元素宣告 ---
-    const modalContainer = document.getElementById('info-modal-container');
-    const modalTriggers = document.querySelectorAll('[data-modal-target]');
-    const desktopPanel = document.getElementById('desktop-info-panel'); // 新增的桌面面板
-
-    // --- 函式定義 ---
-
-    /**
-     * 功能：在右側面板顯示內容 (電腦版專用)
-     * @param {HTMLElement} contentTemplate - 包含內容的模板元素
-     */
-    function showInPanel(contentTemplate) {
-        if (desktopPanel && contentTemplate) {
-            desktopPanel.innerHTML = contentTemplate.innerHTML;
-        }
+// 定義三個步驟的詳細內容 (您可以在此修改文字)
+const stepData = {
+    1: {
+        title: "步驟一：準備衣物",
+        content: `
+            <ol style="padding-left: 20px; text-align: left;">
+                <li>請準備一件<strong>穿過但未洗過</strong>的輕薄衣物（如 T-shirt）。</li>
+                <li>請勿使用厚重衣物（如外套、牛仔褲）或貼身內衣褲。</li>
+                <li>若無法寄送衣物，可聯絡義工詢問替代方案。</li>
+            </ol>
+        `
+    },
+    2: {
+        title: "步驟二：寄送資訊",
+        content: `
+            <p>請選擇以下任一方式寄送：</p>
+            <ul style="padding-left: 20px; text-align: left;">
+                <li><strong>7-11 店到店：</strong><br>門市：XX門市 (店號 123456)<br>收件人：林某某<br>電話：0912-345-678</li>
+                <li><strong>郵寄/宅配：</strong><br>地址：台北市文山區......<br>收件人：承天中承府 收</li>
+            </ul>
+        `
+    },
+    3: {
+        title: "步驟三：匯款帳號",
+        content: `
+            <p>收驚費用：每人 xxx 元</p>
+            <p><strong>銀行代碼：</strong>822 (中國信託)</p>
+            <p><strong>銀行帳號：</strong>1234-5678-9012</p>
+            <hr>
+            <p style="color: #C48945;">匯款後請務必加入官方 LINE，告知您的姓名與帳號末五碼。</p>
+        `
     }
+};
 
-    /**
-     * 功能：開啟全螢幕覆蓋彈窗 (手機版 & 電腦版圖片)
-     * @param {HTMLElement} contentTemplate - 包含內容的模板元素
-     */
-    function openOverlay(contentTemplate) {
-        if (!modalContainer || !contentTemplate) return;
-
-        const isImageModal = contentTemplate.classList.contains('modal-image-content');
-        const contentHTML = `
-          <div class="info-modal-content ${isImageModal ? 'image-modal' : ''}">
-              <button class="modal-close-btn">&times;</button>
-              ${contentTemplate.innerHTML}
-          </div>`;
-
-        modalContainer.innerHTML = contentHTML;
-        modalContainer.classList.add('is-visible');
+// 開啟彈窗
+function openStepModal(stepIndex) {
+    const data = stepData[stepIndex];
+    if (data) {
+        document.getElementById('modal-title').textContent = data.title;
+        document.getElementById('modal-body').innerHTML = data.content;
+        document.getElementById('step-modal-overlay').style.display = 'flex';
     }
+}
 
-    /**
-     * 功能：關閉全螢幕覆蓋彈窗
-     */
-    function closeOverlay() {
-        modalContainer.classList.remove('is-visible');
-        // 增加延遲清空內容，讓淡出效果更平滑
-        setTimeout(() => {
-            modalContainer.innerHTML = '';
-        }, 300);
+// 關閉彈窗
+function closeStepModal() {
+    document.getElementById('step-modal-overlay').style.display = 'none';
+}
+
+// 點擊背景關閉
+document.getElementById('step-modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeStepModal();
     }
-
-    // --- 事件監聽器綁定 ---
-
-    // 綁定所有觸發按鈕
-    modalTriggers.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetId = button.getAttribute('data-modal-target');
-            const contentTemplate = document.querySelector(targetId);
-            const isImageModal = contentTemplate.classList.contains('modal-image-content');
-            const isDesktop = window.innerWidth >= 1024;
-
-            // 核心判斷邏輯
-            if (isDesktop && !isImageModal) {
-                // 電腦版 & 非圖片 -> 顯示在右側面板
-                showInPanel(contentTemplate);
-            } else {
-                // 手機版或圖片 -> 開啟全螢幕彈窗
-                openOverlay(contentTemplate);
-            }
-        });
-    });
-
-    // 綁定關閉彈窗事件 (透過事件委派)
-    document.body.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal-close-btn') || e.target.id === 'info-modal-container') {
-            closeOverlay();
-        }
-    });
 });
 </script>
+
+<style>
+/* === 卡片容器 (手機版：橫向滑動) === */
+.process-card-container {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;      /* 允許橫向滑動 */
+    padding: 20px 10px;    /* 預留陰影空間 */
+    scroll-snap-type: x mandatory; /* 滑動時自動對齊 */
+    -webkit-overflow-scrolling: touch; /* 讓滑動更順暢 */
+}
+
+/* === 單張卡片樣式 === */
+.process-card {
+    flex: 0 0 280px;       /* 手機版固定寬度，確保可以滑動 */
+    scroll-snap-align: center; /* 滑動停止時置中 */
+    
+    background: rgba(255, 255, 255, 0.7);
+    border: 2px solid #E6BA67;
+    border-radius: 15px;
+    padding: 25px 20px;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    
+    box-shadow: 0 4px 10px rgba(196, 137, 69, 0.15);
+    transition: transform 0.3s ease;
+}
+
+.process-card:hover {
+    transform: translateY(-5px); /* 電腦版滑鼠移過去會浮起來 */
+}
+
+/* === 卡片內容元素 === */
+.card-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #C48945;
+    margin-bottom: 10px;
+}
+
+.card-desc {
+    font-size: 0.95em;
+    color: #333;
+    line-height: 1.5;
+    margin-bottom: 15px;
+    flex-grow: 1; /* 讓內容高度對齊 */
+}
+
+/* 預留的圖片區塊 */
+.card-image-box {
+    width: 100%;
+    height: 150px; /* 您可以根據圖片實際比例調整 */
+    background-color: #f0ebe5; /* 圖片載入前的底色 */
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 讓圖片填滿框框 */
+}
+
+.card-btn {
+    width: 100%; /* 按鈕滿版 */
+}
+
+/* === 電腦版樣式 (>= 1024px) === */
+@media (min-width: 1024px) {
+    .process-card-container {
+        justify-content: center; /* 居中排列 */
+        overflow-x: visible;     /* 取消滑動 */
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .process-card {
+        flex: 1;           /* 三張卡片平均分配寬度 */
+        max-width: 320px;  /* 限制最大寬度，避免太寬 */
+    }
+}
+
+/* === 彈窗樣式 (共用) === */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    border: 2px solid #E6BA67;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
 {% endblock %}
