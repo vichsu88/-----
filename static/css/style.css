@@ -1,3 +1,14 @@
+/* === 強制全站為淺色模式，防止手機深色模式轉黑 === */
+:root {
+    color-scheme: light;
+}
+
+/* 確保 body 背景色有最高優先權 */
+body {
+    background-color: #F3F0EC !important; /* 加上 !important 避免被瀏覽器複寫 */
+    color: #333 !important;               /* 確保文字維持深色，避免被轉成白色 */
+    /* ...原有設定... */
+}
 /* ==========================================================================
    承天中承府 全站樣式 (Refactored by Gemini)
    ========================================================================== */
@@ -127,6 +138,7 @@ body::before {
 @media (min-width: 1024px) {
     .hero-section {
         height: 600px;
+        background-image: url('../images/pages/index/banner_PC.png');
     }
 }
 
