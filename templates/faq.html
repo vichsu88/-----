@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('faqSearch');
     
     let currentFaqCategory = '';
-    let allFaqsData = []; // 用來儲存目前分類下的所有資料
+    let allFaqsData = []; // 【關鍵】這是全域變數，用來讓搜尋功能存取資料
 
     // 1. 取得分類並產生按鈕
     async function fetchFaqCategories() {
@@ -43,20 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFaqCategoryBtns(categories);
         } catch (error) {
             console.error(error);
-            // 失敗時至少顯示全部按鈕
             renderFaqCategoryBtns([]);
         }
     }
 
-    // 2. 渲染分類按鈕
+    // 2. 渲染分類按鈕 (使用您原本的 btn--brown 樣式)
     function renderFaqCategoryBtns(categories) {
-        // 使用您原本的 CSS class，不額外覆寫樣式
         const baseClasses = 'btn btn--brown'; 
         
-        // "全部" 按鈕
         let html = `<button class="${baseClasses}" data-category="">全部</button>`;
         
-        // 其他分類按鈕
         if(Array.isArray(categories)){
             categories.forEach(cat => {
                 html += `<button class="${baseClasses}" data-category="${cat}">${cat}</button>`;
@@ -68,14 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // 綁定點擊事件
         faqCategoryBtnsDiv.querySelectorAll('button').forEach(btn => {
             btn.addEventListener('click', () => {
-                // 更新按鈕外觀 (若原本 CSS 有 :active 或其他對應樣式可在此加強，這裡主要處理邏輯)
-                // 為了讓使用者知道當前選中，我們可以簡單加上一點透明度變化或依賴原本的 active 樣式
+                // 簡單的視覺回饋：重置所有按鈕透明度，選中的稍微變淡以示區別
                 faqCategoryBtnsDiv.querySelectorAll('button').forEach(b => b.style.opacity = '1');
-                btn.style.opacity = '0.8'; // 簡單的視覺回饋
+                btn.style.opacity = '0.8';
 
-                // 更新當前分類並重新抓取
                 currentFaqCategory = btn.dataset.category;
-                searchInput.value = ''; // 切換分類時清空搜尋框
+                if(searchInput) searchInput.value = ''; // 切換分類時清空搜尋框
                 fetchFaqs(); 
             });
         });
@@ -91,9 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(url);
             if (!res.ok) throw new Error('無法取得問答');
-            allFaqsData = await res.json(); // 將資料存入全域變數
             
-            renderFaqs(allFaqsData); // 初始渲染全部
+            // 【修正重點】這裡必須更新全域變數 allFaqsData，搜尋功能才會有資料
+            allFaqsData = await res.json(); 
+            
+            renderFaqs(allFaqsData); 
 
         } catch (error) {
             console.error(error);
@@ -104,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. 渲染 FAQ 列表
     function renderFaqs(data) {
         if (!Array.isArray(data) || data.length === 0) {
-            faqListDiv.innerHTML = `<div id="no-result-msg" style="text-align: center; color: #666; margin-top: 20px;">目前沒有此分類的問答。</div>`;
+            faqListDiv.innerHTML = `<div id="no-result-msg" style="text-align: center; color: #666; margin-top: 20px;">目前沒有此分類的問答或查無結果。</div>`;
             return;
         }
 
@@ -123,22 +119,23 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.trim().toLowerCase();
             
-            // 若沒有資料，直接跳過
+            // 若還沒載入資料或資料是空的，直接結束
             if (!allFaqsData || allFaqsData.length === 0) return;
 
-            // 從 allFaqsData 中過濾符合標題或內容的項目
+            // 若搜尋框清空，顯示全部 (目前分類下的全部)
+            if (searchTerm === '') {
+                 renderFaqs(allFaqsData);
+                 return;
+            }
+
+            // 過濾資料
             const filteredData = allFaqsData.filter(faq => {
-                const q = faq.question ? faq.question.toLowerCase() : '';
-                const a = faq.answer ? faq.answer.toLowerCase() : '';
+                const q = String(faq.question || '').toLowerCase();
+                const a = String(faq.answer || '').toLowerCase();
                 return q.includes(searchTerm) || a.includes(searchTerm);
             });
 
-            // 重新渲染過濾後的結果
-            if (filteredData.length > 0) {
-                renderFaqs(filteredData);
-            } else {
-                faqListDiv.innerHTML = `<div id="no-result-msg" style="text-align: center; color: #666; margin-top: 20px;">查無相關問題，請嘗試其他關鍵字。</div>`;
-            }
+            renderFaqs(filteredData);
         });
     }
 
@@ -149,14 +146,12 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
-/* 移除原本覆蓋 .btn--brown 的樣式，
-   確保按鈕恢復成全站統一的設計。
-   
-   僅保留 FAQ 卡片本身的樣式
+/* 僅定義卡片樣式，不覆蓋 btn 樣式 
+   這樣按鈕就會使用 style.css 中的全域設定
 */
 .faq-item-card {
     background: #fff;
-    border: 2px solid #E6BA67; /* 配合主色調的金邊 */
+    border: 2px solid #E6BA67; /* 金邊 */
     padding: 20px;
     margin-bottom: 15px;
     border-radius: 10px;
@@ -164,14 +159,14 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 .faq-q {
     font-weight: bold;
-    color: #C48945; /* 配合文字主色 */
+    color: #C48945; 
     margin-bottom: 8px;
     font-size: 1.1em;
 }
 .faq-a {
     color: #333;
     line-height: 1.6;
-    white-space: pre-line; /* 讓換行符號正常顯示 */
+    white-space: pre-line;
 }
 </style>
 {% endblock %}
