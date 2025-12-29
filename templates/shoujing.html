@@ -64,7 +64,7 @@
 // 定義三個步驟的詳細內容
 const stepData = {
     1: {
-        title: "步驟一：準備衣物",
+        title: "步驟一：準備紅紙正楷書寫後，夾帶於衣服中",
         content: `
             <ol style="padding-left: 20px; text-align: left;">
                 <li>姓名：</li>
@@ -81,19 +81,17 @@ const stepData = {
     2: {
         title: "步驟二：寄送資訊",
         content: `
-            <p>請選擇以下任一方式寄送：</p>
+            <p>郵寄/宅配資訊：</p>
             <ul style="padding-left: 20px; text-align: left;">
-                <li><strong>親送</strong></li>
-                <li><strong>郵寄/宅配：</strong><p>收件人：八八菸酒</p><p>宅配地址：嘉義市新生路337號</p><p>寄出前確認每件衣服皆夾帶紅單。</p></li>
+                <li><p>收件人：八八菸酒</p><p>宅配地址：嘉義市新生路337號</p></li>
             </ul>
         `
     },
     3: {
         title: "步驟三：黑貓下單教學",
-        // 注意：這裡必須使用反引號包住 HTML 字串，並且圖片路徑要用 Jinja2 生成
         content: `
             <div class="modal-image-content" style="text-align: center;">
-                <p>請參考下方圖示進行下單：</p>
+                <p>黑貓app安排寄件參考以下步驟</p>
                 <img src="{{ url_for('static', filename='images/pages/shoujing/shipping.jpg') }}" alt="黑貓下單教學" style="max-width: 100%; height: auto; border-radius: 8px;">
             </div>
         `
