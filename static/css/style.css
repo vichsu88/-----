@@ -109,7 +109,7 @@ body::before {
 
 /* === 全新 Banner 樣式 (V2) === */
 .hero-section {
-    margin-top: 0 !important;
+    margin-top: -5 !important;
     /* 設定手機上的 Banner 高度 */
     height: 300px; 
 
