@@ -138,7 +138,6 @@ body::before {
 @media (min-width: 1024px) {
     .hero-section {
         height: 600px;
-        background-image: url('../images/pages/index/banner_PC.png');
     }
 }
 
