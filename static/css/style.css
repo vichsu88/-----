@@ -114,7 +114,7 @@ body::before {
 .services-section,
 .declaration-section {
     padding: 0 20px;
-    margin-top: 80px;
+    margin-top: 50px;
     text-align: center;
 }
 
@@ -1101,45 +1101,45 @@ body::before {
   border-radius: 8px;  /* 加上一點圓角讓視覺更柔和 */
   overflow: hidden;    /* 確保內容不會超出圓角範圍 */
 }
-/* === 進場動畫遮罩層樣式 === */
+/* === 進場動畫遮罩層樣式 (擴散版) === */
 #intro-overlay {
-    position: fixed;        /* 固定在螢幕上，不隨捲軸移動 */
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;           /* 滿版寬度 */
-    height: 100vh;          /* 滿版高度 */
-    background-color: #F3F0EC; /* 跟你的網頁背景色一樣，讓視覺一致 */
-    z-index: 99999;         /* 確保它疊在所有東西(包含導覽列)的最上面 */
+    width: 100vw;
+    height: 100vh;
+    background-color: #F3F0EC;
+    z-index: 99999;
     
-    /* 讓圖片置中 */
     display: flex;
     justify-content: center;
     align-items: center;
 
-    /* 設定淡出動畫的過渡效果 (1.5秒內慢慢消失) */
-    transition: opacity 1.5s ease-out, visibility 1.5s ease-out;
+    /* 設定遮罩層(背景)的轉場：1.5秒內慢慢變透明 */
+    transition: opacity 1.5s ease-in-out, visibility 1.5s ease-in-out;
 }
 
-/* 設定進場圖片的大小 */
 #intro-overlay img {
-    width: 80%;            /* 手機版寬度 80% */
-    max-width: 500px;      /* 電腦版最大不超過 500px (可依喜好調整) */
+    width: 80%;
+    max-width: 500px;
     height: auto;
     object-fit: contain;
     
-    /* 加上一點點浮入動畫，更有質感 */
-    animation: zoomIn 2s ease-out forwards;
+    /* 這裡設定圖片的轉場：1.5秒內變形(變大) */
+    transition: transform 1.5s ease-in-out;
+    
+    /* 初始狀態：正常大小 (scale 1) */
+    transform: scale(1);
 }
 
-/* 簡單的放大淡入關鍵影格 */
-@keyframes zoomIn {
-    0% { transform: scale(0.9); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-/* 當加上這個 class 時，遮罩層會消失 */
+/* === 當 JS 加上 fade-out 這個 class 時觸發的動畫 === */
 #intro-overlay.fade-out {
-    opacity: 0;             /* 變透明 */
-    visibility: hidden;     /* 隱藏 (不擋滑鼠點擊) */
-    pointer-events: none;   /* 確保滑鼠穿透 */
+    opacity: 0;             /* 背景變透明 */
+    visibility: hidden;     /* 隱藏 */
+    pointer-events: none;   /* 滑鼠穿透 */
+}
+
+#intro-overlay.fade-out img {
+    /* 關鍵在這裡：讓圖片放大 25 倍！(看起來就像擴散到全螢幕) */
+    transform: scale(25);   
 }

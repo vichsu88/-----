@@ -6,22 +6,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalBody = modal.querySelector('.modal-body');
     const closeModalBtn = document.getElementById('modalCloseBtn');
     let allNewsData = []; // 用來儲存從 API 獲取的完整資料
+    /* === 新增：控制進場動畫 (擴散版) === */
     const introOverlay = document.getElementById('intro-overlay');
     if (introOverlay) {
-        // 檢查瀏覽器是否已經有 "hasSeenIntro" 的紀錄
         if (sessionStorage.getItem('hasSeenIntro')) {
-            // 如果有(代表看過了)，直接強制隱藏，不要播動畫
+            // 如果看過了，直接隱藏
             introOverlay.style.display = 'none';
         } else {
-            // 如果沒有(代表第一次來)，等待 2.5 秒後淡出
+            // === 修改這裡 ===
+            // 1. 先讓圖片靜止顯示 1 秒 (1000毫秒)
             setTimeout(() => {
+                // 2. 加 class 開始執行 CSS 的「擴散 + 淡出」動畫
                 introOverlay.classList.add('fade-out');
                 
-                // 動畫播完後，在 sessionStorage 記上一筆「我看過了」
+                // 3. 記錄已看過
                 sessionStorage.setItem('hasSeenIntro', 'true');
-            }, 2500); 
+            }, 1000); 
         }
     }
+
     /**
      * 這是一個小工具，可以把 "文字($'網址'$)" 變成真正的連結
      */
