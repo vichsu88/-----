@@ -128,7 +128,7 @@ body::before {
     width: 100%;
 
     /* 關鍵：設定背景圖片 */
-    background-image: url('../images/pages/index/banner.png');
+    background-image: url('../images/pages/index/banner_PC.png');
     background-size: cover; /* 讓圖片永遠填滿容器，多餘部分會被裁切 */
     background-position: center; /* 不論如何裁切，都以圖片中心為焦點 */
     background-repeat: no-repeat; /* 確保圖片不重複 */
