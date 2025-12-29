@@ -9,7 +9,10 @@
     <h2 class="section-title">常見問題</h2>
     
     <div class="search-container" style="margin-bottom: 20px;">
-        <input type="text" id="faqSearch" class="faq-search-input" placeholder="🔍 搜尋問題關鍵字..." style="width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+        <input type="text" id="faqSearch" placeholder="🔍 搜尋問題關鍵字..." 
+               style="width: 100%; max-width: 500px; padding: 10px 15px; 
+                      border: 2px solid #E6BA67; border-radius: 50px; 
+                      font-size: 18pt; outline: none; background-color: rgba(255,255,255,0.8);">
     </div>
 
     <div id="faq-category-btns" style="margin-bottom: 34px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;">
@@ -29,9 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('faqSearch');
     
     let currentFaqCategory = '';
-    let allFaqsData = []; // 用來儲存目前分類下的所有資料，供搜尋過濾使用
+    let allFaqsData = []; // 用來儲存目前分類下的所有資料
 
-    // 1. 取得分類
+    // 1. 取得分類並產生按鈕
     async function fetchFaqCategories() {
         try {
             const res = await fetch('/api/faq/categories');
@@ -40,29 +43,35 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFaqCategoryBtns(categories);
         } catch (error) {
             console.error(error);
-            faqCategoryBtnsDiv.innerHTML = `<p style="text-align:center; color: red;">分類載入失敗</p>`;
+            // 失敗時至少顯示全部按鈕
+            renderFaqCategoryBtns([]);
         }
     }
 
     // 2. 渲染分類按鈕
     function renderFaqCategoryBtns(categories) {
-        const baseClasses = 'btn btn--brown'; // 請確保你的 CSS 有這個 class
+        // 使用您原本的 CSS class，不額外覆寫樣式
+        const baseClasses = 'btn btn--brown'; 
+        
         // "全部" 按鈕
-        let html = `<button class="${baseClasses}${currentFaqCategory === '' ? ' active' : ''}" data-category="">全部</button>`;
+        let html = `<button class="${baseClasses}" data-category="">全部</button>`;
         
         // 其他分類按鈕
-        categories.forEach(cat => {
-            html += `<button class="${baseClasses}${cat === currentFaqCategory ? ' active' : ''}" data-category="${cat}">${cat}</button>`;
-        });
+        if(Array.isArray(categories)){
+            categories.forEach(cat => {
+                html += `<button class="${baseClasses}" data-category="${cat}">${cat}</button>`;
+            });
+        }
 
         faqCategoryBtnsDiv.innerHTML = html;
 
         // 綁定點擊事件
         faqCategoryBtnsDiv.querySelectorAll('button').forEach(btn => {
             btn.addEventListener('click', () => {
-                // 更新按鈕樣式
-                faqCategoryBtnsDiv.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+                // 更新按鈕外觀 (若原本 CSS 有 :active 或其他對應樣式可在此加強，這裡主要處理邏輯)
+                // 為了讓使用者知道當前選中，我們可以簡單加上一點透明度變化或依賴原本的 active 樣式
+                faqCategoryBtnsDiv.querySelectorAll('button').forEach(b => b.style.opacity = '1');
+                btn.style.opacity = '0.8'; // 簡單的視覺回饋
 
                 // 更新當前分類並重新抓取
                 currentFaqCategory = btn.dataset.category;
@@ -92,14 +101,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 4. 渲染 FAQ 列表 (包含搜尋過濾邏輯)
+    // 4. 渲染 FAQ 列表
     function renderFaqs(data) {
         if (!Array.isArray(data) || data.length === 0) {
             faqListDiv.innerHTML = `<div id="no-result-msg" style="text-align: center; color: #666; margin-top: 20px;">目前沒有此分類的問答。</div>`;
             return;
         }
 
-        // 產生 HTML
         const html = data.map(faq => `
             <div class="faq-item-card">
                 <div class="faq-q">Q：${faq.question}</div>
@@ -115,6 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.trim().toLowerCase();
             
+            // 若沒有資料，直接跳過
+            if (!allFaqsData || allFaqsData.length === 0) return;
+
             // 從 allFaqsData 中過濾符合標題或內容的項目
             const filteredData = allFaqsData.filter(faq => {
                 const q = faq.question ? faq.question.toLowerCase() : '';
@@ -138,35 +149,28 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
-/* 簡單補強一些樣式，確保按鈕有回饋感 */
-.btn--brown {
-    padding: 8px 16px;
-    border: 1px solid #8b5a2b;
-    background-color: white;
-    color: #8b5a2b;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.3s;
-}
-.btn--brown:hover, .btn--brown.active {
-    background-color: #8b5a2b;
-    color: white;
-}
+/* 移除原本覆蓋 .btn--brown 的樣式，
+   確保按鈕恢復成全站統一的設計。
+   
+   僅保留 FAQ 卡片本身的樣式
+*/
 .faq-item-card {
     background: #fff;
-    border: 1px solid #eee;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
+    border: 2px solid #E6BA67; /* 配合主色調的金邊 */
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 .faq-q {
     font-weight: bold;
-    color: #333;
-    margin-bottom: 5px;
+    color: #C48945; /* 配合文字主色 */
+    margin-bottom: 8px;
+    font-size: 1.1em;
 }
 .faq-a {
-    color: #555;
+    color: #333;
+    line-height: 1.6;
     white-space: pre-line; /* 讓換行符號正常顯示 */
 }
 </style>
