@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const introOverlay = document.getElementById('intro-overlay');
+    if (introOverlay) {
+        // 設定 2500 毫秒 (2.5秒) 後開始淡出
+        setTimeout(() => {
+            introOverlay.classList.add('fade-out');
+        }, 2500); 
+    }
     const newsList = document.getElementById('news-list');
     const modal = document.getElementById('announcementModal');
     const modalDate = modal.querySelector('.modal-date');
