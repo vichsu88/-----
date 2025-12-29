@@ -1143,3 +1143,35 @@ body::before {
     /* 關鍵在這裡：讓圖片放大 25 倍！(看起來就像擴散到全螢幕) */
     transform: scale(25);   
 }
+/* === FAQ 搜尋框樣式 === */
+.search-container {
+    text-align: center;
+    margin-bottom: 30px; /* 與下方問題列表保持距離 */
+    padding: 0 20px;
+}
+
+.faq-search-input {
+    width: 100%;
+    max-width: 500px; /* 限制最大寬度，跟你的新聞卡片差不多寬 */
+    padding: 10px 15px;
+    
+    /* 你的指定樣式 */
+    border: 1px solid #E6BA67; /* 細的金邊框 */
+    background-color: transparent; /* 透明背景 */
+    font-size: 12px; /* 指定字體大小 */
+    color: #333; /* 輸入文字顏色 */
+    
+    border-radius: 50px; /* 圓角設計，比較柔和 */
+    outline: none; /* 移除點擊時的藍框 */
+    transition: all 0.3s ease;
+}
+
+.faq-search-input:focus {
+    box-shadow: 0 0 5px rgba(230, 186, 103, 0.5); /* 聚焦時發點光 */
+}
+
+/* 設定 placeholder (提示字) 的顏色 */
+.faq-search-input::placeholder {
+    color: #999; /* 灰色底字 */
+    font-weight: bold;
+}

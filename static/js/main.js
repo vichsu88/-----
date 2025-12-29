@@ -4,6 +4,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalDate = modal.querySelector('.modal-date');
     const modalTitle = modal.querySelector('.modal-title');
     const modalBody = modal.querySelector('.modal-body');
+    /* === FAQ 搜尋功能 === */
+    const searchInput = document.getElementById('faqSearch');
+    // 抓取所有的問題卡片 (請確認你的 class 名稱是 .faq-item-card)
+    const faqCards = document.querySelectorAll('.faq-item-card');
+    const noResultMsg = document.getElementById('no-result-msg');
+
+    if (searchInput && faqCards.length > 0) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.trim().toLowerCase();
+            let hasResult = false;
+
+            faqCards.forEach(card => {
+                // 抓取問題(Q)與回答(A)的文字內容
+                const questionText = card.querySelector('.faq-q')?.textContent || '';
+                const answerText = card.querySelector('.faq-a')?.textContent || '';
+                const fullText = (questionText + answerText).toLowerCase();
+
+                // 比對是否包含關鍵字
+                if (fullText.includes(searchTerm)) {
+                    card.style.display = ''; // 顯示
+                    hasResult = true;
+                } else {
+                    card.style.display = 'none'; // 隱藏
+                }
+            });
+
+            // 控制「查無資料」的訊息顯示
+            if (noResultMsg) {
+                noResultMsg.style.display = hasResult ? 'none' : 'block';
+            }
+        });
     const closeModalBtn = document.getElementById('modalCloseBtn');
     let allNewsData = []; // 用來儲存從 API 獲取的完整資料
     /* === 新增：控制進場動畫 (擴散版) === */
@@ -24,6 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1000); 
         }
     }
+    
 
     /**
      * 這是一個小工具，可以把 "文字($'網址'$)" 變成真正的連結
@@ -99,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     // 抓取需要的 HTML 元素
     const navToggleBtn = document.querySelector('.nav-toggle');
+    
     const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
     const closeOverlayBtn = document.getElementById('overlay-close-btn');
     // 【新增】抓取選單中的所有連結
@@ -123,6 +156,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 點擊任何一個連結後，都隱藏 Overlay 選單
                 mobileNavOverlay.classList.remove('is-visible');
             });
+            
         });
     }
-});
+}); 
+    
