@@ -736,7 +736,7 @@ body::before {
     
     /* 複雜背景設定 */
     background-color: lightgray; /* 備用顏色 */
-    background-image: linear-gradient(180deg, #FFF 0%, #8E532C 75.48%), url('../images/pages/index/BG-cloud.png');
+    background-image: linear-gradient(180deg, #FFF 0%, #8E532C 75.48%), url('../images/common/BG-cloud.png');
     background-repeat: no-repeat;
     background-position: center, center;
     background-size: contain, cover;
