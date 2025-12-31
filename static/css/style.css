@@ -88,9 +88,10 @@ body::before {
     height: 101px;
     box-sizing: border-box;
     padding: 0 25px;
-    margin: 20px auto; 
+    
+    /* 關鍵修改：將下方邊距設為 0 */
+    margin: 20px auto 0; 
 }
-
 .nav-logo img {
     width: 84px;
     height: 84px;
