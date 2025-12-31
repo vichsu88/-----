@@ -275,10 +275,12 @@ def export_unmarked_feedback():
     except Exception as e:
         return f"導出時發生錯誤: {str(e)}", 500
 @app.route('/api/announcements', methods=['GET'])
+# --- 請複製這段程式碼，完整替換 app.py 中的 get_announcements 函式 ---
+@app.route('/api/announcements', methods=['GET'])
 def get_announcements():
     if db is None: return jsonify({"error": "資料庫未連線或連線失敗"}), 500
     try:
-        # 修改排序邏輯：先看置頂 -> 再看日期(新到舊) -> 最後看建立時間(新到舊)
+        # 關鍵修正：加入 ("createdAt", -1) 確保同一天的公告也會由新到舊排序
         announcements_cursor = db.announcements.find().sort([
             ("isPinned", -1), 
             ("date", -1), 
