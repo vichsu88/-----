@@ -120,14 +120,19 @@ body::before {
 
 /* === 全新 Banner 樣式 (V2) === */
 .hero-section {
-    margin-top: 0 !important;
+    margin-top: -2 !important;
     /* 設定手機上的 Banner 高度 */
     height: 300px; 
 
-    /* 讓 Banner 寬度永遠是 100% */
-    width: 100%;
+    /* --- 修改開始：讓寬度與導覽列一致並置中 --- */
+    width: 95%;            /* 配合 .main-nav 的 width: 95% */
+    max-width: 1200px;     /* 配合 .main-nav 的 max-width: 1200px */
+    margin-left: auto;     /* 水平置中 */
+    margin-right: auto;    /* 水平置中 */
+    border-radius: 10px;   /* 加上圓角，視覺上跟導覽列更統一 (可選) */
+    /* --- 修改結束 --- */
 
-    /* 關鍵：設定背景圖片 */
+    /*  */
     background-image: url('../images/pages/index/banner_PC.png');
     background-size: cover; /* 讓圖片永遠填滿容器，多餘部分會被裁切 */
     background-position: center; /* 不論如何裁切，都以圖片中心為焦點 */
