@@ -4,20 +4,19 @@ document.addEventListener('DOMContentLoaded', function() {
        ============================== */
     const newsList = document.getElementById('news-list');
     const modal = document.getElementById('announcementModal');
-    // 確認 modal 存在才去抓內部的元素，避免報錯
     const modalDate = modal ? modal.querySelector('.modal-date') : null;
     const modalTitle = modal ? modal.querySelector('.modal-title') : null;
     const modalBody = modal ? modal.querySelector('.modal-body') : null;
     const closeModalBtn = document.getElementById('modalCloseBtn');
-    let allNewsData = []; // 用來儲存從 API 獲取的完整資料
+    let allNewsData = []; 
 
     /* ==============================
        工具函式：解析連結
-       把 "文字($'網址'$)" 轉換成 <a href="...">文字</a>
+       語法：文字($'網址'$)
        ============================== */
     function parseContentForLinks(text) {
         if (!text) return '';
-        // 正規表示式：抓取 文字($'網址'$) 的結構
+        // 抓取 文字($'網址'$) 的結構
         const regex = /(.+?)\(\$\'(.+?)\'\$\)/g;
         const replacement = '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #007bff; text-decoration: underline;">$1</a>';
         return text.replace(regex, replacement);
@@ -69,7 +68,6 @@ document.addEventListener('DOMContentLoaded', function() {
     /* ==============================
        4. 最新消息 (Fetch API) & 連結轉換
        ============================== */
-    // 只有當 newsList 存在時才執行 Fetch，避免在非首頁報錯
     if (newsList) {
         fetch('/api/announcements')
             .then(response => response.json())
@@ -93,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // 點擊公告時觸發
                     newsItem.addEventListener('click', () => {
-                        // 確保 Modal 相關元素都存在
                         if (modal && modalDate && modalTitle && modalBody) {
                             const newsData = allNewsData[index];
                             modalDate.textContent = newsData.date;

@@ -278,7 +278,12 @@ def export_unmarked_feedback():
 def get_announcements():
     if db is None: return jsonify({"error": "資料庫未連線或連線失敗"}), 500
     try:
-        announcements_cursor = db.announcements.find().sort([("isPinned", -1), ("date", -1)])
+        # 修改排序邏輯：先看置頂 -> 再看日期(新到舊) -> 最後看建立時間(新到舊)
+        announcements_cursor = db.announcements.find().sort([
+            ("isPinned", -1), 
+            ("date", -1), 
+            ("createdAt", -1)
+        ])
         results = []
         for doc in announcements_cursor:
             doc['_id'] = str(doc['_id'])
@@ -288,7 +293,7 @@ def get_announcements():
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": f"在處理公告時發生嚴重錯誤: {str(e)}"}), 500
-
+    
 @app.route('/api/links', methods=['GET'])
 @login_required
 def get_links():
