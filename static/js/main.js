@@ -4,26 +4,27 @@ document.addEventListener('DOMContentLoaded', function() {
        ============================== */
     const newsList = document.getElementById('news-list');
     const modal = document.getElementById('announcementModal');
-    const modalDate = modal ? modal.querySelector('.modal-date') : null;
-    const modalTitle = modal ? modal.querySelector('.modal-title') : null;
-    const modalBody = modal ? modal.querySelector('.modal-body') : null;
+    // 使用 Optional Chaining (?.) 避免找不到元素時報錯
+    const modalDate = modal?.querySelector('.modal-date');
+    const modalTitle = modal?.querySelector('.modal-title');
+    const modalBody = modal?.querySelector('.modal-body');
     const closeModalBtn = document.getElementById('modalCloseBtn');
     let allNewsData = []; 
 
     /* ==============================
-       工具函式：解析連結
-       語法：文字($'網址'$)
+       【關鍵工具】解析連結函式
+       將 "文字($'網址'$)" 轉換為可點擊的 HTML 連結
        ============================== */
     function parseContentForLinks(text) {
         if (!text) return '';
-        // 抓取 文字($'網址'$) 的結構
+        // 抓取 文字($'網址'$) 的正規表示式
         const regex = /(.+?)\(\$\'(.+?)\'\$\)/g;
         const replacement = '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #007bff; text-decoration: underline;">$1</a>';
         return text.replace(regex, replacement);
     }
 
     /* ==============================
-       2. FAQ 搜尋功能
+       2. FAQ 搜尋功能 (若頁面有此功能才執行)
        ============================== */
     const searchInput = document.getElementById('faqSearch');
     const faqCards = document.querySelectorAll('.faq-item-card');
@@ -37,12 +38,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const questionText = card.querySelector('.faq-q')?.textContent || '';
                 const answerText = card.querySelector('.faq-a')?.textContent || '';
                 const fullText = (questionText + answerText).toLowerCase();
-                if (fullText.includes(searchTerm)) {
-                    card.style.display = ''; 
-                    hasResult = true;
-                } else {
-                    card.style.display = 'none'; 
-                }
+                const isMatch = fullText.includes(searchTerm);
+                card.style.display = isMatch ? '' : 'none';
+                if (isMatch) hasResult = true;
             });
             if (noResultMsg) {
                 noResultMsg.style.display = hasResult ? 'none' : 'block';
@@ -58,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (sessionStorage.getItem('hasSeenIntro')) {
             introOverlay.style.display = 'none';
         } else {
+            // 延遲 1 秒後開始淡出
             setTimeout(() => {
                 introOverlay.classList.add('fade-out');
                 sessionStorage.setItem('hasSeenIntro', 'true');
@@ -96,8 +95,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             modalDate.textContent = newsData.date;
                             modalTitle.textContent = newsData.title;
                             
-                            // 【關鍵步驟】先轉換連結，再處理換行
+                            // 【關鍵步驟】1. 先轉換連結
                             const contentWithLinks = parseContentForLinks(newsData.content);
+                            // 【關鍵步驟】2. 再處理換行符號
                             modalBody.innerHTML = contentWithLinks.replace(/\n/g, '<br>');
                             
                             modal.style.display = 'flex';
