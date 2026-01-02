@@ -3,13 +3,9 @@
 {% block title %}承天中承府 - 信徒回饋{% endblock %}
 
 {% block content %}
-<a href="#" class="feedback-floating-btn">
-        <img src="{{ url_for('static', filename='images/pages/feedback/new.png') }}" alt="我要回饋">
-    </a>
-    <div class="feedback-container">
-        </div>
+
 <style>
-    /* --- 本頁專屬樣式 (您的 CSS 都會被保留) --- */
+    /* --- 本頁專屬樣式 --- */
     .feedback-page-wrapper {
         padding: 40px 20px;
         max-width: 900px;
@@ -20,42 +16,9 @@
         text-align: center;
         margin-bottom: 40px;
     }
-    .feedback-action-btn {
-        position: fixed;
-        bottom: 100px;
-        right: 20px;
-        width: 90px;
-        height: 90px;
-        border-radius: 25px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        cursor: pointer;
-        transition: transform 0.2s ease-out;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-        z-index: 997;
-    }
-    .feedback-action-btn:hover { transform: scale(1.05); }
-    .feedback-action-btn img {
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        object-fit: cover;
-        z-index: 1;
-    }
-    .feedback-action-btn .btn-label {
-        position: relative;
-        z-index: 2;
-        color: white;
-        font-weight: bold;
-        font-size: 14px;
-        text-align: center;
-        line-height: 1.2;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-        pointer-events: none;
-        padding: 2px 6px;
-    }
+    
+    /* (已移除舊按鈕 .feedback-action-btn 的樣式，避免干擾) */
+
     .feedback-card{
         font-family:'Noto Sans TC', sans-serif;
         border:2px solid #E6BA67;
@@ -116,13 +79,12 @@
         <h2 class="section-title">信徒回饋</h2>
     </div>
 
-    <a href="#" id="show-feedback-form-btn" class="feedback-action-btn" aria-label="打開回饋表單">
-        <img src="{{ url_for('static', filename='images/pages/feedback/new.png') }}" alt="" aria-hidden="true" loading="lazy">
-        <span class="btn-label">我要回饋</span>
+    <a href="#" id="show-feedback-form-btn" class="feedback-floating-btn">
+        <img src="{{ url_for('static', filename='images/pages/feedback/new.png') }}" alt="我要回饋">
     </a>
 
     <div id="feedback-list-container">
-        </div>
+    </div>
 </main>
 
 <div id="feedback-form-modal" class="feedback-form-modal">
@@ -176,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function fetchAndRenderFeedback() {
     try {
-      // 【優化】加上 credentials:'include'，確保未來跨域部署時 cookie 能正常傳送
       const res = await fetch('/api/feedback/approved', { credentials:'include' });
       if (!res.ok) throw new Error('讀取回饋資料失敗');
       const data = await res.json();
@@ -191,19 +152,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const card = document.createElement('div');
         card.className = 'feedback-card';
         
-        // 【優化】處理 nickname 和 category 可能為空的情況
         const nickname = item.nickname || '匿名';
         const category = Array.isArray(item.category) ? item.category.join(', ') : '';
 
-        // 【安全修正】防止 XSS 攻擊，先用 textContent 轉義，再處理換行
         const header = document.createElement('h3');
         header.className = 'feedback-card__header';
         header.innerHTML = `<span class="nickname">${nickname}</span> / ${category}`;
 
         const content = document.createElement('p');
         content.className = 'feedback-card__content';
-        content.textContent = item.content; // 1. 先用 textContent 安全地插入純文字
-        content.innerHTML = content.innerHTML.replace(/\n/g, '<br>'); // 2. 再將純文字中的換行符轉為 <br>
+        content.textContent = item.content;
+        content.innerHTML = content.innerHTML.replace(/\n/g, '<br>');
 
         card.appendChild(header);
         card.appendChild(content);
@@ -215,9 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // 按鈕點擊事件：打開 Modal
   showFormBtn.addEventListener('click', e => {
-    e.preventDefault();
-    formModal.classList.add('is-visible');
+    e.preventDefault(); // 防止頁面跳轉
+    formModal.classList.add('is-visible'); // 顯示表單
   });
 
   formModal.addEventListener('click', e => {
@@ -248,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/api/feedback', {
         method: 'POST',
-        credentials: 'include', // ★ 確保 cookie 與 CSRF token 一同發送
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': getCsrfToken()
@@ -256,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(payload)
       });
       
-      // 【優化】更穩固的錯誤處理
       if (!res.ok) {
           let errorMessage;
           try {
