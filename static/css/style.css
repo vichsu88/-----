@@ -1181,3 +1181,39 @@ body::before {
     color: #999; /* 灰色底字 */
     font-weight: bold;
 }
+/* === 信徒回饋頁專屬：側邊懸浮按鈕 === */
+.feedback-floating-btn {
+    position: fixed;       /* 固定定位 */
+    right: 0;              /* 貼齊畫面最右側 */
+    bottom: 55%;           /* 距離底部 55% (中間偏下) */
+    width: 2vw;            /* 寬度為視窗的 2% */
+    height: auto;          /* 高度自動，保持長條原圖比例 */
+    z-index: 9999;         /* 最上層 */
+    cursor: pointer;       /* 滑鼠游標變手指 */
+    
+    /* 動畫：名稱 10秒 無限循環 */
+    animation: flash-twice 10s infinite;
+}
+
+.feedback-floating-btn img {
+    width: 100%;
+    display: block;        /* 消除圖片下方預設空隙 */
+}
+
+/* === 閃爍動畫 (每10秒閃2次) === */
+@keyframes flash-twice {
+    0%   { opacity: 1; }
+    2%   { opacity: 0.2; } /* 第1次變暗 */
+    4%   { opacity: 1; }
+    6%   { opacity: 0.2; } /* 第2次變暗 */
+    8%   { opacity: 1; }
+    100% { opacity: 1; }   /* 休息 */
+}
+
+/* 手機版調整：避免 2% 太小看不到 */
+@media (max-width: 768px) {
+    .feedback-floating-btn {
+        width: 45px; /* 手機版固定寬度 */
+        bottom: 50%; /* 手機版位置微調 */
+    }
+}
