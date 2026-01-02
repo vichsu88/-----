@@ -1217,3 +1217,23 @@ body::before {
         bottom: 50%; /* 手機版位置微調 */
     }
 }
+/* === 首頁 YouTube 影片響應式設定 === */
+.video-responsive-wrapper {
+    position: relative;
+    width: 100%; /* 寬度跟隨父容器 */
+    max-width: 800px; /* 限制最大寬度，避免在電腦版過大，可自行調整 */
+    padding-bottom: 56.25%; /* 關鍵：設定 16:9 比例 (9/16 = 0.5625) */
+    height: 0;
+    margin: 0 auto 30px auto; /* 上0、左右置中、下30px間距 */
+    overflow: hidden;
+    border-radius: 10px; /* 加上圓角比較好看 */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* 加上一點陰影 */
+}
+
+.video-responsive-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
