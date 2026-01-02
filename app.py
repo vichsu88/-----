@@ -276,26 +276,32 @@ def export_unmarked_feedback():
         return f"導出時發生錯誤: {str(e)}", 500
 @app.route('/api/announcements', methods=['GET'])
 # --- 請複製這段程式碼，完整替換 app.py 中的 get_announcements 函式 ---
+# --- 請用這段完整替換 app.py 中的 get_announcements 函式 ---
 @app.route('/api/announcements', methods=['GET'])
 def get_announcements():
     if db is None: return jsonify({"error": "資料庫未連線或連線失敗"}), 500
     try:
-        # 關鍵修正：加入 ("createdAt", -1) 確保同一天的公告也會由新到舊排序
+        # 修改重點：
+        # 1. ("isPinned", -1) -> 置頂的排最上面
+        # 2. ("_id", -1)      -> 這代表「依照建立時間由新到舊」，保證最新發布的在上面
         announcements_cursor = db.announcements.find().sort([
             ("isPinned", -1), 
-            ("date", -1), 
-            ("createdAt", -1)
+            ("_id", -1)
         ])
+        
         results = []
         for doc in announcements_cursor:
             doc['_id'] = str(doc['_id'])
+            # 如果有 date 欄位且是 datetime 物件，轉成字串
             if 'date' in doc and isinstance(doc['date'], datetime):
                 doc['date'] = doc['date'].strftime('%Y/%m/%d')
             results.append(doc)
+            
         return jsonify(results)
     except Exception as e:
+        print(f"Error fetching announcements: {e}") # 在後台印出錯誤以便除錯
         return jsonify({"error": f"在處理公告時發生嚴重錯誤: {str(e)}"}), 500
-    
+
 @app.route('/api/links', methods=['GET'])
 @login_required
 def get_links():
