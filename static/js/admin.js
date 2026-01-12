@@ -3,13 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
     /* =========================================
        1. 工具函式
        ========================================= */
-    function parseContentForLinks(text) {
-        if (!text) return '';
-        const regex = /(.+?)\(\$\'(.+?)\'\$\)/g;
-        return text.replace(regex, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #007bff; text-decoration: underline;">$1</a>');
-    }
-
-    const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const getCsrfToken = () => {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    };
 
     async function apiFetch(url, options = {}) {
         const hasBody = !!options.body;
@@ -79,7 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!adminContent.dataset.initialized) {
             setupNavigation();
             // 預設點擊第一個分頁
-            document.querySelector('.nav-item').click();
+            const firstNav = document.querySelector('.nav-item');
+            if(firstNav) firstNav.click();
             adminContent.dataset.initialized = 'true';
         }
     }
@@ -100,7 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 2. 切換內容顯示
                 const targetId = item.dataset.tab;
                 tabContents.forEach(c => c.classList.remove('active'));
-                document.getElementById(targetId)?.classList.add('active');
+                const targetContent = document.getElementById(targetId);
+                if(targetContent) targetContent.classList.add('active');
 
                 // 3. 更新標題
                 if(pageTitleDisplay) pageTitleDisplay.textContent = item.dataset.title;
@@ -110,19 +109,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 5. 載入對應資料
                 switch (targetId) {
-                    case 'tab-links': fetchLinks(); break;
-                    case 'tab-announcements': fetchAndRenderAnnouncements(); break;
+                    case 'tab-links': 
+                        fetchLinks(); 
+                        break;
+                    case 'tab-announcements': 
+                        fetchAndRenderAnnouncements(); 
+                        break;
                     case 'tab-feedback':
                         // 預設切到已刊登
-                        document.querySelector('.sub-tab-btn[data-sub-tab="#approved-list-content"]').click();
+                        const approvedBtn = document.querySelector('.sub-tab-btn[data-sub-tab="#approved-list-content"]');
+                        if(approvedBtn) approvedBtn.click();
                         fetchApprovedFeedback();
                         fetchPendingFeedback();
                         break;
                     case 'tab-qa':
+                        // 【修正重點】確保這裡呼叫的函式都存在
                         fetchFaqCategories().then(renderFaqCategoryBtns).then(fetchAndRenderFaqs);
                         break;
-                    case 'tab-products': fetchAndRenderProducts(); break;
-                    case 'tab-fund': fetchFundSettings(); break;
+                    case 'tab-products': 
+                        fetchAndRenderProducts(); 
+                        break;
+                    case 'tab-fund': 
+                        fetchFundSettings(); 
+                        break;
                 }
             });
         });
@@ -133,9 +142,18 @@ document.addEventListener('DOMContentLoaded', () => {
         subTabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 if(tab.classList.contains('faq-category-btn')) return; // 排除 FAQ 分類按鈕
-                subTabs.forEach(t => {
-                    if(!t.classList.contains('faq-category-btn')) t.classList.remove('active');
-                });
+                
+                // 只針對同一組的 sub-tabs 操作
+                const parent = tab.closest('.admin-sub-tabs');
+                if(parent) {
+                    parent.querySelectorAll('.sub-tab-btn').forEach(t => t.classList.remove('active'));
+                } else {
+                     // Fallback
+                     subTabs.forEach(t => {
+                        if(!t.classList.contains('faq-category-btn')) t.classList.remove('active');
+                    });
+                }
+                
                 subContents.forEach(c => c.classList.remove('active'));
                 
                 tab.classList.add('active');
@@ -145,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 手機版選單開關
     function openSidebar() {
         sidebar.classList.add('open');
         sidebarOverlay.classList.add('active');
@@ -182,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* =========================================
-       5. 模組功能：商品管理 (含圖片)
+       5. 商品管理 (含圖片)
        ========================================= */
     const productsListDiv = document.getElementById('products-list');
     const addProductBtn = document.getElementById('add-product-btn');
@@ -190,13 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const productForm = document.getElementById('product-form');
     const productModalTitle = document.getElementById('product-modal-title');
     
-    // 圖片相關 DOM
     const productImageInput = document.getElementById('product-image-input');
     const previewImage = document.getElementById('preview-image');
     const removeImageBtn = document.getElementById('remove-image-btn');
     const imageHiddenInput = productForm.querySelector('input[name="image"]');
 
-    // 圖片選擇與預覽
     productImageInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -235,7 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? '<span style="color:green; font-size:12px;">● 上架中</span>' 
                     : '<span style="color:red; font-size:12px;">● 已下架</span>';
                 
-                // 如果有圖片顯示圖片，沒有顯示預設圖
                 const imgHtml = p.image 
                     ? `<img src="${p.image}" style="width:100%; height:200px; object-fit:cover; border-radius:6px 6px 0 0;">`
                     : `<div style="width:100%; height:200px; background:#eee; display:flex; align-items:center; justify-content:center; color:#999; border-radius:6px 6px 0 0;">無圖片</div>`;
@@ -260,7 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
             }).join('');
 
-            // 綁定按鈕
             productsListDiv.querySelectorAll('.delete-product-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     if(!confirm('確定要刪除此商品嗎？')) return;
@@ -317,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
             price: productForm.price.value,
             description: productForm.description.value,
             isActive: productForm.isActive.checked,
-            image: imageHiddenInput.value // 包含圖片Base64
+            image: imageHiddenInput.value
         };
         try {
             if (id) await apiFetch(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(formData) });
@@ -327,20 +340,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { alert('儲存失敗：' + error.message); }
     });
 
-    // 通用 Modal 關閉
-    document.querySelectorAll('.admin-modal-overlay').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-close-btn') || e.target === modal) {
-                modal.classList.remove('is-visible');
-            }
-        });
-    });
-
     /* =========================================
-       6. 模組功能：建廟基金、連結、FAQ、公告、回饋 (簡化版)
+       6. 建廟基金 & 連結
        ========================================= */
-    
-    // --- 基金 ---
     async function fetchFundSettings() {
         try {
             const data = await apiFetch('/api/fund-settings');
@@ -363,15 +365,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { alert('更新失敗：' + e.message); }
     });
 
-    // --- 連結 ---
     const linksListDiv = document.getElementById('links-list');
     async function fetchLinks() {
         try {
             const links = await apiFetch('/api/links');
             linksListDiv.innerHTML = links.map(link => `
-                <div class="link-item">
-                    <span class="link-name-display">${link.name}</span>
-                    <input class="link-url-display" type="text" value="${link.url}" readonly>
+                <div class="link-item" style="display:flex; gap:10px; margin-bottom:10px; align-items:center; background:#fff; padding:10px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                    <span style="font-weight:bold; min-width:80px;">${link.name}</span>
+                    <input type="text" value="${link.url}" readonly style="flex:1; padding:5px; border:1px solid #ddd; background:#eee; border-radius:4px;">
                     <button class="btn btn--brown edit-link-btn" data-id="${link._id}" data-url="${link.url}">修改</button>
                 </div>
             `).join('');
@@ -388,68 +389,108 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { console.error(e); }
     }
 
-    // --- 回饋、FAQ、公告 (沿用原本邏輯，只適配 DOM) ---
-    // (這裡保留您原有的邏輯，只是為了節省篇幅，我確認它們在上面的 switch case 中都有被呼叫)
-    // 這裡我將簡化展示關鍵函式，確保它們存在
+    /* =========================================
+       7. 信徒回饋管理
+       ========================================= */
     const pendingListContainer = document.getElementById('pending-feedback-list');
     const approvedListContainer = document.getElementById('approved-feedback-list');
     
-    async function fetchPendingFeedback() { /* ...與原版相同邏輯... */ 
-        const data = await apiFetch('/api/feedback/pending');
-        pendingListContainer.innerHTML = data.length ? data.map(item => renderFeedbackCard(item, 'pending')).join('') : '<p>無待審核回饋</p>';
-        bindFeedbackButtons(pendingListContainer);
+    async function fetchPendingFeedback() {
+        try {
+            const data = await apiFetch('/api/feedback/pending');
+            pendingListContainer.innerHTML = data.length ? data.map(item => renderFeedbackCard(item, 'pending')).join('') : '<p style="text-align:center; color:#999;">目前無待審核回饋</p>';
+            bindFeedbackButtons(pendingListContainer);
+        } catch(e) { console.error(e); }
     }
-    async function fetchApprovedFeedback() { /* ... */ 
-        const data = await apiFetch('/api/feedback/approved');
-        approvedListContainer.innerHTML = data.length ? data.map(item => renderFeedbackCard(item, 'approved')).join('') : '<p>無已刊登回饋</p>';
-        bindFeedbackButtons(approvedListContainer);
+    async function fetchApprovedFeedback() {
+        try {
+            const data = await apiFetch('/api/feedback/approved');
+            approvedListContainer.innerHTML = data.length ? data.map(item => renderFeedbackCard(item, 'approved')).join('') : '<p style="text-align:center; color:#999;">目前無已刊登回饋</p>';
+            bindFeedbackButtons(approvedListContainer);
+        } catch(e) { console.error(e); }
     }
 
     function renderFeedbackCard(item, type) {
-        // ... 生成 HTML 字串，與原版相同，只是包裝成函式方便呼叫 ...
+        // 判斷是否標記
+        const isMarked = item.isMarked ? 'checked' : '';
+        const markHtml = (type === 'approved') 
+            ? `<label style="margin-right:10px; cursor:pointer;">
+                 <input type="checkbox" class="mark-checkbox" data-id="${item._id}" ${isMarked}> 已寄出/已讀
+               </label>` 
+            : '';
+
         return `
-            <div class="feedback-card">
+            <div class="feedback-card" style="${item.isMarked ? 'background-color:#f0f9eb;' : ''}">
                 <div class="feedback-card__header">
                    <span>${item.nickname} / ${item.category}</span>
                    <span>${item.createdAt}</span>
                 </div>
-                <div class="feedback-card__content">${item.content}</div>
-                <div class="feedback-card__actions">
+                <div class="feedback-card__content" style="white-space: pre-line; margin:10px 0;">${item.content}</div>
+                <div class="feedback-card__actions" style="align-items:center;">
+                    ${markHtml}
                     ${type === 'pending' ? 
                       `<button class="btn btn--red action-btn" data-action="delete" data-id="${item._id}">刪除</button>
-                       <button class="btn btn--brown action-btn" data-action="approve" data-id="${item._id}">同意</button>` :
-                      `<button class="btn btn--brown view-btn" data-data='${JSON.stringify(item).replace(/'/g, "&apos;")}' >查看</button>`
+                       <button class="btn btn--brown action-btn" data-action="approve" data-id="${item._id}">同意刊登</button>` :
+                      `<button class="btn btn--brown view-btn" data-data='${JSON.stringify(item).replace(/'/g, "&apos;")}' >查看詳細</button>`
                     }
                 </div>
             </div>`;
     }
 
     function bindFeedbackButtons(container) {
+        // 刪除/同意
         container.querySelectorAll('.action-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
                 const action = btn.dataset.action;
-                if(!confirm('確定執行？')) return;
+                if(!confirm('確定執行此動作？')) return;
                 
-                if(action === 'approve') await apiFetch(`/api/feedback/${id}/approve`, { method:'PUT' });
-                if(action === 'delete') await apiFetch(`/api/feedback/${id}`, { method:'DELETE' });
-                
-                fetchPendingFeedback();
-                fetchApprovedFeedback();
+                try {
+                    if(action === 'approve') await apiFetch(`/api/feedback/${id}/approve`, { method:'PUT' });
+                    if(action === 'delete') await apiFetch(`/api/feedback/${id}`, { method:'DELETE' });
+                    
+                    fetchPendingFeedback();
+                    fetchApprovedFeedback();
+                } catch(e) { alert(e.message); }
             });
         });
         
+        // 標記 Checkbox
+        container.querySelectorAll('.mark-checkbox').forEach(chk => {
+            chk.addEventListener('change', async () => {
+                try {
+                    await apiFetch(`/api/feedback/${chk.dataset.id}/mark`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ isMarked: chk.checked })
+                    });
+                    fetchApprovedFeedback(); // 重新整理以更新背景色
+                } catch(e) { 
+                    alert('標記失敗'); 
+                    chk.checked = !chk.checked; 
+                }
+            });
+        });
+
+        // 查看詳細
         container.querySelectorAll('.view-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const item = JSON.parse(btn.dataset.data);
-                document.getElementById('view-modal-body').textContent = `
-                    姓名: ${item.realName}\n電話: ${item.phone}\n地址: ${item.address}\n內容: ${item.content}
-                `.replace(/\n/g, '<br>');
+                document.getElementById('view-modal-body').innerHTML = `
+                    <p><b>真實姓名:</b> ${item.realName || '無'}</p>
+                    <p><b>電話:</b> ${item.phone || '無'}</p>
+                    <p><b>地址:</b> ${item.address || '無'}</p>
+                    <hr>
+                    <p><b>內容:</b><br>${item.content}</p>
+                `;
                 
                 // 綁定刪除按鈕
                 const delBtn = document.getElementById('delete-feedback-btn');
-                delBtn.onclick = async () => {
-                    if(confirm('刪除?')) {
+                // 清除舊事件 (用 cloneNode 快速解法)
+                const newDelBtn = delBtn.cloneNode(true);
+                delBtn.parentNode.replaceChild(newDelBtn, delBtn);
+                
+                newDelBtn.onclick = async () => {
+                    if(confirm('確定要刪除這則回饋嗎？此動作無法復原。')) {
                         await apiFetch(`/api/feedback/${item._id}`, {method:'DELETE'});
                         document.getElementById('view-modal').classList.remove('is-visible');
                         fetchApprovedFeedback();
@@ -460,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 匯出功能 ---
+    // 匯出功能
     document.getElementById('export-btn')?.addEventListener('click', async () => {
         const text = await apiFetch('/api/feedback/export-unmarked');
         document.getElementById('export-output-textarea').value = text;
@@ -468,64 +509,168 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.getElementById('mark-all-btn')?.addEventListener('click', async () => {
-        if(confirm('全部標記已讀？')) {
+        if(confirm('確定要將所有已審核的回饋標記為已讀？')) {
             await apiFetch('/api/feedback/mark-all-approved', {method:'PUT'});
             fetchApprovedFeedback();
         }
     });
 
-    // --- FAQ 與 公告 (請維持您原本檔案中的邏輯，此處省略以保持簡潔) --- 
-    // 注意：您原本的 fetchAndRenderAnnouncements 和 fetchAndRenderFaqs 邏輯是好的，
-    // 請確保它們能夠被 switch case 正確呼叫到。
-    // ... (Faq logic) ...
-    // ... (Announcement logic) ...
-    
-    // ★ 為了讓程式碼完整，這裡補上簡易版 FAQ/Announcement 渲染，以防您複製時漏掉
+    /* =========================================
+       8. FAQ 常見問題 (修復重點)
+       ========================================= */
     const faqListDiv = document.getElementById('faq-list');
+    const faqCategoryBtnsDiv = document.getElementById('faq-category-btns');
+    const addFaqBtn = document.getElementById('add-faq-btn');
+    const faqModal = document.getElementById('faq-modal');
+    const faqForm = document.getElementById('faq-form');
+
+    // 取得分類
+    async function fetchFaqCategories() {
+        try {
+            return await apiFetch('/api/faq/categories');
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    }
+
+    // 渲染分類按鈕 (後台僅供顯示或簡單篩選，這裡做簡單顯示)
+    function renderFaqCategoryBtns(categories) {
+        if (!faqCategoryBtnsDiv) return;
+        faqCategoryBtnsDiv.innerHTML = categories.map(cat => 
+            `<span style="display:inline-block; padding:4px 8px; background:#e0e0e0; border-radius:12px; font-size:12px; color:#555;">${cat}</span>`
+        ).join('');
+    }
+
+    // 取得並渲染列表
     async function fetchAndRenderFaqs() {
-         /* 實作與之前相同，略 */
-         const faqs = await apiFetch('/api/faq'); // 簡化
-         faqListDiv.innerHTML = faqs.map(f => `
-            <div class="feedback-card">
-                <b>Q: ${f.question}</b><br>A: ${f.answer}
-                <div style="text-align:right"><button class="btn btn--red del-faq" data-id="${f._id}">刪除</button></div>
-            </div>`).join('');
-         faqListDiv.querySelectorAll('.del-faq').forEach(b => b.onclick = async()=>{
-             if(confirm('刪除?')) { await apiFetch(`/api/faq/${b.dataset.id}`, {method:'DELETE'}); fetchAndRenderFaqs(); }
-         });
+        if(!faqListDiv) return;
+        try {
+            const faqs = await apiFetch('/api/faq');
+            faqListDiv.innerHTML = faqs.map(f => `
+                <div class="feedback-card" style="position:relative;">
+                    <div style="margin-bottom:5px;">
+                        <span style="background:#C48945; color:#fff; font-size:12px; padding:2px 6px; border-radius:4px;">${f.category}</span>
+                        ${f.isPinned ? '<span style="color:red; font-size:12px;">[置頂]</span>' : ''}
+                    </div>
+                    <div style="font-weight:bold; margin-bottom:5px;">Q: ${f.question}</div>
+                    <div style="white-space:pre-line; color:#555;">A: ${f.answer}</div>
+                    <button class="btn btn--red del-faq-btn" data-id="${f._id}" style="position:absolute; top:15px; right:15px; padding:4px 8px; font-size:12px;">刪除</button>
+                </div>
+            `).join('');
+
+            // 綁定刪除
+            faqListDiv.querySelectorAll('.del-faq-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if(confirm('確定刪除此問答？')) {
+                        await apiFetch(`/api/faq/${btn.dataset.id}`, {method:'DELETE'});
+                        // 重新載入分類與列表
+                        fetchFaqCategories().then(renderFaqCategoryBtns).then(fetchAndRenderFaqs);
+                    }
+                });
+            });
+        } catch(e) { console.error(e); }
     }
-    
+
+    if(addFaqBtn) addFaqBtn.addEventListener('click', async () => {
+        // 更新 Modal 中的分類建議按鈕
+        const categories = await fetchFaqCategories();
+        const container = document.getElementById('faq-modal-category-btns');
+        if(container) {
+            container.innerHTML = categories.map(c => 
+                `<button type="button" class="btn" style="background:#eee; color:#333; font-size:12px; padding:4px 8px;" onclick="this.form.other_category.value='${c}'">${c}</button>`
+            ).join('');
+        }
+        faqForm.reset();
+        faqModal.classList.add('is-visible');
+    });
+
+    if(faqForm) faqForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const category = faqForm.other_category.value.trim();
+        if(!category) { alert('請輸入或選擇分類'); return; }
+
+        try {
+            await apiFetch('/api/faq', {
+                method: 'POST',
+                body: JSON.stringify({
+                    question: faqForm.question.value,
+                    answer: faqForm.answer.value,
+                    category: category,
+                    isPinned: faqForm.isPinned.checked
+                })
+            });
+            faqModal.classList.remove('is-visible');
+            fetchFaqCategories().then(renderFaqCategoryBtns).then(fetchAndRenderFaqs);
+        } catch(err) { alert(err.message); }
+    });
+
+    /* =========================================
+       9. 最新消息公告 (修復重點)
+       ========================================= */
     const announcementsListDiv = document.getElementById('announcements-list');
+    const addAnnBtn = document.getElementById('add-announcement-btn');
+    const annModal = document.getElementById('announcement-modal');
+    const annForm = document.getElementById('announcement-form');
+
     async function fetchAndRenderAnnouncements() {
-        const data = await apiFetch('/api/announcements');
-        announcementsListDiv.innerHTML = data.map(a => `
-            <div class="feedback-card">
-               <div>${a.date} ${a.isPinned?'[置頂]':''}</div>
-               <h3>${a.title}</h3>
-               <div style="text-align:right">
-                 <button class="btn btn--red del-ann" data-id="${a._id}">刪除</button>
-               </div>
-            </div>`).join('');
-         announcementsListDiv.querySelectorAll('.del-ann').forEach(b => b.onclick = async()=>{
-             if(confirm('刪除?')) { await apiFetch(`/api/announcements/${b.dataset.id}`, {method:'DELETE'}); fetchAndRenderAnnouncements(); }
-         });
+        if(!announcementsListDiv) return;
+        try {
+            const data = await apiFetch('/api/announcements');
+            announcementsListDiv.innerHTML = data.map(a => `
+                <div class="feedback-card">
+                   <div style="font-size:12px; color:#888;">
+                       ${a.date} 
+                       ${a.isPinned ? '<span style="color:red; font-weight:bold; margin-left:5px;">[置頂]</span>' : ''}
+                   </div>
+                   <h3 style="margin:5px 0;">${a.title}</h3>
+                   <div style="white-space:pre-line; color:#555; max-height:80px; overflow:hidden;">${a.content}</div>
+                   <div style="text-align:right; margin-top:10px;">
+                     <button class="btn btn--red del-ann-btn" data-id="${a._id}">刪除</button>
+                   </div>
+                </div>`).join('');
+             
+            announcementsListDiv.querySelectorAll('.del-ann-btn').forEach(b => {
+                b.onclick = async () => {
+                     if(confirm('確定刪除此公告？')) { 
+                         await apiFetch(`/api/announcements/${b.dataset.id}`, {method:'DELETE'}); 
+                         fetchAndRenderAnnouncements(); 
+                     }
+                };
+            });
+        } catch(e) { console.error(e); }
     }
     
-    const addAnnBtn = document.getElementById('add-announcement-btn');
-    if(addAnnBtn) addAnnBtn.onclick = () => document.getElementById('announcement-modal').classList.add('is-visible');
+    if(addAnnBtn) addAnnBtn.onclick = () => {
+        annForm.reset();
+        annModal.classList.add('is-visible');
+    };
     
-    const annForm = document.getElementById('announcement-form');
     if(annForm) annForm.onsubmit = async (e) => {
         e.preventDefault();
-        await apiFetch('/api/announcements', {
-            method:'POST', 
-            body: JSON.stringify({
-                date: annForm.date.value, title: annForm.title.value, content: annForm.content.value, isPinned: annForm.isPinned.checked
-            })
-        });
-        document.getElementById('announcement-modal').classList.remove('is-visible');
-        fetchAndRenderAnnouncements();
+        try {
+            await apiFetch('/api/announcements', {
+                method:'POST', 
+                body: JSON.stringify({
+                    date: annForm.date.value, 
+                    title: annForm.title.value, 
+                    content: annForm.content.value, 
+                    isPinned: annForm.isPinned.checked
+                })
+            });
+            annModal.classList.remove('is-visible');
+            fetchAndRenderAnnouncements();
+        } catch(err) { alert(err.message); }
     };
+
+    // 通用 Modal 關閉
+    document.querySelectorAll('.admin-modal-overlay').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-close-btn') || e.target === modal) {
+                modal.classList.remove('is-visible');
+            }
+        });
+    });
 
     // --- 啟動 ---
     checkSession();
