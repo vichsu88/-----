@@ -23,10 +23,46 @@
             margin: 0; 
             font-family: 'Noto Sans TC', sans-serif; 
             height: 100vh; 
-            overflow: hidden; /* 防止雙重捲動 */
+            overflow: hidden; 
         }
 
-        /* --- 登入畫面 (維持置中) --- */
+        /* --- 強制按鈕平面化 (Flat Design Overrides) --- */
+        #admin-wrapper .btn, 
+        #admin-wrapper button.btn,
+        .admin-main .btn,
+        .admin-modal-content .btn {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background-image: none !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            border: none !important;
+            border-radius: 4px !important;
+            color: #fff !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            padding: 8px 16px !important;
+            transition: opacity 0.2s !important;
+            transform: none !important;
+            font-weight: normal !important;
+            cursor: pointer !important;
+        }
+        
+        #admin-wrapper .btn:hover, .admin-modal-content .btn:hover {
+            opacity: 0.85 !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        /* 定義單一顏色 */
+        .btn--brown { background-color: #C48945 !important; }
+        .btn--red { background-color: #dc3545 !important; }
+        .btn--green { background-color: #28a745 !important; }
+        .btn--grey { background-color: #6c757d !important; }
+
+        /* --- 登入畫面 --- */
         #login-wrapper {
             display: flex;
             justify-content: center;
@@ -41,16 +77,13 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
             width: 100%;
             max-width: 400px;
+            text-align: center;
         }
 
         /* --- 後台主佈局 --- */
-        #admin-wrapper {
-            display: flex;
-            height: 100vh;
-            width: 100%;
-        }
+        #admin-wrapper { display: flex; height: 100vh; width: 100%; }
 
-        /* 1. 左側導覽列 */
+        /* 左側導覽列 */
         .admin-sidebar {
             width: var(--sidebar-width);
             background-color: var(--sidebar-bg);
@@ -61,7 +94,6 @@
             transition: transform 0.3s ease;
             z-index: 1000;
         }
-
         .sidebar-header {
             padding: 20px;
             background-color: rgba(0,0,0,0.1);
@@ -71,148 +103,84 @@
             justify-content: space-between;
             align-items: center;
         }
-        .sidebar-header h2 { margin: 0; font-size: 20px; letter-spacing: 1px; }
-        .close-sidebar-btn { display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
-
-        .sidebar-nav {
-            flex-grow: 1;
-            padding: 20px 0;
-            overflow-y: auto;
-        }
-
+        .sidebar-nav { flex-grow: 1; padding: 20px 0; overflow-y: auto; }
         .nav-item {
-            display: block;
-            width: 100%;
-            padding: 15px 25px;
-            background: none;
-            border: none;
-            color: #bdc3c7;
-            text-align: left;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
+            display: block; width: 100%; padding: 15px 25px;
+            background: none; border: none; color: #bdc3c7;
+            text-align: left; font-size: 16px; cursor: pointer;
             border-left: 4px solid transparent;
         }
-        .nav-item:hover { background-color: rgba(255,255,255,0.05); color: #fff; }
         .nav-item.active { background-color: rgba(0,0,0,0.2); color: #fff; border-left-color: var(--main-brown); }
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        #logout-btn { width: 100%; }
 
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        #logout-btn {
-            width: 100%;
-            padding: 10px;
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        /* 2. 右側主內容區 */
+        /* 右側主內容區 */
         .admin-main {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background-color: var(--bg-gray);
-            position: relative;
+            flex-grow: 1; display: flex; flex-direction: column;
+            overflow: hidden; background-color: var(--bg-gray); position: relative;
         }
-
-        /* 手機版 Header (只有手機會出現) */
-        .mobile-header {
-            display: none;
-            background: #fff;
-            padding: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            align-items: center;
-            justify-content: space-between;
-        }
-        .hamburger-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #333; }
-
-        /* 麵包屑/頁面標題列 */
         .page-header {
-            background: #fff;
-            padding: 20px 30px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: #fff; padding: 20px 30px; border-bottom: 1px solid #e0e0e0;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .page-title { margin: 0; font-size: 24px; color: #333; }
+        .content-body { flex-grow: 1; padding: 30px; overflow-y: auto; }
 
-        /* 內容捲動區 */
-        .content-body {
-            flex-grow: 1;
-            padding: 30px;
-            overflow-y: auto;
+        /* --- 信徒回饋：垂直佈局樣式 --- */
+        .feedback-section { margin-bottom: 40px; }
+        .feedback-section-title {
+            font-size: 18px; font-weight: bold; margin-bottom: 15px;
+            padding-bottom: 10px; border-bottom: 2px solid #eee;
+            display: flex; justify-content: space-between; align-items: center;
         }
-
-        /* --- 內容卡片樣式優化 --- */
-        .tab-content { display: none; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .card-container {
-            background: #fff;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+        /* 待審核區 (黃色底) */
+        #section-pending {
+            background-color: #fff9db; 
+            border: 2px solid #ffeeba;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        /* 已刊登區 (白色底) */
+        #section-approved {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
         }
 
-        /* 商品網格排列 (重點修改) */
-        #products-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        /* 列表項目樣式 */
+        /* 卡片樣式 */
         .feedback-card { 
-            background: #fff; 
-            border: 1px solid #eee; 
-            border-radius: 8px; 
-            padding: 20px; 
-            margin-bottom: 15px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            transition: transform 0.2s;
+            background: #fff; border: 1px solid #ddd; border-radius: 6px; 
+            padding: 15px; margin-bottom: 15px; 
         }
-        .feedback-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
-        
-        .feedback-card__header { display: flex; justify-content: space-between; margin-bottom: 10px; color: #888; font-size: 0.9em; }
-        .feedback-card__actions { margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px; }
+        .feedback-card__header { display: flex; justify-content: space-between; margin-bottom: 10px; color: #666; font-size: 0.9em; }
+        /* 內文自動換行 */
+        .feedback-card__content { 
+            margin: 10px 0; font-size: 15px; line-height: 1.6;
+            white-space: pre-wrap !important; 
+            word-break: break-all !important; 
+        }
+        .feedback-card__actions { margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
 
-        /* 按鈕樣式 */
-        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-weight: bold; color: white; transition: 0.2s; }
-        .btn--brown { background-color: var(--main-brown); }
-        .btn--brown:hover { background-color: #a06d35; }
-        .btn--red { background-color: #dc3545; }
-        .btn--red:hover { background-color: #c82333; }
-        
-        /* 浮動新增按鈕 */
+        /* 商品列表 */
+        #products-list {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;
+        }
+
+        /* 浮動按鈕 (新增用) */
         .fab-btn {
             position: fixed; bottom: 40px; right: 40px;
-            width: 60px; height: 60px;
-            border-radius: 50%;
-            background-color: var(--main-brown);
-            color: white;
-            font-size: 30px;
-            border: none;
-            box-shadow: 0 4px 10px rgba(196, 137, 69, 0.4);
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
+            width: 60px; height: 60px; border-radius: 50%;
+            background-color: var(--main-brown) !important; color: white !important;
+            font-size: 30px; border: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
             z-index: 90;
-            transition: transform 0.2s;
         }
-        .fab-btn:hover { transform: scale(1.1); }
 
-        /* --- 彈窗樣式 (維持不變，微調細節) --- */
+        /* Modal 樣式 */
         .admin-modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 2000; background: rgba(0,0,0,0.5); justify-content: center; align-items: center;
-            backdrop-filter: blur(2px);
         }
         .admin-modal-overlay.is-visible { display: flex; }
         .admin-modal-content {
@@ -224,112 +192,28 @@
             position: absolute; top: 15px; right: 20px;
             background: none; border: none; font-size: 28px; cursor: pointer; color: #999;
         }
-        
-        /* --- RWD 手機版適配 --- */
-        @media (max-width: 768px) {
-            .admin-sidebar {
-                position: fixed; left: -100%; height: 100%; top: 0;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.2);
-            }
-            .admin-sidebar.open { transform: translateX(100%); left: -260px; /* 修正定位 */ } 
-            /* 更正: 因為 transform 100% 是以自身寬度移動，所以 left 設為 -260px，open 時 transform 100% (即 +260px) 就會歸零 */
 
+        /* 分頁切換 */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* RWD 手機版 */
+        .mobile-header { display: none; background: #fff; padding: 15px; align-items: center; justify-content: space-between; }
+        .close-sidebar-btn { display: none; }
+        .sidebar-overlay { display: none; }
+
+        @media (max-width: 768px) {
+            .admin-sidebar { position: fixed; left: -260px; height: 100%; top: 0; }
+            .admin-sidebar.open { transform: translateX(100%); } 
             .mobile-header { display: flex; }
-            .page-header { display: none; /* 手機版隱藏大標題，省空間 */ }
+            .page-header { display: none; }
             .content-body { padding: 15px; }
-            
-            .close-sidebar-btn { display: block; }
-            
-            /* 遮罩 */
-            .sidebar-overlay {
-                display: none; position: fixed; top:0; left:0; width:100%; height:100%;
-                background: rgba(0,0,0,0.5); z-index: 999;
+            .close-sidebar-btn { display: block; background:none; border:none; color:white; font-size:24px; }
+            .sidebar-overlay { 
+                display: none; position: fixed; top:0; left:0; width:100%; height:100%; 
+                background: rgba(0,0,0,0.5); z-index: 999; 
             }
             .sidebar-overlay.active { display: block; }
-            /* --- 強制覆蓋：後台按鈕平面化樣式 --- */
-        #admin-wrapper .btn {
-            background-image: none !important; /* 移除漸層光影 */
-            box-shadow: none !important;       /* 移除陰影 */
-            border: none !important;           /* 移除邊框 */
-            border-radius: 6px !important;     /* 稍微圓角即可 */
-            text-shadow: none !important;      /* 移除文字陰影 */
-            color: white !important;           /* 文字白色 */
-            
-            /* 文字置中設定 */
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-align: center !important;
-            
-            transition: opacity 0.2s !important; /* 簡單的滑鼠效果 */
-            transform: none !important;          /* 移除位移效果 */
-        }
-
-        #admin-wrapper .btn:hover {
-            opacity: 0.9 !important;             /* 滑鼠移上去稍微變透明一點點 */
-            transform: translateY(-1px) !important; /* 極輕微浮動 */
-        }
-        
-        /* 定義單一顏色 */
-        #admin-wrapper .btn--brown {
-            background-color: #C48945 !important; /* 您的主色調 (原本的咖啡金) */
-        }
-        
-        #admin-wrapper .btn--red {
-            background-color: #dc3545 !important; /* 刪除用的紅色 */
-        }
-        
-        #admin-wrapper .btn--green {
-            background-color: #28a745 !important; /* 成功/匯出用的綠色 */
-        }
-        
-        #admin-wrapper .btn--grey {
-            background-color: #6c757d !important; /* 一般操作灰色 */
-        }
-        /* 強制按鈕平面化 - 使用更強的選擇器覆蓋 style.css */
-    #admin-wrapper .btn, 
-    #admin-wrapper button.btn,
-    .admin-main .btn {
-        background-image: none !important;
-        background-color: #6c757d !important; /* 預設灰 */
-        box-shadow: none !important;
-        border: none !important;
-        text-shadow: none !important;
-        border-radius: 4px !important;
-        color: #fff !important;
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-        padding: 8px 16px !important;
-        transition: opacity 0.2s;
-        cursor: pointer;
-        font-weight: normal;
-    }
-
-    #admin-wrapper .btn--brown { background-color: #C48945 !important; }
-    #admin-wrapper .btn--red { background-color: #dc3545 !important; }
-    #admin-wrapper .btn--green { background-color: #28a745 !important; }
-    #admin-wrapper .btn--grey { background-color: #6c757d !important; }
-
-    #admin-wrapper .btn:hover { opacity: 0.8; transform: none !important; }
-
-    /* 修復回饋內容長度 */
-    .feedback-card__content {
-        white-space: pre-wrap !important;
-        word-break: break-all !important;
-        line-height: 1.6;
-        max-height: 200px;
-        overflow-y: auto;
-    }
-
-    /* 待審核區塊顯眼度 */
-    #section-pending {
-        background-color: #fffdec;
-        border: 2px solid #f9e79f;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-    }
         }
     </style>
 </head>
@@ -338,7 +222,6 @@
     <div id="login-wrapper">
         <div id="login-container">
             <div style="text-align: center; margin-bottom: 20px;">
-                <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="Logo" style="height: 60px;">
                 <h2 style="color: #333;">後台管理系統</h2>
             </div>
             <form id="login-form">
@@ -354,45 +237,32 @@
 
     <div id="admin-content" style="display: none;">
         <div id="admin-wrapper">
-            
             <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
+            
             <aside class="admin-sidebar" id="admin-sidebar">
                 <div class="sidebar-header">
                     <h2>帥府後台</h2>
                     <button class="close-sidebar-btn" id="close-sidebar">&times;</button>
                 </div>
                 <nav class="sidebar-nav">
-                    <button class="nav-item active" data-tab="tab-feedback" data-title="信徒回饋管理">
-                        💬 信徒回饋
-                    </button>
-                    <button class="nav-item" data-tab="tab-products" data-title="商品與募款項目">
-                        🛍️ 商品管理
-                    </button>
-                    <button class="nav-item" data-tab="tab-fund" data-title="建廟基金設定">
-                        📊 基金進度
-                    </button>
-                    <button class="nav-item" data-tab="tab-announcements" data-title="最新消息公告">
-                        📢 最新消息
-                    </button>
-                    <button class="nav-item" data-tab="tab-qa" data-title="常見問題 (FAQ)">
-                        ❓ 常見問題
-                    </button>
-                    <button class="nav-item" data-tab="tab-links" data-title="外部連結管理">
-                        🔗 連結管理
-                    </button>
+                    <button class="nav-item active" data-tab="tab-feedback" data-title="信徒回饋管理">💬 信徒回饋</button>
+                    <button class="nav-item" data-tab="tab-products" data-title="商品與募款項目">🛍️ 商品管理</button>
+                    <button class="nav-item" data-tab="tab-fund" data-title="建廟基金設定">📊 基金進度</button>
+                    <button class="nav-item" data-tab="tab-announcements" data-title="最新消息公告">📢 最新消息</button>
+                    <button class="nav-item" data-tab="tab-qa" data-title="常見問題 (FAQ)">❓ 常見問題</button>
+                    <button class="nav-item" data-tab="tab-links" data-title="外部連結管理">🔗 連結管理</button>
                 </nav>
                 <div class="sidebar-footer">
-                    <button id="logout-btn">登出系統</button>
+                    <button id="logout-btn" class="btn btn--red">登出系統</button>
                 </div>
             </aside>
 
             <main class="admin-main">
                 <header class="mobile-header">
-                    <button class="hamburger-btn" id="sidebar-toggle">☰</button>
+                    <button class="hamburger-btn" id="sidebar-toggle" style="background:none; border:none; font-size:24px;">☰</button>
                     <h3 style="margin:0;">帥府後台</h3>
-                    <div style="width: 24px;"></div> </header>
-
+                    <div style="width: 24px;"></div>
+                </header>
                 <header class="page-header">
                     <h2 class="page-title" id="page-title-display">信徒回饋管理</h2>
                     <div style="color: #666; font-size: 0.9em;">今日: <span id="today-date"></span></div>
@@ -401,43 +271,42 @@
                 <div class="content-body">
                     
                     <div id="tab-feedback" class="tab-content active">
-                        <div class="card-container">
-                            <div class="admin-sub-tabs">
-                                <button class="sub-tab-btn active" data-sub-tab="#approved-list-content">已刊登列表</button>
-                                <button class="sub-tab-btn" data-sub-tab="#pending-list-content">待審核區</button>
+                        
+                        <div id="section-pending" class="feedback-section">
+                            <div class="feedback-section-title" style="color: #856404; border-bottom-color: #ffeeba;">
+                                <span>⚠️ 待審核區 (請依序處理，舊的在上面)</span>
                             </div>
+                            <div id="pending-feedback-list"></div>
+                        </div>
 
-                            <div id="approved-list-content" class="sub-tab-content active">
-                                <div class="approved-actions">
-                                    <button id="mark-all-btn" class="btn btn--brown">全部標記為已讀</button>
-                                    <button id="export-btn" class="btn" style="background:#2ecc71;">匯出未標記寄件資訊</button>
+                        <div id="section-approved" class="feedback-section">
+                            <div class="feedback-section-title">
+                                <span>✅ 已刊登列表</span>
+                                <div style="display:flex; gap:10px;">
+                                    <button id="mark-all-btn" class="btn btn--brown" style="font-size:13px;">全部標記為已讀</button>
+                                    <button id="export-btn" class="btn btn--green" style="font-size:13px;">匯出未寄送清單 (下載)</button>
                                 </div>
-                                <div id="approved-feedback-list"></div>
                             </div>
-
-                            <div id="pending-list-content" class="sub-tab-content">
-                                <div id="pending-feedback-list"></div>
-                            </div>
+                            <div id="approved-feedback-list"></div>
                         </div>
                     </div>
 
                     <div id="tab-products" class="tab-content">
                         <div id="products-list"></div>
-                        <button id="add-product-btn" class="fab-btn" title="新增商品">+</button>
+                        <button id="add-product-btn" class="fab-btn">+</button>
                     </div>
 
                     <div id="tab-fund" class="tab-content">
-                        <div class="card-container" style="max-width: 500px;">
-                            <h3 style="margin-top:0;">建廟基金目標設定</h3>
+                        <div class="feedback-section" style="background:#fff; padding:25px; border-radius:8px; max-width:500px;">
+                            <h3 style="margin-top:0;">建廟基金設定</h3>
                             <form id="fund-form">
                                 <div style="margin-bottom: 20px;">
-                                    <label style="font-weight:bold; display:block; margin-bottom:8px;">目標金額 (Goal)</label>
-                                    <input type="number" id="fund-goal" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px;" placeholder="例如：10000000">
+                                    <label style="font-weight:bold; display:block; margin-bottom:8px;">目標金額</label>
+                                    <input type="number" id="fund-goal" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px;">
                                 </div>
                                 <div style="margin-bottom: 20px;">
-                                    <label style="font-weight:bold; display:block; margin-bottom:8px;">目前已募得金額 (Current)</label>
-                                    <input type="number" id="fund-current" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px;" placeholder="例如：2500000">
-                                    <small style="color: #e74c3c;">* 此數字將直接更新前台圓餅圖</small>
+                                    <label style="font-weight:bold; display:block; margin-bottom:8px;">目前金額</label>
+                                    <input type="number" id="fund-current" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px;">
                                 </div>
                                 <button type="submit" class="btn btn--brown" style="width:100%;">儲存設定</button>
                             </form>
@@ -450,181 +319,110 @@
                     </div>
 
                     <div id="tab-qa" class="tab-content">
-                        <div id="faq-category-btns" style="margin-bottom:18px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                        <div id="faq-category-btns" style="margin-bottom:18px; display:flex; flex-wrap:wrap; gap:8px;"></div>
                         <div id="faq-list"></div>
                         <button id="add-faq-btn" class="fab-btn">+</button>
                     </div>
 
                     <div id="tab-links" class="tab-content">
-                        <div class="card-container">
+                        <div class="feedback-section" style="background:#fff; padding:20px; border-radius:8px;">
                             <div id="links-list"></div>
                         </div>
                     </div>
 
-                </div> </main>
+                </div>
+            </main>
         </div>
     </div>
 
     <div id="product-modal" class="admin-modal-overlay">
         <div class="admin-modal-content">
             <button class="modal-close-btn">&times;</button>
-            <h4 id="product-modal-title" style="font-size: 1.2rem; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">新增商品</h4>
+            <h4 id="product-modal-title" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">新增商品</h4>
             <form id="product-form">
                 <input type="hidden" name="productId">
-                
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">商品分類</label>
-                    <select name="category" required style="width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+                    <label style="font-weight:bold;">分類</label>
+                    <select name="category" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
                         <option value="手工香">手工香系列</option>
                         <option value="保養品">保養品系列</option>
-                        <option value="原力曼">元帥娘愛用(原力曼)</option>
-                        <option value="建廟基金">建廟基金募款</option>
+                        <option value="原力曼">原力曼</option>
+                        <option value="建廟基金">建廟基金</option>
                         <option value="捐香">捐香服務</option>
                     </select>
                 </div>
-
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">商品名稱</label>
-                    <input type="text" name="name" required placeholder="例如：招財沉香" style="width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+                    <label style="font-weight:bold;">名稱</label>
+                    <input type="text" name="name" required style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
                 </div>
-
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">商品圖片</label>
-                    <div style="margin-top:5px; border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; background: #fafafa;">
-                        <img id="preview-image" src="" style="max-width: 100%; max-height: 250px; display: none; margin: 0 auto 15px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                        
-                        <input type="file" id="product-image-input" accept="image/*" style="display: none;">
-                        <div style="display: flex; justify-content: center; gap: 10px;">
-                            <button type="button" class="btn" style="background:#6c757d;" onclick="document.getElementById('product-image-input').click()">
-                                📷 選擇圖片
-                            </button>
-                            <button type="button" id="remove-image-btn" class="btn btn--red" style="display:none;">
-                                移除
-                            </button>
-                        </div>
+                    <label style="font-weight:bold;">圖片</label>
+                    <div style="margin-top:5px; text-align:center; background:#f9f9f9; padding:10px; border-radius:4px;">
+                        <img id="preview-image" style="max-width:100%; max-height:200px; display:none; margin-bottom:10px;">
+                        <input type="file" id="product-image-input" accept="image/*" style="display:none;">
+                        <button type="button" class="btn btn--grey" onclick="document.getElementById('product-image-input').click()">選擇圖片</button>
+                        <button type="button" id="remove-image-btn" class="btn btn--red" style="display:none;">移除</button>
                         <input type="hidden" name="image">
                     </div>
-                    <small style="color: #888; display:block; margin-top:5px;">建議尺寸：1080x1080 (正方形)，檔案小於 2MB</small>
                 </div>
-
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">價格 (NT$)</label>
-                    <input type="number" name="price" required placeholder="例如：500" style="width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+                    <label style="font-weight:bold;">價格</label>
+                    <input type="number" name="price" required style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
                 </div>
-
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">描述/備註</label>
-                    <textarea name="description" rows="3" style="width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;"></textarea>
+                    <label style="font-weight:bold;">描述</label>
+                    <textarea name="description" rows="3" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;"></textarea>
                 </div>
-
-                <div style="margin-bottom:20px; padding: 10px; background: #f9f9f9; border-radius: 6px;">
-                    <label style="display:flex; align-items:center; cursor:pointer;">
-                        <input type="checkbox" name="isActive" checked style="width:20px; height:20px; margin-right:10px;"> 
-                        <span style="font-weight:bold;">上架販售中</span>
-                    </label>
+                <div style="margin-bottom:15px;">
+                    <label><input type="checkbox" name="isActive" checked> 上架中</label>
                 </div>
-
-                <button type="submit" class="btn btn--brown" style="width:100%; padding: 12px; font-size: 16px;">儲存商品</button>
+                <button type="submit" class="btn btn--brown" style="width:100%;">儲存</button>
             </form>
         </div>
     </div>
+
     <div id="feedback-edit-modal" class="admin-modal-overlay">
         <div class="admin-modal-content">
             <button class="modal-close-btn">&times;</button>
-            <h4 style="font-size: 1.2rem; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">編輯信徒回饋</h4>
+            <h4 style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">編輯回饋</h4>
             <form id="feedback-edit-form">
                 <input type="hidden" name="feedbackId">
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div style="margin-bottom:15px;">
-                        <label style="font-weight:bold;">真實姓名</label>
-                        <input type="text" name="realName" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="font-weight:bold;">暱稱</label>
-                        <input type="text" name="nickname" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <div><label style="font-weight:bold;">姓名</label><input type="text" name="realName" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
+                    <div><label style="font-weight:bold;">暱稱</label><input type="text" name="nickname" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
                 </div>
-
                 <div style="margin-bottom:15px;">
                     <label style="font-weight:bold;">分類</label>
                     <select name="category" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                        <option value="運途">運途</option>
-                        <option value="事業">事業</option>
-                        <option value="財運">財運</option>
-                        <option value="身體">身體</option>
-                        <option value="姻緣">姻緣</option>
-                        <option value="收驚">收驚</option>
-                        <option value="其他">其他</option>
+                        <option value="運途">運途</option><option value="事業">事業</option><option value="財運">財運</option>
+                        <option value="身體">身體</option><option value="姻緣">姻緣</option><option value="收驚">收驚</option><option value="其他">其他</option>
                     </select>
                 </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div style="margin-bottom:15px;">
-                        <label style="font-weight:bold;">農曆生日</label>
-                        <input type="text" name="lunarBirthday" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="font-weight:bold;">時辰</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <div><label style="font-weight:bold;">農曆生日</label><input type="text" name="lunarBirthday" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
+                    <div><label style="font-weight:bold;">時辰</label>
                         <select name="birthTime" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                            <option value="吉時 (不知道)">吉時 (不知道)</option>
-                            <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
-                            <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
-                            <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
-                            <option value="卯時 (05:00-07:00)">卯時 (05:00-07:00)</option>
-                            <option value="辰時 (07:00-09:00)">辰時 (07:00-09:00)</option>
-                            <option value="巳時 (09:00-11:00)">巳時 (09:00-11:00)</option>
-                            <option value="午時 (11:00-13:00)">午時 (11:00-13:00)</option>
-                            <option value="未時 (13:00-15:00)">未時 (13:00-15:00)</option>
-                            <option value="申時 (15:00-17:00)">申時 (15:00-17:00)</option>
-                            <option value="酉時 (17:00-19:00)">酉時 (17:00-19:00)</option>
-                            <option value="戌時 (19:00-21:00)">戌時 (19:00-21:00)</option>
-                            <option value="亥時 (21:00-23:00)">亥時 (21:00-23:00)</option>
+                            <option value="吉時 (不知道)">吉時</option><option value="子時">子時</option><option value="丑時">丑時</option>
+                            <option value="寅時">寅時</option><option value="卯時">卯時</option><option value="辰時">辰時</option>
+                            <option value="巳時">巳時</option><option value="午時">午時</option><option value="未時">未時</option>
+                            <option value="申時">申時</option><option value="酉時">酉時</option><option value="戌時">戌時</option><option value="亥時">亥時</option>
                         </select>
                     </div>
                 </div>
-
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">電話</label>
-                    <input type="text" name="phone" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                </div>
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">地址</label>
-                    <input type="text" name="address" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                </div>
-
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">內容</label>
-                    <textarea name="content" rows="6" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></textarea>
-                </div>
-
-                <button type="submit" class="btn btn--brown" style="width:100%; padding: 12px;">儲存修改</button>
+                <div style="margin-bottom:15px;"><label style="font-weight:bold;">電話</label><input type="text" name="phone" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
+                <div style="margin-bottom:15px;"><label style="font-weight:bold;">地址</label><input type="text" name="address" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
+                <div style="margin-bottom:15px;"><label style="font-weight:bold;">內容</label><textarea name="content" rows="6" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></textarea></div>
+                <button type="submit" class="btn btn--brown" style="width:100%;">儲存修改</button>
             </form>
-        </div>
-    </div>
-    <div id="export-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h4>寄件資訊 (可直接複製)</h4>
-            <textarea id="export-output-textarea" readonly style="width: 100%; height: 60vh; padding: 10px; border: 1px solid #ddd;"></textarea>
         </div>
     </div>
 
     <div id="view-modal" class="admin-modal-overlay">
         <div class="admin-modal-content">
             <button class="modal-close-btn" onclick="document.getElementById('view-modal').classList.remove('is-visible')">&times;</button>
-            <h4>完整回饋內容</h4>
-            <div id="view-modal-body" style="background:#f9f9f9; padding:15px; border-radius:6px; margin-bottom:20px; line-height:1.6;"></div>
+            <h4>詳細內容</h4>
+            <div id="view-modal-body" style="background:#f9f9f9; padding:15px; border-radius:6px; margin-bottom:20px; line-height:1.6; word-break: break-all;"></div>
             <button id="delete-feedback-btn" class="btn btn--red" style="width:100%;">刪除這則回饋</button>
-        </div>
-    </div>
-
-    <div id="announcement-view-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h4>公告預覽</h4>
-            <div id="announcement-view-modal-body" style="margin-bottom:20px;"></div>
-            <button id="delete-announcement-from-modal-btn" class="btn btn--red" style="width:100%;">刪除公告</button>
         </div>
     </div>
 
@@ -636,18 +434,18 @@
                 <input type="hidden" name="announcementId">
                 <div style="margin-bottom:15px;">
                     <label style="font-weight:bold;">日期</label>
-                    <input type="text" name="date" required placeholder="例如：2025/07/08" style="width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+                    <input type="text" name="date" required placeholder="YYYY/MM/DD" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
                 </div>
                 <div style="margin-bottom:15px;">
                     <label style="font-weight:bold;">標題</label>
-                    <input type="text" name="title" required style="width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+                    <input type="text" name="title" required style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
                 </div>
                 <div style="margin-bottom:15px;">
                     <label style="font-weight:bold;">內文</label>
-                    <textarea name="content" rows="5" required style="width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;"></textarea>
+                    <textarea name="content" rows="5" required style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;"></textarea>
                 </div>
                 <div style="margin-bottom:15px;">
-                    <label><input type="checkbox" name="isPinned" value="true"> 置頂這則公告</label>
+                    <label><input type="checkbox" name="isPinned"> 置頂</label>
                 </div>
                 <button type="submit" class="btn btn--brown" style="width:100%;">發布</button>
             </form>
@@ -660,20 +458,20 @@
             <h4>新增問答</h4>
             <form id="faq-form">
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">問題 (Q)</label>
-                    <textarea name="question" rows="2" required style="width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;"></textarea>
+                    <label style="font-weight:bold;">問題</label>
+                    <textarea name="question" rows="2" required style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;"></textarea>
                 </div>
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">答案 (A)</label>
-                    <textarea name="answer" rows="4" required style="width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;"></textarea>
+                    <label style="font-weight:bold;">答案</label>
+                    <textarea name="answer" rows="4" required style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;"></textarea>
                 </div>
                 <div style="margin-bottom:15px;">
                     <label style="font-weight:bold;">分類</label>
-                    <div id="faq-modal-category-btns" style="display: flex; gap:8px; flex-wrap:wrap; margin:8px 0;"></div>
-                    <input type="text" name="other_category" placeholder="或輸入新分類（限中文）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px;">
+                    <div id="faq-modal-category-btns" style="display:flex; flex-wrap:wrap; gap:8px; margin:5px 0;"></div>
+                    <input type="text" name="other_category" placeholder="輸入新分類" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
                 </div>
                 <div style="margin-bottom:15px;">
-                    <label><input type="checkbox" name="isPinned" value="true"> 置頂</label>
+                    <label><input type="checkbox" name="isPinned"> 置頂</label>
                 </div>
                 <button type="submit" class="btn btn--brown" style="width:100%;">儲存</button>
             </form>
@@ -682,82 +480,7 @@
 
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
     <script>
-        // 顯示今日日期
         document.getElementById('today-date').textContent = new Date().toLocaleDateString('zh-TW');
     </script>
-<div id="feedback-edit-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h4 style="font-size: 1.2rem; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">編輯信徒回饋</h4>
-            <form id="feedback-edit-form">
-                <input type="hidden" name="feedbackId">
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div style="margin-bottom:15px;">
-                        <label style="font-weight:bold;">真實姓名</label>
-                        <input type="text" name="realName" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="font-weight:bold;">暱稱</label>
-                        <input type="text" name="nickname" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    </div>
-                </div>
-
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">分類</label>
-                    <select name="category" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                        <option value="運途">運途</option>
-                        <option value="事業">事業</option>
-                        <option value="財運">財運</option>
-                        <option value="身體">身體</option>
-                        <option value="姻緣">姻緣</option>
-                        <option value="收驚">收驚</option>
-                        <option value="其他">其他</option>
-                    </select>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div style="margin-bottom:15px;">
-                        <label style="font-weight:bold;">農曆生日</label>
-                        <input type="text" name="lunarBirthday" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    </div>
-                    <div style="margin-bottom:15px;">
-                        <label style="font-weight:bold;">時辰</label>
-                        <select name="birthTime" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                            <option value="吉時 (不知道)">吉時 (不知道)</option>
-                            <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
-                            <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
-                            <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
-                            <option value="卯時 (05:00-07:00)">卯時 (05:00-07:00)</option>
-                            <option value="辰時 (07:00-09:00)">辰時 (07:00-09:00)</option>
-                            <option value="巳時 (09:00-11:00)">巳時 (09:00-11:00)</option>
-                            <option value="午時 (11:00-13:00)">午時 (11:00-13:00)</option>
-                            <option value="未時 (13:00-15:00)">未時 (13:00-15:00)</option>
-                            <option value="申時 (15:00-17:00)">申時 (15:00-17:00)</option>
-                            <option value="酉時 (17:00-19:00)">酉時 (17:00-19:00)</option>
-                            <option value="戌時 (19:00-21:00)">戌時 (19:00-21:00)</option>
-                            <option value="亥時 (21:00-23:00)">亥時 (21:00-23:00)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">電話</label>
-                    <input type="text" name="phone" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                </div>
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">地址</label>
-                    <input type="text" name="address" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                </div>
-
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:bold;">內容</label>
-                    <textarea name="content" rows="6" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></textarea>
-                </div>
-
-                <button type="submit" class="btn btn--brown" style="width:100%; padding: 12px;">儲存修改</button>
-            </form>
-        </div>
-    </div>
 </body>
 </html>
