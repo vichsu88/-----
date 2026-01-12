@@ -199,7 +199,39 @@ def approve_feedback(feedback_id):
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": f"審核時發生錯誤: {str(e)}"}), 500
+# --- app.py 新增功能 ---
 
+# API: 更新回饋內容 (編輯功能)
+@app.route('/api/feedback/<feedback_id>', methods=['PUT'])
+@login_required
+def update_feedback(feedback_id):
+    if db is None: return jsonify({"error": "資料庫未連線"}), 500
+    
+    data = request.get_json()
+    # 這裡接收管理者修改後的所有欄位
+    try:
+        update_fields = {
+            "realName": data.get('realName'),
+            "nickname": data.get('nickname'),
+            "category": data.get('category'), # 存入時維持陣列格式或是字串，需看您資料庫現狀，這裡假設前端會送對的格式
+            "content": data.get('content'),
+            "lunarBirthday": data.get('lunarBirthday'),
+            "birthTime": data.get('birthTime'),
+            "address": data.get('address'),
+            "phone": data.get('phone')
+        }
+        
+        result = db.feedback.update_one(
+            {'_id': ObjectId(feedback_id)},
+            {'$set': update_fields}
+        )
+        
+        if result.matched_count == 0:
+            return jsonify({"error": "找不到指定的回饋"}), 404
+            
+        return jsonify({"success": True, "message": "資料更新成功"})
+    except Exception as e:
+        return jsonify({"error": f"更新失敗: {str(e)}"}), 500
 # API: 不同意刪除 (從資料庫中刪除)
 @app.route('/api/feedback/<feedback_id>', methods=['DELETE'])
 @login_required

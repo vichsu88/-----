@@ -484,7 +484,80 @@
             </form>
         </div>
     </div>
+    <div id="feedback-edit-modal" class="admin-modal-overlay">
+        <div class="admin-modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h4 style="font-size: 1.2rem; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">編輯信徒回饋</h4>
+            <form id="feedback-edit-form">
+                <input type="hidden" name="feedbackId">
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="margin-bottom:15px;">
+                        <label style="font-weight:bold;">真實姓名</label>
+                        <input type="text" name="realName" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <label style="font-weight:bold;">暱稱</label>
+                        <input type="text" name="nickname" required style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    </div>
+                </div>
 
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:bold;">分類</label>
+                    <select name="category" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                        <option value="運途">運途</option>
+                        <option value="事業">事業</option>
+                        <option value="財運">財運</option>
+                        <option value="身體">身體</option>
+                        <option value="姻緣">姻緣</option>
+                        <option value="收驚">收驚</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="margin-bottom:15px;">
+                        <label style="font-weight:bold;">農曆生日</label>
+                        <input type="text" name="lunarBirthday" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <label style="font-weight:bold;">時辰</label>
+                        <select name="birthTime" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                            <option value="吉時 (不知道)">吉時 (不知道)</option>
+                            <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
+                            <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
+                            <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
+                            <option value="卯時 (05:00-07:00)">卯時 (05:00-07:00)</option>
+                            <option value="辰時 (07:00-09:00)">辰時 (07:00-09:00)</option>
+                            <option value="巳時 (09:00-11:00)">巳時 (09:00-11:00)</option>
+                            <option value="午時 (11:00-13:00)">午時 (11:00-13:00)</option>
+                            <option value="未時 (13:00-15:00)">未時 (13:00-15:00)</option>
+                            <option value="申時 (15:00-17:00)">申時 (15:00-17:00)</option>
+                            <option value="酉時 (17:00-19:00)">酉時 (17:00-19:00)</option>
+                            <option value="戌時 (19:00-21:00)">戌時 (19:00-21:00)</option>
+                            <option value="亥時 (21:00-23:00)">亥時 (21:00-23:00)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:bold;">電話</label>
+                    <input type="text" name="phone" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:bold;">地址</label>
+                    <input type="text" name="address" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                </div>
+
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:bold;">內容</label>
+                    <textarea name="content" rows="6" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn--brown" style="width:100%; padding: 12px;">儲存修改</button>
+            </form>
+        </div>
+    </div>
     <div id="export-modal" class="admin-modal-overlay">
         <div class="admin-modal-content">
             <button class="modal-close-btn">&times;</button>
