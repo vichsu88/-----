@@ -39,10 +39,10 @@
         line-height:1.9;
         color:#555;
         white-space:pre-wrap;
-        word-break:break-all;
+        word-break:break-word; /* 防止長文字爆版 */
     }
 
-    /* ★★★ 修改重點：浮動按鈕 (電腦版) ★★★ */
+    /* 浮動按鈕 (電腦版) */
     .feedback-floating-btn {
         position: fixed;
         top: 50%;
@@ -51,31 +51,23 @@
         z-index: 900;
         cursor: pointer;
         transition: transform 0.2s, opacity 0.3s;
-        width: 210px; /* 電腦版維持大尺寸 */
+        width: 210px;
     }
-    .feedback-floating-btn img {
-        width: 100%;
-        height: auto;
-        display: block;
-    }
-    .feedback-floating-btn:hover {
-        transform: translateY(-50%) scale(1.05);
-    }
+    .feedback-floating-btn img { width: 100%; height: auto; display: block; }
+    .feedback-floating-btn:hover { transform: translateY(-50%) scale(1.05); }
 
-    /* ★★★ 修改重點：浮動按鈕 (手機版縮小) ★★★ */
+    /* 手機版浮動按鈕 */
     @media (max-width: 768px) {
         .feedback-floating-btn {
-            width: 130px; /* 手機版縮小 */
+            width: 130px;
             top: auto;
-            bottom: 30px; /* 改為靠下，避免遮擋內容 */
-            transform: none; /* 移除垂直置中 */
+            bottom: 30px;
+            transform: none;
         }
-        .feedback-floating-btn:hover {
-            transform: scale(1.05);
-        }
+        .feedback-floating-btn:hover { transform: scale(1.05); }
     }
 
-    /* Modal 共用樣式 */
+    /* --- Modal 共用樣式 --- */
     .modal-overlay {
         display: none;
         position: fixed;
@@ -87,16 +79,27 @@
     }
     .modal-overlay.is-visible { display: flex; }
     
+    /* ★★★ 版面寬度優化 ★★★ */
     .modal-content {
         background: #F3F0EC; 
         padding: 30px; 
         border-radius: 15px;
-        width: 90%; 
-        max-width: 600px; 
         position: relative;
-        max-height:90vh; 
-        overflow-y:auto;
+        max-height: 90vh; 
+        overflow-y: auto;
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        
+        /* 電腦版寬度 85% */
+        width: 85%;
+        max-width: 1000px; 
+    }
+
+    /* 手機版寬度 98% */
+    @media (max-width: 768px) {
+        .modal-content {
+            width: 98%;
+            padding: 20px 15px; /* 減少內距以爭取空間 */
+        }
     }
     
     .modal-close-btn {
@@ -132,7 +135,7 @@
         border:none;border-radius:25px;padding:12px 0;cursor:pointer; 
         box-shadow:0 4px 10px rgba(0,0,0,.15); transition:opacity .2s; 
     }
-    .btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+    .btn-primary:disabled{opacity:.45;cursor:not-allowed; background:#999;}
     
     /* 第二階段確認視窗樣式 */
     .review-table {
@@ -142,40 +145,35 @@
         background: #fff;
         border-radius: 8px;
         overflow: hidden;
+        table-layout: fixed; /* 固定表格佈局 */
     }
     .review-table th, .review-table td {
         padding: 12px;
         border-bottom: 1px solid #eee;
         text-align: left;
+        vertical-align: top;
     }
     .review-table th {
         background: #E6BA67;
         color: white;
-        width: 30%;
+        width: 120px; /* 固定標題寬度 */
         font-weight: normal;
     }
+    /* ★★★ 內容防爆版關鍵 ★★★ */
+    .review-table td {
+        word-wrap: break-word;
+        word-break: break-word;
+        white-space: pre-wrap;
+    }
+
     .agree-box {
-        background: #fff;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px dashed #C48945;
-        margin-bottom: 20px;
-        font-size: 14px;
-        line-height: 1.6;
+        background: #fff; padding: 15px; border-radius: 8px; border: 1px dashed #C48945;
+        margin-bottom: 20px; font-size: 14px; line-height: 1.6;
     }
-    .action-buttons {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-    }
+    .action-buttons { display: flex; gap: 15px; justify-content: center; }
     .btn-secondary {
-        background: #6c757d;
-        color: white;
-        border: none;
-        border-radius: 25px;
-        padding: 12px 25px;
-        font-size: 16px;
-        cursor: pointer;
+        background: #6c757d; color: white; border: none; border-radius: 25px;
+        padding: 12px 25px; font-size: 16px; cursor: pointer;
     }
 </style>
 
@@ -200,12 +198,12 @@
             <p class="feedback-note">
                 <strong>一份善緣，一份心意</strong><br>
                 每一份感動、每一次在生活中受到的護佑，都是元帥慈悲的珍貴見證。<br>
-                寫下您與元帥故事拿小神衣，元帥娘不定期加碼抽獎。
+                請完整填寫以下資訊（所有欄位皆為必填），下一步將進行資料確認。
             </p>
             
             <div class="form-fieldset">
-                <label>真實姓名：<input type="text" name="realName" required></label>
-                <label>暱稱 (公開顯示)：<input type="text" name="nickname" required></label>
+                <label>真實姓名：<input type="text" name="realName" required placeholder="請填寫真實姓名"></label>
+                <label>暱稱 (公開顯示)：<input type="text" name="nickname" required placeholder="例如：陳信徒"></label>
                 
                 <div class="single-choice">
                     <p style="margin-bottom:5px; font-weight:bold;">類別（擇一）：</p>
@@ -223,15 +221,18 @@
                 </label>
 
                 <div class="form-group">
-                    <label for="lunarBirthday">農曆生日 (YYYY/MM/DD)</label>
+                    <label for="lunarBirthday">農曆生日 (YYYY/MM/DD) <span style="color:red;font-size:12px;">*必填</span></label>
                     <input type="text" id="lunarBirthday" name="lunarBirthday" 
-                          placeholder="例如：1995/08/21" maxlength="10">
+                          placeholder="例如：1995/08/21" maxlength="10" required>
+                    <small style="color:#888;">格式範例：1995/01/01 (月日請補0)</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="birthTime">出生時辰 (選填)</label>
-                    <select id="birthTime" name="birthTime">
-                        <option value="" selected>吉時 (不知道)</option> <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
+                    <label for="birthTime">出生時辰 <span style="color:red;font-size:12px;">*必填</span></label>
+                    <select id="birthTime" name="birthTime" required>
+                        <option value="" disabled selected>請選擇時辰</option>
+                        <option value="吉時 (不知道)">吉時 (不知道)</option>
+                        <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
                         <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
                         <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
                         <option value="卯時 (05:00-07:00)">卯時 (05:00-07:00)</option>
@@ -246,8 +247,8 @@
                     </select>
                 </div>
 
-                <label>寄件地址：<input type="text" name="address"></label>
-                <label>聯絡電話：<input type="tel" name="phone"></label>
+                <label>寄件地址：<input type="text" name="address" required placeholder="請填寫完整收件地址"></label>
+                <label>聯絡電話：<input type="tel" name="phone" required placeholder="例如：0912345678"></label>
             </div>
 
             <button type="button" id="go-to-review-btn" class="btn-primary" disabled>下一步：確認資料</button>
@@ -271,7 +272,7 @@
                 <th colspan="2" style="text-align:center; background:#f0f0f0; color:#555;">回饋內容</th>
             </tr>
             <tr>
-                <td colspan="2" id="review-content" style="white-space: pre-wrap;"></td>
+                <td colspan="2" id="review-content"></td>
             </tr>
         </table>
 
@@ -349,59 +350,109 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- 2. Fix: 農曆生日輸入修正 (解決重複輸入問題) ---
-// 找到 feedback.html 裡的 <script> 區塊，替換 handleInput 部分
+  // --- 2. Fix: 農曆生日輸入修正 (解決重複輸入問題 + 範圍驗證) ---
   if(lunarInput){
-      lunarInput.addEventListener('input', (e) => {
-        // 核心修正：不使用 value 直接賦值，除非格式變動
-        let cursorPosition = lunarInput.selectionStart;
-        let originalValue = lunarInput.value;
-        let v = originalValue.replace(/\D/g, ''); 
-        
-        if (v.length > 8) v = v.slice(0, 8);
+      let isComposing = false; 
 
+      lunarInput.addEventListener('compositionstart', () => { isComposing = true; });
+      lunarInput.addEventListener('compositionend', () => { isComposing = false; handleInput(); });
+
+      lunarInput.addEventListener('input', (e) => {
+          if (isComposing) return;
+          handleInput(e);
+      });
+
+      function handleInput(e) {
+        let v = lunarInput.value.replace(/\D/g, ''); // 只保留數字
+        if (v.length > 8) v = v.slice(0, 8); // YYYYMMDD 最多8碼
+
+        // 格式化邏輯
         let formatted = '';
         if (v.length > 4) {
-          formatted = v.slice(0, 4) + '/' + v.slice(4, 6) + (v.length > 6 ? '/' + v.slice(6) : '');
-        } else if (v.length === 4 && e.inputType !== 'deleteContentBackward') {
-           formatted = v + '/';
+          formatted = v.slice(0, 4) + '/' + v.slice(4);
+        } else if (v.length === 4) {
+           // 只有在不是刪除鍵操作時才自動補斜線
+           if(e && e.inputType !== 'deleteContentBackward') formatted = v + '/';
+           else formatted = v;
         } else {
           formatted = v;
         }
 
-        if (originalValue !== formatted) {
-            lunarInput.value = formatted;
-            // 保持游標位置，避免重複觸發導致數字倍增
+        if (formatted.length > 7) {
+           // formatted 現在像 1995/08
+           let rawDate = v.slice(4, 6); // 月份部分
+           
+           // 自動補第二個斜線
+           if(v.length >= 7) {
+               formatted = v.slice(0, 4) + '/' + v.slice(4, 6) + '/' + v.slice(6);
+           }
         }
-      });
+        
+        // 只有當格式化後的字串跟當前顯示的不一樣時才更新
+        if (lunarInput.value !== formatted) {
+            lunarInput.value = formatted;
+        }
+        
+        checkFormValidity(); // 每次輸入都檢查按鈕狀態
+      }
   }
 
-  // --- 3. 檢查第一階段表單內容 ---
-  feedbackForm.addEventListener('input', () => {
+  // 日期有效性檢查 (YYYY/MM/DD)
+  function isValidDate(dateString) {
+      const regex = /^\d{4}\/\d{2}\/\d{2}$/;
+      if (!regex.test(dateString)) return false;
+      
+      const parts = dateString.split('/');
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      const day = parseInt(parts[2], 10);
+
+      // 檢查範圍
+      if (month < 1 || month > 12) return false;
+      if (day < 1 || day > 31) return false;
+      
+      // 簡單檢查年份合理性
+      if (year < 1900 || year > new Date().getFullYear()) return false;
+
+      return true;
+  }
+
+  // --- 3. 檢查表單完整性 (所有欄位必填) ---
+  function checkFormValidity() {
     const isRealName = feedbackForm.realName.value.trim().length > 0;
     const isNickname = feedbackForm.nickname.value.trim().length > 0;
     const isCategory = !!feedbackForm.category.value;
     const isContentOk = feedbackForm.content.value.trim().length >= 100;
+    const isPhone = feedbackForm.phone.value.trim().length > 0;
+    const isAddress = feedbackForm.address.value.trim().length > 0;
+    const isBirthTime = feedbackForm.birthTime.value !== "";
     
-    goToReviewBtn.disabled = !(isRealName && isNickname && isCategory && isContentOk);
-  });
+    // 日期檢查
+    const dateVal = lunarInput.value;
+    const isDateOk = isValidDate(dateVal);
+
+    // 只有全部通過，按鈕才啟用
+    const allValid = isRealName && isNickname && isCategory && isContentOk && isPhone && isAddress && isBirthTime && isDateOk;
+    goToReviewBtn.disabled = !allValid;
+  }
+
+  feedbackForm.addEventListener('input', checkFormValidity);
+  feedbackForm.addEventListener('change', checkFormValidity); // 針對 radio 和 select
 
   // --- 4. 點擊「下一步：確認資料」 ---
   goToReviewBtn.addEventListener('click', () => {
     document.getElementById('review-realName').textContent = feedbackForm.realName.value;
     document.getElementById('review-nickname').textContent = feedbackForm.nickname.value;
     document.getElementById('review-category').textContent = feedbackForm.category.value;
-    document.getElementById('review-lunarBirthday').textContent = feedbackForm.lunarBirthday.value || '未填寫';
-    const birthTimeVal = feedbackForm.birthTime.value;
-    document.getElementById('review-birthTime').textContent = birthTimeVal ? birthTimeVal : '吉時 (不知道)';
-    document.getElementById('review-phone').textContent = feedbackForm.phone.value || '未填寫';
-    document.getElementById('review-address').textContent = feedbackForm.address.value || '未填寫';
+    document.getElementById('review-lunarBirthday').textContent = feedbackForm.lunarBirthday.value;
+    document.getElementById('review-birthTime').textContent = feedbackForm.birthTime.value;
+    document.getElementById('review-phone').textContent = feedbackForm.phone.value;
+    document.getElementById('review-address').textContent = feedbackForm.address.value;
     document.getElementById('review-content').textContent = feedbackForm.content.value;
     
     agreeCheckbox.checked = false;
     confirmSubmitBtn.disabled = true;
 
-    formModal.classList.add('is-visible'); 
     formModal.classList.remove('is-visible');
     reviewModal.classList.add('is-visible');
   });
