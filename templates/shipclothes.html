@@ -96,7 +96,11 @@
     .feedback-floating-btn img { width: 100%; height: auto; display: block; }
     .feedback-floating-btn:hover { transform: translateY(-50%) scale(1.05); }
     @media (max-width: 768px) {
-        .feedback-floating-btn { width: 130px; top: auto; bottom: 30px; transform: none; }
+        .feedback-floating-btn { width: 130px;
+            top: auto;
+            bottom: 85px; /* 改為 85px，避開下方的 TOP 按鈕 */
+            transform: none;
+            right: 10px; }
         .feedback-floating-btn:hover { transform: scale(1.05); }
     }
 
@@ -255,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/shipclothes/calc-date');
             const data = await res.json();
-            datePreview.textContent = `預計黑貓收件日：${data.pickupDate}`;
+            datePreview.textContent = `黑貓收件日：${data.pickupDate}`;
         } catch(e){}
     }
 

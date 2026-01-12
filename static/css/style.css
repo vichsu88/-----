@@ -1186,7 +1186,7 @@ body::before {
 .feedback-floating-btn {
     position: fixed;
     right: 0;              /* 貼齊最右側 */
-    bottom: 55%;           /* 垂直位置中間偏下 */
+    bottom: 85%;           /* 垂直位置中間偏下 */
     width: 130px;          /* 固定像素寬度，確保長條圖夠大 */
     height: auto;          /* 高度自動 */
     z-index: 9999;
