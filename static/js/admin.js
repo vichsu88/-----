@@ -523,6 +523,101 @@ document.addEventListener('DOMContentLoaded', () => {
             closeAnnouncementDetailModal();
         }
     });
+    // --- 圖片處理邏輯 ---
+const productImageInput = document.getElementById('product-image-input');
+const previewImage = document.getElementById('preview-image');
+const removeImageBtn = document.getElementById('remove-image-btn');
+const imageHiddenInput = productForm.querySelector('input[name="image"]');
+
+// 當使用者選擇檔案時
+productImageInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // 1. 檢查檔案大小 (2MB = 2 * 1024 * 1024 bytes)
+    if (file.size > 2 * 1024 * 1024) {
+        alert('圖片太大了！請將檔案縮小至 2MB 以內。');
+        this.value = ''; // 清空選擇
+        return;
+    }
+
+    // 2. 讀取圖片並轉為 Base64
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+            // 3. (選用) 檢查解析度，這裡先只做警告
+            if (img.width > 2500 || img.height > 2500) {
+                alert('提醒：圖片解析度非常高，可能會影響讀取速度，建議縮小後再上傳。');
+            }
+            // 設定預覽與隱藏欄位
+            previewImage.src = event.target.result;
+            previewImage.style.display = 'block';
+            removeImageBtn.style.display = 'inline-block';
+            imageHiddenInput.value = event.target.result; // 存入 Base64
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+
+// 移除圖片按鈕
+removeImageBtn.addEventListener('click', function() {
+    productImageInput.value = '';
+    imageHiddenInput.value = '';
+    previewImage.src = '';
+    previewImage.style.display = 'none';
+    removeImageBtn.style.display = 'none';
+});
+
+// 修改 showProductModal 函式，確保打開時會載入舊圖片
+// 請找到原本的 showProductModal，在裡面補上圖片處理的邏輯：
+const originalShowProductModal = showProductModal; // 備份舊函式 (概念)
+
+// ★ 請直接修改原本的 showProductModal 函式，加入以下內容：
+function showProductModal(product = null) {
+    productForm.reset();
+    
+    // 重置圖片區域
+    previewImage.src = '';
+    previewImage.style.display = 'none';
+    removeImageBtn.style.display = 'none';
+    imageHiddenInput.value = '';
+
+    if (product) {
+        // ... (原本的欄位賦值代碼 name, price 等) ...
+        productModalTitle.textContent = '編輯商品';
+        productForm.productId.value = product._id;
+        productForm.category.value = product.category;
+        productForm.name.value = product.name;
+        productForm.price.value = product.price;
+        productForm.description.value = product.description;
+        productForm.isActive.checked = product.isActive;
+
+        // ★ 加入這段：如果有圖片，就顯示出來
+        if (product.image) {
+            previewImage.src = product.image;
+            previewImage.style.display = 'block';
+            removeImageBtn.style.display = 'inline-block';
+            imageHiddenInput.value = product.image;
+        }
+    } else {
+        productModalTitle.textContent = '新增商品';
+        productForm.productId.value = '';
+        productForm.isActive.checked = true;
+    }
+    productModal.classList.add('is-visible');
+}
+
+// 也要記得在 productForm 的 submit 事件中，formData 已經會自動包含 hidden 的 image 欄位，
+// 但要確認您的 formData 建構方式有包含它：
+/* 原本的 submit 事件中：
+   const formData = {
+       ...,
+       image: productForm.image.value, // ★ 確保加入這一行
+       ...
+   };
+*/
     // --- 商品管理邏輯 ---
     const productsListDiv = document.getElementById('products-list');
     const addProductBtn = document.getElementById('add-product-btn');

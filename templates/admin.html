@@ -265,7 +265,22 @@
                             <label style="font-weight:bold;">商品名稱：</label>
                             <input type="text" name="name" required placeholder="例如：招財沉香" style="width:100%; padding:8px; margin-top:5px;">
                         </div>
-
+                        <div style="margin-bottom:15px;">
+                            <label style="font-weight:bold;">商品圖片：</label>
+                        <div style="margin-top:5px; border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px;">
+                            <img id="preview-image" src="" style="max-width: 100%; max-height: 200px; display: none; margin: 0 auto 10px; border-radius: 4px;">
+                            
+                            <input type="file" id="product-image-input" accept="image/*" style="display: none;">
+                            <button type="button" class="btn" style="background:#6c757d; font-size:14px;" onclick="document.getElementById('product-image-input').click()">
+                                選擇圖片 (Max 2MB)
+                            </button>
+                            <button type="button" id="remove-image-btn" class="btn" style="background:#dc3545; font-size:14px; display:none; margin-left:5px;">
+                                移除
+                            </button>
+                            <input type="hidden" name="image">
+                        </div>
+                            <small style="color: #888;">建議尺寸：1080x1080 (正方形)，檔案小於 2MB</small>
+                        </div>
                         <div style="margin-bottom:15px;">
                             <label style="font-weight:bold;">價格 (元)：</label>
                             <input type="number" name="price" required placeholder="例如：500" style="width:100%; padding:8px; margin-top:5px;">
