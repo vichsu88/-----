@@ -152,7 +152,7 @@ def yuan_user_page(): return redirect(url_for('shop_page'))
 @app.route('/donation')
 def donation_page(): return redirect(url_for('shop_page'))
 @app.route('/fund')
-def fund_page(): return redirect(url_for('shop_page'))
+def fund_page(): return redirect(url_for('fund.html'))
 
 @app.route('/feedback')
 def feedback_page(): return render_template('feedback.html')
