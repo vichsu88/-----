@@ -1247,3 +1247,83 @@ body::before {
     width: 100%;
     height: 100%;
 }
+/* =========================================
+   新增：電腦版下拉選單 (Dropdown Menu)
+   ========================================= */
+/* 母選項容器 */
+.nav-links-desktop .dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* 下拉按鈕樣式 */
+.nav-links-desktop .dropbtn {
+    cursor: pointer;
+    /* 這裡繼承 nav-links-desktop a 的樣式，但加上箭頭指示 */
+}
+
+/* 下拉選單內容 (預設隱藏) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%; /* 出現在按鈕正下方 */
+    left: 50%;
+    transform: translateX(-50%); /* 水平置中 */
+    background-color: rgba(255, 255, 255, 0.95);
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    border: 1px solid #E6BA67;
+    z-index: 1000;
+    padding: 10px 0;
+    text-align: center;
+}
+
+/* 下拉選單連結 */
+.dropdown-content a {
+    color: #333 !important; /* 覆蓋原本白色設定 */
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    font-size: 18px !important; /* 比主選單小一點 */
+    font-family: 'Noto Sans TC', sans-serif !important; /* 子選單用清晰字體 */
+    text-shadow: none !important;
+}
+
+/* 滑鼠移過連結變色 */
+.dropdown-content a:hover {
+    background-color: #fdf6e9;
+    color: #C48945 !important;
+}
+
+/* 滑鼠移入母選項時顯示下拉 */
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* =========================================
+   新增：手機版選單層級 (Mobile Hierarchy)
+   ========================================= */
+/* 小標題 (不可點擊) */
+.mobile-group-title {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 16px;
+    color: #888;
+    margin-bottom: 15px !important;
+    margin-top: 10px;
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+/* 子項目縮排 */
+.mobile-sub-item {
+    margin-bottom: 20px !important; /* 比主項目稍微緊湊一點 */
+    padding-left: 0; /* 視覺上不做太多縮排，改用字體大小區分 */
+}
+
+.mobile-sub-item a {
+    font-size: 24px !important; /* 比主項目(30px)小 */
+    color: #6d4c41 !important; /* 顏色稍微深一點區隔 */
+}

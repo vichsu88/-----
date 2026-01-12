@@ -76,14 +76,41 @@ def inject_links():
     except: return dict(links={})
 
 # --- 4. 前台頁面路由 ---
+# --- 前台頁面路由 ---
 @app.route('/')
 def home(): return render_template('index.html')
+
+# ★ 合併後的新服務頁面
+@app.route('/services')
+def services_page(): return render_template('services.html')
+
+# 舊路由轉址 (相容性)
 @app.route('/gongtan')
-def gongtan_page(): return render_template('gongtan.html')
+def gongtan_page(): return redirect(url_for('services_page', _anchor='gongtan-section'))
 @app.route('/shoujing')
-def shoujing_page(): return render_template('shoujing.html')
-@app.route('/incense')
-def incense_page(): return render_template('incense.html')
+def shoujing_page(): return redirect(url_for('services_page', _anchor='shoujing-section'))
+
+# ★ 新增產品與功能頁面路由 (目前先指向 index 或簡易模板，防止連結失效)
+@app.route('/products/incense')
+def incense_page(): return render_template('incense.html') # 假設您還保留這個，或者稍後我們重做商品頁
+
+@app.route('/products/skincare')
+def skincare_page(): 
+    # 暫時無內容，先導回首頁並顯示訊息，或顯示 "敬請期待"
+    return render_template('index.html') 
+
+@app.route('/products/yuan-shuai-niang')
+def yuan_user_page(): 
+    return render_template('index.html')
+
+@app.route('/donation')
+def donation_page(): 
+    return render_template('index.html')
+
+@app.route('/fund')
+def fund_page(): 
+    return render_template('index.html')
+
 @app.route('/feedback')
 def feedback_page(): return render_template('feedback.html')
 @app.route('/faq')

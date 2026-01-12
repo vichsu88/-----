@@ -5,33 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light">
   <title>{% block title %}承天中承府{% endblock %}</title>
-
   <meta name="csrf-token" content="{{ csrf_token() }}">
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 
   <header class="main-header">
-    <nav class="main-nav" role="navigation" aria-label="主導覽">
+    <nav class="main-nav">
       <a href="{{ url_for('home') }}" class="nav-logo">
-        <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="承天中承府 Logo">
+        <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="Logo">
       </a>
 
       <button class="nav-toggle" aria-label="開啟選單">
-        <svg xmlns="http://www.w.org/2000/svg" width="36" height="6" viewBox="0 0 36 6" fill="none"><path d="M3 3H33" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/></svg>
-        <svg xmlns="http://www.w.org/2000/svg" width="36" height="6" viewBox="0 0 36 6" fill="none"><path d="M3 2.66666H33" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/></svg>
-        <svg xmlns="http://www.w3.org/2000/svg" width="21" height="6" viewBox="0 0 21 6" fill="none"><path d="M3.33334 3L18 3" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/></svg>
+        <svg width="36" height="6" viewBox="0 0 36 6"><path d="M3 3H33" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/></svg>
+        <svg width="36" height="6" viewBox="0 0 36 6"><path d="M3 2.66H33" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/></svg>
+        <svg width="21" height="6" viewBox="0 0 21 6"><path d="M3.33 3L18 3" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round"/></svg>
       </button>
 
       <ul class="nav-links-desktop">
         <li><a href="{{ url_for('home') }}">首頁</a></li>
-        <li><a href="/#services-section">服務項目</a></li>
+        <li><a href="{{ url_for('services_page') }}">收驚問事</a></li>
+        
+        <li class="dropdown">
+            <span class="dropbtn">周邊產品 ▾</span>
+            <div class="dropdown-content">
+                <a href="{{ url_for('incense_page') }}">手工香系列</a>
+                <a href="{{ url_for('skincare_page') }}">保養品系列</a>
+                <a href="{{ url_for('yuan_user_page') }}">元帥娘愛用</a>
+            </div>
+        </li>
+
         <li><a href="{{ url_for('feedback_page') }}">信徒回饋</a></li>
+        <li><a href="{{ url_for('donation_page') }}">捐香服務</a></li>
+        <li><a href="{{ url_for('fund_page') }}">建廟基金</a></li>
         <li><a href="{{ url_for('faq_page') }}">常見問題</a></li>
       </ul>
     </nav>
@@ -49,20 +58,15 @@
           <p>地址：嘉義市新生路337號八八菸酒</p>
           <p>營業時間：上午10:30～凌晨3:00</p>
         </div>
-
         <div class="footer-col footer-col-center">
-          <img src="{{ url_for('static', filename='images/common/footer-ill.png') }}"
-               alt="" aria-hidden="true" class="footer-illustration center-yuanbao" loading="lazy">
+          <img src="{{ url_for('static', filename='images/common/footer-ill.png') }}" class="footer-illustration center-yuanbao" loading="lazy">
         </div>
-
         <div class="footer-col footer-col-right">
-        <h4 class="custom-link-title">官方社群</h4>
-        <div class="footer-social">
-            <a href="{{ links['煙島元帥社群'] or '#' }}" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE" loading="lazy"></a>
-            <a href="{{ links['TikTok'] or '#' }}" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok" loading="lazy"></a>
-            <a href="{{ links['IG'] or '#' }}" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram" loading="lazy"></a>
-            <a href="{{ links['FB'] or '#' }}" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook" loading="lazy"></a>
-            <a href="{{ links['YouTube'] or '#' }}" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube" loading="lazy"></a>
+          <h4 class="custom-link-title">官方社群</h4>
+          <div class="footer-social">
+            <a href="{{ links['煙島元帥社群'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}"></a>
+            <a href="{{ links['FB'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}"></a>
+            <a href="{{ links['IG'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}"></a>
           </div>
           <div class="footer-copyright">&copy; All copyright reserved | Eros design</div>
         </div>
@@ -71,31 +75,30 @@
   </footer>
 
   <div class="mobile-nav-overlay" id="mobile-nav-overlay">
-    <button class="overlay-close-btn" id="overlay-close-btn" aria-label="關閉選單">&times;</button>
+    <button class="overlay-close-btn" id="overlay-close-btn">&times;</button>
     <ul class="overlay-nav-links">
       <li><a href="{{ url_for('home') }}">首頁</a></li>
-      <li><a href="/#services-section">服務項目</a></li>
+      <li><a href="{{ url_for('services_page') }}">收驚問事</a></li>
+      
+      <li class="mobile-group-title">周邊產品系列</li>
+      <li class="mobile-sub-item"><a href="{{ url_for('incense_page') }}">手工香系列</a></li>
+      <li class="mobile-sub-item"><a href="{{ url_for('skincare_page') }}">保養品系列</a></li>
+      <li class="mobile-sub-item"><a href="{{ url_for('yuan_user_page') }}">元帥娘愛用</a></li>
+
       <li><a href="{{ url_for('feedback_page') }}">信徒回饋</a></li>
+      <li><a href="{{ url_for('donation_page') }}">捐香服務</a></li>
+      <li><a href="{{ url_for('fund_page') }}">建廟基金</a></li>
       <li><a href="{{ url_for('faq_page') }}">常見問題</a></li>
     </ul>
-
-    <img src="{{ url_for('static', filename='images/common/menu-avator.png') }}" alt="元帥聖像" class="overlay-avatar" loading="lazy">
-    <h4 class="custom-link-title">官方社群</h4>
+    
     <div class="overlay-social">
-       <a href="{{ links['FB'] or '#' }}" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook" loading="lazy"></a>
-       <a href="{{ links['IG'] or '#' }}" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram" loading="lazy"></a>
-       <a href="{{ links['元帥娘官方LINE'] or '#' }}" aria-label="LINE"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE" loading="lazy"></a>
-       <a href="{{ links['TikTok'] or '#' }}" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok" loading="lazy"></a>
-       <a href="{{ links['YouTube'] or '#' }}" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube" loading="lazy"></a>
+       <a href="{{ links['FB'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}"></a>
+       <a href="{{ links['IG'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}"></a>
+       <a href="{{ links['元帥娘官方LINE'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}"></a>
     </div>
   </div>
 
-  <a href="#" class="back-to-top-btn" aria-label="回到頂端">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M14.5962 8.42871L8.71097 2.54349C8.32044 2.153 7.68728 2.153 7.29676 2.54349L1.41154 8.42871" stroke="#C48945" stroke-width="3" stroke-linecap="round"/></svg>
-    <span>TOP</span>
-  </a>
-
+  <a href="#" class="back-to-top-btn">TOP</a>
   <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
-    <script async src="//www.instagram.com/embed.js"></script>
 </body>
 </html>
