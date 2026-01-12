@@ -121,10 +121,53 @@
         position: absolute; top: 15px; right: 15px; background: #C48945; color: #fff;
         border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;
     }
+    
+    /* 表單元件樣式 */
     .form-group { margin-bottom: 20px; }
     .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
     .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
     
+    /* 衣服輸入列樣式 */
+    .clothing-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+    .clothing-row input {
+        flex: 1; /* 兩個輸入框平分寬度 */
+    }
+    
+    .remove-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .add-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 8px 15px;
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        margin-top: 5px;
+    }
+
+    /* 驗證碼 */
     .captcha-row {
         display: flex; gap: 10px; align-items: center;
     }
@@ -161,16 +204,11 @@
     <div class="modal-content">
         <button class="modal-close-btn">&times;</button>
         <h3 style="margin-top:0; color:#C48945; text-align:center;">登記寄回衣物</h3>
-        <p style="color:#666; font-size:14px; text-align:center; margin-bottom:20px;">請逐筆輸入，若有多件衣物請分開登記。</p>
+        <p style="color:#666; font-size:14px; text-align:center; margin-bottom:20px;">請依照欄位順序填寫，衣物可點擊 + 新增多筆。</p>
         
         <form id="ship-form">
             <div class="form-group">
-                <label>真實姓名 (將隱碼顯示)</label>
-                <input type="text" id="senderName" class="form-control" placeholder="請填寫全名" required>
-            </div>
-
-            <div class="form-group">
-                <label>所屬 Line 群組</label>
+                <label>1. 所屬 Line 群組</label>
                 <select id="lineGroup" class="form-control" required>
                     <option value="" disabled selected>請選擇群組</option>
                     <option value="群組一">群組一</option>
@@ -181,8 +219,24 @@
             </div>
 
             <div class="form-group">
-                <label>衣服編號 (單件)</label>
-                <input type="text" id="clothingId" class="form-control" placeholder="例如 A001" required>
+                <label>2. Line 名稱 (群組內顯示的暱稱)</label>
+                <input type="text" id="lineName" class="form-control" placeholder="例如：快樂小明" required>
+            </div>
+
+            <div class="form-group">
+                <label>3. 真實姓名 (寄件人全名，將隱碼顯示)</label>
+                <input type="text" id="senderName" class="form-control" placeholder="請填寫全名" required>
+            </div>
+
+            <div class="form-group">
+                <label>4. 衣服明細 (編號 + 名稱)</label>
+                <div id="clothes-container">
+                    <div class="clothing-row">
+                        <input type="text" class="form-control clothing-id" placeholder="編號 (例如 A001)" required>
+                        <input type="text" class="form-control clothing-name" placeholder="名稱 (例如 紅色T恤)" required>
+                    </div>
+                </div>
+                <button type="button" class="add-btn" id="add-clothing-btn">＋ 新增下一件</button>
             </div>
 
             <div class="form-group">
@@ -208,6 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const boardList = document.getElementById('board-list');
     const datePreview = document.getElementById('preview-date');
     const captchaQ = document.getElementById('captcha-question');
+    const clothesContainer = document.getElementById('clothes-container');
+    const addClothingBtn = document.getElementById('add-clothing-btn');
 
     // 開啟 Modal 並取得驗證碼
     openBtn.addEventListener('click', async () => {
@@ -224,6 +280,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     closeBtn.onclick = closeModal;
     modal.onclick = (e) => { if(e.target === modal) closeModal(); };
+
+    // 動態新增衣服欄位
+    addClothingBtn.addEventListener('click', () => {
+        const div = document.createElement('div');
+        div.className = 'clothing-row';
+        div.innerHTML = `
+            <input type="text" class="form-control clothing-id" placeholder="編號" required>
+            <input type="text" class="form-control clothing-name" placeholder="名稱" required>
+            <button type="button" class="remove-btn" title="刪除">×</button>
+        `;
+        clothesContainer.appendChild(div);
+        
+        // 綁定刪除事件
+        div.querySelector('.remove-btn').addEventListener('click', () => {
+            div.remove();
+        });
+    });
 
     // 取得驗證碼題目
     async function fetchCaptcha() {
@@ -248,10 +321,26 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        // 收集衣服資料
+        const idInputs = document.querySelectorAll('.clothing-id');
+        const nameInputs = document.querySelectorAll('.clothing-name');
+        const clothes = [];
+        
+        for(let i=0; i<idInputs.length; i++) {
+            const id = idInputs[i].value.trim();
+            const name = nameInputs[i].value.trim();
+            if(id && name) {
+                clothes.push({ id: id, name: name });
+            }
+        }
+
+        if(clothes.length === 0) { alert('請至少填寫一件衣服'); return; }
+
         const payload = {
-            name: document.getElementById('senderName').value.trim(),
             lineGroup: document.getElementById('lineGroup').value,
-            clothingId: document.getElementById('clothingId').value.trim(),
+            lineName: document.getElementById('lineName').value.trim(),
+            name: document.getElementById('senderName').value.trim(),
+            clothes: clothes, // 物件陣列
             captcha: document.getElementById('captcha-input').value.trim()
         };
 
@@ -269,6 +358,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if(result.success) {
                 alert(`登記成功！\n預計收件日：${result.pickupDate}`);
                 form.reset();
+                // 重置衣服欄位回預設狀態 (1行)
+                clothesContainer.innerHTML = `
+                    <div class="clothing-row">
+                        <input type="text" class="form-control clothing-id" placeholder="編號 (例如 A001)" required>
+                        <input type="text" class="form-control clothing-name" placeholder="名稱 (例如 紅色T恤)" required>
+                    </div>`;
+                
                 closeModal();
                 fetchBoardData(); // 刷新清單
             } else {
@@ -289,20 +385,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            boardList.innerHTML = data.map(item => `
+            boardList.innerHTML = data.map(item => {
+                // 處理衣服顯示格式： A001 (紅衣), B002 (藍褲)
+                const clothesDisplay = item.clothes.map(c => 
+                    `<span style="border:1px solid #ddd; padding:2px 6px; border-radius:4px; margin-right:5px; background:#fff; display:inline-block; margin-bottom:4px;">
+                        <b>${c.id}</b> <small style="color:#666;">(${c.name})</small>
+                    </span>`
+                ).join('');
+
+                return `
                 <div class="board-card">
                     <div class="board-info">
-                        <div style="margin-bottom:5px;">
+                        <div style="margin-bottom:8px;">
                             <span class="board-date-badge">預計 ${item.pickupDate} 收件</span>
                             <span style="font-weight:bold; font-size:18px;">${item.name}</span>
-                            <span style="color:#888; font-size:14px; margin-left:10px;">(${item.lineGroup})</span>
+                            <span style="color:#C48945; font-size:14px; margin-left:5px;">(${item.lineName})</span>
+                            <span style="color:#888; font-size:13px; margin-left:5px;">@${item.lineGroup}</span>
                         </div>
                         <div class="board-clothes">
-                            申請日期: ${item.submitDate} <br>
-                            衣服編號: <b>${item.clothes[0]}</b>
+                            <div style="margin-bottom:4px; font-size:12px; color:#888;">申請日期: ${item.submitDate}</div>
+                            <div>${clothesDisplay}</div>
                         </div>
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
         } catch(e) { boardList.innerHTML = '<p>載入失敗</p>'; }
     }
 

@@ -282,7 +282,9 @@ def get_captcha():
     session['captcha_answer'] = str(num1 + num2) # 儲存答案在 Session
     return jsonify({"question": f"{num1} + {num2} = ?"})
 
-# 提交衣物登記
+# --- 在 app.py 後段，ShipClothes API 區域進行修改 ---
+
+# API: 提交衣物登記 (更新版)
 @app.route('/api/shipclothes', methods=['POST'])
 def submit_ship_clothes():
     if db is None: return jsonify({"success": False, "message": "資料庫未連線"}), 500
@@ -291,24 +293,24 @@ def submit_ship_clothes():
     # 1. 檢查驗證碼
     user_captcha = data.get('captcha', '').strip()
     correct_answer = session.get('captcha_answer')
-    
-    # 驗證後立即清除，避免重複使用
-    session.pop('captcha_answer', None)
+    session.pop('captcha_answer', None) # 驗證一次即銷毀
 
     if not correct_answer or user_captcha != correct_answer:
         return jsonify({"success": False, "message": "驗證碼錯誤，請重新輸入"}), 400
 
-    # 2. 檢查必填 (修改：clothingId 為單筆字串)
-    if not data.get('name') or not data.get('clothingId') or not data.get('lineGroup'):
+    # 2. 檢查必填 (新增 lineName)
+    if not data.get('name') or not data.get('lineGroup') or not data.get('lineName') or not data.get('clothes'):
         return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
 
     now_tw = datetime.utcnow() + timedelta(hours=8)
     pickup_date = calculate_business_d2(now_tw)
 
+    # 3. 儲存資料 (clothes 結構為物件陣列)
     submission = {
         "name": data['name'],
         "lineGroup": data['lineGroup'],
-        "clothes": [data['clothingId']], # 為了相容顯示邏輯，存成單元素的 list，或者之後改前端顯示 logic
+        "lineName": data['lineName'],  # 新增
+        "clothes": data['clothes'],    # 預期格式: [{'id': 'A01', 'name': 'T恤'}, ...]
         "submitDate": now_tw,
         "submitDateStr": now_tw.strftime('%Y/%m/%d'),
         "pickupDate": pickup_date,
@@ -321,7 +323,7 @@ def submit_ship_clothes():
         "pickupDate": pickup_date.strftime('%Y/%m/%d')
     })
 
-# 取得清單
+# API: 取得清單 (更新版)
 @app.route('/api/shipclothes/list', methods=['GET'])
 def get_ship_clothes_list():
     if db is None: return jsonify([]), 500
@@ -349,14 +351,14 @@ def get_ship_clothes_list():
             results.append({
                 "name": masked_name,
                 "lineGroup": doc['lineGroup'],
-                "clothes": doc.get('clothes', []),
+                "lineName": doc.get('lineName', ''), # 新增回傳
+                "clothes": doc.get('clothes', []),   # 回傳物件陣列
                 "submitDate": doc['submitDateStr'],
                 "pickupDate": doc['pickupDateStr']
             })
             
         return jsonify(results)
     except Exception as e: return jsonify({"error": str(e)}), 500
-
 # --- 9. API: 商品管理 (Products) ---
 @app.route('/api/products', methods=['GET'])
 @login_required
