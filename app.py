@@ -548,13 +548,42 @@ def add_announcement():
 def delete_announcement(aid):
     db.announcements.delete_one({'_id': ObjectId(aid)})
     return jsonify({"success": True})
-
+@app.route('/api/announcements/<aid>', methods=['PUT'])
+@login_required
+def update_announcement(aid):
+    if db is None: return jsonify({"error": "DB Error"}), 500
+    data = request.get_json()
+    try:
+        date_obj = datetime.strptime(data['date'], '%Y/%m/%d')
+        update_fields = {
+            "date": date_obj,
+            "title": data['title'],
+            "content": data['content'],
+            "isPinned": data.get('isPinned', False)
+        }
+        db.announcements.update_one({'_id': ObjectId(aid)}, {'$set': update_fields})
+        return jsonify({"success": True})
+    except Exception as e: return jsonify({"error": str(e)}), 500
 @app.route('/api/faq', methods=['GET'])
 def get_faqs():
     query = {'category': request.args.get('category')} if request.args.get('category') else {}
     faqs = db.faq.find(query).sort([('isPinned', -1), ('createdAt', -1)])
     return jsonify([{**doc, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d')} for doc in faqs])
-
+@app.route('/api/faq/<fid>', methods=['PUT'])
+@login_required
+def update_faq(fid):
+    if db is None: return jsonify({"error": "DB Error"}), 500
+    data = request.get_json()
+    try:
+        update_fields = {
+            "question": data['question'],
+            "answer": data['answer'],
+            "category": data['category'],
+            "isPinned": data.get('isPinned', False)
+        }
+        db.faq.update_one({'_id': ObjectId(fid)}, {'$set': update_fields})
+        return jsonify({"success": True})
+    except Exception as e: return jsonify({"error": str(e)}), 500
 @app.route('/api/faq/categories', methods=['GET'])
 def get_faq_categories(): return jsonify(db.faq.distinct('category'))
 
