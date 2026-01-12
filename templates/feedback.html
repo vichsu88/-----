@@ -342,12 +342,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- 2. Fix: 農曆生日自動輸入斜線 ---
+// --- 2. Fix: 農曆生日自動輸入斜線 (改良版) ---
   lunarInput.addEventListener('input', (e) => {
-    let v = e.target.value.replace(/\D/g, ''); // 只保留數字
-    if (v.length > 4) v = v.slice(0, 4) + '/' + v.slice(4);
-    if (v.length > 7) v = v.slice(0, 7) + '/' + v.slice(7);
-    e.target.value = v;
+    let input = e.target;
+    let v = input.value.replace(/\D/g, ''); // 移除所有非數字字符
+    
+    // 限制最大長度 (YYYYMMDD = 8個數字)
+    if (v.length > 8) v = v.slice(0, 8);
+
+    // 格式化邏輯
+    let formatted = '';
+    if (v.length > 4) {
+      formatted = v.slice(0, 4) + '/' + v.slice(4);
+    } else if (v.length === 4) {
+       // 使用者打滿4碼時，自動加上斜線 (但如果是刪除鍵操作則不加，避免刪不掉)
+       if(e.inputType !== 'deleteContentBackward') {
+           formatted = v + '/';
+       } else {
+           formatted = v;
+       }
+    } else {
+      formatted = v;
+    }
+
+    if (formatted.length > 7) { // 已經有第一個斜線，處理第二個
+       // formatted 現在長得像 1995/08
+       // 因為 formatted 裡面已經有斜線了，我們要看原始數字 v
+       if (v.length >= 7) {
+            formatted = v.slice(0, 4) + '/' + v.slice(4, 6) + '/' + v.slice(6);
+       }
+    }
+    
+    input.value = formatted;
   });
 
   // --- 3. 檢查第一階段表單內容 ---
