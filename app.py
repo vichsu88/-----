@@ -120,42 +120,45 @@ def api_logout():
     return jsonify({"success": True, "message": "已成功登出"})
 # API: 接收前端新的回饋
 @app.route('/api/feedback', methods=['POST'])
+# --- app.py (找到 add_feedback 函式進行修改) ---
+
+@app.route('/api/feedback', methods=['POST'])
 def add_feedback():
     if db is None: return jsonify({"error": "資料庫未連線"}), 500
     
     data = request.get_json()
     
-    # 後端的基本驗證，確保必填欄位存在且同意條款
-    required_fields = ['realName', 'nickname', 'category', 'content', 'agreed']
+    # 移除 'agreed' 的必填檢查，因為現在是在第二階段才勾選，前端會負責擋
+    required_fields = ['realName', 'nickname', 'category', 'content']
     if not all(field in data and data[field] for field in required_fields):
-        return jsonify({"error": "必填欄位不完整或未勾選同意"}), 400
+        return jsonify({"error": "必填欄位不完整"}), 400
     
-    if not data['agreed']:
+    # 雖然前端有檢查，後端還是保險起見檢查一下 agree
+    if not data.get('agreed'):
         return jsonify({"error": "必須勾選同意條款"}), 400
 
-    # 準備要存入資料庫的完整資料
+    # 處理時辰預設值 (Fix 3)
+    birth_time = data.get('birthTime')
+    if not birth_time:
+        birth_time = '吉時 (不知道)'
+
     new_feedback = {
         "realName": data.get('realName'),
         "nickname": data.get('nickname'),
         "category": data.get('category', []),
         "content": data.get('content'),
         "lunarBirthday": data.get('lunarBirthday', ''), 
-        "birthTime": data.get('birthTime', ''),
-        "address": data.get('address', ''), # 非必填欄位，如果沒有就存空字串
-        "phone": data.get('phone', ''),   # 非必填欄位，如果沒有就存空字串
+        "birthTime": birth_time, # 使用處理過的變數
+        "address": data.get('address', ''),
+        "phone": data.get('phone', ''),
         "agreed": True,
-        "createdAt": datetime.utcnow(), # 使用世界標準時間，避免時區問題
-        "status": "pending", # 新留言預設都是「待審核」
-        "isMarked": False    # 新留言預設都是「未標記」
+        "createdAt": datetime.utcnow(),
+        "status": "pending",
+        "isMarked": False
     }
     
-    # 將資料插入 feedback 集合
     db.feedback.insert_one(new_feedback)
-    
-    # 回傳成功訊息給前端
     return jsonify({"success": True, "message": "您的回饋已成功送出，待管理者審核後將會刊登。"})
-# app.py (在 add_feedback 函式下方新增)
-
 # API: 獲取所有待審核的回饋
 @app.route('/api/feedback/pending', methods=['GET'])
 @login_required

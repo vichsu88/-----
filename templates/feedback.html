@@ -16,9 +16,8 @@
         text-align: center;
         margin-bottom: 40px;
     }
-    
-    /* (已移除舊按鈕 .feedback-action-btn 的樣式，避免干擾) */
 
+    /* 列表卡片樣式 */
     .feedback-card{
         font-family:'Noto Sans TC', sans-serif;
         border:2px solid #E6BA67;
@@ -42,7 +41,27 @@
         white-space:pre-wrap;
         word-break:break-all;
     }
-    .feedback-form-modal {
+
+    /* 浮動按鈕 */
+    .feedback-floating-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 900;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .feedback-floating-btn img {
+        width: 70px;
+        height: auto;
+        display: block;
+    }
+    .feedback-floating-btn:hover {
+        transform: scale(1.1);
+    }
+
+    /* Modal 共用樣式 */
+    .modal-overlay {
         display: none;
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
@@ -51,27 +70,106 @@
         justify-content: center;
         align-items: center;
     }
-    .feedback-form-modal.is-visible { display: flex; }
-    .feedback-form-content {
-        background: #F3F0EC; padding: 30px; border-radius: 15px;
-        width: 90%; max-width: 600px; position: relative;
-        max-height:90vh; overflow-y:auto;
+    .modal-overlay.is-visible { display: flex; }
+    
+    .modal-content {
+        background: #F3F0EC; 
+        padding: 30px; 
+        border-radius: 15px;
+        width: 90%; 
+        max-width: 600px; 
+        position: relative;
+        max-height:90vh; 
+        overflow-y:auto;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
+    
     .modal-close-btn {
         position: absolute; top: 15px; right: 15px; background: #C48945;
         border: 1px solid #D9B88A; border-radius: 50%; width: 35px; height: 35px;
         color: white; font-size: 20px; line-height: 35px; text-align: center;
         cursor: pointer; padding: 0;
     }
+
+    /* 表單樣式 */
     .feedback-note{ line-height:1.7; letter-spacing:.05em; text-align:left; margin-bottom:18px; }
     .feedback-note strong{ display:block; font-size:clamp(18px,4vw,22px); color:#C48945; margin:0 0 8px 0; }
-    .form-fieldset{ padding:20px 18px; border-radius:35px; border:2px solid #E6BA67; background:rgba(255,255,255,.50); box-shadow:0 0 5px rgba(255,255,255,.50) inset; backdrop-filter:blur(7.5px); }
+    
+    /* 修正跑版的關鍵：確保 fieldset 包住所有輸入項 */
+    .form-fieldset{ 
+        padding:20px 18px; 
+        border-radius:35px; 
+        border:2px solid #E6BA67; 
+        background:rgba(255,255,255,.50); 
+        box-shadow:0 0 5px rgba(255,255,255,.50) inset; 
+        backdrop-filter:blur(7.5px); 
+        margin-bottom: 20px;
+    }
+    
     .form-fieldset label, .single-choice{display:block;margin-bottom:12px;font-size:15px;}
-    .form-fieldset input[type=text], .form-fieldset input[type=tel], .form-fieldset textarea{ width:100%;border:1px solid #ccc;border-radius:6px;padding:6px 8px; font-size:15px;box-sizing:border-box; }
-    .single-choice label{margin-right:10px;font-weight:normal;}
-    .agree-box{display:block;margin:15px 0;font-size:14px;line-height:1.6;}
-    .btn-primary{ width:100%;max-width:200px;margin:0 auto;display:block; background:#C48945;color:#fff;font-size:17px;font-weight:bold; border:none;border-radius:25px;padding:10px 0;cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,.15); transition:opacity .2s; }
+    .form-fieldset input[type=text], .form-fieldset input[type=tel], .form-fieldset textarea, .form-fieldset select { 
+        width:100%;border:1px solid #ccc;border-radius:6px;padding:8px 10px; font-size:15px;box-sizing:border-box; 
+    }
+    .single-choice label{margin-right:10px;font-weight:normal; display: inline-block;}
+    
+    .btn-primary{ 
+        width:100%;max-width:200px;margin:0 auto;display:block; 
+        background:#C48945;color:#fff;font-size:17px;font-weight:bold; 
+        border:none;border-radius:25px;padding:12px 0;cursor:pointer; 
+        box-shadow:0 4px 10px rgba(0,0,0,.15); transition:opacity .2s; 
+    }
     .btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+    
+    /* 第二階段確認視窗樣式 */
+    .review-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .review-table th, .review-table td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+    }
+    .review-table th {
+        background: #E6BA67;
+        color: white;
+        width: 30%;
+        font-weight: normal;
+    }
+    .warning-text {
+        color: #d9534f;
+        font-weight: bold;
+        text-align: center;
+        margin: 15px 0;
+        font-size: 0.9em;
+    }
+    .agree-box {
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px dashed #C48945;
+        margin-bottom: 20px;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 12px 25px;
+        font-size: 16px;
+        cursor: pointer;
+    }
 </style>
 
 <main class="feedback-page-wrapper">
@@ -84,28 +182,26 @@
     </a>
 
     <div id="feedback-list-container">
-    </div>
+        </div>
 </main>
 
-<div id="feedback-form-modal" class="feedback-form-modal">
-    <div class="feedback-form-content">
+<div id="feedback-form-modal" class="modal-overlay">
+    <div class="modal-content">
         <button class="modal-close-btn">&times;</button>
-        <form id="feedback-form" class="feedback-create-form">
+        <form id="feedback-form">
             <h2 class="section-title" style="margin-top:0">我要回饋</h2>
             <p class="feedback-note">
                 <strong>一份善緣，一份心意</strong><br>
                 每一份感動、每一次在生活中受到的護佑，都是元帥慈悲的珍貴見證。<br>
-                1. 回饋內容送出後，視為同意授權公開刊登於本府網站。<br>
-                2. 回饋將於通過審核後方能刊登，敬請耐心等候。<br>
-                3. 未經審核通過者恕不另行通知與回覆。<br>
-                4. 個人資料僅用於寄送贈品與必要聯繫，不作其他用途，敬請安心填寫。<br>
-                5. 平安符須由元帥娘親自審核與開符，故每位信眾僅限領取乙份。
+                請填寫以下資訊，下一步將進行資料確認。
             </p>
+            
             <div class="form-fieldset">
                 <label>真實姓名：<input type="text" name="realName" required></label>
-                <label>暱稱：<input type="text" name="nickname" required></label>
+                <label>暱稱 (公開顯示)：<input type="text" name="nickname" required></label>
+                
                 <div class="single-choice">
-                    <p>類別（擇一）：</p>
+                    <p style="margin-bottom:5px; font-weight:bold;">類別（擇一）：</p>
                     <label><input type="radio" name="category" value="運途" required> 運途</label>
                     <label><input type="radio" name="category" value="事業"> 事業</label>
                     <label><input type="radio" name="category" value="財運"> 財運</label>
@@ -113,23 +209,22 @@
                     <label><input type="radio" name="category" value="姻緣"> 姻緣</label>
                     <label><input type="radio" name="category" value="收驚"> 收驚</label>
                     <label><input type="radio" name="category" value="其他"> 其他</label>
-            </div>
-                <label>回饋內容（至少 100 字）：<textarea name="content" rows="6" minlength="100" required></textarea></label>
-            <div class="form-group">
-                <label for="lunarBirthday">農曆生日</label>
-                <input type="text" id="lunarBirthday" name="lunarBirthday" 
-                      placeholder="例如：1995/08/21" 
-                      pattern="\d{4}/\d{2}/\d{2}" 
-                      title="請輸入 YYYY/MM/DD 格式，例如 1995/08/21">
-                <small style="color: #888; display: block; margin-top: 4px;">※ 請依照 YYYY/MM/DD 格式填寫</small>
-            </div>
+                </div>
 
-            <div class="form-group">
-                <label for="birthTime">出生時辰 (選填)</label>
-                <div class="select-wrapper">
+                <label>回饋內容（至少 100 字）：
+                    <textarea name="content" rows="6" minlength="100" required placeholder="請分享您的故事..."></textarea>
+                </label>
+
+                <div class="form-group">
+                    <label for="lunarBirthday">農曆生日 (YYYY/MM/DD)</label>
+                    <input type="text" id="lunarBirthday" name="lunarBirthday" 
+                          placeholder="例如：1995/08/21" maxlength="10">
+                </div>
+
+                <div class="form-group">
+                    <label for="birthTime">出生時辰 (選填)</label>
                     <select id="birthTime" name="birthTime">
-                        <option value="" disabled selected>請選擇時辰</option>
-                        <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
+                        <option value="" selected>吉時 (不知道)</option> <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
                         <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
                         <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
                         <option value="卯時 (05:00-07:00)">卯時 (05:00-07:00)</option>
@@ -143,29 +238,76 @@
                         <option value="亥時 (21:00-23:00)">亥時 (21:00-23:00)</option>
                     </select>
                 </div>
-            </div>
-            </div>
+
                 <label>寄件地址：<input type="text" name="address"></label>
                 <label>聯絡電話：<input type="tel" name="phone"></label>
             </div>
-            <label class="agree-box">
-                <input type="checkbox" name="agreed" required>
-                我已詳閱並同意上述授權與注意事項，並願意提供回饋供本府公開刊登。
-            </label>
-            <button type="submit" id="submit-feedback-btn" class="btn-primary" disabled>提交回饋</button>
+
+            <button type="button" id="go-to-review-btn" class="btn-primary" disabled>下一步：確認資料</button>
         </form>
+    </div>
+</div>
+
+<div id="review-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 class="section-title" style="margin-top:0">確認資料</h2>
+        
+        <table class="review-table">
+            <tr><th>真實姓名</th><td id="review-realName"></td></tr>
+            <tr><th>暱稱</th><td id="review-nickname"></td></tr>
+            <tr><th>類別</th><td id="review-category"></td></tr>
+            <tr><th>農曆生日</th><td id="review-lunarBirthday"></td></tr>
+            <tr><th>時辰</th><td id="review-birthTime"></td></tr>
+            <tr><th>電話</th><td id="review-phone"></td></tr>
+            <tr><th>地址</th><td id="review-address"></td></tr>
+            <tr>
+                <th colspan="2" style="text-align:center; background:#f0f0f0; color:#555;">回饋內容</th>
+            </tr>
+            <tr>
+                <td colspan="2" id="review-content" style="white-space: pre-wrap;"></td>
+            </tr>
+        </table>
+
+        <div class="agree-box">
+            <label style="cursor:pointer; display:flex; align-items:flex-start;">
+                <input type="checkbox" id="review-agreed" style="margin-right:10px; margin-top:4px; transform: scale(1.2);">
+                <span>
+                    我已詳閱並同意授權上述內容供本府公開刊登。<br>
+                    <span style="color:#d9534f;">※ 資料送出後無法自行修改，若資料不完整恕無法重新寄送平安符，請確認無誤。</span>
+                </span>
+            </label>
+        </div>
+
+        <div class="action-buttons">
+            <button type="button" id="back-to-edit-btn" class="btn-secondary">返回修改</button>
+            <button type="button" id="confirm-submit-btn" class="btn-primary" disabled>確認送出</button>
+        </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  
+  // DOM Elements
   const feedbackListContainer = document.getElementById('feedback-list-container');
   const showFormBtn = document.getElementById('show-feedback-form-btn');
+  
+  // Modals
   const formModal = document.getElementById('feedback-form-modal');
+  const reviewModal = document.getElementById('review-modal');
+  
+  // Buttons
+  const goToReviewBtn = document.getElementById('go-to-review-btn');
+  const backToEditBtn = document.getElementById('back-to-edit-btn');
+  const confirmSubmitBtn = document.getElementById('confirm-submit-btn');
+  
+  // Form Inputs
   const feedbackForm = document.getElementById('feedback-form');
-  const submitBtn = document.getElementById('submit-feedback-btn');
+  const agreeCheckbox = document.getElementById('review-agreed');
+  const lunarInput = document.getElementById('lunarBirthday');
 
+  // --- 1. 自動載入回饋列表 ---
   async function fetchAndRenderFeedback() {
     try {
       const res = await fetch('/api/feedback/approved', { credentials:'include' });
@@ -181,19 +323,15 @@ document.addEventListener('DOMContentLoaded', () => {
       data.forEach(item => {
         const card = document.createElement('div');
         card.className = 'feedback-card';
-        
         const nickname = item.nickname || '匿名';
         const category = Array.isArray(item.category) ? item.category.join(', ') : '';
-
         const header = document.createElement('h3');
         header.className = 'feedback-card__header';
         header.innerHTML = `<span class="nickname">${nickname}</span> / ${category}`;
-
         const content = document.createElement('p');
         content.className = 'feedback-card__content';
         content.textContent = item.content;
         content.innerHTML = content.innerHTML.replace(/\n/g, '<br>');
-
         card.appendChild(header);
         card.appendChild(content);
         feedbackListContainer.appendChild(card);
@@ -204,27 +342,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 按鈕點擊事件：打開 Modal
-  showFormBtn.addEventListener('click', e => {
-    e.preventDefault(); // 防止頁面跳轉
-    formModal.classList.add('is-visible'); // 顯示表單
+  // --- 2. Fix: 農曆生日自動輸入斜線 ---
+  lunarInput.addEventListener('input', (e) => {
+    let v = e.target.value.replace(/\D/g, ''); // 只保留數字
+    if (v.length > 4) v = v.slice(0, 4) + '/' + v.slice(4);
+    if (v.length > 7) v = v.slice(0, 7) + '/' + v.slice(7);
+    e.target.value = v;
   });
 
-  formModal.addEventListener('click', e => {
-    if (e.target.classList.contains('modal-close-btn') || e.target.id === 'feedback-form-modal') {
-      formModal.classList.remove('is-visible');
-    }
-  });
-
+  // --- 3. 檢查第一階段表單內容 ---
   feedbackForm.addEventListener('input', () => {
+    const isRealName = feedbackForm.realName.value.trim().length > 0;
+    const isNickname = feedbackForm.nickname.value.trim().length > 0;
+    const isCategory = !!feedbackForm.category.value;
     const isContentOk = feedbackForm.content.value.trim().length >= 100;
-    const isAgreed = feedbackForm.agreed.checked;
-    submitBtn.disabled = !(isContentOk && isAgreed);
+    
+    // 只有必填都過了，才能按「下一步」
+    goToReviewBtn.disabled = !(isRealName && isNickname && isCategory && isContentOk);
   });
 
-  feedbackForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    submitBtn.disabled = true;
+  // --- 4. 點擊「下一步：確認資料」 ---
+  goToReviewBtn.addEventListener('click', () => {
+    // 填入資料到 Review Table
+    document.getElementById('review-realName').textContent = feedbackForm.realName.value;
+    document.getElementById('review-nickname').textContent = feedbackForm.nickname.value;
+    document.getElementById('review-category').textContent = feedbackForm.category.value;
+    
+    // 生日
+    document.getElementById('review-lunarBirthday').textContent = feedbackForm.lunarBirthday.value || '未填寫';
+    
+    // 時辰 (Fix: 預設顯示吉時)
+    const birthTimeVal = feedbackForm.birthTime.value;
+    document.getElementById('review-birthTime').textContent = birthTimeVal ? birthTimeVal : '吉時 (不知道)';
+    
+    document.getElementById('review-phone').textContent = feedbackForm.phone.value || '未填寫';
+    document.getElementById('review-address').textContent = feedbackForm.address.value || '未填寫';
+    document.getElementById('review-content').textContent = feedbackForm.content.value;
+    
+    // 重置勾選狀態
+    agreeCheckbox.checked = false;
+    confirmSubmitBtn.disabled = true;
+
+    // 切換 Modal
+    formModal.classList.remove('is-visible');
+    reviewModal.classList.add('is-visible');
+  });
+
+  // --- 5. 點擊「返回修改」 ---
+  backToEditBtn.addEventListener('click', () => {
+    reviewModal.classList.remove('is-visible');
+    formModal.classList.add('is-visible');
+  });
+
+  // --- 6. 同意條款連動送出按鈕 ---
+  agreeCheckbox.addEventListener('change', () => {
+    confirmSubmitBtn.disabled = !agreeCheckbox.checked;
+  });
+
+  // --- 7. 最終送出 (Call API) ---
+  confirmSubmitBtn.addEventListener('click', async () => {
+    confirmSubmitBtn.disabled = true;
+    confirmSubmitBtn.textContent = '送出中...';
+
     const payload = {
       realName: feedbackForm.realName.value.trim(),
       nickname: feedbackForm.nickname.value.trim(),
@@ -234,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
       birthTime: feedbackForm.birthTime.value,
       address: feedbackForm.address.value.trim(),
       phone: feedbackForm.phone.value.trim(),
-      agreed: feedbackForm.agreed.checked
+      agreed: true // 在這一步已經勾選了
     };
 
     try {
@@ -260,15 +439,32 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       alert('送出成功！待審核後將刊登。');
-      formModal.classList.remove('is-visible');
-      feedbackForm.reset();
-      submitBtn.disabled = true;
+      reviewModal.classList.remove('is-visible');
+      feedbackForm.reset(); // 清空表單
+      goToReviewBtn.disabled = true; // 重置按鈕狀態
     } catch (err) {
       alert(err.message);
-      submitBtn.disabled = false;
+    } finally {
+        confirmSubmitBtn.textContent = '確認送出';
+        // 如果失敗，可以選擇是否開啟按鈕讓使用者重試
+        // confirmSubmitBtn.disabled = false; 
     }
   });
 
+  // --- 8. UI 控制：打開表單 / 關閉 Modal ---
+  showFormBtn.addEventListener('click', e => {
+    e.preventDefault();
+    formModal.classList.add('is-visible');
+  });
+
+  document.querySelectorAll('.modal-close-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      formModal.classList.remove('is-visible');
+      reviewModal.classList.remove('is-visible');
+    });
+  });
+
+  // 初始化
   fetchAndRenderFeedback();
 });
 </script>
