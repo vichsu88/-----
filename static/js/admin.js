@@ -391,12 +391,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* =========================================
 /* =========================================
-       7. 信徒回饋管理 (更新版)
+       7. 信徒回饋管理 (修正版)
        ========================================= */
     const pendingListContainer = document.getElementById('pending-feedback-list');
     const approvedListContainer = document.getElementById('approved-feedback-list');
     
-    // 新增：編輯 Modal 相關 DOM
+    // 新增：編輯 Modal 相關 DOM (必須確認 admin.html 有加這段)
     const feedbackEditModal = document.getElementById('feedback-edit-modal');
     const feedbackEditForm = document.getElementById('feedback-edit-form');
 
@@ -423,21 +423,20 @@ document.addEventListener('DOMContentLoaded', () => {
                </label>` 
             : '';
         
-        // 處理類別顯示 (相容陣列與字串)
-        let catDisplay = item.category;
-        if(Array.isArray(item.category)) catDisplay = item.category.join(' ');
+        // 處理類別
+        let catDisplay = Array.isArray(item.category) ? item.category.join(' ') : item.category;
 
-        // ★★★ 關鍵修改：按鈕區域 ★★★
-        // 待審核區 (Pending) 顯示：編輯(灰) + 刪除(紅) + 同意(咖)
+        // ★★★ 關鍵修正：按鈕顯示邏輯 ★★★
         let buttonsHtml = '';
         if (type === 'pending') {
+            // 待審核區：顯示 [編輯] [刪除] [同意]
             buttonsHtml = `
                 <button class="btn btn--grey edit-feedback-btn" style="margin-right:5px;" data-data='${JSON.stringify(item).replace(/'/g, "&apos;")}'>編輯</button>
                 <button class="btn btn--red action-btn" style="margin-right:5px;" data-action="delete" data-id="${item._id}">刪除</button>
                 <button class="btn btn--brown action-btn" data-action="approve" data-id="${item._id}">同意</button>
             `;
         } else {
-            // 已刊登區 (Approved) 顯示：查看詳細
+            // 已刊登區：顯示 [查看詳細]
             buttonsHtml = `<button class="btn btn--brown view-btn" data-data='${JSON.stringify(item).replace(/'/g, "&apos;")}' >查看詳細</button>`;
         }
 
@@ -478,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(action === 'delete') await apiFetch(`/api/feedback/${id}`, { method:'DELETE' });
                     
                     fetchPendingFeedback();
-                    fetchApprovedFeedback(); // 如果是同意，可能會影響approved列表
+                    fetchApprovedFeedback();
                 } catch(e) { alert(e.message); }
             });
         });
@@ -503,7 +502,6 @@ document.addEventListener('DOMContentLoaded', () => {
         container.querySelectorAll('.view-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const item = JSON.parse(btn.dataset.data);
-                // 這裡的邏輯維持不變...
                 document.getElementById('view-modal-body').innerHTML = `
                     <p><b>真實姓名:</b> ${item.realName || '無'}</p>
                     <p><b>電話:</b> ${item.phone || '無'}</p>
@@ -512,17 +510,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     <hr>
                     <p><b>內容:</b><br>${item.content}</p>
                 `;
-                // ... (略: 刪除按鈕綁定邏輯維持原樣) ...
+                
+                const delBtn = document.getElementById('delete-feedback-btn');
+                const newDelBtn = delBtn.cloneNode(true);
+                delBtn.parentNode.replaceChild(newDelBtn, delBtn);
+                
+                newDelBtn.onclick = async () => {
+                    if(confirm('確定要刪除這則回饋嗎？此動作無法復原。')) {
+                        await apiFetch(`/api/feedback/${item._id}`, {method:'DELETE'});
+                        document.getElementById('view-modal').classList.remove('is-visible');
+                        fetchApprovedFeedback();
+                    }
+                };
                 document.getElementById('view-modal').classList.add('is-visible');
             });
         });
     }
 
-    // 新增：顯示編輯 Modal 函式
+    // 顯示編輯 Modal
     function showFeedbackEditModal(item) {
+        if(!feedbackEditForm) return;
         feedbackEditForm.reset();
         
-        // 填入資料
         feedbackEditForm.feedbackId.value = item._id;
         feedbackEditForm.realName.value = item.realName || '';
         feedbackEditForm.nickname.value = item.nickname || '';
@@ -531,8 +540,6 @@ document.addEventListener('DOMContentLoaded', () => {
         feedbackEditForm.phone.value = item.phone || '';
         feedbackEditForm.address.value = item.address || '';
         
-        // 處理 Select (類別 & 時辰)
-        // 注意：category 可能是陣列或字串，這裡做簡單處理
         let catVal = Array.isArray(item.category) ? item.category[0] : item.category;
         feedbackEditForm.category.value = catVal || '其他';
         feedbackEditForm.birthTime.value = item.birthTime || '吉時 (不知道)';
@@ -540,17 +547,16 @@ document.addEventListener('DOMContentLoaded', () => {
         feedbackEditModal.classList.add('is-visible');
     }
 
-    // 新增：編輯表單送出
+    // 編輯表單送出
     if (feedbackEditForm) {
         feedbackEditForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = feedbackEditForm.feedbackId.value;
             
-            // 收集表單資料
             const formData = {
                 realName: feedbackEditForm.realName.value,
                 nickname: feedbackEditForm.nickname.value,
-                category: [feedbackEditForm.category.value], // 轉回陣列格式以配合您的資料庫習慣
+                category: [feedbackEditForm.category.value], 
                 content: feedbackEditForm.content.value,
                 lunarBirthday: feedbackEditForm.lunarBirthday.value,
                 birthTime: feedbackEditForm.birthTime.value,
@@ -565,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 alert('修改成功！');
                 feedbackEditModal.classList.remove('is-visible');
-                fetchPendingFeedback(); // 重新整理列表顯示最新資料
+                fetchPendingFeedback(); 
             } catch (error) { 
                 alert('儲存失敗：' + error.message); 
             }

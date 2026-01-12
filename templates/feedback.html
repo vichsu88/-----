@@ -42,22 +42,26 @@
         word-break:break-all;
     }
 
-    /* 浮動按鈕 */
+    /* ★★★ 修改重點：浮動按鈕 (放大3倍 + 右側置中) ★★★ */
     .feedback-floating-btn {
         position: fixed;
-        bottom: 30px;
-        right: 30px;
-        z-index: 900;
+        top: 50%;            /* 垂直置中 */
+        right: 0;            /* 貼齊右側 */
+        transform: translateY(-50%); /* 修正垂直偏移 */
+        z-index: 900;        /* 預設層級 */
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: transform 0.2s, opacity 0.3s;
+        /* 設定寬度控制大小，原約 70px -> 3倍約 210px */
+        width: 210px; 
     }
     .feedback-floating-btn img {
-        width: 70px;
+        width: 100%;
         height: auto;
         display: block;
+        /* 如果圖片本身有留白，這裡可以裁切或調整 */
     }
     .feedback-floating-btn:hover {
-        transform: scale(1.1);
+        transform: translateY(-50%) scale(1.05); /* 懸停時稍微放大 */
     }
 
     /* Modal 共用樣式 */
@@ -65,7 +69,7 @@
         display: none;
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 1000;
+        z-index: 1000; /* 比按鈕高，確保蓋住 */
         background: rgba(0,0,0,0.6);
         justify-content: center;
         align-items: center;
@@ -95,7 +99,6 @@
     .feedback-note{ line-height:1.7; letter-spacing:.05em; text-align:left; margin-bottom:18px; }
     .feedback-note strong{ display:block; font-size:clamp(18px,4vw,22px); color:#C48945; margin:0 0 8px 0; }
     
-    /* 修正跑版的關鍵：確保 fieldset 包住所有輸入項 */
     .form-fieldset{ 
         padding:20px 18px; 
         border-radius:35px; 
@@ -139,13 +142,6 @@
         color: white;
         width: 30%;
         font-weight: normal;
-    }
-    .warning-text {
-        color: #d9534f;
-        font-weight: bold;
-        text-align: center;
-        margin: 15px 0;
-        font-size: 0.9em;
     }
     .agree-box {
         background: #fff;
@@ -193,7 +189,7 @@
             <p class="feedback-note">
                 <strong>一份善緣，一份心意</strong><br>
                 每一份感動、每一次在生活中受到的護佑，都是元帥慈悲的珍貴見證。<br>
-                分享你與元帥的故事拿小神衣，元帥娘還會不定期抽獎!<br>
+                請填寫以下資訊，下一步將進行資料確認。
             </p>
             
             <div class="form-fieldset">
@@ -243,7 +239,7 @@
                 <label>聯絡電話：<input type="tel" name="phone"></label>
             </div>
 
-            <button type="button" id="go-to-review-btn" class="btn-primary" disabled>下一步</button>
+            <button type="button" id="go-to-review-btn" class="btn-primary" disabled>下一步：確認資料</button>
         </form>
     </div>
 </div>
@@ -342,39 +338,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-// --- 2. Fix: 農曆生日自動輸入斜線 (改良版) ---
-  lunarInput.addEventListener('input', (e) => {
-    let input = e.target;
-    let v = input.value.replace(/\D/g, ''); // 移除所有非數字字符
-    
-    // 限制最大長度 (YYYYMMDD = 8個數字)
-    if (v.length > 8) v = v.slice(0, 8);
+  // --- 2. Fix: 農曆生日自動輸入斜線 (修正Bug版) ---
+  if(lunarInput){
+      lunarInput.addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, ''); // 只保留數字
+        if (v.length > 8) v = v.slice(0, 8); // 限制總長度
 
-    // 格式化邏輯
-    let formatted = '';
-    if (v.length > 4) {
-      formatted = v.slice(0, 4) + '/' + v.slice(4);
-    } else if (v.length === 4) {
-       // 使用者打滿4碼時，自動加上斜線 (但如果是刪除鍵操作則不加，避免刪不掉)
-       if(e.inputType !== 'deleteContentBackward') {
+        let formatted = '';
+        if (v.length > 4) {
+          formatted = v.slice(0, 4) + '/' + v.slice(4);
+        } else if (v.length === 4 && e.inputType !== 'deleteContentBackward') {
            formatted = v + '/';
-       } else {
-           formatted = v;
-       }
-    } else {
-      formatted = v;
-    }
+        } else {
+          formatted = v;
+        }
 
-    if (formatted.length > 7) { // 已經有第一個斜線，處理第二個
-       // formatted 現在長得像 1995/08
-       // 因為 formatted 裡面已經有斜線了，我們要看原始數字 v
-       if (v.length >= 7) {
-            formatted = v.slice(0, 4) + '/' + v.slice(4, 6) + '/' + v.slice(6);
-       }
-    }
-    
-    input.value = formatted;
-  });
+        if (formatted.length > 7 && v.length >= 7) {
+           formatted = v.slice(0, 4) + '/' + v.slice(4, 6) + '/' + v.slice(6);
+        }
+        e.target.value = formatted;
+      });
+  }
 
   // --- 3. 檢查第一階段表單內容 ---
   feedbackForm.addEventListener('input', () => {
@@ -383,7 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const isCategory = !!feedbackForm.category.value;
     const isContentOk = feedbackForm.content.value.trim().length >= 100;
     
-    // 只有必填都過了，才能按「下一步」
     goToReviewBtn.disabled = !(isRealName && isNickname && isCategory && isContentOk);
   });
 
@@ -393,23 +376,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('review-realName').textContent = feedbackForm.realName.value;
     document.getElementById('review-nickname').textContent = feedbackForm.nickname.value;
     document.getElementById('review-category').textContent = feedbackForm.category.value;
-    
-    // 生日
     document.getElementById('review-lunarBirthday').textContent = feedbackForm.lunarBirthday.value || '未填寫';
-    
-    // 時辰 (Fix: 預設顯示吉時)
     const birthTimeVal = feedbackForm.birthTime.value;
-    document.getElementById('review-birthTime').textContent = birthTimeVal ? birthTimeVal : '吉時';
-    
+    document.getElementById('review-birthTime').textContent = birthTimeVal ? birthTimeVal : '吉時 (不知道)';
     document.getElementById('review-phone').textContent = feedbackForm.phone.value || '未填寫';
     document.getElementById('review-address').textContent = feedbackForm.address.value || '未填寫';
     document.getElementById('review-content').textContent = feedbackForm.content.value;
     
-    // 重置勾選狀態
     agreeCheckbox.checked = false;
     confirmSubmitBtn.disabled = true;
 
-    // 切換 Modal
+    // UI 切換
+    formModal.classList.add('is-visible'); // 確保 Form 是開的 (雖然這裡有點怪，但先確保邏輯連續)
+    // 隱藏 Form 顯示 Review 
     formModal.classList.remove('is-visible');
     reviewModal.classList.add('is-visible');
   });
@@ -439,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
       birthTime: feedbackForm.birthTime.value,
       address: feedbackForm.address.value.trim(),
       phone: feedbackForm.phone.value.trim(),
-      agreed: true // 在這一步已經勾選了
+      agreed: true 
     };
 
     try {
@@ -466,31 +445,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
       alert('送出成功！待審核後將刊登。');
       reviewModal.classList.remove('is-visible');
-      feedbackForm.reset(); // 清空表單
-      goToReviewBtn.disabled = true; // 重置按鈕狀態
+      feedbackForm.reset(); 
+      goToReviewBtn.disabled = true; 
+      
+      // 送出成功後，按鈕要浮回來 (雖然 modal 關閉會自動處理，但保險起見)
+      showFormBtn.style.zIndex = '900';
+      showFormBtn.style.opacity = '1';
+
     } catch (err) {
       alert(err.message);
     } finally {
         confirmSubmitBtn.textContent = '確認送出';
-        // 如果失敗，可以選擇是否開啟按鈕讓使用者重試
-        // confirmSubmitBtn.disabled = false; 
     }
   });
 
-  // --- 8. UI 控制：打開表單 / 關閉 Modal ---
+  // --- 8. UI 控制：打開表單 / 關閉 Modal 與按鈕壓下去的邏輯 ---
   showFormBtn.addEventListener('click', e => {
     e.preventDefault();
     formModal.classList.add('is-visible');
+    // ★★★ 按鈕壓下去 (藏起來或降低層級) ★★★
+    showFormBtn.style.zIndex = '-1'; 
+    showFormBtn.style.opacity = '0'; // 也可以選擇直接變透明
   });
 
   document.querySelectorAll('.modal-close-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       formModal.classList.remove('is-visible');
       reviewModal.classList.remove('is-visible');
+      // ★★★ 關閉時按鈕浮上來 ★★★
+      showFormBtn.style.zIndex = '900';
+      showFormBtn.style.opacity = '1';
     });
   });
+  
+  // 點擊遮罩關閉
+  [formModal, reviewModal].forEach(modal => {
+      modal.addEventListener('click', e => {
+          if (e.target === modal) {
+              modal.classList.remove('is-visible');
+              showFormBtn.style.zIndex = '900';
+              showFormBtn.style.opacity = '1';
+          }
+      });
+  });
 
-  // 初始化
   fetchAndRenderFeedback();
 });
 </script>

@@ -201,6 +201,8 @@ def approve_feedback(feedback_id):
         return jsonify({"error": f"審核時發生錯誤: {str(e)}"}), 500
 # --- app.py 新增功能 ---
 
+# --- 請將此區段插入 app.py (放在 approve_feedback 函式附近) ---
+
 # API: 更新回饋內容 (編輯功能)
 @app.route('/api/feedback/<feedback_id>', methods=['PUT'])
 @login_required
@@ -208,12 +210,12 @@ def update_feedback(feedback_id):
     if db is None: return jsonify({"error": "資料庫未連線"}), 500
     
     data = request.get_json()
-    # 這裡接收管理者修改後的所有欄位
     try:
+        # 準備更新的欄位
         update_fields = {
             "realName": data.get('realName'),
             "nickname": data.get('nickname'),
-            "category": data.get('category'), # 存入時維持陣列格式或是字串，需看您資料庫現狀，這裡假設前端會送對的格式
+            "category": data.get('category'), 
             "content": data.get('content'),
             "lunarBirthday": data.get('lunarBirthday'),
             "birthTime": data.get('birthTime'),
