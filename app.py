@@ -9,14 +9,27 @@ from bson import ObjectId
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
 
 # --- 應用程式初始化與設定 ---
 load_dotenv()
 app = Flask(__name__)
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["2000 per day", "500 per hour"], # 全站預設限制
+    storage_uri="memory://" 
+)
 csrf = CSRFProtect(app) 
 # 1. 設定 SECRET_KEY，若 .env 未提供，則使用隨機值確保不報錯
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
+is_production = os.environ.get('RENDER') is not None
 
+app.config['SESSION_COOKIE_SECURE'] = is_production  # True: 僅限 HTTPS, False: 允許 HTTP
+app.config['SESSION_COOKIE_HTTPONLY'] = True         # 禁止 JS 讀取 Cookie (防 XSS)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'        # 防範 CSRF 的另一道防線
 # 3. 設定 Session 有效期為 8 小時
 app.permanent_session_lifetime = timedelta(hours=8)
 
@@ -92,6 +105,7 @@ def session_check():
 # 【關鍵修改】豁免 /api/login 的 CSRF 檢查，因為使用者此時還沒有 token
 @csrf.exempt
 @app.route('/api/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def api_login():
     password = request.json.get('password')
     if ADMIN_PASSWORD_HASH and check_password_hash(ADMIN_PASSWORD_HASH, password):
@@ -457,6 +471,7 @@ def add_product():
             "category": data.get('category', '其他'), # 分類：手工香, 建廟基金, 保養品...
             "price": int(data.get('price', 0)),
             "description": data.get('description', ''),
+            "image": data.get('image', ''),  # ★ 新增這一行：儲存圖片 Base64
             "isActive": data.get('isActive', True), # 預設上架
             "createdAt": datetime.utcnow()
         }
@@ -476,6 +491,7 @@ def update_product(product_id):
             "category": data.get('category'),
             "price": int(data.get('price', 0)),
             "description": data.get('description', ''),
+            "image": data.get('image'), # ★ 新增這一行：更新圖片
             "isActive": data.get('isActive', True)
         }
         db.products.update_one({'_id': ObjectId(product_id)}, {'$set': update_fields})
