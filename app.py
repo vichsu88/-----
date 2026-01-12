@@ -167,7 +167,7 @@ def get_pending_feedback():
     
     try:
         # 查詢 status 為 'pending' 的所有文件，並依照建立時間倒序排列 (新的在最上面)
-        pending_list_cursor = db.feedback.find({"status": "pending"}).sort("createdAt", -1)
+        pending_list_cursor = db.feedback.find({"status": "pending"}).sort("createdAt", 1)
         
         results = []
         for doc in pending_list_cursor:

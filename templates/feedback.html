@@ -42,26 +42,37 @@
         word-break:break-all;
     }
 
-    /* ★★★ 修改重點：浮動按鈕 (放大3倍 + 右側置中) ★★★ */
+    /* ★★★ 修改重點：浮動按鈕 (電腦版) ★★★ */
     .feedback-floating-btn {
         position: fixed;
-        top: 50%;            /* 垂直置中 */
-        right: 0;            /* 貼齊右側 */
-        transform: translateY(-50%); /* 修正垂直偏移 */
-        z-index: 900;        /* 預設層級 */
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        z-index: 900;
         cursor: pointer;
         transition: transform 0.2s, opacity 0.3s;
-        /* 設定寬度控制大小，原約 70px -> 3倍約 210px */
-        width: 210px; 
+        width: 210px; /* 電腦版維持大尺寸 */
     }
     .feedback-floating-btn img {
         width: 100%;
         height: auto;
         display: block;
-        /* 如果圖片本身有留白，這裡可以裁切或調整 */
     }
     .feedback-floating-btn:hover {
-        transform: translateY(-50%) scale(1.05); /* 懸停時稍微放大 */
+        transform: translateY(-50%) scale(1.05);
+    }
+
+    /* ★★★ 修改重點：浮動按鈕 (手機版縮小) ★★★ */
+    @media (max-width: 768px) {
+        .feedback-floating-btn {
+            width: 130px; /* 手機版縮小 */
+            top: auto;
+            bottom: 30px; /* 改為靠下，避免遮擋內容 */
+            transform: none; /* 移除垂直置中 */
+        }
+        .feedback-floating-btn:hover {
+            transform: scale(1.05);
+        }
     }
 
     /* Modal 共用樣式 */
@@ -69,7 +80,7 @@
         display: none;
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 1000; /* 比按鈕高，確保蓋住 */
+        z-index: 1000;
         background: rgba(0,0,0,0.6);
         justify-content: center;
         align-items: center;
@@ -338,16 +349,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- 2. Fix: 農曆生日自動輸入斜線 (修正Bug版) ---
+  // --- 2. Fix: 農曆生日輸入修正 (解決重複輸入問題) ---
   if(lunarInput){
+      let isComposing = false; // 偵測是否正在輸入中文/注音
+
+      lunarInput.addEventListener('compositionstart', () => { isComposing = true; });
+      lunarInput.addEventListener('compositionend', () => { isComposing = false; handleInput(); });
+
       lunarInput.addEventListener('input', (e) => {
-        let v = e.target.value.replace(/\D/g, ''); // 只保留數字
+          if (isComposing) return; // 如果正在選字，先不處理
+          handleInput();
+      });
+
+      function handleInput() {
+        let v = lunarInput.value.replace(/\D/g, ''); // 只保留數字
         if (v.length > 8) v = v.slice(0, 8); // 限制總長度
 
         let formatted = '';
         if (v.length > 4) {
           formatted = v.slice(0, 4) + '/' + v.slice(4);
-        } else if (v.length === 4 && e.inputType !== 'deleteContentBackward') {
+        } else if (v.length === 4) {
            formatted = v + '/';
         } else {
           formatted = v;
@@ -356,8 +377,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (formatted.length > 7 && v.length >= 7) {
            formatted = v.slice(0, 4) + '/' + v.slice(4, 6) + '/' + v.slice(6);
         }
-        e.target.value = formatted;
-      });
+        
+        // 只有當格式化後的字串跟當前顯示的不一樣時才更新，避免游標亂跳或重複觸發
+        if (lunarInput.value !== formatted) {
+            lunarInput.value = formatted;
+        }
+      }
   }
 
   // --- 3. 檢查第一階段表單內容 ---
@@ -372,7 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- 4. 點擊「下一步：確認資料」 ---
   goToReviewBtn.addEventListener('click', () => {
-    // 填入資料到 Review Table
     document.getElementById('review-realName').textContent = feedbackForm.realName.value;
     document.getElementById('review-nickname').textContent = feedbackForm.nickname.value;
     document.getElementById('review-category').textContent = feedbackForm.category.value;
@@ -386,9 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
     agreeCheckbox.checked = false;
     confirmSubmitBtn.disabled = true;
 
-    // UI 切換
-    formModal.classList.add('is-visible'); // 確保 Form 是開的 (雖然這裡有點怪，但先確保邏輯連續)
-    // 隱藏 Form 顯示 Review 
+    formModal.classList.add('is-visible'); 
     formModal.classList.remove('is-visible');
     reviewModal.classList.add('is-visible');
   });
@@ -448,7 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
       feedbackForm.reset(); 
       goToReviewBtn.disabled = true; 
       
-      // 送出成功後，按鈕要浮回來 (雖然 modal 關閉會自動處理，但保險起見)
       showFormBtn.style.zIndex = '900';
       showFormBtn.style.opacity = '1';
 
@@ -459,26 +480,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 8. UI 控制：打開表單 / 關閉 Modal 與按鈕壓下去的邏輯 ---
+  // --- 8. UI 控制 ---
   showFormBtn.addEventListener('click', e => {
     e.preventDefault();
     formModal.classList.add('is-visible');
-    // ★★★ 按鈕壓下去 (藏起來或降低層級) ★★★
     showFormBtn.style.zIndex = '-1'; 
-    showFormBtn.style.opacity = '0'; // 也可以選擇直接變透明
+    showFormBtn.style.opacity = '0';
   });
 
   document.querySelectorAll('.modal-close-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       formModal.classList.remove('is-visible');
       reviewModal.classList.remove('is-visible');
-      // ★★★ 關閉時按鈕浮上來 ★★★
       showFormBtn.style.zIndex = '900';
       showFormBtn.style.opacity = '1';
     });
   });
   
-  // 點擊遮罩關閉
   [formModal, reviewModal].forEach(modal => {
       modal.addEventListener('click', e => {
           if (e.target === modal) {
