@@ -502,11 +502,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 匯出功能
-    document.getElementById('export-btn')?.addEventListener('click', async () => {
-        const text = await apiFetch('/api/feedback/export-unmarked');
-        document.getElementById('export-output-textarea').value = text;
-        document.getElementById('export-modal').classList.add('is-visible');
-    });
+// 在 static/js/admin.js 中，替換原本 export-btn 的邏輯
+
+    const exportBtn = document.getElementById('export-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', async () => {
+            if (!confirm('確定要匯出並下載未寄送清單嗎？\n\n注意：系統將自動把匯出的資料標記為「已寄出/已讀」，下次匯出時不會重複出現。')) {
+                return;
+            }
+
+            try {
+                // 改用 POST 請求呼叫下載 API
+                const response = await fetch('/api/feedback/download-unmarked', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken() 
+                    }
+                });
+
+                if (response.status === 404) {
+                    alert('目前沒有新的未寄送資料！');
+                    return;
+                }
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || '匯出失敗');
+                }
+
+                // 處理檔案下載
+                const blob = await response.blob(); 
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // 檔名設定
+                const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,"");
+                a.download = `寄件清單_${dateStr}.txt`;
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                alert('下載成功！資料狀態已更新為已讀。');
+                
+                // 重新整理列表
+                fetchApprovedFeedback();
+
+            } catch (error) {
+                alert('發生錯誤：' + error.message);
+                console.error(error);
+            }
+        });
+    }
     
     document.getElementById('mark-all-btn')?.addEventListener('click', async () => {
         if(confirm('確定要將所有已審核的回饋標記為已讀？')) {

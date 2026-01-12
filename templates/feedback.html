@@ -113,8 +113,38 @@
                     <label><input type="radio" name="category" value="姻緣"> 姻緣</label>
                     <label><input type="radio" name="category" value="收驚"> 收驚</label>
                     <label><input type="radio" name="category" value="其他"> 其他</label>
-                </div>
+            </div>
                 <label>回饋內容（至少 100 字）：<textarea name="content" rows="6" minlength="100" required></textarea></label>
+            <div class="form-group">
+                <label for="lunarBirthday">農曆生日</label>
+                <input type="text" id="lunarBirthday" name="lunarBirthday" 
+                      placeholder="例如：1995/08/21" 
+                      pattern="\d{4}/\d{2}/\d{2}" 
+                      title="請輸入 YYYY/MM/DD 格式，例如 1995/08/21">
+                <small style="color: #888; display: block; margin-top: 4px;">※ 請依照 YYYY/MM/DD 格式填寫</small>
+            </div>
+
+            <div class="form-group">
+                <label for="birthTime">出生時辰 (選填)</label>
+                <div class="select-wrapper">
+                    <select id="birthTime" name="birthTime">
+                        <option value="" disabled selected>請選擇時辰</option>
+                        <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
+                        <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
+                        <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
+                        <option value="卯時 (05:00-07:00)">卯時 (05:00-07:00)</option>
+                        <option value="辰時 (07:00-09:00)">辰時 (07:00-09:00)</option>
+                        <option value="巳時 (09:00-11:00)">巳時 (09:00-11:00)</option>
+                        <option value="午時 (11:00-13:00)">午時 (11:00-13:00)</option>
+                        <option value="未時 (13:00-15:00)">未時 (13:00-15:00)</option>
+                        <option value="申時 (15:00-17:00)">申時 (15:00-17:00)</option>
+                        <option value="酉時 (17:00-19:00)">酉時 (17:00-19:00)</option>
+                        <option value="戌時 (19:00-21:00)">戌時 (19:00-21:00)</option>
+                        <option value="亥時 (21:00-23:00)">亥時 (21:00-23:00)</option>
+                    </select>
+                </div>
+            </div>
+            </div>
                 <label>寄件地址：<input type="text" name="address"></label>
                 <label>聯絡電話：<input type="tel" name="phone"></label>
             </div>
@@ -200,6 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
       nickname: feedbackForm.nickname.value.trim(),
       category: [feedbackForm.category.value],
       content: feedbackForm.content.value.trim(),
+      lunarBirthday: feedbackForm.lunarBirthday.value.trim(),
+      birthTime: feedbackForm.birthTime.value,
       address: feedbackForm.address.value.trim(),
       phone: feedbackForm.phone.value.trim(),
       agreed: feedbackForm.agreed.checked

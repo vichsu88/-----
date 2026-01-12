@@ -246,6 +246,46 @@
                 background: rgba(0,0,0,0.5); z-index: 999;
             }
             .sidebar-overlay.active { display: block; }
+            /* --- 強制覆蓋：後台按鈕平面化樣式 --- */
+        #admin-wrapper .btn {
+            background-image: none !important; /* 移除漸層光影 */
+            box-shadow: none !important;       /* 移除陰影 */
+            border: none !important;           /* 移除邊框 */
+            border-radius: 6px !important;     /* 稍微圓角即可 */
+            text-shadow: none !important;      /* 移除文字陰影 */
+            color: white !important;           /* 文字白色 */
+            
+            /* 文字置中設定 */
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            
+            transition: opacity 0.2s !important; /* 簡單的滑鼠效果 */
+            transform: none !important;          /* 移除位移效果 */
+        }
+
+        #admin-wrapper .btn:hover {
+            opacity: 0.9 !important;             /* 滑鼠移上去稍微變透明一點點 */
+            transform: translateY(-1px) !important; /* 極輕微浮動 */
+        }
+        
+        /* 定義單一顏色 */
+        #admin-wrapper .btn--brown {
+            background-color: #C48945 !important; /* 您的主色調 (原本的咖啡金) */
+        }
+        
+        #admin-wrapper .btn--red {
+            background-color: #dc3545 !important; /* 刪除用的紅色 */
+        }
+        
+        #admin-wrapper .btn--green {
+            background-color: #28a745 !important; /* 成功/匯出用的綠色 */
+        }
+        
+        #admin-wrapper .btn--grey {
+            background-color: #6c757d !important; /* 一般操作灰色 */
+        }
         }
     </style>
 </head>

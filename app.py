@@ -139,6 +139,8 @@ def add_feedback():
         "nickname": data.get('nickname'),
         "category": data.get('category', []),
         "content": data.get('content'),
+        "lunarBirthday": data.get('lunarBirthday', ''), 
+        "birthTime": data.get('birthTime', ''),
         "address": data.get('address', ''), # 非必填欄位，如果沒有就存空字串
         "phone": data.get('phone', ''),   # 非必填欄位，如果沒有就存空字串
         "agreed": True,
@@ -260,7 +262,60 @@ def mark_all_approved_feedback():
         return jsonify({"success": True, "modified_count": result.modified_count})
     except Exception as e:
         return jsonify({"error": f"全部標記時發生錯誤: {str(e)}"}), 500
+@app.route('/api/feedback/download-unmarked', methods=['POST'])
+@login_required
+def download_unmarked_feedback():
+    if db is None: return jsonify({"error": "資料庫未連線"}), 500
+    try:
+        # 1. 找出所有 Status='approved' 且 isMarked=False 的文件
+        cursor = db.feedback.find(
+            {"status": "approved", "isMarked": False}
+        ).sort("address", 1)
+        
+        feedback_list = list(cursor)
+        
+        if not feedback_list:
+            return jsonify({"error": "目前沒有新的未寄送資料"}), 404
 
+        # 2. 組合匯出內容 (純文字檔)
+        export_text = f"匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        export_text += f"總筆數: {len(feedback_list)}\n"
+        export_text += "="*30 + "\n\n"
+
+        ids_to_update = []
+        count = 1
+        
+        for doc in feedback_list:
+            ids_to_update.append(doc['_id'])
+            
+            export_text += f"【第 {count} 筆】\n"
+            export_text += f"姓名: {doc.get('realName')}\n"
+            export_text += f"電話: {doc.get('phone')}\n"
+            export_text += f"地址: {doc.get('address')}\n"
+            # 這裡將生日與時辰加入匯出檔案
+            export_text += f"農曆生日: {doc.get('lunarBirthday', '無')}\n"
+            export_text += f"時辰: {doc.get('birthTime', '無')}\n"
+            export_text += f"內容摘要: {doc.get('content')[:30]}...\n"
+            export_text += "-"*20 + "\n\n"
+            count += 1
+
+        # 3. 自動將這些資料標記為已讀 (isMarked = True)
+        db.feedback.update_many(
+            {'_id': {'$in': ids_to_update}},
+            {'$set': {'isMarked': True}}
+        )
+
+        # 4. 回傳檔案供瀏覽器下載
+        return Response(
+            export_text,
+            mimetype='text/plain',
+            headers={
+                "Content-Disposition": f"attachment;filename=shipping_list_{datetime.now().strftime('%Y%m%d')}.txt"
+            }
+        )
+
+    except Exception as e:
+        return jsonify({"error": f"匯出失敗: {str(e)}"}), 500
 # API: 輸出未標記的寄件資訊
 @app.route('/api/feedback/export-unmarked', methods=['GET'])
 @login_required
