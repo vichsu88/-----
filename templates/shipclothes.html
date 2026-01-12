@@ -8,90 +8,11 @@
         padding: 40px 20px;
         max-width: 900px;
         margin: 0 auto;
+        position: relative;
     }
     
-    /* === 上方教學區塊 === */
-    .instruction-box {
-        background: #fff;
-        border: 2px solid #E6BA67;
-        border-radius: 15px;
-        padding: 25px;
-        margin-bottom: 30px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    .instruction-title {
-        color: #C48945;
-        font-size: 20px;
-        font-weight: bold;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .black-cat-btn {
-        background: #333;
-        color: #fff;
-        padding: 8px 15px;
-        border-radius: 5px;
-        text-decoration: none;
-        font-size: 14px;
-        display: inline-block;
-        margin-top: 10px;
-    }
-    .black-cat-btn:hover { background: #555; transform: translateY(-2px); }
-
-    /* === 表單區塊 === */
-    .form-container {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(5px);
-        padding: 30px;
-        border-radius: 15px;
-        border: 1px solid #ddd;
-        margin-bottom: 50px;
-    }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
-    .form-control {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 16px;
-        box-sizing: border-box; /* 重要 */
-    }
-    
-    /* 動態衣服編號欄位 */
-    .clothing-input-group {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-    .add-btn {
-        background: #28a745;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 35px;
-        height: 35px;
-        font-size: 24px;
-        line-height: 35px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 5px;
-    }
-    .remove-btn {
-        background: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0 15px;
-        cursor: pointer;
-    }
-
-    /* === 留言板區塊 (Board) === */
-    .board-section { margin-top: 50px; }
+    /* === 留言板區塊 (Board - 置頂) === */
+    .board-section { margin-bottom: 40px; }
     .board-title {
         text-align: center;
         font-size: 24px;
@@ -132,32 +53,120 @@
         font-size: 14px;
         color: #555;
     }
-    
-    /* 預計收件日強調 */
-    .pickup-highlight {
-        color: #d9534f;
-        font-weight: bold;
+
+    /* === 下方教學區塊 === */
+    .instruction-box {
+        background: #fff;
+        border: 2px solid #E6BA67;
+        border-radius: 15px;
+        padding: 25px;
+        margin-top: 40px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
+    .instruction-title {
+        color: #C48945;
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+    .black-cat-btn {
+        background: #333;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 14px;
+        display: inline-block;
+        margin-top: 15px;
+    }
+    .black-cat-btn:hover { background: #555; transform: translateY(-2px); }
+
+    /* === 懸浮按鈕 (我要登記) === */
+    .feedback-floating-btn {
+        position: fixed;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        z-index: 900;
+        cursor: pointer;
+        transition: transform 0.2s, opacity 0.3s;
+        width: 210px;
+    }
+    .feedback-floating-btn img { width: 100%; height: auto; display: block; }
+    .feedback-floating-btn:hover { transform: translateY(-50%) scale(1.05); }
+
+    @media (max-width: 768px) {
+        .feedback-floating-btn {
+            width: 130px;
+            top: auto;
+            bottom: 30px;
+            transform: none;
+        }
+        .feedback-floating-btn:hover { transform: scale(1.05); }
+    }
+
+    /* === Modal 樣式 (登記表單) === */
+    .modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;
+        backdrop-filter: blur(3px);
+    }
+    .modal-overlay.is-visible { display: flex; }
+    .modal-content {
+        background: #fff; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px;
+        position: relative; border: 3px solid #E6BA67;
+        max-height: 90vh; overflow-y: auto;
+    }
+    .modal-close-btn {
+        position: absolute; top: 15px; right: 15px; background: #C48945; color: #fff;
+        border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
+    .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+    
+    .captcha-row {
+        display: flex; gap: 10px; align-items: center;
+    }
+    .captcha-q {
+        background: #eee; padding: 10px; border-radius: 6px; font-weight: bold; min-width: 80px; text-align: center;
+    }
+    .btn--brown { background: #C48945; color: #fff; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; }
 </style>
 
 <main class="ship-wrapper">
-    <h2 class="section-title">寄回衣物登記</h2>
+    <div id="open-ship-form-btn" class="feedback-floating-btn">
+        <img src="{{ url_for('static', filename='images/pages/feedback/new.png') }}" alt="我要登記">
+    </div>
+
+    <div class="board-section">
+        <h2 class="board-title">📅 近期收件清單 (自動更新)</h2>
+        <p style="text-align:center; color:#888; font-size:14px; margin-bottom:20px;">僅顯示 昨日 ~ 未來 5 天 內的登記資料</p>
+        <div id="board-list" class="board-list"><p style="text-align:center;">載入中...</p></div>
+    </div>
 
     <div class="instruction-box">
         <div class="instruction-title">📦 黑貓寄件教學</div>
-        <p style="line-height:1.6;">
-            請確認您的衣物已清洗並包裝完整。<br>
-            填寫下方表單後，系統將自動計算收件日期（工作日 D+2）。<br>
-            <strong>黑貓宅急便網站</strong>：提供到府收件或超商寄件資訊。
+        <p style="line-height:1.8;">
+            1. 請將衣物清洗並包裝完整。<br>
+            2. 點擊右側（或下方）按鈕登記，系統將計算預計收件日。<br>
+            3. 前往黑貓官網預約到府收件，或至超商寄件。<br>
+            <strong>收件資訊：</strong>嘉義市新生路337號 (八八菸酒) / 0912345678
         </p>
         <a href="https://www.t-cat.com.tw/" target="_blank" class="black-cat-btn">前往黑貓宅急便官網 ➤</a>
     </div>
+</main>
 
-    <div class="form-container">
+<div id="ship-modal" class="modal-overlay">
+    <div class="modal-content">
+        <button class="modal-close-btn">&times;</button>
+        <h3 style="margin-top:0; color:#C48945; text-align:center;">登記寄回衣物</h3>
+        <p style="color:#666; font-size:14px; text-align:center; margin-bottom:20px;">請逐筆輸入，若有多件衣物請分開登記。</p>
+        
         <form id="ship-form">
             <div class="form-group">
-                <label>真實姓名 (將以 O 隱碼顯示)</label>
-                <input type="text" id="senderName" class="form-control" placeholder="請填寫全名，例如：許秉承" required>
+                <label>真實姓名 (將隱碼顯示)</label>
+                <input type="text" id="senderName" class="form-control" placeholder="請填寫全名" required>
             </div>
 
             <div class="form-group">
@@ -172,87 +181,78 @@
             </div>
 
             <div class="form-group">
-                <label>衣服編號 (可多件)</label>
-                <div id="clothes-container">
-                    <div class="clothing-input-group">
-                        <input type="text" class="form-control clothing-id" placeholder="輸入編號 (例如 A001)" required>
-                    </div>
-                </div>
-                <button type="button" class="add-btn" id="add-clothing-btn">+</button>
+                <label>衣服編號 (單件)</label>
+                <input type="text" id="clothingId" class="form-control" placeholder="例如 A001" required>
             </div>
 
-            <div style="margin-top: 30px; text-align: center;">
-                <p id="calc-date-preview" style="color:#C48945; font-weight:bold; margin-bottom:15px; display:none;">
-                    預計黑貓收件日：<span id="preview-date-text"></span>
-                </p>
-                <button type="submit" class="btn btn--brown" style="width:100%; max-width:300px;">送出登記</button>
+            <div class="form-group">
+                <label>驗證碼 (防機器人)</label>
+                <div class="captcha-row">
+                    <div id="captcha-question" class="captcha-q">Loading...</div>
+                    <input type="text" id="captcha-input" class="form-control" placeholder="請輸入答案" required style="flex:1;">
+                </div>
             </div>
+
+            <p id="preview-date" style="text-align:center; color:#C48945; font-weight:bold; margin-bottom:15px;"></p>
+            <button type="submit" class="btn--brown">送出登記</button>
         </form>
     </div>
-
-    <div class="board-section">
-        <div class="board-title">📅 近期收件清單 (自動更新)</div>
-        <p style="text-align:center; color:#888; font-size:14px; margin-bottom:20px;">僅顯示 昨日 ~ 未來 5 天 內的登記資料</p>
-        
-        <div id="board-list" class="board-list">
-            <p style="text-align:center;">載入中...</p>
-        </div>
-    </div>
-
-</main>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const clothesContainer = document.getElementById('clothes-container');
-    const addBtn = document.getElementById('add-clothing-btn');
-    const shipForm = document.getElementById('ship-form');
+    const modal = document.getElementById('ship-modal');
+    const openBtn = document.getElementById('open-ship-form-btn');
+    const closeBtn = document.querySelector('.modal-close-btn');
+    const form = document.getElementById('ship-form');
     const boardList = document.getElementById('board-list');
-    const previewText = document.getElementById('preview-date-text');
-    const previewBox = document.getElementById('calc-date-preview');
+    const datePreview = document.getElementById('preview-date');
+    const captchaQ = document.getElementById('captcha-question');
 
-    // 1. 動態新增衣服欄位
-    addBtn.addEventListener('click', () => {
-        const div = document.createElement('div');
-        div.className = 'clothing-input-group';
-        div.innerHTML = `
-            <input type="text" class="form-control clothing-id" placeholder="輸入編號" required>
-            <button type="button" class="remove-btn">刪除</button>
-        `;
-        clothesContainer.appendChild(div);
-        
-        // 綁定刪除事件
-        div.querySelector('.remove-btn').addEventListener('click', () => {
-            div.remove();
-        });
+    // 開啟 Modal 並取得驗證碼
+    openBtn.addEventListener('click', async () => {
+        modal.classList.add('is-visible');
+        openBtn.style.zIndex = -1; openBtn.style.opacity = 0;
+        await fetchCaptcha();
+        await fetchDatePreview();
     });
 
-    // 2. 預覽 D+2 日期 (呼叫後端 API 計算)
-    async function updatePreviewDate() {
+    // 關閉 Modal
+    function closeModal() {
+        modal.classList.remove('is-visible');
+        openBtn.style.zIndex = 900; openBtn.style.opacity = 1;
+    }
+    closeBtn.onclick = closeModal;
+    modal.onclick = (e) => { if(e.target === modal) closeModal(); };
+
+    // 取得驗證碼題目
+    async function fetchCaptcha() {
+        try {
+            const res = await fetch('/api/captcha');
+            const data = await res.json();
+            captchaQ.textContent = data.question;
+            document.getElementById('captcha-input').value = ''; // 清空輸入
+        } catch(e) { captchaQ.textContent = "Error"; }
+    }
+
+    // 取得預計日期
+    async function fetchDatePreview() {
         try {
             const res = await fetch('/api/shipclothes/calc-date');
             const data = await res.json();
-            if(data.pickupDate) {
-                previewText.textContent = data.pickupDate;
-                previewBox.style.display = 'block';
-            }
-        } catch(e) { console.error(e); }
+            datePreview.textContent = `預計黑貓收件日：${data.pickupDate}`;
+        } catch(e) {}
     }
-    updatePreviewDate(); // 進來就先算一次
 
-    // 3. 送出表單
-    shipForm.addEventListener('submit', async (e) => {
+    // 送出表單
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // 收集所有衣服編號
-        const inputs = document.querySelectorAll('.clothing-id');
-        const clothes = Array.from(inputs).map(input => input.value.trim()).filter(v => v);
-        
-        if(clothes.length === 0) { alert('請至少填寫一件衣服編號'); return; }
-
         const payload = {
             name: document.getElementById('senderName').value.trim(),
             lineGroup: document.getElementById('lineGroup').value,
-            clothes: clothes
+            clothingId: document.getElementById('clothingId').value.trim(),
+            captcha: document.getElementById('captcha-input').value.trim()
         };
 
         try {
@@ -267,18 +267,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const result = await res.json();
             if(result.success) {
-                alert(`登記成功！\n您的預計收件日為：${result.pickupDate}`);
-                shipForm.reset();
-                // 重置衣服欄位只剩一格
-                clothesContainer.innerHTML = '<div class="clothing-input-group"><input type="text" class="form-control clothing-id" placeholder="輸入編號 (例如 A001)" required></div>';
-                fetchBoardData(); // 重新整理留言板
+                alert(`登記成功！\n預計收件日：${result.pickupDate}`);
+                form.reset();
+                closeModal();
+                fetchBoardData(); // 刷新清單
             } else {
-                alert('登記失敗：' + result.message);
+                alert(result.message);
+                if(result.message.includes('驗證碼')) fetchCaptcha(); // 驗證碼錯就刷新
             }
         } catch(e) { alert('連線錯誤'); }
     });
 
-    // 4. 載入留言板資料
+    // 載入清單
     async function fetchBoardData() {
         try {
             const res = await fetch('/api/shipclothes/list');
@@ -289,10 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            boardList.innerHTML = data.map(item => {
-                const clothesHtml = item.clothes.map(c => `<span style="border:1px solid #ddd; padding:2px 6px; border-radius:4px; margin-right:5px; background:#fff;">${c}</span>`).join('');
-                
-                return `
+            boardList.innerHTML = data.map(item => `
                 <div class="board-card">
                     <div class="board-info">
                         <div style="margin-bottom:5px;">
@@ -302,15 +299,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div class="board-clothes">
                             申請日期: ${item.submitDate} <br>
-                            衣服編號: ${clothesHtml}
+                            衣服編號: <b>${item.clothes[0]}</b>
                         </div>
                     </div>
-                </div>`;
-            }).join('');
-        } catch(e) {
-            console.error(e);
-            boardList.innerHTML = '<p style="text-align:center;">資料載入失敗</p>';
-        }
+                </div>`).join('');
+        } catch(e) { boardList.innerHTML = '<p>載入失敗</p>'; }
     }
 
     fetchBoardData();

@@ -1,6 +1,7 @@
-# --- app.py (完整最終整合版) ---
+# --- app.py (完整最終整合版 - 含驗證碼與單筆登記) ---
 import os
 import re
+import random # 新增：用於驗證碼
 from functools import wraps
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, render_template, request, session, redirect, url_for, Response
@@ -104,13 +105,13 @@ def shoujing_page(): return redirect(url_for('services_page', _anchor='shoujing-
 @app.route('/products/incense')
 def incense_page(): return render_template('incense.html')
 @app.route('/products/skincare')
-def skincare_page(): return render_template('index.html') # 暫時佔位
+def skincare_page(): return render_template('index.html') 
 @app.route('/products/yuan-shuai-niang')
-def yuan_user_page(): return render_template('index.html') # 暫時佔位
+def yuan_user_page(): return render_template('index.html') 
 @app.route('/donation')
-def donation_page(): return render_template('index.html') # 暫時佔位
+def donation_page(): return render_template('index.html') 
 @app.route('/fund')
-def fund_page(): return render_template('index.html') # 暫時佔位
+def fund_page(): return render_template('index.html') 
 
 @app.route('/feedback')
 def feedback_page(): return render_template('feedback.html')
@@ -259,25 +260,46 @@ def download_unmarked_feedback():
             text += f"生日: {doc.get('lunarBirthday')} ({doc.get('birthTime')})\n"
             text += f"內容: {doc.get('content')[:50]}...\n{'-'*20}\n\n"
 
-        # 自動標記為已讀
         db.feedback.update_many({'_id': {'$in': ids}}, {'$set': {'isMarked': True}})
         
         return Response(text, mimetype='text/plain', headers={"Content-Disposition": f"attachment;filename=list_{datetime.now().strftime('%Y%m%d')}.txt"})
     except Exception as e: return jsonify({"error": str(e)}), 500
 
 # --- 8. API: 收驚衣物寄回功能 (ShipClothes) ---
+
+# 計算 D+2 工作日
 @app.route('/api/shipclothes/calc-date', methods=['GET'])
 def get_pickup_date_preview():
     today = datetime.utcnow() + timedelta(hours=8)
     pickup_date = calculate_business_d2(today)
     return jsonify({"pickupDate": pickup_date.strftime('%Y/%m/%d (%a)')})
 
+# 取得驗證碼 (簡單數學題)
+@app.route('/api/captcha', methods=['GET'])
+def get_captcha():
+    num1 = random.randint(1, 10)
+    num2 = random.randint(1, 10)
+    session['captcha_answer'] = str(num1 + num2) # 儲存答案在 Session
+    return jsonify({"question": f"{num1} + {num2} = ?"})
+
+# 提交衣物登記
 @app.route('/api/shipclothes', methods=['POST'])
 def submit_ship_clothes():
     if db is None: return jsonify({"success": False, "message": "資料庫未連線"}), 500
     data = request.get_json()
     
-    if not data.get('name') or not data.get('clothes') or not data.get('lineGroup'):
+    # 1. 檢查驗證碼
+    user_captcha = data.get('captcha', '').strip()
+    correct_answer = session.get('captcha_answer')
+    
+    # 驗證後立即清除，避免重複使用
+    session.pop('captcha_answer', None)
+
+    if not correct_answer or user_captcha != correct_answer:
+        return jsonify({"success": False, "message": "驗證碼錯誤，請重新輸入"}), 400
+
+    # 2. 檢查必填 (修改：clothingId 為單筆字串)
+    if not data.get('name') or not data.get('clothingId') or not data.get('lineGroup'):
         return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
 
     now_tw = datetime.utcnow() + timedelta(hours=8)
@@ -286,7 +308,7 @@ def submit_ship_clothes():
     submission = {
         "name": data['name'],
         "lineGroup": data['lineGroup'],
-        "clothes": data['clothes'],
+        "clothes": [data['clothingId']], # 為了相容顯示邏輯，存成單元素的 list，或者之後改前端顯示 logic
         "submitDate": now_tw,
         "submitDateStr": now_tw.strftime('%Y/%m/%d'),
         "pickupDate": pickup_date,
@@ -299,6 +321,7 @@ def submit_ship_clothes():
         "pickupDate": pickup_date.strftime('%Y/%m/%d')
     })
 
+# 取得清單
 @app.route('/api/shipclothes/list', methods=['GET'])
 def get_ship_clothes_list():
     if db is None: return jsonify([]), 500
@@ -306,8 +329,8 @@ def get_ship_clothes_list():
     now_tw = datetime.utcnow() + timedelta(hours=8)
     today_date = now_tw.replace(hour=0, minute=0, second=0, microsecond=0)
     
-    start_date = today_date - timedelta(days=1) # 昨天
-    end_date = today_date + timedelta(days=5)   # 未來5天
+    start_date = today_date - timedelta(days=1)
+    end_date = today_date + timedelta(days=5)
     
     try:
         cursor = db.shipments.find({
@@ -326,7 +349,7 @@ def get_ship_clothes_list():
             results.append({
                 "name": masked_name,
                 "lineGroup": doc['lineGroup'],
-                "clothes": doc['clothes'],
+                "clothes": doc.get('clothes', []),
                 "submitDate": doc['submitDateStr'],
                 "pickupDate": doc['pickupDateStr']
             })
