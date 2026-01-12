@@ -435,28 +435,40 @@ def get_products():
     for p in products: p['_id'] = str(p['_id'])
     return jsonify(products)
 
+# --- app.py (請替換 add_product 和 update_product) ---
+
 @app.route('/api/products', methods=['POST'])
 @login_required
 def add_product():
     if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
-    new_product = {
-        "name": data.get('name'), "category": data.get('category', '其他'),
-        "price": int(data.get('price', 0)), "description": data.get('description', ''),
-        "image": data.get('image', ''), "isActive": data.get('isActive', True),
-        "createdAt": datetime.utcnow()
-    }
-    db.products.insert_one(new_product)
-    return jsonify({"success": True})
+    try:
+        new_product = {
+            "name": data.get('name'), 
+            "category": data.get('category', '其他'),
+            "price": int(data.get('price', 0)), 
+            "description": data.get('description', ''),
+            "image": data.get('image', ''), 
+            "isActive": data.get('isActive', True),
+            "variants": data.get('variants', []), # ★ 新增：儲存規格陣列
+            "createdAt": datetime.utcnow()
+        }
+        db.products.insert_one(new_product)
+        return jsonify({"success": True})
+    except Exception as e: return jsonify({"error": str(e)}), 500
 
 @app.route('/api/products/<pid>', methods=['PUT'])
 @login_required
 def update_product(pid):
+    if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
-    fields = {k: data.get(k) for k in ['name', 'category', 'price', 'description', 'image', 'isActive'] if k in data}
-    if 'price' in fields: fields['price'] = int(fields['price'])
-    db.products.update_one({'_id': ObjectId(pid)}, {'$set': fields})
-    return jsonify({"success": True})
+    try:
+        # ★ 新增：更新 variants
+        fields = {k: data.get(k) for k in ['name', 'category', 'price', 'description', 'image', 'isActive', 'variants'] if k in data}
+        if 'price' in fields: fields['price'] = int(fields['price'])
+        db.products.update_one({'_id': ObjectId(pid)}, {'$set': fields})
+        return jsonify({"success": True})
+    except Exception as e: return jsonify({"error": str(e)}), 500
 
 @app.route('/api/products/<pid>', methods=['DELETE'])
 @login_required
