@@ -297,6 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'tab-qa':
                         fetchFaqCategories().then(renderFaqCategoryBtns).then(fetchAndRenderFaqs);
                         break;
+                    case 'tab-products': fetchAndRenderProducts(); break;
+                    case 'tab-fund': fetchFundSettings(); break;
                 }
             });
         });
@@ -521,6 +523,142 @@ document.addEventListener('DOMContentLoaded', () => {
             closeAnnouncementDetailModal();
         }
     });
+    // --- 商品管理邏輯 ---
+    const productsListDiv = document.getElementById('products-list');
+    const addProductBtn = document.getElementById('add-product-btn');
+    const productModal = document.getElementById('product-modal');
+    const productForm = document.getElementById('product-form');
+    const productModalTitle = document.getElementById('product-modal-title');
+
+    async function fetchAndRenderProducts() {
+        try {
+            const products = await apiFetch('/api/products');
+            if (products.length === 0) {
+                productsListDiv.innerHTML = '<p>目前沒有商品。</p>';
+                return;
+            }
+            productsListDiv.innerHTML = products.map(p => {
+                // 安全處理字串
+                const safeP = JSON.stringify(p).replace(/'/g, "&apos;");
+                const statusHtml = p.isActive 
+                    ? '<span style="color:green; font-weight:bold;">[上架中]</span>' 
+                    : '<span style="color:red; font-weight:bold;">[已下架]</span>';
+                
+                return `
+                <div class="feedback-card" style="border-left: 4px solid var(--main-brown);">
+                    <div class="feedback-card__header">
+                        <span class="feedback-card__info" style="color:#666;">${p.category}</span>
+                        ${statusHtml}
+                    </div>
+                    <div class="feedback-card__content">
+                        <h4 style="margin:0 0 5px 0;">${p.name}</h4>
+                        <div style="color: var(--main-brown); font-weight:bold;">NT$ ${p.price}</div>
+                        <div style="font-size:0.9em; color:#555; margin-top:5px;">${p.description || ''}</div>
+                    </div>
+                    <div class="feedback-card__actions">
+                        <button class="btn delete-product-btn" data-id="${p._id}" style="background:#dc3545; font-size:12px; height:30px; line-height:30px;">刪除</button>
+                        <button class="btn btn--brown edit-product-btn" data-data='${safeP}' style="font-size:12px; height:30px; line-height:30px;">編輯</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // 綁定編輯與刪除按鈕
+            productsListDiv.querySelectorAll('.delete-product-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if(!confirm('確定要刪除此商品嗎？')) return;
+                    try {
+                        await apiFetch(`/api/products/${btn.dataset.id}`, { method: 'DELETE' });
+                        fetchAndRenderProducts();
+                    } catch(e) { alert(e.message); }
+                });
+            });
+
+            productsListDiv.querySelectorAll('.edit-product-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const data = JSON.parse(btn.dataset.data);
+                    showProductModal(data); // 開啟編輯模式
+                });
+            });
+
+        } catch (error) { console.error('商品載入失敗:', error); }
+    }
+
+    function showProductModal(product = null) {
+        productForm.reset();
+        if (product) {
+            // 編輯模式
+            productModalTitle.textContent = '編輯商品';
+            productForm.productId.value = product._id;
+            productForm.category.value = product.category;
+            productForm.name.value = product.name;
+            productForm.price.value = product.price;
+            productForm.description.value = product.description;
+            productForm.isActive.checked = product.isActive;
+        } else {
+            // 新增模式
+            productModalTitle.textContent = '新增商品';
+            productForm.productId.value = ''; // ID 為空代表新增
+            productForm.isActive.checked = true; // 預設上架
+        }
+        productModal.classList.add('is-visible');
+    }
+
+    addProductBtn.addEventListener('click', () => showProductModal(null));
+
+    productForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = productForm.productId.value;
+        const formData = {
+            category: productForm.category.value,
+            name: productForm.name.value,
+            price: productForm.price.value,
+            description: productForm.description.value,
+            isActive: productForm.isActive.checked
+        };
+
+        try {
+            if (id) {
+                // 更新
+                await apiFetch(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(formData) });
+            } else {
+                // 新增
+                await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(formData) });
+            }
+            productModal.classList.remove('is-visible');
+            fetchAndRenderProducts();
+        } catch (error) { alert('儲存失敗：' + error.message); }
+    });
+
+    productModal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-close-btn') || e.target.id === 'product-modal') {
+            productModal.classList.remove('is-visible');
+        }
+    });
+
+
+    // --- 建廟基金設定邏輯 ---
+    const fundForm = document.getElementById('fund-form');
+    async function fetchFundSettings() {
+        try {
+            const data = await apiFetch('/api/fund-settings');
+            document.getElementById('fund-goal').value = data.goal_amount;
+            document.getElementById('fund-current').value = data.current_amount;
+        } catch (error) { console.error(error); }
+    }
+
+    fundForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const goal = document.getElementById('fund-goal').value;
+        const current = document.getElementById('fund-current').value;
+        try {
+            await apiFetch('/api/fund-settings', {
+                method: 'POST',
+                body: JSON.stringify({ goal_amount: goal, current_amount: current })
+            });
+            alert('基金設定已更新！');
+        } catch (e) { alert('更新失敗：' + e.message); }
+    });
+
     // --- 啟動！ ---
     checkSession();
 });

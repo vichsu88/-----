@@ -112,6 +112,8 @@
                 <button class="tab-btn" data-tab="tab-announcements">公告</button>
                 <button class="tab-btn active" data-tab="tab-feedback">回饋</button>
                 <button class="tab-btn" data-tab="tab-qa">問答</button>
+                <button class="tab-btn" data-tab="tab-products">商品</button>
+                <button class="tab-btn" data-tab="tab-fund">基金</button>
             </div>
 
             <div id="tab-links" class="tab-content">
@@ -218,7 +220,73 @@
     </div>
   </div>
 </div>
+<div id="tab-products" class="tab-content">
+                <h3>商品與募款項目管理</h3>
+                <div id="products-list"></div>
 
+                <button id="add-product-btn" class="btn btn--brown" style="position: fixed; right: 30px; bottom: 30px; z-index: 98; font-size: 32px; width: 64px; height: 64px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;">+</button>
+            </div>
+
+            <div id="tab-fund" class="tab-content">
+                <h3>建廟基金進度設定</h3>
+                <div class="feedback-card">
+                    <form id="fund-form">
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:8px;">目標金額 (Goal)：</label>
+                            <input type="number" id="fund-goal" style="width:100%; padding:10px; font-size:16px;" placeholder="例如：10000000">
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:8px;">目前已募得金額 (Current)：</label>
+                            <input type="number" id="fund-current" style="width:100%; padding:10px; font-size:16px;" placeholder="例如：2500000">
+                            <small style="color: #666;">* 此數字將直接影響前台圓餅圖顯示</small>
+                        </div>
+                        <button type="submit" class="btn btn--brown" style="width:100%;">儲存設定</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="product-modal" class="admin-modal-overlay">
+                <div class="admin-modal-content" style="max-width:480px;">
+                    <button class="modal-close-btn">&times;</button>
+                    <h4 id="product-modal-title">新增商品</h4>
+                    <form id="product-form">
+                        <input type="hidden" name="productId"> <div style="margin-bottom:15px;">
+                            <label style="font-weight:bold;">分類：</label>
+                            <select name="category" required style="width:100%; padding:8px; margin-top:5px;">
+                                <option value="手工香">手工香系列</option>
+                                <option value="保養品">保養品系列</option>
+                                <option value="原力曼">元帥娘愛用(原力曼)</option>
+                                <option value="建廟基金">建廟基金募款</option>
+                                <option value="捐香">捐香服務</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-bottom:15px;">
+                            <label style="font-weight:bold;">商品名稱：</label>
+                            <input type="text" name="name" required placeholder="例如：招財沉香" style="width:100%; padding:8px; margin-top:5px;">
+                        </div>
+
+                        <div style="margin-bottom:15px;">
+                            <label style="font-weight:bold;">價格 (元)：</label>
+                            <input type="number" name="price" required placeholder="例如：500" style="width:100%; padding:8px; margin-top:5px;">
+                        </div>
+
+                        <div style="margin-bottom:15px;">
+                            <label style="font-weight:bold;">描述/備註 (選填)：</label>
+                            <textarea name="description" rows="3" style="width:100%; padding:8px; margin-top:5px;"></textarea>
+                        </div>
+
+                        <div style="margin-bottom:15px;">
+                            <label style="display:flex; align-items:center; cursor:pointer;">
+                                <input type="checkbox" name="isActive" checked style="width:20px; height:20px; margin-right:8px;"> 
+                                <span>上架中 (打勾代表可購買，取消代表缺貨/下架)</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn--brown" style="width:100%;">儲存</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
