@@ -3,38 +3,14 @@ document.addEventListener('DOMContentLoaded', () => {
     /* =========================================
        1. 工具函式
        ========================================= */
-    const getCsrfToken = () => {
-        const meta = document.querySelector('meta[name="csrf-token"]');
-        return meta ? meta.getAttribute('content') : '';
-    };
-
+    const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     async function apiFetch(url, options = {}) {
-        const hasBody = !!options.body;
-        const headers = {
-            ...(hasBody && { 'Content-Type': 'application/json' }),
-            'X-CSRFToken': getCsrfToken(),
-            ...(options.headers || {})
-        };
-        try {
-            const response = await fetch(url, { ...options, credentials: 'include', headers });
-            if (!response.ok) {
-                const errorText = await response.text();
-                let errorMessage = errorText;
-                try {
-                    const errorJson = JSON.parse(errorText);
-                    errorMessage = errorJson.error || errorJson.message || errorText;
-                } catch (e) {}
-                throw new Error(errorMessage || `請求失敗: ${response.status}`);
-            }
-            const contentType = response.headers.get('Content-Type') || '';
-            if (contentType.includes('application/json')) return response.json();
-            return response.text();
-        } catch (error) {
-            console.error(`API Error (${url}):`, error);
-            throw error;
-        }
+        const headers = { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken(), ...(options.headers || {}) };
+        const response = await fetch(url, { ...options, credentials: 'include', headers });
+        if (!response.ok) throw new Error(`API 錯誤: ${response.status}`);
+        const contentType = response.headers.get('Content-Type') || '';
+        return contentType.includes('application/json') ? response.json() : response.text();
     }
-
     /* =========================================
        2. 初始化與登入
        ========================================= */
