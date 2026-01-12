@@ -286,6 +286,50 @@
         #admin-wrapper .btn--grey {
             background-color: #6c757d !important; /* 一般操作灰色 */
         }
+        /* 強制按鈕平面化 - 使用更強的選擇器覆蓋 style.css */
+    #admin-wrapper .btn, 
+    #admin-wrapper button.btn,
+    .admin-main .btn {
+        background-image: none !important;
+        background-color: #6c757d !important; /* 預設灰 */
+        box-shadow: none !important;
+        border: none !important;
+        text-shadow: none !important;
+        border-radius: 4px !important;
+        color: #fff !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 16px !important;
+        transition: opacity 0.2s;
+        cursor: pointer;
+        font-weight: normal;
+    }
+
+    #admin-wrapper .btn--brown { background-color: #C48945 !important; }
+    #admin-wrapper .btn--red { background-color: #dc3545 !important; }
+    #admin-wrapper .btn--green { background-color: #28a745 !important; }
+    #admin-wrapper .btn--grey { background-color: #6c757d !important; }
+
+    #admin-wrapper .btn:hover { opacity: 0.8; transform: none !important; }
+
+    /* 修復回饋內容長度 */
+    .feedback-card__content {
+        white-space: pre-wrap !important;
+        word-break: break-all !important;
+        line-height: 1.6;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    /* 待審核區塊顯眼度 */
+    #section-pending {
+        background-color: #fffdec;
+        border: 2px solid #f9e79f;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
         }
     </style>
 </head>

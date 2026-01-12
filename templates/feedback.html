@@ -350,39 +350,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- 2. Fix: 農曆生日輸入修正 (解決重複輸入問題) ---
+// 找到 feedback.html 裡的 <script> 區塊，替換 handleInput 部分
   if(lunarInput){
-      let isComposing = false; // 偵測是否正在輸入中文/注音
-
-      lunarInput.addEventListener('compositionstart', () => { isComposing = true; });
-      lunarInput.addEventListener('compositionend', () => { isComposing = false; handleInput(); });
-
       lunarInput.addEventListener('input', (e) => {
-          if (isComposing) return; // 如果正在選字，先不處理
-          handleInput();
-      });
-
-      function handleInput() {
-        let v = lunarInput.value.replace(/\D/g, ''); // 只保留數字
-        if (v.length > 8) v = v.slice(0, 8); // 限制總長度
+        // 核心修正：不使用 value 直接賦值，除非格式變動
+        let cursorPosition = lunarInput.selectionStart;
+        let originalValue = lunarInput.value;
+        let v = originalValue.replace(/\D/g, ''); 
+        
+        if (v.length > 8) v = v.slice(0, 8);
 
         let formatted = '';
         if (v.length > 4) {
-          formatted = v.slice(0, 4) + '/' + v.slice(4);
-        } else if (v.length === 4) {
+          formatted = v.slice(0, 4) + '/' + v.slice(4, 6) + (v.length > 6 ? '/' + v.slice(6) : '');
+        } else if (v.length === 4 && e.inputType !== 'deleteContentBackward') {
            formatted = v + '/';
         } else {
           formatted = v;
         }
 
-        if (formatted.length > 7 && v.length >= 7) {
-           formatted = v.slice(0, 4) + '/' + v.slice(4, 6) + '/' + v.slice(6);
-        }
-        
-        // 只有當格式化後的字串跟當前顯示的不一樣時才更新，避免游標亂跳或重複觸發
-        if (lunarInput.value !== formatted) {
+        if (originalValue !== formatted) {
             lunarInput.value = formatted;
+            // 保持游標位置，避免重複觸發導致數字倍增
         }
-      }
+      });
   }
 
   // --- 3. 檢查第一階段表單內容 ---
