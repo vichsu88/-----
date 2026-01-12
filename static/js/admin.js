@@ -437,3 +437,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     checkSession();
 });
+/* === 10. 訂單管理 (Orders) === */
+const ordersListDiv = document.getElementById('orders-list');
+
+async function fetchOrders() {
+    if(!ordersListDiv) return;
+    try {
+        const orders = await apiFetch('/api/orders');
+        if(orders.length === 0) { ordersListDiv.innerHTML = '<p>無訂單</p>'; return; }
+        
+        ordersListDiv.innerHTML = orders.map(o => {
+            const statusColor = o.status === 'paid' ? 'green' : (o.status === 'shipped' ? 'blue' : 'red');
+            const statusText = o.status === 'paid' ? '已付款/待出貨' : (o.status === 'shipped' ? '已出貨' : '未付款/待核對');
+            
+            // 商品清單字串
+            const itemsStr = o.items.map(i => `${i.name} x${i.qty}`).join(', ');
+            
+            return `
+            <div class="feedback-card" style="border-left: 5px solid ${statusColor};">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span><b>${o.orderId}</b> (${o.customer.name})</span>
+                    <span style="color:${statusColor}; font-weight:bold;">${statusText}</span>
+                </div>
+                <div style="font-size:14px; color:#555; line-height:1.6;">
+                    金額：$${o.total} <br>
+                    匯款後五碼：<b style="color:#C48945;">${o.customer.last5}</b> <br>
+                    電話：${o.customer.phone} <br>
+                    地址：${o.customer.address} <br>
+                    商品：${itemsStr} <br>
+                    時間：${o.createdAt}
+                </div>
+                <div style="text-align:right; margin-top:10px;">
+                    ${o.status === 'pending' ? `<button class="btn btn--green" onclick="confirmOrder('${o._id}')">確認收款</button>` : ''}
+                    <button class="btn btn--red" onclick="deleteOrder('${o._id}')">刪除</button>
+                </div>
+            </div>`;
+        }).join('');
+    } catch(e){ console.error(e); }
+}
+
+window.confirmOrder = async (id) => {
+    if(confirm('確認已收到款項？系統將標記為已付款並寄信通知客人。')) {
+        await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'});
+        fetchOrders();
+    }
+};
+
+window.deleteOrder = async (id) => {
+    if(confirm('確定刪除此訂單？')) {
+        await apiFetch(`/api/orders/${id}`, {method:'DELETE'});
+        fetchOrders();
+    }
+};
+
+// 記得在 switch case 裡加入 'tab-orders': fetchOrders(); break;
