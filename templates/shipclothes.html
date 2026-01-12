@@ -11,101 +11,96 @@
         position: relative;
     }
     
-    /* === 留言板區塊 (Board - 置頂) === */
+    /* === 留言板區塊 (Board) === */
     .board-section { margin-bottom: 40px; }
     .board-title {
-        text-align: center;
-        font-size: 24px;
-        color: #C48945;
-        margin-bottom: 20px;
-        font-weight: bold;
+        text-align: center; font-size: 24px; color: #C48945; margin-bottom: 20px; font-weight: bold;
     }
-    .board-list {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-    .board-card {
+    .board-list { display: flex; flex-direction: column; gap: 25px; } /* 增加間距 */
+    
+    /* 日期分組容器 */
+    .date-group {
+        border: 2px solid #E6BA67;
+        border-radius: 12px;
+        overflow: hidden;
         background: #fff;
-        border-left: 5px solid #C48945;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    .board-date-badge {
-        background: #333;
+    
+    /* 日期標題 (Header) */
+    .date-header {
+        background: #E6BA67;
         color: #fff;
-        padding: 5px 10px;
-        border-radius: 4px;
-        font-size: 14px;
-        margin-right: 10px;
+        padding: 12px 20px;
+        font-size: 18px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
-    .board-info { flex: 1; min-width: 200px; }
-    .board-clothes { 
-        margin-top: 10px; 
-        background: #f9f9f9; 
-        padding: 10px; 
-        border-radius: 5px;
+    
+    /* 該日期的所有卡片容器 */
+    .date-content {
+        padding: 15px;
+        background: #fff;
+    }
+
+    /* 單筆申請卡片 */
+    .submission-card {
+        padding: 15px;
+        border-bottom: 1px dashed #ddd;
+    }
+    .submission-card:last-child { border-bottom: none; }
+    
+    .card-user-info {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+    .tag-line { background: #eee; color: #555; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: normal;}
+    .card-clothes-list {
+        margin-left: 10px;
+    }
+    .cloth-item {
+        display: inline-block;
+        background: #f9f9f9;
+        border: 1px solid #eee;
+        padding: 4px 8px;
+        margin: 0 5px 5px 0;
+        border-radius: 4px;
         font-size: 14px;
         color: #555;
     }
 
     /* === 下方教學區塊 === */
     .instruction-box {
-        background: #fff;
-        border: 2px solid #E6BA67;
-        border-radius: 15px;
-        padding: 25px;
-        margin-top: 40px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        background: #fff; border: 2px solid #ddd; border-radius: 15px; padding: 25px; margin-top: 40px;
     }
-    .instruction-title {
-        color: #C48945;
-        font-size: 20px;
-        font-weight: bold;
-        margin-bottom: 15px;
-    }
+    .instruction-title { color: #555; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
     .black-cat-btn {
-        background: #333;
-        color: #fff;
-        padding: 10px 20px;
-        border-radius: 5px;
-        text-decoration: none;
-        font-size: 14px;
-        display: inline-block;
-        margin-top: 15px;
+        background: #333; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none;
+        font-size: 14px; display: inline-block; margin-top: 15px;
     }
     .black-cat-btn:hover { background: #555; transform: translateY(-2px); }
 
-    /* === 懸浮按鈕 (我要登記) === */
+    /* === 懸浮按鈕 === */
     .feedback-floating-btn {
-        position: fixed;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
-        z-index: 900;
-        cursor: pointer;
-        transition: transform 0.2s, opacity 0.3s;
-        width: 210px;
+        position: fixed; top: 50%; right: 0; transform: translateY(-50%); z-index: 900; cursor: pointer;
+        transition: transform 0.2s, opacity 0.3s; width: 210px;
     }
     .feedback-floating-btn img { width: 100%; height: auto; display: block; }
     .feedback-floating-btn:hover { transform: translateY(-50%) scale(1.05); }
-
     @media (max-width: 768px) {
-        .feedback-floating-btn {
-            width: 130px;
-            top: auto;
-            bottom: 30px;
-            transform: none;
-        }
+        .feedback-floating-btn { width: 130px; top: auto; bottom: 30px; transform: none; }
         .feedback-floating-btn:hover { transform: scale(1.05); }
     }
 
-    /* === Modal 樣式 (登記表單) === */
+    /* === Modal 樣式 === */
     .modal-overlay {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;
@@ -114,66 +109,29 @@
     .modal-overlay.is-visible { display: flex; }
     .modal-content {
         background: #fff; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px;
-        position: relative; border: 3px solid #E6BA67;
-        max-height: 90vh; overflow-y: auto;
+        position: relative; border: 3px solid #E6BA67; max-height: 90vh; overflow-y: auto;
     }
     .modal-close-btn {
         position: absolute; top: 15px; right: 15px; background: #C48945; color: #fff;
         border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;
     }
-    
-    /* 表單元件樣式 */
     .form-group { margin-bottom: 20px; }
     .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
     .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
     
-    /* 衣服輸入列樣式 */
-    .clothing-row {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
-        align-items: center;
-    }
-    .clothing-row input {
-        flex: 1; /* 兩個輸入框平分寬度 */
-    }
+    .clothing-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .clothing-row input { flex: 1; }
     
     .remove-btn {
-        background: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        line-height: 30px;
-        font-size: 18px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
+        background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px;
+        line-height: 30px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-
     .add-btn {
-        background: #28a745;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        padding: 8px 15px;
-        font-size: 14px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        margin-top: 5px;
+        background: #28a745; color: white; border: none; border-radius: 5px; padding: 8px 15px;
+        font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; margin-top: 5px;
     }
-
-    /* 驗證碼 */
-    .captcha-row {
-        display: flex; gap: 10px; align-items: center;
-    }
-    .captcha-q {
-        background: #eee; padding: 10px; border-radius: 6px; font-weight: bold; min-width: 80px; text-align: center;
-    }
+    .captcha-row { display: flex; gap: 10px; align-items: center; }
+    .captcha-q { background: #eee; padding: 10px; border-radius: 6px; font-weight: bold; min-width: 80px; text-align: center; }
     .btn--brown { background: #C48945; color: #fff; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; }
 </style>
 
@@ -192,7 +150,7 @@
         <div class="instruction-title">📦 黑貓寄件教學</div>
         <p style="line-height:1.8;">
             1. 請將衣物清洗並包裝完整。<br>
-            2. 點擊右側（或下方）按鈕登記，系統將計算預計收件日。<br>
+            2. 點擊登記按鈕，系統將計算預計收件日。<br>
             3. 前往黑貓官網預約到府收件，或至超商寄件。<br>
             <strong>收件資訊：</strong>嘉義市新生路337號 (八八菸酒) / 0912345678
         </p>
@@ -219,23 +177,26 @@
             </div>
 
             <div class="form-group">
-                <label>2. Line 名稱 (群組內顯示的暱稱)</label>
+                <label>2. Line 名稱 (群組內暱稱)</label>
                 <input type="text" id="lineName" class="form-control" placeholder="例如：快樂小明" required>
             </div>
 
             <div class="form-group">
-                <label>3. 真實姓名 (寄件人全名，將隱碼顯示)</label>
+                <label>3. 寄件人真實姓名 (隱碼顯示)</label>
                 <input type="text" id="senderName" class="form-control" placeholder="請填寫全名" required>
             </div>
 
             <div class="form-group">
-                <label>4. 衣服明細 (編號 + 名稱)</label>
+                <label>4. 寄件人年次 (例如：75 或 1986)</label>
+                <input type="text" id="birthYear" class="form-control" placeholder="請填寫出生年份" required>
+            </div>
+
+            <div class="form-group">
+                <label>5. 衣服明細 (編號 + 衣服主人姓名)</label>
                 <div id="clothes-container">
                     <div class="clothing-row">
-                        <input type="text" class="form-control clothing-id" placeholder="編號 (如 A122413)" required>
-                        <input type="text" class="form-control clothing-name" placeholder="姓名" required>
-                        <input type="text" class="form-control clothing-name" placeholder="年次" required>
-
+                        <input type="text" class="form-control clothing-id" placeholder="編號 (例如 A001)" required>
+                        <input type="text" class="form-control clothing-owner" placeholder="主人姓名 (本名)" required>
                     </div>
                 </div>
                 <button type="button" class="add-btn" id="add-clothing-btn">＋ 新增下一件</button>
@@ -244,8 +205,8 @@
             <div class="form-group">
                 <label>驗證碼 (防機器人)</label>
                 <div class="captcha-row">
-                    <div id="captcha-question" class="captcha-q">Loading...</div>
-                    <input type="text" id="captcha-input" class="form-control" placeholder="請輸入答案" required style="flex:1;">
+                    <div id="captcha-question" class="captcha-q">...</div>
+                    <input type="text" id="captcha-input" class="form-control" placeholder="答案" required style="flex:1;">
                 </div>
             </div>
 
@@ -267,150 +228,128 @@ document.addEventListener('DOMContentLoaded', () => {
     const clothesContainer = document.getElementById('clothes-container');
     const addClothingBtn = document.getElementById('add-clothing-btn');
 
-    // 開啟 Modal 並取得驗證碼
-    openBtn.addEventListener('click', async () => {
-        modal.classList.add('is-visible');
-        openBtn.style.zIndex = -1; openBtn.style.opacity = 0;
-        await fetchCaptcha();
-        await fetchDatePreview();
-    });
-
-    // 關閉 Modal
-    function closeModal() {
-        modal.classList.remove('is-visible');
-        openBtn.style.zIndex = 900; openBtn.style.opacity = 1;
-    }
+    openBtn.onclick = async () => { modal.classList.add('is-visible'); openBtn.style.opacity=0; openBtn.style.zIndex=-1; await fetchCaptcha(); await fetchDatePreview(); };
+    function closeModal() { modal.classList.remove('is-visible'); openBtn.style.opacity=1; openBtn.style.zIndex=900; }
     closeBtn.onclick = closeModal;
-    modal.onclick = (e) => { if(e.target === modal) closeModal(); };
+    modal.onclick = (e) => { if(e.target===modal) closeModal(); };
 
-    // 動態新增衣服欄位
-    addClothingBtn.addEventListener('click', () => {
+    // 新增衣服欄位
+    addClothingBtn.onclick = () => {
         const div = document.createElement('div');
         div.className = 'clothing-row';
         div.innerHTML = `
             <input type="text" class="form-control clothing-id" placeholder="編號" required>
-            <input type="text" class="form-control clothing-name" placeholder="名稱" required>
-            <button type="button" class="remove-btn" title="刪除">×</button>
+            <input type="text" class="form-control clothing-owner" placeholder="主人姓名" required>
+            <button type="button" class="remove-btn">×</button>
         `;
         clothesContainer.appendChild(div);
-        
-        // 綁定刪除事件
-        div.querySelector('.remove-btn').addEventListener('click', () => {
-            div.remove();
-        });
-    });
+        div.querySelector('.remove-btn').onclick = () => div.remove();
+    };
 
-    // 取得驗證碼題目
     async function fetchCaptcha() {
         try {
             const res = await fetch('/api/captcha');
             const data = await res.json();
             captchaQ.textContent = data.question;
-            document.getElementById('captcha-input').value = ''; // 清空輸入
-        } catch(e) { captchaQ.textContent = "Error"; }
+            document.getElementById('captcha-input').value = '';
+        } catch(e){}
     }
-
-    // 取得預計日期
     async function fetchDatePreview() {
         try {
             const res = await fetch('/api/shipclothes/calc-date');
             const data = await res.json();
             datePreview.textContent = `預計黑貓收件日：${data.pickupDate}`;
-        } catch(e) {}
+        } catch(e){}
     }
 
-    // 送出表單
-    form.addEventListener('submit', async (e) => {
+    form.onsubmit = async (e) => {
         e.preventDefault();
-        
-        // 收集衣服資料
         const idInputs = document.querySelectorAll('.clothing-id');
-        const nameInputs = document.querySelectorAll('.clothing-name');
+        const ownerInputs = document.querySelectorAll('.clothing-owner');
         const clothes = [];
-        
         for(let i=0; i<idInputs.length; i++) {
             const id = idInputs[i].value.trim();
-            const name = nameInputs[i].value.trim();
-            if(id && name) {
-                clothes.push({ id: id, name: name });
-            }
+            const owner = ownerInputs[i].value.trim();
+            if(id && owner) clothes.push({ id, owner });
         }
-
-        if(clothes.length === 0) { alert('請至少填寫一件衣服'); return; }
+        if(!clothes.length) { alert('請填寫衣服'); return; }
 
         const payload = {
             lineGroup: document.getElementById('lineGroup').value,
             lineName: document.getElementById('lineName').value.trim(),
             name: document.getElementById('senderName').value.trim(),
-            clothes: clothes, // 物件陣列
+            birthYear: document.getElementById('birthYear').value.trim(),
+            clothes: clothes,
             captcha: document.getElementById('captcha-input').value.trim()
         };
 
         try {
             const res = await fetch('/api/shipclothes', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')},
                 body: JSON.stringify(payload)
             });
-            
             const result = await res.json();
             if(result.success) {
                 alert(`登記成功！\n預計收件日：${result.pickupDate}`);
                 form.reset();
-                // 重置衣服欄位回預設狀態 (1行)
-                clothesContainer.innerHTML = `
-                    <div class="clothing-row">
-                        <input type="text" class="form-control clothing-id" placeholder="編號 (例如 A001)" required>
-                        <input type="text" class="form-control clothing-name" placeholder="名稱 (例如 紅色T恤)" required>
-                    </div>`;
-                
+                clothesContainer.innerHTML = `<div class="clothing-row"><input type="text" class="form-control clothing-id" placeholder="編號 (例如 A001)" required><input type="text" class="form-control clothing-owner" placeholder="主人姓名 (本名)" required></div>`;
                 closeModal();
-                fetchBoardData(); // 刷新清單
+                fetchBoardData();
             } else {
                 alert(result.message);
-                if(result.message.includes('驗證碼')) fetchCaptcha(); // 驗證碼錯就刷新
+                if(result.message.includes('驗證碼')) fetchCaptcha();
             }
         } catch(e) { alert('連線錯誤'); }
-    });
+    };
 
-    // 載入清單
+    // 載入清單 (依照日期分組顯示)
     async function fetchBoardData() {
         try {
             const res = await fetch('/api/shipclothes/list');
             const data = await res.json();
-            
-            if(data.length === 0) {
-                boardList.innerHTML = '<p style="text-align:center; color:#999;">目前沒有近期的收件登記。</p>';
-                return;
-            }
+            if(data.length === 0) { boardList.innerHTML = '<p style="text-align:center;color:#999;">目前無資料</p>'; return; }
 
-            boardList.innerHTML = data.map(item => {
-                // 處理衣服顯示格式： A001 (紅衣), B002 (藍褲)
-                const clothesDisplay = item.clothes.map(c => 
-                    `<span style="border:1px solid #ddd; padding:2px 6px; border-radius:4px; margin-right:5px; background:#fff; display:inline-block; margin-bottom:4px;">
-                        <b>${c.id}</b> <small style="color:#666;">(${c.name})</small>
-                    </span>`
-                ).join('');
+            // 1. 資料分組： { "2023/10/27": [item1, item2], "2023/10/28": [item3] }
+            const grouped = {};
+            data.forEach(item => {
+                if(!grouped[item.pickupDate]) grouped[item.pickupDate] = [];
+                grouped[item.pickupDate].push(item);
+            });
 
-                return `
-                <div class="board-card">
-                    <div class="board-info">
-                        <div style="margin-bottom:8px;">
-                            <span class="board-date-badge">預計 ${item.pickupDate} 收件</span>
-                            <span style="font-weight:bold; font-size:18px;">${item.name}</span>
-                            <span style="color:#C48945; font-size:14px; margin-left:5px;">(${item.lineName})</span>
-                            <span style="color:#888; font-size:13px; margin-left:5px;">@${item.lineGroup}</span>
+            // 2. 渲染 HTML
+            let html = '';
+            for (const [date, items] of Object.entries(grouped)) {
+                // 生成該日期的所有申請卡片
+                const itemsHtml = items.map(item => {
+                    const clothesHtml = item.clothes.map(c => 
+                        `<span class="cloth-item"><b>${c.id}</b> <small>(${c.owner})</small></span>`
+                    ).join('');
+                    
+                    return `
+                    <div class="submission-card">
+                        <div class="card-user-info">
+                            ${item.name} <span style="font-weight:normal; font-size:14px; color:#666;">(${item.birthYear}年次)</span>
+                            <span class="tag-line">${item.lineName}</span>
+                            <span class="tag-line">@${item.lineGroup}</span>
                         </div>
-                        <div class="board-clothes">
-                            <div style="margin-bottom:4px; font-size:12px; color:#888;">申請日期: ${item.submitDate}</div>
-                            <div>${clothesDisplay}</div>
+                        <div class="card-clothes-list">
+                            ${clothesHtml}
                         </div>
+                    </div>`;
+                }).join('');
+
+                // 組合日期區塊
+                html += `
+                <div class="date-group">
+                    <div class="date-header">📅 預計收件日：${date}</div>
+                    <div class="date-content">
+                        ${itemsHtml}
                     </div>
                 </div>`;
-            }).join('');
+            }
+            boardList.innerHTML = html;
+
         } catch(e) { boardList.innerHTML = '<p>載入失敗</p>'; }
     }
 
