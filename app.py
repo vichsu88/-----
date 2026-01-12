@@ -1,4 +1,4 @@
-# --- app.py (完整修正版) ---
+# --- app.py (完整最終整合版) ---
 import os
 import re
 from functools import wraps
@@ -20,12 +20,12 @@ app = Flask(__name__)
 # 安全性設定
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
 is_production = os.environ.get('RENDER') is not None
-app.config['SESSION_COOKIE_SECURE'] = is_production  # True: 僅限 HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True         # 禁止 JS 讀取 Cookie
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'        # 防範 CSRF
-app.permanent_session_lifetime = timedelta(hours=8)  # Session 有效期 8 小時
+app.config['SESSION_COOKIE_SECURE'] = is_production
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.permanent_session_lifetime = timedelta(hours=8)
 
-# 流量限制 (Rate Limiting)
+# 流量限制
 limiter = Limiter(
     get_remote_address,
     app=app,
@@ -33,13 +33,11 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
-# CSRF 保護
+# CSRF & CORS
 csrf = CSRFProtect(app)
-
-# CORS 設定
 CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
-# 管理員密碼雜湊
+# 管理員密碼
 ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH')
 
 # --- 2. 資料庫連線 ---
@@ -55,7 +53,7 @@ try:
 except Exception as e:
     print(f"--- MongoDB 連線失敗: {e} ---")
 
-# --- 3. 裝飾器與工具函式 ---
+# --- 3. 工具函式 ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -65,6 +63,16 @@ def login_required(f):
             return redirect(url_for('admin_page'))
         return f(*args, **kwargs)
     return decorated_function
+
+def calculate_business_d2(start_date):
+    """計算 D+2 工作日 (跳過週六日)"""
+    current = start_date
+    added_days = 0
+    while added_days < 2:
+        current += timedelta(days=1)
+        if current.weekday() < 5: # 0-4 是週一到週五
+            added_days += 1
+    return current
 
 @app.context_processor
 def inject_links():
@@ -76,41 +84,33 @@ def inject_links():
     except: return dict(links={})
 
 # --- 4. 前台頁面路由 ---
-# --- 前台頁面路由 ---
 @app.route('/')
 def home(): return render_template('index.html')
-@app.route('/shipclothes')
-def ship_clothes_page(): return render_template('shipclothes.html')
-# ★ 合併後的新服務頁面
+
 @app.route('/services')
 def services_page(): return render_template('services.html')
 
-# 舊路由轉址 (相容性)
+# 寄回衣物登記頁面 (新功能)
+@app.route('/shipclothes')
+def ship_clothes_page(): return render_template('shipclothes.html')
+
+# 舊路由轉址
 @app.route('/gongtan')
 def gongtan_page(): return redirect(url_for('services_page', _anchor='gongtan-section'))
 @app.route('/shoujing')
 def shoujing_page(): return redirect(url_for('services_page', _anchor='shoujing-section'))
 
-# ★ 新增產品與功能頁面路由 (目前先指向 index 或簡易模板，防止連結失效)
+# 產品與其他頁面
 @app.route('/products/incense')
-def incense_page(): return render_template('incense.html') # 假設您還保留這個，或者稍後我們重做商品頁
-
+def incense_page(): return render_template('incense.html')
 @app.route('/products/skincare')
-def skincare_page(): 
-    # 暫時無內容，先導回首頁並顯示訊息，或顯示 "敬請期待"
-    return render_template('index.html') 
-
+def skincare_page(): return render_template('index.html') # 暫時佔位
 @app.route('/products/yuan-shuai-niang')
-def yuan_user_page(): 
-    return render_template('index.html')
-
+def yuan_user_page(): return render_template('index.html') # 暫時佔位
 @app.route('/donation')
-def donation_page(): 
-    return render_template('index.html')
-
+def donation_page(): return render_template('index.html') # 暫時佔位
 @app.route('/fund')
-def fund_page(): 
-    return render_template('index.html')
+def fund_page(): return render_template('index.html') # 暫時佔位
 
 @app.route('/feedback')
 def feedback_page(): return render_template('feedback.html')
@@ -121,7 +121,7 @@ def faq_page(): return render_template('faq.html')
 @app.route('/admin')
 def admin_page(): return render_template('admin.html')
 
-# --- 6. 核心 API：認證系統 ---
+# --- 6. API: 認證系統 ---
 @app.route('/api/session_check', methods=['GET'])
 def session_check():
     return jsonify({"logged_in": session.get('logged_in', False)})
@@ -142,9 +142,7 @@ def api_logout():
     session.pop('logged_in', None)
     return jsonify({"success": True})
 
-# --- 7. 核心 API：信徒回饋 (Feedback) ---
-
-# 新增回饋 (前台)
+# --- 7. API: 信徒回饋 (Feedback) ---
 @app.route('/api/feedback', methods=['POST'])
 def add_feedback():
     if db is None: return jsonify({"error": "資料庫未連線"}), 500
@@ -174,13 +172,12 @@ def add_feedback():
     db.feedback.insert_one(new_feedback)
     return jsonify({"success": True, "message": "回饋已送出，待審核中"})
 
-# 取得待審核列表 (舊 -> 新)
 @app.route('/api/feedback/pending', methods=['GET'])
 @login_required
 def get_pending_feedback():
     if db is None: return jsonify({"error": "DB Error"}), 500
     try:
-        cursor = db.feedback.find({"status": "pending"}).sort("createdAt", 1)
+        cursor = db.feedback.find({"status": "pending"}).sort("createdAt", 1) # 舊到新
         results = []
         for doc in cursor:
             doc['_id'] = str(doc['_id'])
@@ -189,13 +186,12 @@ def get_pending_feedback():
         return jsonify(results)
     except Exception as e: return jsonify({"error": str(e)}), 500
 
-# 取得已刊登列表 (新 -> 舊)
 @app.route('/api/feedback/approved', methods=['GET'])
 @login_required
 def get_approved_feedback():
     if db is None: return jsonify({"error": "DB Error"}), 500
     try:
-        cursor = db.feedback.find({"status": "approved"}).sort("createdAt", -1)
+        cursor = db.feedback.find({"status": "approved"}).sort("createdAt", -1) # 新到舊
         results = []
         for doc in cursor:
             doc['_id'] = str(doc['_id'])
@@ -204,7 +200,6 @@ def get_approved_feedback():
         return jsonify(results)
     except Exception as e: return jsonify({"error": str(e)}), 500
 
-# 編輯回饋
 @app.route('/api/feedback/<feedback_id>', methods=['PUT'])
 @login_required
 def update_feedback(feedback_id):
@@ -217,7 +212,6 @@ def update_feedback(feedback_id):
         return jsonify({"success": True})
     except Exception as e: return jsonify({"error": str(e)}), 500
 
-# 同意刊登
 @app.route('/api/feedback/<feedback_id>/approve', methods=['PUT'])
 @login_required
 def approve_feedback(feedback_id):
@@ -225,7 +219,6 @@ def approve_feedback(feedback_id):
     db.feedback.update_one({'_id': ObjectId(feedback_id)}, {'$set': {'status': 'approved'}})
     return jsonify({"success": True})
 
-# 刪除回饋
 @app.route('/api/feedback/<feedback_id>', methods=['DELETE'])
 @login_required
 def delete_feedback(feedback_id):
@@ -233,7 +226,6 @@ def delete_feedback(feedback_id):
     db.feedback.delete_one({'_id': ObjectId(feedback_id)})
     return jsonify({"success": True})
 
-# 標記單筆
 @app.route('/api/feedback/<feedback_id>/mark', methods=['PUT'])
 @login_required
 def mark_feedback(feedback_id):
@@ -242,7 +234,6 @@ def mark_feedback(feedback_id):
     db.feedback.update_one({'_id': ObjectId(feedback_id)}, {'$set': {'isMarked': data.get('isMarked', False)}})
     return jsonify({"success": True})
 
-# 全部標記已讀
 @app.route('/api/feedback/mark-all-approved', methods=['PUT'])
 @login_required
 def mark_all_approved_feedback():
@@ -250,7 +241,6 @@ def mark_all_approved_feedback():
     db.feedback.update_many({'status': 'approved'}, {'$set': {'isMarked': True}})
     return jsonify({"success": True})
 
-# 匯出並下載未寄送清單
 @app.route('/api/feedback/download-unmarked', methods=['POST'])
 @login_required
 def download_unmarked_feedback():
@@ -269,12 +259,82 @@ def download_unmarked_feedback():
             text += f"生日: {doc.get('lunarBirthday')} ({doc.get('birthTime')})\n"
             text += f"內容: {doc.get('content')[:50]}...\n{'-'*20}\n\n"
 
+        # 自動標記為已讀
         db.feedback.update_many({'_id': {'$in': ids}}, {'$set': {'isMarked': True}})
         
         return Response(text, mimetype='text/plain', headers={"Content-Disposition": f"attachment;filename=list_{datetime.now().strftime('%Y%m%d')}.txt"})
     except Exception as e: return jsonify({"error": str(e)}), 500
 
-# --- 8. 商品管理 API (Products) ---
+# --- 8. API: 收驚衣物寄回功能 (ShipClothes) ---
+@app.route('/api/shipclothes/calc-date', methods=['GET'])
+def get_pickup_date_preview():
+    today = datetime.utcnow() + timedelta(hours=8)
+    pickup_date = calculate_business_d2(today)
+    return jsonify({"pickupDate": pickup_date.strftime('%Y/%m/%d (%a)')})
+
+@app.route('/api/shipclothes', methods=['POST'])
+def submit_ship_clothes():
+    if db is None: return jsonify({"success": False, "message": "資料庫未連線"}), 500
+    data = request.get_json()
+    
+    if not data.get('name') or not data.get('clothes') or not data.get('lineGroup'):
+        return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
+
+    now_tw = datetime.utcnow() + timedelta(hours=8)
+    pickup_date = calculate_business_d2(now_tw)
+
+    submission = {
+        "name": data['name'],
+        "lineGroup": data['lineGroup'],
+        "clothes": data['clothes'],
+        "submitDate": now_tw,
+        "submitDateStr": now_tw.strftime('%Y/%m/%d'),
+        "pickupDate": pickup_date,
+        "pickupDateStr": pickup_date.strftime('%Y/%m/%d')
+    }
+    
+    db.shipments.insert_one(submission)
+    return jsonify({
+        "success": True, 
+        "pickupDate": pickup_date.strftime('%Y/%m/%d')
+    })
+
+@app.route('/api/shipclothes/list', methods=['GET'])
+def get_ship_clothes_list():
+    if db is None: return jsonify([]), 500
+    
+    now_tw = datetime.utcnow() + timedelta(hours=8)
+    today_date = now_tw.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    start_date = today_date - timedelta(days=1) # 昨天
+    end_date = today_date + timedelta(days=5)   # 未來5天
+    
+    try:
+        cursor = db.shipments.find({
+            "pickupDate": { "$gte": start_date, "$lte": end_date }
+        }).sort("pickupDate", 1)
+
+        results = []
+        for doc in cursor:
+            real_name = doc['name']
+            masked_name = real_name
+            if len(real_name) >= 3:
+                masked_name = real_name[0] + "O" + real_name[2:]
+            elif len(real_name) == 2:
+                masked_name = real_name[0] + "O"
+
+            results.append({
+                "name": masked_name,
+                "lineGroup": doc['lineGroup'],
+                "clothes": doc['clothes'],
+                "submitDate": doc['submitDateStr'],
+                "pickupDate": doc['pickupDateStr']
+            })
+            
+        return jsonify(results)
+    except Exception as e: return jsonify({"error": str(e)}), 500
+
+# --- 9. API: 商品管理 (Products) ---
 @app.route('/api/products', methods=['GET'])
 @login_required
 def get_products():
@@ -323,7 +383,7 @@ def delete_product(product_id):
     db.products.delete_one({'_id': ObjectId(product_id)})
     return jsonify({"success": True})
 
-# --- 9. 公告管理 API (Announcements) ---
+# --- 10. API: 公告、FAQ、其他 ---
 @app.route('/api/announcements', methods=['GET'])
 def get_announcements():
     if db is None: return jsonify({"error": "DB Error"}), 500
@@ -360,7 +420,6 @@ def delete_announcement(ann_id):
     db.announcements.delete_one({'_id': ObjectId(ann_id)})
     return jsonify({"success": True})
 
-# --- 10. FAQ 管理 API ---
 @app.route('/api/faq', methods=['GET'])
 def get_faqs():
     if db is None: return jsonify({"error": "DB Error"}), 500
@@ -392,7 +451,6 @@ def delete_faq(faq_id):
     db.faq.delete_one({'_id': ObjectId(faq_id)})
     return jsonify({"success": True})
 
-# --- 11. 建廟基金 & 連結 API ---
 @app.route('/api/fund-settings', methods=['GET'])
 def get_fund_settings():
     if db is None: return jsonify({"error": "DB Error"}), 500
@@ -424,102 +482,7 @@ def update_link(link_id):
     data = request.get_json()
     db.links.update_one({'_id': ObjectId(link_id)}, {'$set': {'url': data['url']}})
     return jsonify({"success": True})
-# --- app.py 新增部分：收驚衣物寄回功能 ---
 
-# 工具函式：計算 D+2 工作日 (跳過週六日)
-def calculate_business_d2(start_date):
-    current = start_date
-    added_days = 0
-    while added_days < 2:
-        current += timedelta(days=1)
-        # weekday(): 0=Mon, 5=Sat, 6=Sun
-        if current.weekday() < 5: 
-            added_days += 1
-    return current
-
-# API: 計算並回傳預計收件日 (給前端預覽用)
-@app.route('/api/shipclothes/calc-date', methods=['GET'])
-def get_pickup_date_preview():
-    today = datetime.utcnow() + timedelta(hours=8) # 台灣時間
-    pickup_date = calculate_business_d2(today)
-    return jsonify({"pickupDate": pickup_date.strftime('%Y/%m/%d (%a)')})
-
-# API: 提交衣物登記
-@app.route('/api/shipclothes', methods=['POST'])
-def submit_ship_clothes():
-    if db is None: return jsonify({"success": False, "message": "資料庫未連線"}), 500
-    data = request.get_json()
-    
-    # 檢查必填
-    if not data.get('name') or not data.get('clothes') or not data.get('lineGroup'):
-        return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
-
-    # 台灣時間
-    now_tw = datetime.utcnow() + timedelta(hours=8)
-    pickup_date = calculate_business_d2(now_tw) # 計算 D+2
-
-    submission = {
-        "name": data['name'],
-        "lineGroup": data['lineGroup'],
-        "clothes": data['clothes'], # list
-        "submitDate": now_tw,
-        "submitDateStr": now_tw.strftime('%Y/%m/%d'), # 方便查詢
-        "pickupDate": pickup_date, # 用於排序
-        "pickupDateStr": pickup_date.strftime('%Y/%m/%d') # 用於顯示
-    }
-    
-    db.shipments.insert_one(submission)
-    return jsonify({
-        "success": True, 
-        "pickupDate": pickup_date.strftime('%Y/%m/%d')
-    })
-
-# API: 取得公開留言板資料 (過濾日期 + 姓名隱碼)
-@app.route('/api/shipclothes/list', methods=['GET'])
-def get_ship_clothes_list():
-    if db is None: return jsonify([]), 500
-    
-    # 計算時間範圍：昨日 ~ 未來 5 天
-    now_tw = datetime.utcnow() + timedelta(hours=8)
-    today_date = now_tw.replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    start_date = today_date - timedelta(days=1) # 昨天
-    end_date = today_date + timedelta(days=5)   # 未來5天
-    
-    try:
-        # 查詢 pickupDate 在範圍內的資料
-        cursor = db.shipments.find({
-            "pickupDate": {
-                "$gte": start_date, 
-                "$lte": end_date
-            }
-        }).sort("pickupDate", 1) # 依收件日排序 (近到遠)
-
-        results = []
-        for doc in cursor:
-            # 姓名隱碼處理
-            real_name = doc['name']
-            masked_name = ""
-            if len(real_name) >= 3:
-                # 許秉承 -> 許O承
-                masked_name = real_name[0] + "O" + real_name[2:]
-            elif len(real_name) == 2:
-                # 許以 -> 許O
-                masked_name = real_name[0] + "O"
-            else:
-                masked_name = real_name # 一個字不處理 (罕見)
-
-            results.append({
-                "name": masked_name,
-                "lineGroup": doc['lineGroup'],
-                "clothes": doc['clothes'],
-                "submitDate": doc['submitDateStr'],
-                "pickupDate": doc['pickupDateStr']
-            })
-            
-        return jsonify(results)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 # --- 啟動 ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
