@@ -368,20 +368,29 @@ def get_ship_clothes_list():
 # =========================================
 # 9. API: 訂單系統 (Orders)
 # =========================================
+# --- app.py (請替換原本的 create_order 函式) ---
+
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
     
+    # 產生訂單編號
+    order_id = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
+    
+    # 建立客戶資料 (支援建廟基金所需的農曆生日)
+    customer_info = {
+        "name": data.get('name'),
+        "phone": data.get('phone'),
+        "address": data.get('address'),
+        "last5": data.get('last5'),
+        "email": data.get('email', ''),
+        "lunarBirthday": data.get('lunarBirthday', '') # ★ 新增：建廟基金專用
+    }
+
     order = {
-        "orderId": f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}",
-        "customer": {
-            "name": data['name'],
-            "phone": data['phone'],
-            "address": data['address'],
-            "last5": data['last5'],
-            "email": data.get('email', '')
-        },
+        "orderId": order_id,
+        "customer": customer_info,
         "items": data['items'],
         "total": data['total'],
         "status": "pending",
@@ -389,6 +398,40 @@ def create_order():
     }
     db.orders.insert_one(order)
     
+    # --- 寄送確認信 (內容優化) ---
+    # 組合商品明細字串
+    items_str = "\n".join([f"- {i['name']} x {i['qty']} (NT$ {i['price']*i['qty']})" for i in data['items']])
+    
+    email_subject = f"【承天中承府】感謝您的護持與訂購 - 單號 {order_id}"
+    email_body = f"""
+    親愛的 {customer_info['name']} 大德 您好：
+
+    感謝您的發心護持與訂購。
+    我們已收到您的訂單資訊，將盡快為您確認款項。
+
+    【訂單資訊】
+    訂單編號：{order_id}
+    訂購項目：
+    {items_str}
+    --------------------------------
+    總金額：NT$ {data['total']}
+    
+    【您的匯款資訊】
+    帳號後五碼：{customer_info['last5']}
+    
+    【本府收款帳戶】
+    銀行代碼：000 (範例銀行)
+    銀行帳號：1234-5678-9012
+    
+    ※ 請務必於填單後 2 小時內完成匯款。
+    ※ 建廟基金項目，我們將於每月初一、十五統一稟奏疏文，將您的功德上達天聽。
+
+    承天中承府 敬上
+    """
+    
+    send_email(customer_info['email'], email_subject, email_body)
+
+    return jsonify({"success": True, "orderId": order_id})    
     # 寄送確認信 (需設定 .env 才生效)
     email_body = f"""感謝您的訂購！訂單編號：{order['orderId']}\n總金額：NT$ {order['total']}\n請於2小時內匯款。"""
     send_email(data.get('email'), f"訂單確認 - {order['orderId']}", email_body)

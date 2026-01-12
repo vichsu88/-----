@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block title %}承天中承府 - 建廟基金{% endblock %}
+
+{% block content %}
+<style>
+    /* === 共用設定 === */
+    .fund-page-wrapper {
+        background-color: #F3F0EC;
+        font-family: 'Noto Sans TC', sans-serif;
+    }
+    .section-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 60px 20px;
+        text-align: center;
+    }
+    .section-title-fund {
+        font-size: 2.5rem;
+        color: #C48945;
+        margin-bottom: 20px;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* === 第一區：Hero & 圓餅圖 === */
+    .fund-hero {
+        position: relative;
+        height: 90vh;
+        min-height: 600px;
+        /* 請更換為您的建廟背景圖 */
+        background: url('{{ url_for("static", filename="images/pages/index/banner.png") }}') no-repeat center center/cover;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        color: #fff;
+    }
+    .fund-hero::before {
+        content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.6); /* 黑色遮罩讓圖表突出 */
+    }
+    
+    /* 圓餅圖動畫 */
+    .chart-container {
+        position: relative;
+        z-index: 2;
+        width: 280px;
+        height: 280px;
+        border-radius: 50%;
+        background: #eee;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 0 30px rgba(196, 137, 69, 0.5);
+        margin-bottom: 30px;
+    }
+    .chart-inner {
+        width: 240px;
+        height: 240px;
+        background: #fff; /* 中間挖空 */
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: #333;
+    }
+    .chart-percent { font-size: 3rem; font-weight: bold; color: #C48945; }
+    .chart-label { font-size: 1rem; color: #666; }
+    .hero-text { position: relative; z-index: 2; margin-top: 20px; }
+    .hero-text h1 { font-size: clamp(2rem, 5vw, 3.5rem); margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+    .hero-text p { font-size: 1.2rem; margin-top: 10px; opacity: 0.9; }
+
+    /* === 第二區：YouTube 影片 === */
+    .video-wrapper {
+        position: relative;
+        padding-bottom: 56.25%; /* 16:9 比例 */
+        height: 0;
+        overflow: hidden;
+        max-width: 900px;
+        margin: 0 auto;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .video-wrapper iframe {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    }
+
+    /* === 第三區：故事圖片牆 === */
+    .story-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0; /* 圖片緊密連接，或設為 20px */
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .story-img {
+        width: 100%;
+        height: auto;
+        display: block;
+        /* 預設樣式，您之後上傳圖片會自動撐開 */
+    }
+
+    /* === 第四區：捐款 CTA === */
+    .donation-section {
+        background: #fff;
+        border-top: 5px solid #C48945;
+        padding: 80px 20px;
+    }
+    .donation-options {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 40px;
+    }
+    .donate-card {
+        border: 2px solid #E6BA67;
+        border-radius: 15px;
+        padding: 20px;
+        width: 280px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.3s;
+        background: #fff;
+        position: relative;
+    }
+    .donate-card:hover, .donate-card.selected {
+        background: #C48945;
+        color: #fff;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(196, 137, 69, 0.3);
+    }
+    .donate-card h3 { margin: 10px 0; font-size: 1.5rem; }
+    .donate-card .price { font-size: 1.8rem; font-weight: bold; margin-bottom: 15px; }
+    .qty-control {
+        display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px;
+    }
+    .qty-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: #eee; color: #333; cursor: pointer; font-weight: bold; }
+    .donate-card.selected .qty-btn { background: #fff; color: #C48945; }
+    .qty-display { width: 40px; text-align: center; font-size: 1.2rem; }
+
+    /* Modal 表單 */
+    .modal-overlay {
+        display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;
+        backdrop-filter: blur(5px);
+    }
+    .modal-content {
+        background: #fff; padding: 30px; border-radius: 15px; width: 90%; max-width: 600px;
+        max-height: 90vh; overflow-y: auto; position: relative; border: 3px solid #C48945;
+    }
+    .modal-header { font-size: 1.5rem; font-weight: bold; color: #C48945; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .emotional-text {
+        background: #fdf6e9; padding: 15px; border-radius: 8px; font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 20px; border-left: 4px solid #C48945;
+    }
+    .form-row { display: flex; gap: 15px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    .summary-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
+    .summary-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    
+    .btn-action {
+        width: 100%; padding: 15px; font-size: 18px; font-weight: bold; color: #fff;
+        background: #C48945; border: none; border-radius: 50px; cursor: pointer; margin-top: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .btn-action:disabled { background: #ccc; cursor: not-allowed; }
+</style>
+
+<div class="fund-page-wrapper">
+
+    <div class="fund-hero">
+        <div class="chart-container" id="fund-chart">
+            <div class="chart-inner">
+                <span class="chart-percent" id="percent-text">0%</span>
+                <span class="chart-label">目前進度</span>
+                <div style="margin-top:10px; font-size:14px;">
+                    目標：<span id="goal-text">loading...</span><br>
+                    已募：<span id="current-text">loading...</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-text">
+            <h1>一磚一瓦，共建聖殿</h1>
+            <p>承天中承府 建廟基金募集中</p>
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title-fund">建廟緣起</h2>
+        <div class="video-wrapper">
+            <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=example" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <div class="section-container" style="background:#fff;">
+        <h2 class="section-title-fund">未來願景</h2>
+        <div class="story-container">
+            <img src="{{ url_for('static', filename='images/pages/incense/story1.jpg') }}" class="story-img" alt="願景圖1">
+            <img src="{{ url_for('static', filename='images/pages/incense/story2.jpg') }}" class="story-img" alt="願景圖2">
+            </div>
+    </div>
+
+    <div class="donation-section" id="donate">
+        <div class="section-container" style="padding-top:0;">
+            <h2 class="section-title-fund">立即護持</h2>
+            <p style="margin-bottom:40px; font-size:1.2rem; color:#666;">您的每一份心意，都將化作莊嚴廟宇的一部份。</p>
+            
+            <div class="donation-options">
+                <div class="donate-card" onclick="selectItem('suixi', 100)">
+                    <h3>隨喜助建</h3>
+                    <div class="price">NT$ 100</div>
+                    <div class="qty-control">
+                        <button class="qty-btn" onclick="updateQty('suixi', -1); event.stopPropagation();">-</button>
+                        <span class="qty-display" id="qty-suixi">0</span>
+                        <button class="qty-btn" onclick="updateQty('suixi', 1); event.stopPropagation();">+</button>
+                    </div>
+                </div>
+                <div class="donate-card" onclick="selectItem('tile', 600)">
+                    <h3>建廟瓦片</h3>
+                    <div class="price">NT$ 600</div>
+                    <div class="qty-control">
+                        <button class="qty-btn" onclick="updateQty('tile', -1); event.stopPropagation();">-</button>
+                        <span class="qty-display" id="qty-tile">0</span>
+                        <button class="qty-btn" onclick="updateQty('tile', 1); event.stopPropagation();">+</button>
+                    </div>
+                </div>
+                <div class="donate-card" onclick="selectItem('pillar', 10000)">
+                    <h3>龍柱認捐</h3>
+                    <div class="price">NT$ 10,000</div>
+                    <div class="qty-control">
+                        <button class="qty-btn" onclick="updateQty('pillar', -1); event.stopPropagation();">-</button>
+                        <span class="qty-display" id="qty-pillar">0</span>
+                        <button class="qty-btn" onclick="updateQty('pillar', 1); event.stopPropagation();">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align:center; font-size:1.5rem; font-weight:bold; margin-bottom:20px; color:#C48945;">
+                總護持金額：NT$ <span id="total-amount">0</span>
+            </div>
+            
+            <button class="btn-action" style="max-width:300px;" onclick="openFormModal()">前往填寫資料</button>
+        </div>
+    </div>
+
+</div>
+
+<div id="fund-form-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">填寫護持資料</div>
+        <div class="emotional-text">
+            感恩您的發心！<br>
+            您的一磚一瓦，我們都會詳細記錄，並於每月初一、十五向元帥稟奏疏文。<br>
+            您的功德將永留帥府，庇佑您閤家平安。
+        </div>
+        
+        <form id="donation-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>真實姓名</label>
+                    <input type="text" name="name" class="form-control" required placeholder="將用於疏文稟奏">
+                </div>
+                <div class="form-group">
+                    <label>農曆生日 (YYYY/MM/DD)</label>
+                    <input type="text" name="lunarBirthday" class="form-control" required placeholder="例如: 1990/01/01">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>聯絡電話</label>
+                    <input type="tel" name="phone" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>電子信箱 (接收確認信)</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>聯絡地址 (寄送感謝狀/收據)</label>
+                <input type="text" name="address" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>匯款帳號後五碼</label>
+                <input type="text" name="last5" class="form-control" maxlength="5" required placeholder="請填寫您的帳號後5碼">
+            </div>
+
+            <button type="submit" class="btn-action">下一步：確認資料</button>
+            <button type="button" class="btn-action" style="background:#ccc; margin-top:10px;" onclick="closeModal('fund-form-modal')">取消</button>
+        </form>
+    </div>
+</div>
+
+<div id="confirm-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">請確認護持資訊</div>
+        <table class="summary-table">
+            <tr><td width="30%">姓名</td><td id="conf-name"></td></tr>
+            <tr><td>農曆生日</td><td id="conf-birth"></td></tr>
+            <tr><td>護持項目</td><td id="conf-items"></td></tr>
+            <tr><td>總金額</td><td id="conf-total" style="color:#C48945; font-weight:bold;"></td></tr>
+        </table>
+        <p style="color:red; font-size:13px; text-align:center;">※ 資料送出後無法修改，請確認無誤。</p>
+        <button id="final-submit-btn" class="btn-action">確認送出</button>
+        <button class="btn-action" style="background:#ccc; margin-top:10px;" onclick="backToEdit()">返回修改</button>
+    </div>
+</div>
+
+<div id="success-modal" class="modal-overlay">
+    <div class="modal-content" style="text-align:center;">
+        <div style="font-size:3rem; margin-bottom:10px;">🙏</div>
+        <h2 style="color:#C48945;">功德無量</h2>
+        <p>資料已成功送出，感謝您的護持！</p>
+        <div style="background:#e3f2fd; padding:15px; border-radius:8px; margin:20px 0; text-align:left;">
+            <p><strong>匯款銀行：</strong>000 (範例銀行)</p>
+            <p><strong>匯款帳號：</strong>1234-5678-9012</p>
+            <p style="color:red; font-size:13px;">請務必於 2 小時內完成匯款。</p>
+        </div>
+        <button class="btn-action" onclick="window.location.reload()">完成</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    // === 1. 初始化圖表 ===
+    try {
+        const res = await fetch('/api/fund-settings');
+        const data = await res.json();
+        const goal = data.goal_amount || 10000000;
+        const current = data.current_amount || 0;
+        const percent = Math.min(Math.round((current / goal) * 100), 100);
+        
+        document.getElementById('goal-text').textContent = `$${goal.toLocaleString()}`;
+        document.getElementById('current-text').textContent = `$${current.toLocaleString()}`;
+        document.getElementById('percent-text').textContent = `${percent}%`;
+        
+        // CSS Conic Gradient 動畫
+        const chart = document.getElementById('fund-chart');
+        let p = 0;
+        const interval = setInterval(() => {
+            if(p >= percent) clearInterval(interval);
+            chart.style.background = `conic-gradient(#C48945 0% ${p}%, #ddd ${p}% 100%)`;
+            p++;
+        }, 20); // 動畫速度
+    } catch(e) {}
+
+    // === 2. 捐款邏輯 ===
+    const items = {
+        'suixi': { name: '隨喜助建', price: 100, qty: 0 },
+        'tile': { name: '建廟瓦片', price: 600, qty: 0 },
+        'pillar': { name: '龍柱認捐', price: 10000, qty: 0 }
+    };
+
+    window.updateQty = (key, change) => {
+        items[key].qty = Math.max(0, items[key].qty + change);
+        document.getElementById(`qty-${key}`).innerText = items[key].qty;
+        
+        // 視覺選取效果
+        const card = document.querySelector(`.donate-card[onclick*="${key}"]`);
+        if(items[key].qty > 0) card.classList.add('selected');
+        else card.classList.remove('selected');
+        
+        calcTotal();
+    };
+
+    window.selectItem = (key) => {
+        // 點擊卡片本身也可以+1 (體驗優化)
+        // 但如果按到 +/- 按鈕會被 stopPropagation 擋住，不會觸發這個
+        // 這裡暫時留空，或可設計成點擊卡片就選 1
+        if(items[key].qty === 0) updateQty(key, 1);
+    };
+
+    function calcTotal() {
+        let total = 0;
+        for(let key in items) total += items[key].price * items[key].qty;
+        document.getElementById('total-amount').innerText = total.toLocaleString();
+    }
+
+    // === 3. 表單流程 ===
+    const formModal = document.getElementById('fund-form-modal');
+    const confirmModal = document.getElementById('confirm-modal');
+    const successModal = document.getElementById('success-modal');
+    const form = document.getElementById('donation-form');
+
+    window.openFormModal = () => {
+        const total = parseInt(document.getElementById('total-amount').innerText.replace(/,/g,''));
+        if(total === 0) return alert('請先選擇護持項目');
+        formModal.style.display = 'flex';
+    };
+    window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+    window.backToEdit = () => { confirmModal.style.display = 'none'; formModal.style.display = 'flex'; };
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        // 收集資料並顯示確認 Modal
+        document.getElementById('conf-name').innerText = form.name.value;
+        document.getElementById('conf-birth').innerText = form.lunarBirthday.value;
+        
+        let itemsHtml = '';
+        for(let key in items) {
+            if(items[key].qty > 0) itemsHtml += `${items[key].name} x ${items[key].qty}<br>`;
+        }
+        document.getElementById('conf-items').innerHTML = itemsHtml;
+        document.getElementById('conf-total').innerText = document.getElementById('total-amount').innerText;
+
+        formModal.style.display = 'none';
+        confirmModal.style.display = 'flex';
+    });
+
+    document.getElementById('final-submit-btn').onclick = async () => {
+        const btn = document.getElementById('final-submit-btn');
+        btn.disabled = true; btn.innerText = '處理中...';
+
+        // 整理商品資料給後端 API
+        const orderItems = [];
+        for(let key in items) {
+            if(items[key].qty > 0) orderItems.push({
+                name: `[建廟] ${items[key].name}`,
+                price: items[key].price,
+                qty: items[key].qty,
+                id: key // 簡單 ID
+            });
+        }
+
+        const payload = {
+            name: form.name.value,
+            phone: form.phone.value,
+            address: form.address.value,
+            last5: form.last5.value,
+            email: form.email.value,
+            lunarBirthday: form.lunarBirthday.value, // 新增
+            items: orderItems,
+            total: parseInt(document.getElementById('total-amount').innerText.replace(/,/g,''))
+        };
+
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            
+            if(result.success) {
+                confirmModal.style.display = 'none';
+                successModal.style.display = 'flex';
+            } else {
+                alert('送出失敗');
+                btn.disabled = false;
+            }
+        } catch(e) { alert('連線錯誤'); btn.disabled = false; }
+    };
+});
+</script>
+{% endblock %}
