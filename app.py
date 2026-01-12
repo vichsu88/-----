@@ -79,7 +79,8 @@ def inject_links():
 # --- 前台頁面路由 ---
 @app.route('/')
 def home(): return render_template('index.html')
-
+@app.route('/shipclothes')
+def ship_clothes_page(): return render_template('shipclothes.html')
 # ★ 合併後的新服務頁面
 @app.route('/services')
 def services_page(): return render_template('services.html')
@@ -423,7 +424,102 @@ def update_link(link_id):
     data = request.get_json()
     db.links.update_one({'_id': ObjectId(link_id)}, {'$set': {'url': data['url']}})
     return jsonify({"success": True})
+# --- app.py 新增部分：收驚衣物寄回功能 ---
 
+# 工具函式：計算 D+2 工作日 (跳過週六日)
+def calculate_business_d2(start_date):
+    current = start_date
+    added_days = 0
+    while added_days < 2:
+        current += timedelta(days=1)
+        # weekday(): 0=Mon, 5=Sat, 6=Sun
+        if current.weekday() < 5: 
+            added_days += 1
+    return current
+
+# API: 計算並回傳預計收件日 (給前端預覽用)
+@app.route('/api/shipclothes/calc-date', methods=['GET'])
+def get_pickup_date_preview():
+    today = datetime.utcnow() + timedelta(hours=8) # 台灣時間
+    pickup_date = calculate_business_d2(today)
+    return jsonify({"pickupDate": pickup_date.strftime('%Y/%m/%d (%a)')})
+
+# API: 提交衣物登記
+@app.route('/api/shipclothes', methods=['POST'])
+def submit_ship_clothes():
+    if db is None: return jsonify({"success": False, "message": "資料庫未連線"}), 500
+    data = request.get_json()
+    
+    # 檢查必填
+    if not data.get('name') or not data.get('clothes') or not data.get('lineGroup'):
+        return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
+
+    # 台灣時間
+    now_tw = datetime.utcnow() + timedelta(hours=8)
+    pickup_date = calculate_business_d2(now_tw) # 計算 D+2
+
+    submission = {
+        "name": data['name'],
+        "lineGroup": data['lineGroup'],
+        "clothes": data['clothes'], # list
+        "submitDate": now_tw,
+        "submitDateStr": now_tw.strftime('%Y/%m/%d'), # 方便查詢
+        "pickupDate": pickup_date, # 用於排序
+        "pickupDateStr": pickup_date.strftime('%Y/%m/%d') # 用於顯示
+    }
+    
+    db.shipments.insert_one(submission)
+    return jsonify({
+        "success": True, 
+        "pickupDate": pickup_date.strftime('%Y/%m/%d')
+    })
+
+# API: 取得公開留言板資料 (過濾日期 + 姓名隱碼)
+@app.route('/api/shipclothes/list', methods=['GET'])
+def get_ship_clothes_list():
+    if db is None: return jsonify([]), 500
+    
+    # 計算時間範圍：昨日 ~ 未來 5 天
+    now_tw = datetime.utcnow() + timedelta(hours=8)
+    today_date = now_tw.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    start_date = today_date - timedelta(days=1) # 昨天
+    end_date = today_date + timedelta(days=5)   # 未來5天
+    
+    try:
+        # 查詢 pickupDate 在範圍內的資料
+        cursor = db.shipments.find({
+            "pickupDate": {
+                "$gte": start_date, 
+                "$lte": end_date
+            }
+        }).sort("pickupDate", 1) # 依收件日排序 (近到遠)
+
+        results = []
+        for doc in cursor:
+            # 姓名隱碼處理
+            real_name = doc['name']
+            masked_name = ""
+            if len(real_name) >= 3:
+                # 許秉承 -> 許O承
+                masked_name = real_name[0] + "O" + real_name[2:]
+            elif len(real_name) == 2:
+                # 許以 -> 許O
+                masked_name = real_name[0] + "O"
+            else:
+                masked_name = real_name # 一個字不處理 (罕見)
+
+            results.append({
+                "name": masked_name,
+                "lineGroup": doc['lineGroup'],
+                "clothes": doc['clothes'],
+                "submitDate": doc['submitDateStr'],
+                "pickupDate": doc['pickupDateStr']
+            })
+            
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 # --- 啟動 ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
