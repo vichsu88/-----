@@ -137,7 +137,7 @@
 
 <main class="ship-wrapper">
     <div id="open-ship-form-btn" class="feedback-floating-btn">
-        <img src="{{ url_for('static', filename='images/pages/feedback/new.png') }}" alt="我要登記">
+        <img src="{{ url_for('static', filename='images/pages/feedback/ship.png') }}" alt="我要登記">
     </div>
 
     <div class="board-section">
@@ -187,23 +187,20 @@
             </div>
 
             <div class="form-group">
-                <label>4. 寄件人年次 (例如：75 或 1986)</label>
-                <input type="text" id="birthYear" class="form-control" placeholder="請填寫出生年份" required>
-            </div>
-
-            <div class="form-group">
-                <label>5. 衣服明細 (編號 + 衣服主人姓名)</label>
+                <label>4. 衣服明細 (編號/姓名/年分)</label>
                 <div id="clothes-container">
                     <div class="clothing-row">
-                        <input type="text" class="form-control clothing-id" placeholder="編號 (例如 A001)" required>
+                        <input type="text" class="form-control clothing-id" placeholder="編號 (例如 122413)" required>
                         <input type="text" class="form-control clothing-owner" placeholder="主人姓名 (本名)" required>
+                        <input type="text" id="birthYear" class="form-control" placeholder="民國年份" required>
+
                     </div>
                 </div>
                 <button type="button" class="add-btn" id="add-clothing-btn">＋ 新增下一件</button>
             </div>
 
             <div class="form-group">
-                <label>驗證碼 (防機器人)</label>
+                <label>驗證碼 </label>
                 <div class="captcha-row">
                     <div id="captcha-question" class="captcha-q">...</div>
                     <input type="text" id="captcha-input" class="form-control" placeholder="答案" required style="flex:1;">
