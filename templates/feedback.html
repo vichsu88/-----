@@ -243,7 +243,7 @@
                 <label>聯絡電話：<input type="tel" name="phone"></label>
             </div>
 
-            <button type="button" id="go-to-review-btn" class="btn-primary" disabled>下一步：確認資料</button>
+            <button type="button" id="go-to-review-btn" class="btn-primary" disabled>下一步</button>
         </form>
     </div>
 </div>
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 時辰 (Fix: 預設顯示吉時)
     const birthTimeVal = feedbackForm.birthTime.value;
-    document.getElementById('review-birthTime').textContent = birthTimeVal ? birthTimeVal : '吉時 (不知道)';
+    document.getElementById('review-birthTime').textContent = birthTimeVal ? birthTimeVal : '吉時';
     
     document.getElementById('review-phone').textContent = feedbackForm.phone.value || '未填寫';
     document.getElementById('review-address').textContent = feedbackForm.address.value || '未填寫';
