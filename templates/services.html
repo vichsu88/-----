@@ -57,9 +57,9 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s;
     }
     .step-item:hover { border-left-color: var(--primary-gold); transform: translateX(5px); }
-    .step-title { font-weight: bold; color: #8B4513; font-size: 1.1rem; margin-bottom: 5px; display: flex; justify-content: space-between; }
+    .step-title { font-weight: bold; color: #8B4513; font-size: 1.1rem; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
     .step-desc { font-size: 0.95rem; color: #555; line-height: 1.5; }
-    .line-btn { display: inline-block; background: #06c755; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; text-decoration: none; margin-left: 10px; }
+    .line-btn { display: inline-block; background: #06c755; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; text-decoration: none; margin-left: 10px; }
 
     /* === 3. 信徒見證 === */
     .feedback-section {
@@ -74,7 +74,7 @@
     .fb-link { text-align: center; margin-top: 20px; }
     @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-    /* === 4. 衣物收驚流程 (三張卡片) === */
+    /* === 4. 衣物收驚流程 === */
     .clothes-process-section { max-width: 1100px; margin: 0 auto 80px auto; padding: 0 20px; }
     .process-card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; }
     .process-card {
@@ -87,21 +87,43 @@
     .card-desc { font-size: 0.95rem; color: #666; line-height: 1.6; min-height: 60px; margin-bottom: 15px; }
     .card-image-box { margin-bottom: 20px; height: 180px; display: flex; justify-content: center; align-items: center; background: #fafafa; border-radius: 10px; overflow: hidden; }
     .card-image-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .card-btn { width: 100%; padding: 10px; border-radius: 50px; background: #C48945; color: white; border: none; cursor: pointer; margin-top: auto; transition: 0.3s; }
+    .card-btn { width: 100%; padding: 10px; border-radius: 50px; background: #C48945; color: white; border: none; cursor: pointer; margin-top: auto; transition: 0.3s; font-size: 1rem;}
     .card-btn:hover { background: #a06d35; }
+
+    /* === 5. 底部捐香推廣區 === */
+    .donation-promo-section {
+        background: linear-gradient(to bottom, #fffcf5, #f3e9d2);
+        border-top: 4px double #C48945;
+        padding: 80px 20px;
+        text-align: center;
+        margin-top: 0;
+    }
+    .donation-promo-content { max-width: 800px; margin: 0 auto; }
+    .donation-icon { width: 80px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(196, 137, 69, 0.3)); }
+    .donation-promo-title { color: #8B4513; font-size: 2.2rem; margin-bottom: 20px; font-weight: bold; }
+    .donation-promo-desc { color: #555; font-size: 1.1rem; line-height: 1.8; margin-bottom: 40px; }
+    .btn-action {
+        display: inline-block; padding: 15px 50px; font-size: 1.3rem; font-weight: bold;
+        background: var(--primary-gold); color: white; text-decoration: none; border-radius: 50px;
+        box-shadow: 0 5px 15px rgba(196, 137, 69, 0.4); transition: 0.3s;
+    }
+    .btn-action:hover { background: #a06d35; transform: scale(1.05); }
 
     /* === Modal 彈出視窗樣式 === */
     .modal-overlay {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0, 0, 0, 0.6); z-index: 2000; justify-content: center; align-items: center;
+        opacity: 0; transition: opacity 0.3s ease; /* 淡入效果 */
     }
-    .modal-overlay.show { display: flex; }
+    .modal-overlay.show { display: flex; opacity: 1; }
     .modal-box {
         background: #fff; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
         border-radius: 15px; padding: 30px; position: relative;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.3s ease;
     }
-    .modal-close { position: absolute; top: 15px; right: 20px; font-size: 30px; cursor: pointer; color: #999; }
+    .modal-overlay.show .modal-box { transform: scale(1); }
+    .modal-close { position: absolute; top: 15px; right: 20px; font-size: 30px; cursor: pointer; color: #999; transition: 0.2s; }
+    .modal-close:hover { color: #333; }
     .modal-title { font-size: 1.5rem; color: #8B4513; margin-bottom: 20px; border-bottom: 2px solid #C48945; padding-bottom: 10px; }
     .modal-body { font-size: 1rem; color: #444; line-height: 1.8; }
     .modal-body ul, .modal-body ol { padding-left: 20px; margin-bottom: 15px; }
@@ -109,24 +131,14 @@
 
     /* 紅紙 CSS 繪製 */
     .red-paper-visual {
-        background: #d93025; color: black; /* 傳統紅紙黑字 */
-        width: 240px; height: 320px; margin: 20px auto;
-        padding: 20px; box-sizing: border-box;
-        border: 1px solid rgba(0,0,0,0.1);
-        box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+        background: #d93025; color: black;
+        width: 240px; height: 320px; margin: 20px auto; padding: 20px; box-sizing: border-box;
+        border: 1px solid rgba(0,0,0,0.1); box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
         display: flex; flex-direction: column; justify-content: space-between;
-        font-family: "KaiTi", "BiauKai", serif; /* 標楷體更像手寫 */
-        font-size: 1.1rem; text-align: center;
-        position: relative;
+        font-family: "KaiTi", "BiauKai", serif; font-size: 1.1rem; text-align: center; position: relative;
     }
-    .red-paper-date {
-        position: absolute; top: 10px; left: 10px;
-        font-size: 0.9rem; writing-mode: vertical-rl;
-    }
-    .red-paper-content {
-        display: flex; flex-direction: column; gap: 10px;
-        justify-content: center; height: 100%;
-    }
+    .red-paper-date { position: absolute; top: 10px; left: 10px; font-size: 0.9rem; writing-mode: vertical-rl; }
+    .red-paper-content { display: flex; flex-direction: column; gap: 10px; justify-content: center; height: 100%; }
     .red-paper-row { border-bottom: 1px dashed rgba(0,0,0,0.3); padding-bottom: 2px; }
 
     /* RWD */
@@ -134,6 +146,7 @@
         .hero-title { font-size: 2.2rem; }
         .gongtan-section { flex-direction: column; gap: 30px; }
         .process-card-container { grid-template-columns: 1fr; }
+        .donation-promo-title { font-size: 1.8rem; }
     }
 </style>
 
@@ -154,7 +167,7 @@
 
 <section id="gongtan" class="gongtan-section">
     <div class="gongtan-img-box">
-        <img src="{{ url_for('static', filename='images/pages/shoujing/service1.jpg') }}" alt="元帥辦事" class="gongtan-img">
+        <img src="{{ url_for('static', filename='images/pages/gongtan/signuppic.jpg') }}" alt="元帥辦事" class="gongtan-img">
     </div>
     <div class="gongtan-content">
         <div class="section-header"><h2>公壇問事 / 收驚</h2><span>每週固定開壇 ‧ 現場掛號</span></div>
@@ -210,6 +223,18 @@
             <div class="card-image-box"><img src="{{ url_for('static', filename='images/pages/shoujing/card3.png') }}" alt="步驟三"></div>
             <button class="card-btn" onclick="openModal('modal-step3')">黑貓預約與登記</button>
         </div>
+    </div>
+</section>
+
+<section class="donation-promo-section">
+    <div class="donation-promo-content">
+        <img src="{{ url_for('static', filename='images/pages/incense/product1.png') }}" alt="捐香" class="donation-icon">
+        <h2 class="donation-promo-title">代辦捐香 ‧ 護持公壇</h2>
+        <p class="donation-promo-desc">
+            您的每一份護持，都將化作公壇辦事時的裊裊香煙。<br>
+            我們將於辦事時向元帥稟報您的心意與祈願。
+        </p>
+        <a href="{{ url_for('donation_page') }}" class="btn-action">我要線上捐香</a>
     </div>
 </section>
 
@@ -305,7 +330,7 @@
 
             <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
                 <p style="font-weight:bold; color:#333;">已收到完成通知，並預約好黑貓了嗎？</p>
-                <a href="{{ url_for('ship_clothes_page') }}" class="btn-action" style="display:inline-block; padding:12px 30px; background:#C48945; color:white; text-decoration:none; border-radius:50px;">
+                <a href="{{ url_for('ship_clothes_page') }}" class="btn-action" style="text-decoration:none; display:inline-block; padding:12px 30px; border-radius:50px;">
                     📝 填寫衣物登記單 (告知寄件日)
                 </a>
             </div>
@@ -315,13 +340,22 @@
 
 <script>
     function openModal(id) { document.getElementById(id).classList.add('show'); }
+    
+    // 關閉 Modal (支援點擊 X 和 背景)
     function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    
+    // 全域點擊監聽 (點背景關閉)
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal-overlay')) {
+            event.target.classList.remove('show');
+        }
+    }
     
     // 跑馬燈
     document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/feedback/approved').then(r=>r.json()).then(data => {
             const track = document.getElementById('feedback-track');
-            if(!data.length) { track.innerHTML = '<div style="padding:20px; width:100vw; text-align:center;">暫無回饋</div>'; return; }
+            if(!data.length) { track.innerHTML = '<div style="padding:20px; width:100vw; text-align:center;">暫無回饋資料</div>'; return; }
             const cards = data.map(i => `
                 <div class="feedback-card">
                     <div class="fb-header">
@@ -330,6 +364,8 @@
                     </div>
                     <div class="fb-content">${i.content}</div>
                 </div>`).join('');
+            
+            // 複製內容以填滿跑馬燈
             let content = cards;
             if(data.length < 5) content += content + content;
             track.innerHTML = content + content;
