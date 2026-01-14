@@ -12,341 +12,164 @@
     }
     body { background-color: var(--bg-offwhite); }
 
-    /* === 1. Hero 頂部影音區 (全螢幕感) === */
+    /* === 1. Hero 頂部影音區 === */
     .service-hero {
-        position: relative;
-        width: 100%;
-        height: 70vh; /* 佔據螢幕 70% 高度 */
-        overflow: hidden;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: #000;
+        position: relative; width: 100%; height: 70vh; overflow: hidden;
+        display: flex; justify-content: center; align-items: center; background: #000;
     }
     .video-background {
-        position: absolute;
-        top: 50%; left: 50%;
-        width: 100vw; height: 100vh; /* 放大以覆蓋 */
-        transform: translate(-50%, -50%);
-        pointer-events: none; /* 禁止點擊影片 */
-        opacity: 0.6; /* 稍微變暗讓文字清楚 */
-        z-index: 1;
+        position: absolute; top: 50%; left: 50%; width: 100vw; height: 100vh;
+        transform: translate(-50%, -50%); pointer-events: none; opacity: 0.6; z-index: 1;
     }
-    .video-background iframe {
-        width: 100%; height: 100%;
-        object-fit: cover;
-    }
-    .hero-content {
-        position: relative;
-        z-index: 2;
-        text-align: center;
-        color: #fff;
-        padding: 20px;
-    }
+    .video-background iframe { width: 100%; height: 100%; object-fit: cover; }
+    .hero-content { position: relative; z-index: 2; text-align: center; color: #fff; padding: 20px; }
     .hero-title {
-        font-family: 'KouzanBrushFontOTF', serif;
-        font-size: 3.5rem;
-        margin-bottom: 10px;
-        text-shadow: 0 0 20px rgba(196, 137, 69, 0.8);
-        letter-spacing: 5px;
+        font-family: 'KouzanBrushFontOTF', serif; font-size: 3.5rem; margin-bottom: 10px;
+        text-shadow: 0 0 20px rgba(196, 137, 69, 0.8); letter-spacing: 5px;
     }
     .hero-subtitle {
-        font-size: 1.4rem;
-        font-weight: 300;
-        margin-bottom: 30px;
-        line-height: 1.6;
+        font-size: 1.4rem; font-weight: 300; margin-bottom: 30px; line-height: 1.6;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
     }
-    /* 快速導航按鈕列 */
-    .hero-nav {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
+    .hero-nav { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
     .nav-anchor {
-        padding: 12px 30px;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        color: #fff;
-        text-decoration: none;
-        border-radius: 50px;
-        transition: 0.3s;
-        font-weight: bold;
-        letter-spacing: 1px;
+        padding: 12px 30px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.4); color: #fff; text-decoration: none;
+        border-radius: 50px; transition: 0.3s; font-weight: bold; letter-spacing: 1px;
     }
-    .nav-anchor:hover {
-        background: var(--primary-gold);
-        border-color: var(--primary-gold);
-        transform: translateY(-3px);
-    }
+    .nav-anchor:hover { background: var(--primary-gold); border-color: var(--primary-gold); transform: translateY(-3px); }
 
-    /* === 2. 現場問事區 (左圖右文) === */
+    /* === 2. 現場問事區 === */
     .gongtan-section {
-        max-width: 1200px;
-        margin: 60px auto;
-        padding: 0 20px;
-        display: flex;
-        align-items: center;
-        gap: 50px;
+        max-width: 1200px; margin: 60px auto; padding: 0 20px;
+        display: flex; align-items: center; gap: 50px;
     }
-    .gongtan-img-box {
-        flex: 1;
-        position: relative;
-    }
-    .gongtan-img {
-        width: 100%;
-        border-radius: 15px;
-        box-shadow: 10px 10px 0 var(--primary-gold); /* 裝飾陰影 */
-        object-fit: cover;
-    }
-    .gongtan-content {
-        flex: 1;
-    }
-    .section-header {
-        border-left: 5px solid var(--primary-gold);
-        padding-left: 15px;
-        margin-bottom: 30px;
-    }
-    .section-header h2 {
-        font-size: 2rem;
-        color: #8B4513;
-        margin: 0;
-    }
-    .section-header span {
-        color: #666;
-        font-size: 1rem;
-    }
+    .gongtan-img-box { flex: 1; position: relative; }
+    .gongtan-img { width: 100%; border-radius: 15px; box-shadow: 10px 10px 0 var(--primary-gold); object-fit: cover; }
+    .gongtan-content { flex: 1; }
+    .section-header { border-left: 5px solid var(--primary-gold); padding-left: 15px; margin-bottom: 30px; }
+    .section-header h2 { font-size: 2rem; color: #8B4513; margin: 0; }
+    .section-header span { color: #666; font-size: 1rem; }
 
-    /* 流程步驟美化 */
-    .process-steps {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
+    .process-steps { display: flex; flex-direction: column; gap: 20px; }
     .step-item {
-        background: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 4px solid #ddd;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        transition: 0.3s;
+        background: #fff; padding: 20px; border-radius: 10px; border-left: 4px solid #ddd;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s;
     }
-    .step-item:hover {
-        border-left-color: var(--primary-gold);
-        transform: translateX(5px);
-    }
-    .step-title {
-        font-weight: bold;
-        color: #8B4513;
-        font-size: 1.1rem;
-        margin-bottom: 5px;
-        display: flex;
-        justify-content: space-between;
-    }
-    .step-desc {
-        font-size: 0.95rem;
-        color: #555;
-        line-height: 1.5;
-    }
-    .line-btn {
-        display: inline-block;
-        background: #06c755;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        text-decoration: none;
-        margin-left: 10px;
-    }
+    .step-item:hover { border-left-color: var(--primary-gold); transform: translateX(5px); }
+    .step-title { font-weight: bold; color: #8B4513; font-size: 1.1rem; margin-bottom: 5px; display: flex; justify-content: space-between; }
+    .step-desc { font-size: 0.95rem; color: #555; line-height: 1.5; }
+    .line-btn { display: inline-block; background: #06c755; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; text-decoration: none; margin-left: 10px; }
 
-    /* === 3. 信徒見證跑馬燈 === */
+    /* === 3. 信徒見證 === */
     .feedback-section {
-        background: #fff;
-        padding: 50px 0;
-        margin: 60px 0;
-        border-top: 1px solid #eee;
-        border-bottom: 1px solid #eee;
-        overflow: hidden; /* 隱藏超出部分 */
+        background: #fff; padding: 50px 0; margin: 60px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; overflow: hidden;
     }
-    .marquee-wrapper {
-        display: flex;
-        width: 100%;
+    .marquee-wrapper { display: flex; width: 100%; position: relative; }
+    .marquee-track { display: flex; gap: 30px; animation: scrollLeft 40s linear infinite; width: max-content; }
+    .feedback-card { width: 300px; background: #F9F7F2; padding: 20px; border-radius: 10px; border: 1px solid #eee; flex-shrink: 0; }
+    .fb-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .fb-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #fff; background: var(--primary-gold); }
+    .fb-content { font-size: 0.9rem; color: #555; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .fb-link { text-align: center; margin-top: 20px; }
+    @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+    /* === 4. 衣物收驚流程 (三張卡片) === */
+    .clothes-process-section { max-width: 1100px; margin: 0 auto 80px auto; padding: 0 20px; }
+    .process-card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; }
+    .process-card {
+        background: #fff; border-radius: 15px; padding: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center;
+        border: 1px solid #eee; transition: 0.3s; display: flex; flex-direction: column;
+    }
+    .process-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(196, 137, 69, 0.2); border-color: var(--primary-gold); }
+    .card-title { font-size: 1.3rem; font-weight: bold; color: #8B4513; margin-bottom: 10px; }
+    .card-desc { font-size: 0.95rem; color: #666; line-height: 1.6; min-height: 60px; margin-bottom: 15px; }
+    .card-image-box { margin-bottom: 20px; height: 180px; display: flex; justify-content: center; align-items: center; background: #fafafa; border-radius: 10px; overflow: hidden; }
+    .card-image-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .card-btn { width: 100%; padding: 10px; border-radius: 50px; background: #C48945; color: white; border: none; cursor: pointer; margin-top: auto; transition: 0.3s; }
+    .card-btn:hover { background: #a06d35; }
+
+    /* === Modal 彈出視窗樣式 === */
+    .modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6); z-index: 2000; justify-content: center; align-items: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+        background: #fff; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+        border-radius: 15px; padding: 30px; position: relative;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .modal-close { position: absolute; top: 15px; right: 20px; font-size: 30px; cursor: pointer; color: #999; }
+    .modal-title { font-size: 1.5rem; color: #8B4513; margin-bottom: 20px; border-bottom: 2px solid #C48945; padding-bottom: 10px; }
+    .modal-body { font-size: 1rem; color: #444; line-height: 1.8; }
+    .modal-body ul, .modal-body ol { padding-left: 20px; margin-bottom: 15px; }
+    .modal-body li { margin-bottom: 8px; }
+
+    /* 紅紙 CSS 繪製 */
+    .red-paper-visual {
+        background: #d93025; color: black; /* 傳統紅紙黑字 */
+        width: 240px; height: 320px; margin: 20px auto;
+        padding: 20px; box-sizing: border-box;
+        border: 1px solid rgba(0,0,0,0.1);
+        box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+        display: flex; flex-direction: column; justify-content: space-between;
+        font-family: "KaiTi", "BiauKai", serif; /* 標楷體更像手寫 */
+        font-size: 1.1rem; text-align: center;
         position: relative;
     }
-    .marquee-track {
-        display: flex;
-        gap: 30px;
-        animation: scrollLeft 40s linear infinite;
-        width: max-content; /* 讓寬度依內容延伸 */
+    .red-paper-date {
+        position: absolute; top: 10px; left: 10px;
+        font-size: 0.9rem; writing-mode: vertical-rl;
     }
-    .feedback-card {
-        width: 300px;
-        background: #F9F7F2;
-        padding: 20px;
-        border-radius: 10px;
-        border: 1px solid #eee;
-        flex-shrink: 0; /* 防止被壓縮 */
+    .red-paper-content {
+        display: flex; flex-direction: column; gap: 10px;
+        justify-content: center; height: 100%;
     }
-    .fb-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-    .fb-avatar {
-        width: 40px; height: 40px;
-        background: #ddd;
-        border-radius: 50%;
-        display: flex; justify-content: center; align-items: center;
-        font-weight: bold; color: #fff; background: var(--primary-gold);
-    }
-    .fb-content {
-        font-size: 0.9rem;
-        color: #555;
-        line-height: 1.5;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    .fb-link {
-        text-align: center;
-        margin-top: 20px;
-    }
-    @keyframes scrollLeft {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-50%); } /* 假設複製了一份，移動一半距離 */
-    }
+    .red-paper-row { border-bottom: 1px dashed rgba(0,0,0,0.3); padding-bottom: 2px; }
 
-    /* === 4. 遠距服務 (卡片區) === */
-    .remote-section {
-        max-width: 1000px;
-        margin: 0 auto 80px auto;
-        text-align: center;
-        padding: 0 20px;
-    }
-    .remote-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
-        margin-top: 40px;
-    }
-    .remote-card {
-        background: #fff;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-        transition: 0.3s;
-        border: 1px solid #eee;
-        display: flex;
-        flex-direction: column;
-    }
-    .remote-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 30px rgba(196, 137, 69, 0.2);
-        border-color: var(--primary-gold);
-    }
-    .remote-img {
-        width: 100%;
-        height: 250px;
-        object-fit: cover;
-    }
-    .remote-text {
-        padding: 25px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    .remote-text h3 { margin: 0 0 10px 0; color: #8B4513; }
-    .remote-text p { color: #666; font-size: 0.95rem; line-height: 1.6; flex: 1; }
-    .btn-action {
-        display: block;
-        margin-top: 20px;
-        padding: 12px;
-        background: var(--primary-gold);
-        color: #fff;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-        transition: 0.3s;
-    }
-    .btn-action:hover { background: #a06d35; }
-
-    /* RWD 手機調整 */
+    /* RWD */
     @media (max-width: 768px) {
         .hero-title { font-size: 2.2rem; }
-        .hero-subtitle { font-size: 1.1rem; }
-        .service-hero { height: 60vh; }
-        
         .gongtan-section { flex-direction: column; gap: 30px; }
-        .gongtan-img { box-shadow: 5px 5px 0 var(--primary-gold); }
-        
-        .remote-grid { grid-template-columns: 1fr; }
-        .remote-img { height: 200px; }
-        
-        /* 跑馬燈在手機上改為單張滑動可能更好，但這裡先維持跑馬燈 */
+        .process-card-container { grid-template-columns: 1fr; }
     }
 </style>
 
 <header class="service-hero">
     <div class="video-background">
-        <iframe 
-            src="https://www.youtube.com/embed/odpTDkvJBpw?autoplay=1&mute=1&loop=1&playlist=odpTDkvJBpw&controls=0&showinfo=0&rel=0&playsinline=1" 
-            title="Hero Video" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-            allowfullscreen>
-        </iframe>
+        <iframe src="https://www.youtube.com/embed/odpTDkvJBpw?autoplay=1&mute=1&loop=1&playlist=odpTDkvJBpw&controls=0&showinfo=0&rel=0&playsinline=1" frameborder="0" allowfullscreen></iframe>
     </div>
     <div class="hero-content">
         <h1 class="hero-title">信仰有依 ‧ 心安即家</h1>
-        <div class="hero-subtitle">
-            <p>中壇元帥與元帥娘，以慈悲之心，<br>做您堅實的依靠，讓懸著的心從此踏實。</p>
-        </div>
+        <div class="hero-subtitle"><p>中壇元帥與元帥娘，以慈悲之心，<br>做您堅實的依靠，讓懸著的心從此踏實。</p></div>
         <div class="hero-nav">
             <a href="#gongtan" class="nav-anchor">🙌 現場問事</a>
-            <a href="#remote" class="nav-anchor">📦 寄回衣物</a>
-            <a href="#remote" class="nav-anchor">🕯️ 線上捐香</a>
+            <a href="#clothes-process" class="nav-anchor">📦 寄回衣物</a>
+            <a href="{{ url_for('donation_page') }}" class="nav-anchor">🕯️ 線上捐香</a>
         </div>
     </div>
 </header>
 
 <section id="gongtan" class="gongtan-section">
     <div class="gongtan-img-box">
-        <img src="{{ url_for('static', filename='images/pages/gongtan/signuppic.jpg') }}" alt="元帥辦事" class="gongtan-img">
+        <img src="{{ url_for('static', filename='images/pages/shoujing/service1.jpg') }}" alt="元帥辦事" class="gongtan-img">
     </div>
     <div class="gongtan-content">
-        <div class="section-header">
-            <h2>公壇問事 / 收驚</h2>
-            <span>每週固定開壇 ‧ 現場掛號</span>
-        </div>
-        
+        <div class="section-header"><h2>公壇問事 / 收驚</h2><span>每週固定開壇 ‧ 現場掛號</span></div>
         <div class="process-steps">
             <div class="step-item">
-                <div class="step-title">
-                    1. 加入社群 ‧ 關注動態
-                    <a href="{{ links['元帥娘官方LINE'] or '#' }}" target="_blank" class="line-btn">加入 LINE</a>
-                </div>
-                <div class="step-desc">
-                    請先加入官方 LINE 群組。我們將於群組內公告下個月的「公壇日期」、「報名日期」及「開放名額」。<br>
-                    <small style="color:red;">*每人限加 1 群，違者將踢出群組。</small>
-                </div>
+                <div class="step-title">1. 報名公告 <a href="{{ links['元帥娘官方LINE'] or '#' }}" target="_blank" class="line-btn">加入 LINE</a></div>
+                <div class="step-desc">加入 LINE 群組，關注下個月的公壇日期、報名日期及開放名額。<br><small style="color:red;">*每人限加1群違者踢群。</small></div>
             </div>
-            
             <div class="step-item">
-                <div class="step-title">2. 線上報名 ‧ 準時搶快</div>
-                <div class="step-desc">
-                    報名當日，將由小編於群組發布「報名開始」訊息。請立即在訊息下方留言「+1」，名額有限，額滿即止。
-                </div>
+                <div class="step-title">2. 線上報名</div>
+                <div class="step-desc">報名當日由小編發布「報名開始」後，需立即在群組留言「+1」，額滿即止。</div>
             </div>
-            
             <div class="step-item">
-                <div class="step-title">3. 名單公告 & 現場報到</div>
-                <div class="step-desc">
-                    報名成功者，義工將整理並公告正式名單。請務必於公告時間的「兩小時內」抵達現場完成報到手續。
-                </div>
+                <div class="step-title">3. 名單公告 & 現場問事</div>
+                <div class="step-desc">等待義工公告名單，並於公告時間兩小時內報到。</div>
             </div>
         </div>
     </div>
@@ -355,84 +178,162 @@
 <section class="feedback-section">
     <div style="text-align:center; margin-bottom:30px;">
         <h2 style="color:#8B4513; margin:0;">💬 信徒真實回饋</h2>
-        <p style="color:#666;">來自十方信眾的感應與感謝</p>
     </div>
-    
     <div class="marquee-wrapper">
-        <div class="marquee-track" id="feedback-track">
-            <div style="padding:20px;">載入中...</div>
-        </div>
+        <div class="marquee-track" id="feedback-track"><div style="padding:20px;">載入中...</div></div>
     </div>
-    
-    <div class="fb-link">
-        <a href="{{ url_for('feedback_page') }}" style="color:#C48945; font-weight:bold; text-decoration:underline;">查看更多見證 &raquo;</a>
-    </div>
+    <div class="fb-link"><a href="{{ url_for('feedback_page') }}" style="color:#C48945; font-weight:bold; text-decoration:underline;">查看更多見證 &raquo;</a></div>
 </section>
 
-<section id="remote" class="remote-section">
+<section id="clothes-process" class="clothes-process-section">
     <div class="section-header" style="text-align:center; border:none; padding:0;">
-        <h2>無法親臨現場？</h2>
-        <span>我們提供貼心的遠距服務，讓庇佑無遠弗屆。</span>
+        <h2>衣物收驚服務流程</h2>
+        <span>親送或郵寄皆可，讓元帥的庇佑零距離</span>
     </div>
 
-    <div class="remote-grid">
-        <div class="remote-card">
-            <img src="{{ url_for('static', filename='images/pages/shoujing/shipping.jpg') }}" alt="衣物寄回" class="remote-img">
-            <div class="remote-text">
-                <h3>📦 遠距收驚 (寄回衣物)</h3>
-                <p>若您或家人不便前來，可將衣物寄至帥府。元帥加持後，我們將協助寄回，讓您在家也能獲得安定的力量。</p>
-                <a href="{{ url_for('ship_clothes_page') }}" class="btn-action">填寫衣物寄回單</a>
-            </div>
+    <div class="process-card-container">
+        <div class="process-card">
+            <div class="card-title">步驟一：準備衣物</div>
+            <div class="card-desc">準備一件輕薄衣物，並將個人資訊寫於紅紙後，夾帶於衣服中。<br> 每一件都要寫！</div>
+            <div class="card-image-box"><img src="{{ url_for('static', filename='images/pages/shoujing/card1.png') }}" alt="步驟一"></div>
+            <button class="card-btn" onclick="openModal('modal-step1')">紅紙寫法與規範</button>
         </div>
-
-        <div class="remote-card">
-            <img src="{{ url_for('static', filename='images/pages/incense/product1.png') }}" alt="線上捐香" class="remote-img">
-            <div class="remote-text">
-                <h3>🕯️ 代辦捐香 ‧ 護持公壇</h3>
-                <p>您的每一份護持，都將化作公壇辦事時的裊裊香煙。我們將於辦事時向元帥稟報您的心意與祈願。</p>
-                <a href="{{ url_for('donation_page') }}" class="btn-action">我要線上護持</a>
-            </div>
+        <div class="process-card">
+            <div class="card-title">步驟二：寄送衣物</div>
+            <div class="card-desc"><p>親送：衣物與資料親送至「八八菸酒」<br> 郵寄： 將衣物與資料一同郵寄至帥府。</p></div>
+            <div class="card-image-box"><img src="{{ url_for('static', filename='images/pages/shoujing/card2.png') }}" alt="步驟二"></div>
+            <button class="card-btn" onclick="openModal('modal-step2')">查看收件資訊</button>
+        </div>
+        <div class="process-card">
+            <div class="card-title">步驟三：進度與領取</div>
+            <div class="card-desc"><p>關注群組通知。<br><strong>自取</strong>：依公告編號取回。<br><strong>寄回</strong>：自行安排到付快遞。</p></div>
+            <div class="card-image-box"><img src="{{ url_for('static', filename='images/pages/shoujing/card3.png') }}" alt="步驟三"></div>
+            <button class="card-btn" onclick="openModal('modal-step3')">黑貓預約與登記</button>
         </div>
     </div>
 </section>
+
+<div id="modal-step1" class="modal-overlay">
+    <div class="modal-box">
+        <span class="modal-close" onclick="closeModal('modal-step1')">&times;</span>
+        <div class="modal-title">紅紙填寫與衣物規範</div>
+        <div class="modal-body">
+            <div class="red-paper-visual">
+                <div class="red-paper-date">寄件日期 (左上角)</div>
+                <div class="red-paper-content">
+                    <div class="red-paper-row">姓名：王大明</div>
+                    <div class="red-paper-row">地址：嘉義市...</div>
+                    <div class="red-paper-row">農曆生日：75/01/01</div>
+                    <div class="red-paper-row">時辰：吉時</div>
+                    <div class="red-paper-row">電話：0912-345-678</div>
+                </div>
+            </div>
+            
+            <h4 style="color:#C48945; margin-top:20px;">1️⃣ 個人資料要求</h4>
+            <ul>
+                <li>字體需端正、大、清楚。</li>
+                <li><strong>每件衣物</strong>皆需附一張資料，依順序疊好。</li>
+                <li>紅單左上角請註明「寄件日期」。</li>
+                <li><span style="color:red;">禁止備註特殊祈願</span>。</li>
+            </ul>
+
+            <h4 style="color:#C48945;">2️⃣ 衣物要求</h4>
+            <p>⭕ 輕薄、乾淨、穿過洗淨的長短袖上衣。</p>
+            <p>❌ 無袖、厚重衣物、大學T、針織毛衣、外套、帽T。</p>
+            
+            <h4 style="color:#C48945;">3️⃣ 使用方式</h4>
+            <p>📌 完成後可直接穿，或放枕頭下睡。</p>
+        </div>
+    </div>
+</div>
+
+<div id="modal-step2" class="modal-overlay">
+    <div class="modal-box">
+        <span class="modal-close" onclick="closeModal('modal-step2')">&times;</span>
+        <div class="modal-title">收件資訊</div>
+        <div class="modal-body">
+            <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px;">
+                <h4 style="margin-top:0;">🏠 親自送件</h4>
+                <ul style="margin-bottom:0;">
+                    <li>地點：八八菸酒</li>
+                    <li>地址：嘉義市新生路 337 號</li>
+                    <li>時間：上午 10:30 ～ 凌晨 03:00</li>
+                </ul>
+            </div>
+            <div style="background:#f9f9f9; padding:15px; border-radius:10px;">
+                <h4 style="margin-top:0;">🚚 郵寄寄件</h4>
+                <ul style="margin-bottom:0;">
+                    <li>收件人：承天中承府 (收驚組)</li>
+                    <li>地址：嘉義市新生路 337 號</li>
+                    <li>電話：(寄件不需要電話)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-step3" class="modal-overlay">
+    <div class="modal-box">
+        <span class="modal-close" onclick="closeModal('modal-step3')">&times;</span>
+        <div class="modal-title">黑貓預約與登記</div>
+        <div class="modal-body">
+            <p style="background:#ffeaea; color:red; padding:10px; border-radius:5px; font-weight:bold;">
+                ⚠ 請注意：處理完畢公告於群組，請於 6 個月內取回，逾期回收。
+            </p>
+            
+            <h4 style="color:#C48945;">🐱 黑貓宅急便 App 預約教學 (自行叫車)</h4>
+            <ol>
+                <li>下載並開啟「黑貓宅急便 App」。</li>
+                <li>選擇「常溫宅急便」 &gt; 件數選「1」。</li>
+                <li>寄件方式選「到府 (黑貓到府印單寄包裹)」。</li>
+                <li>付費方式選「<strong>到付宅急便</strong>」。</li>
+                <li><strong>寄件人資訊 (八八菸酒)</strong>：
+                    <ul>
+                        <li>姓名：八八菸酒</li>
+                        <li>地址：嘉義市東區新生路337號</li>
+                    </ul>
+                </li>
+                <li><strong>收件人資訊 (您的資料)</strong>：
+                    <ul>
+                        <li>姓名：您的名字 + 收驚編號 (若有多件填其中一件即可)</li>
+                        <li>地址：您的收件地址</li>
+                    </ul>
+                </li>
+                <li>內容：填寫「衣服總件數」 (如：3)。</li>
+                <li><strong>寄件日</strong>：請依照下方系統顯示的日期填寫。</li>
+            </ol>
+
+            <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
+                <p style="font-weight:bold; color:#333;">已收到完成通知，並預約好黑貓了嗎？</p>
+                <a href="{{ url_for('ship_clothes_page') }}" class="btn-action" style="display:inline-block; padding:12px 30px; background:#C48945; color:white; text-decoration:none; border-radius:50px;">
+                    📝 填寫衣物登記單 (告知寄件日)
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-    // 跑馬燈邏輯
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    
+    // 跑馬燈
     document.addEventListener('DOMContentLoaded', () => {
-        fetch('/api/feedback/approved')
-            .then(res => res.json())
-            .then(data => {
-                const track = document.getElementById('feedback-track');
-                if(!data.length) {
-                    track.innerHTML = '<div style="padding:20px; width:100vw; text-align:center;">暫無回饋資料</div>';
-                    return;
-                }
-
-                // 產生卡片 HTML
-                const generateCards = (items) => {
-                    return items.map(item => `
-                        <div class="feedback-card">
-                            <div class="fb-header">
-                                <div class="fb-avatar">${item.nickname ? item.nickname[0] : '善'}</div>
-                                <div>
-                                    <div style="font-weight:bold;">${item.nickname}</div>
-                                    <div style="font-size:0.8rem; color:#999;">${item.category}</div>
-                                </div>
-                            </div>
-                            <div class="fb-content">${item.content}</div>
-                        </div>
-                    `).join('');
-                };
-
-                // 為了讓跑馬燈不間斷，我們需要複製足夠的卡片來填滿軌道
-                // 至少複製 2 份，如果資料太少就複製更多份
-                let content = generateCards(data);
-                if (data.length < 5) { content += content + content; } // 資料少多複製幾次
-                
-                // 最終結構：原始 + 複製 (為了無縫接軌)
-                track.innerHTML = content + content; 
-            });
+        fetch('/api/feedback/approved').then(r=>r.json()).then(data => {
+            const track = document.getElementById('feedback-track');
+            if(!data.length) { track.innerHTML = '<div style="padding:20px; width:100vw; text-align:center;">暫無回饋</div>'; return; }
+            const cards = data.map(i => `
+                <div class="feedback-card">
+                    <div class="fb-header">
+                        <div class="fb-avatar">${i.nickname?i.nickname[0]:'善'}</div>
+                        <div><b>${i.nickname}</b><br><small style="color:#999">${i.category}</small></div>
+                    </div>
+                    <div class="fb-content">${i.content}</div>
+                </div>`).join('');
+            let content = cards;
+            if(data.length < 5) content += content + content;
+            track.innerHTML = content + content;
+        });
     });
 </script>
-
 {% endblock %}
