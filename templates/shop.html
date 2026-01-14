@@ -9,18 +9,37 @@
         min-height: 100vh;
         background: url('{{ url_for("static", filename="images/pages/incense/store_banner1.png") }}') no-repeat center center/cover;
         position: relative; display: flex; justify-content: center; align-items: center;
+        flex-direction: column; gap: 20px;
     }
     .shop-landing::before { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); }
-    .landing-content { position: relative; z-index: 2; text-align: center; color: #fff; }
-    .enter-shop-btn {
-        background: linear-gradient(45deg, #C48945, #FFD700); 
-        color: #fff; padding: 15px 50px; font-size: 22px; border-radius: 50px;
-        border: 2px solid #fff; cursor: pointer; transition: 0.3s; 
-        box-shadow: 0 0 20px rgba(196, 137, 69, 0.6);
-        display: inline-flex; align-items: center; gap: 10px; font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    .landing-content { position: relative; z-index: 2; text-align: center; color: #fff; width: 100%; display: flex; flex-direction: column; align-items: center; }
+    
+    /* === 統一按鈕樣式設定 === */
+    .landing-btn {
+        display: flex; justify-content: center; align-items: center; gap: 10px;
+        width: 300px; /* 固定寬度，確保兩個按鈕一樣大 */
+        height: 60px; /* 固定高度 */
+        border-radius: 50px;
+        font-size: 20px; font-weight: bold;
+        text-decoration: none; cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-bottom: 15px;
     }
-    .enter-shop-btn:hover { transform: scale(1.1); box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+    .landing-btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
+
+    /* 官方賣場 (金色) */
+    .btn-official {
+        background: linear-gradient(45deg, #C48945, #FFD700); 
+        color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    /* 7-11 賣貨便 (綠色) */
+    .btn-711 {
+        background: #009c6f; 
+        color: #fff;
+    }
 
     /* === 購物主區塊 === */
     #shopping-section { display: none; padding: 40px 10px; background: #F8F5F2; min-height: 100vh; }
@@ -33,7 +52,16 @@
         border: 1px solid #eee;
     }
     .shop-instructions h2 { color: #8B4513; margin-bottom: 10px; font-size: 1.5rem; }
-    .shop-instructions p { color: #555; line-height: 1.6; margin-bottom: 0; }
+    .shop-instructions p { color: #555; line-height: 1.6; margin-bottom: 10px; }
+    
+    /* 區塊內的 7-11 按鈕 (維持小尺寸) */
+    .btn-711-inline {
+        display: inline-block; background: #009c6f; color: white; 
+        padding: 8px 20px; border-radius: 20px; text-decoration: none; 
+        font-weight: bold; font-size: 0.95rem; margin-top: 5px;
+        transition: 0.3s;
+    }
+    .btn-711-inline:hover { background: #007c58; transform: scale(1.05); }
 
     /* 分類按鈕 */
     .category-nav { display: flex; justify-content: center; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
@@ -80,8 +108,53 @@
         flex: 1; background: #333; color: #fff; border: none; padding: 10px; 
         border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;
     }
-    .add-btn:hover { background: #C48945; }
+    /* 手機版移除 active 狀態下的文字變化，避免畫面跳動，改用下方購物車動畫回饋 */
+    .add-btn:active { transform: scale(0.95); } 
 
+    /* === 懸浮購物車與動畫 === */
+    .floating-cart {
+        position: fixed; bottom: 100px; right: 20px; 
+        background: linear-gradient(135deg, #C48945, #d69d58); 
+        color: #fff; width: 65px; height: 65px; border-radius: 50%;
+        display: flex; justify-content: center; align-items: center; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        cursor: pointer; z-index: 990; transition: transform 0.2s;
+    }
+    
+    /* 定義彈跳動畫 */
+    @keyframes cart-bounce {
+        0% { transform: scale(1); }
+        40% { transform: scale(1.3); } /* 放大 */
+        100% { transform: scale(1); }  /* 恢復 */
+    }
+    
+    /* 加入購物車時觸發的 class */
+    .floating-cart.animating {
+        animation: cart-bounce 0.4s ease-out;
+    }
+
+    .cart-count { position: absolute; top: 0; right: 0; background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; text-align: center; font-size: 12px; font-weight: bold; border: 2px solid #fff; }
+
+    /* 購物車 Modal */
+    .cart-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: flex-end; }
+    .cart-overlay.open { display: flex; }
+    .cart-sidebar { background: #fff; width: 100%; max-width: 400px; height: 100%; padding: 20px; display: flex; flex-direction: column; transform: translateX(100%); transition: 0.3s; box-sizing: border-box; }
+    .cart-overlay.open .cart-sidebar { transform: translateX(0); }
+    .cart-items { flex: 1; overflow-y: auto; margin: 15px 0; }
+    .cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #eee; padding: 12px 0; }
+    
+    .cart-qty-ctrl { display: flex; align-items: center; gap: 8px; }
+    .c-q-btn { width: 25px; height: 25px; border-radius: 50%; border: 1px solid #ddd; background: #fff; cursor: pointer; color: #555; font-size: 14px; display: flex; justify-content: center; align-items: center; padding: 0; }
+    
+    /* 結帳 Modal */
+    .checkout-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 1100; justify-content: center; align-items: center; }
+    .checkout-box { background: #fff; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .form-group { margin-bottom: 12px; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+    .btn-submit { width: 100%; background: #C48945; color: #fff; padding: 12px; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px;}
+    .price-summary { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .price-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 15px; color: #555; }
+    
     /* 手機版優化 */
     @media (max-width: 768px) {
         .products-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -94,61 +167,31 @@
         .add-box { flex-direction: column; gap: 5px; }
         .qty-in { width: 100%; padding: 5px; }
         .add-btn { padding: 6px; font-size: 14px; }
+        
+        /* 手機版按鈕寬度調整為螢幕 85%，保持一致性 */
+        .landing-btn { width: 85%; font-size: 18px; }
     }
-
-    /* 懸浮購物車 */
-    .floating-cart {
-        position: fixed; bottom: 100px; right: 20px; 
-        background: linear-gradient(135deg, #C48945, #d69d58); 
-        color: #fff; width: 65px; height: 65px; border-radius: 50%;
-        display: flex; justify-content: center; align-items: center; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        cursor: pointer; z-index: 990; transition: transform 0.2s;
-    }
-    .floating-cart:hover { transform: scale(1.1); }
-    .cart-count { position: absolute; top: 0; right: 0; background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; text-align: center; font-size: 12px; font-weight: bold; border: 2px solid #fff; }
-
-    /* 購物車 Modal */
-    .cart-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: flex-end; }
-    .cart-overlay.open { display: flex; }
-    .cart-sidebar { background: #fff; width: 100%; max-width: 400px; height: 100%; padding: 20px; display: flex; flex-direction: column; transform: translateX(100%); transition: 0.3s; box-sizing: border-box; }
-    .cart-overlay.open .cart-sidebar { transform: translateX(0); }
-    .cart-items { flex: 1; overflow-y: auto; margin: 15px 0; }
-    .cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #eee; padding: 12px 0; }
-
-    /* ★ 購物車數量按鈕樣式 (新) */
-    .cart-qty-ctrl { display: flex; align-items: center; gap: 8px; }
-    .c-q-btn { width: 25px; height: 25px; border-radius: 50%; border: 1px solid #ddd; background: #fff; cursor: pointer; color: #555; font-size: 14px; display: flex; justify-content: center; align-items: center; padding: 0; }
-    .c-q-btn:hover { background: #C48945; color: #fff; border-color: #C48945; }
-
-    /* 結帳 Modal */
-    .checkout-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 1100; justify-content: center; align-items: center; }
-    .checkout-box { background: #fff; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-    
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 14px; }
-    .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-    .btn-submit { width: 100%; background: #C48945; color: #fff; padding: 12px; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px;}
-    
-    /* 價格摘要區塊 */
-    .price-summary { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-    .price-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 15px; color: #555; }
-    .price-row.total { border-top: 1px solid #ddd; margin-top: 10px; padding-top: 10px; font-weight: bold; color: #C48945; font-size: 18px; }
 </style>
 
 <div class="shop-landing" id="landing">
     <div class="landing-content">
-        <h1 style="font-family:'KouzanBrushFontOTF', serif; font-size:3.5rem; margin-bottom:20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">線上結緣商店</h1>
-        <button class="enter-shop-btn" onclick="enterShop()">✨ 進入賣場選購</button>
+        <h1 style="font-family:'KouzanBrushFontOTF', serif; font-size:3.5rem; margin-bottom:20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">進入帥府賣場</h1>
+        
+        <button class="landing-btn btn-official" onclick="enterShop()">
+            官方賣場
+        </button> 
+        
+        <a href="https://myship.7-11.com.tw/general/detail/GM2505178228918?fbclid=PAZXh0bgNhZW0CMTEAAafUH4btGUY5FZ9vGxggH7mZD_YwrkghO7Z04Q6QLsBiwAEUQAjOFkbR6J3VhA_aem_6XG2tFieTMdoAVlFXG4o7g" target="_blank" class="landing-btn btn-711">
+            前往 7-11 賣貨便
+        </a>
     </div>
 </div>
 
 <div id="shopping-section">
     <div class="shop-instructions">
-        <h2>📜 帥府商店訂購須知</h2>
-        <p>歡迎光臨承天中承府線上商店。</p>
-        <p>請依分類選購您喜愛的商品，下單後請於 **2 小時內** 完成匯款。</p>
-        <p style="color: #C48945; font-weight: bold; margin-top: 5px;">★ 全館統一運費：NT$ 120 (宅配)</p>
+        <h2>帥府商店訂購須知</h2>
+        <p>請依分類選購，下單後請於2小時內完成匯款。</p>
+        <p>全館統一運費：NT$ 120</p>
     </div>
 
     <div class="category-nav">
@@ -162,7 +205,7 @@
     <div class="products-grid" id="grid"></div>
 </div>
 
-<div class="floating-cart" onclick="toggleCart(true)">
+<div class="floating-cart" id="floating-cart" onclick="toggleCart(true)">
     <span style="font-size:24px;">🛒</span>
     <span class="cart-count" id="cart-count">0</span>
 </div>
@@ -330,10 +373,17 @@
         
         updateCart();
         
-        const btn = document.activeElement;
-        btn.innerText = "已加入!";
-        btn.style.background = "#28a745";
-        setTimeout(() => { btn.innerText = "加入"; btn.style.background = ""; }, 1000);
+        // ★★★ 優化：移除按鈕文字變化，改用購物車動畫回饋 ★★★
+        const cartBtn = document.getElementById('floating-cart');
+        
+        // 移除 class 以重置動畫 (如果連續點擊)
+        cartBtn.classList.remove('animating');
+        
+        // 觸發 reflow (讓瀏覽器知道需要重新渲染，這樣才能重新執行 CSS 動畫)
+        void cartBtn.offsetWidth; 
+        
+        // 加入 class 開始動畫
+        cartBtn.classList.add('animating');
     };
 
     function updateCart() {
@@ -369,7 +419,6 @@
         }
     }
 
-    // ★ 購物車加減數量邏輯 (含自動刪除)
     window.changeCartQty = (idx, delta) => {
         cart[idx].qty += delta;
         if(cart[idx].qty <= 0) cart.splice(idx, 1);
@@ -406,7 +455,6 @@
     
     window.closeCheckout = () => document.getElementById('checkout-modal').style.display = 'none';
 
-    // ★ 電話自動格式化 (Shop)
     const shopPhone = document.getElementById('shop-phone');
     if (shopPhone) {
         shopPhone.addEventListener('input', (e) => {
@@ -421,8 +469,6 @@
     document.getElementById('order-form').onsubmit = async (e) => {
         e.preventDefault();
         const f = e.target;
-        
-        // ★ 嚴格驗證
         if(!/^09\d{2}-\d{3}-\d{3}$/.test(f.phone.value)) return alert('電話格式錯誤 (請輸入 09XX-XXX-XXX)');
         
         const totalAmount = parseInt(document.getElementById('cart-total').textContent);

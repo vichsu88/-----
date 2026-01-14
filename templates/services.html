@@ -12,6 +12,24 @@
     }
     body { background-color: var(--bg-offwhite); }
 
+    /* === 標題樣式 (元寶夾標題 - 改為黑色) === */
+    .yuanbao-header {
+        display: flex; justify-content: center; align-items: center; gap: 15px;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    .yuanbao-header h2 {
+        font-size: 2rem; color: #000; /* 改為黑色 */
+        margin: 0; font-weight: bold;
+        font-family: 'KouzanBrushFontOTF', serif;
+    }
+    .yuanbao-icon { width: 40px; height: auto; }
+    
+    .header-subtitle {
+        text-align: center; color: #666; font-size: 1rem; 
+        margin-bottom: 40px; display: block;
+    }
+
     /* === 1. Hero 頂部影音區 === */
     .service-hero {
         position: relative; width: 100%; height: 70vh; overflow: hidden;
@@ -39,17 +57,38 @@
     }
     .nav-anchor:hover { background: var(--primary-gold); border-color: var(--primary-gold); transform: translateY(-3px); }
 
-    /* === 2. 現場問事區 === */
+    /* === 2. 現場問事區 (修改為等高佈局 & 輪播) === */
     .gongtan-section {
         max-width: 1200px; margin: 60px auto; padding: 0 20px;
-        display: flex; align-items: center; gap: 50px;
+        display: flex; 
+        align-items: stretch; /* 關鍵：讓左右兩邊等高 */
+        gap: 50px;
     }
-    .gongtan-img-box { flex: 1; position: relative; }
-    .gongtan-img { width: 100%; border-radius: 15px; box-shadow: 10px 10px 0 var(--primary-gold); object-fit: cover; }
-    .gongtan-content { flex: 1; }
-    .section-header { border-left: 5px solid var(--primary-gold); padding-left: 15px; margin-bottom: 30px; }
-    .section-header h2 { font-size: 2rem; color: #8B4513; margin: 0; }
-    .section-header span { color: #666; font-size: 1rem; }
+    
+    .gongtan-img-box { 
+        flex: 1; 
+        position: relative; 
+        border-radius: 15px; 
+        box-shadow: 10px 10px 0 var(--primary-gold); 
+        overflow: hidden;
+        min-height: 400px; /* 手機版最小高度 */
+    }
+    
+    /* 輪播圖片樣式 */
+    .carousel-img {
+        position: absolute; top: 0; left: 0;
+        width: 100%; height: 100%;
+        object-fit: cover; /* 確保圖片填滿且不變形 */
+        opacity: 0;
+        transition: opacity 1.5s ease-in-out; /* 淡入淡出時間 */
+        z-index: 1;
+    }
+    .carousel-img.active { opacity: 1; z-index: 2; }
+    
+    .gongtan-content { 
+        flex: 1; 
+        display: flex; flex-direction: column; justify-content: center; /* 讓內容垂直置中 */
+    }
 
     .process-steps { display: flex; flex-direction: column; gap: 20px; }
     .step-item {
@@ -61,17 +100,34 @@
     .step-desc { font-size: 0.95rem; color: #555; line-height: 1.5; }
     .line-btn { display: inline-block; background: #06c755; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; text-decoration: none; margin-left: 10px; }
 
-    /* === 3. 信徒見證 === */
+    /* === 3. 信徒見證 (換行與輪播) === */
     .feedback-section {
         background: #fff; padding: 50px 0; margin: 60px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; overflow: hidden;
     }
     .marquee-wrapper { display: flex; width: 100%; position: relative; }
-    .marquee-track { display: flex; gap: 30px; animation: scrollLeft 40s linear infinite; width: max-content; }
-    .feedback-card { width: 300px; background: #F9F7F2; padding: 20px; border-radius: 10px; border: 1px solid #eee; flex-shrink: 0; }
-    .fb-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .fb-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #fff; background: var(--primary-gold); }
-    .fb-content { font-size: 0.9rem; color: #555; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .marquee-track { display: flex; gap: 30px; animation: scrollLeft 60s linear infinite; width: max-content; }
+    
+    .feedback-card { 
+        width: 320px; /* 卡片寬度 */
+        background: #F9F7F2; padding: 25px; 
+        border-radius: 10px; border: 1px solid #eee; flex-shrink: 0; 
+        display: flex; flex-direction: column;
+    }
+    .fb-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+    .fb-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #fff; background: var(--primary-gold); flex-shrink: 0;}
+    
+    .fb-content { 
+        font-size: 0.95rem; color: #444; line-height: 1.6; 
+        white-space: pre-wrap; /* 關鍵：支援換行 */
+        max-height: 200px; /* 限制最大高度 */
+        overflow-y: auto; /* 內容太多時可捲動 */
+    }
+    
     .fb-link { text-align: center; margin-top: 20px; }
+    
+    /* 滑鼠移上去暫停輪播，方便閱讀 */
+    .marquee-track:hover { animation-play-state: paused; }
+    
     @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
     /* === 4. 衣物收驚流程 === */
@@ -100,7 +156,6 @@
     }
     .donation-promo-content { max-width: 800px; margin: 0 auto; }
     .donation-icon { width: 80px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(196, 137, 69, 0.3)); }
-    .donation-promo-title { color: #8B4513; font-size: 2.2rem; margin-bottom: 20px; font-weight: bold; }
     .donation-promo-desc { color: #555; font-size: 1.1rem; line-height: 1.8; margin-bottom: 40px; }
     .btn-action {
         display: inline-block; padding: 15px 50px; font-size: 1.3rem; font-weight: bold;
@@ -113,7 +168,7 @@
     .modal-overlay {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0, 0, 0, 0.6); z-index: 2000; justify-content: center; align-items: center;
-        opacity: 0; transition: opacity 0.3s ease; /* 淡入效果 */
+        opacity: 0; transition: opacity 0.3s ease;
     }
     .modal-overlay.show { display: flex; opacity: 1; }
     .modal-box {
@@ -129,7 +184,7 @@
     .modal-body ul, .modal-body ol { padding-left: 20px; margin-bottom: 15px; }
     .modal-body li { margin-bottom: 8px; }
 
-    /* 紅紙 CSS 繪製 */
+    /* 紅紙 CSS */
     .red-paper-visual {
         background: #d93025; color: black;
         width: 240px; height: 320px; margin: 20px auto; padding: 20px; box-sizing: border-box;
@@ -141,12 +196,28 @@
     .red-paper-content { display: flex; flex-direction: column; gap: 10px; justify-content: center; height: 100%; }
     .red-paper-row { border-bottom: 1px dashed rgba(0,0,0,0.3); padding-bottom: 2px; }
 
-    /* RWD */
+    /* RWD 手機版調整 */
     @media (max-width: 768px) {
         .hero-title { font-size: 2.2rem; }
+        
+        /* 手機版 Hero 按鈕：垂直堆疊 */
+        .hero-nav {
+            flex-direction: column;
+            width: 80%; margin: 0 auto; gap: 15px;
+        }
+        .nav-anchor { width: 100%; text-align: center; display: block; box-sizing: border-box; }
+
         .gongtan-section { flex-direction: column; gap: 30px; }
-        .process-card-container { grid-template-columns: 1fr; }
         .donation-promo-title { font-size: 1.8rem; }
+
+        /* 手機版衣物流程卡片：水平滑動 + 吸附 */
+        .process-card-container { 
+            display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+            padding-bottom: 20px; gap: 15px; grid-template-columns: none;
+        }
+        .process-card {
+            min-width: 85%; scroll-snap-align: center; flex-shrink: 0; margin: 0;
+        }
     }
 </style>
 
@@ -167,10 +238,18 @@
 
 <section id="gongtan" class="gongtan-section">
     <div class="gongtan-img-box">
-        <img src="{{ url_for('static', filename='images/pages/gongtan/signuppic.jpg') }}" alt="元帥辦事" class="gongtan-img">
+        <img src="{{ url_for('static', filename='images/pages/gongtan/service1.jpg') }}" class="carousel-img active" alt="輪播圖1">
+        <img src="{{ url_for('static', filename='images/pages/gongtan/service2.jpg') }}" class="carousel-img" alt="輪播圖2">
     </div>
+
     <div class="gongtan-content">
-        <div class="section-header"><h2>公壇問事 / 收驚</h2><span>每週固定開壇 ‧ 現場掛號</span></div>
+        <div class="yuanbao-header">
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
+            <h2>公壇問事</h2>
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
+        </div>
+        <span class="header-subtitle">每月不定期開壇</span>
+        
         <div class="process-steps">
             <div class="step-item">
                 <div class="step-title">1. 報名公告 <a href="{{ links['元帥娘官方LINE'] or '#' }}" target="_blank" class="line-btn">加入 LINE</a></div>
@@ -189,25 +268,30 @@
 </section>
 
 <section class="feedback-section">
-    <div style="text-align:center; margin-bottom:30px;">
-        <h2 style="color:#8B4513; margin:0;">💬 信徒真實回饋</h2>
+    <div class="yuanbao-header">
+        <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
+        <h2>信徒真實回饋</h2>
+        <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
     </div>
+    
     <div class="marquee-wrapper">
         <div class="marquee-track" id="feedback-track"><div style="padding:20px;">載入中...</div></div>
     </div>
-    <div class="fb-link"><a href="{{ url_for('feedback_page') }}" style="color:#C48945; font-weight:bold; text-decoration:underline;">查看更多見證 &raquo;</a></div>
+    <div class="fb-link"><a href="{{ url_for('feedback_page') }}" style="color:#C48945; font-weight:bold; text-decoration:underline;">更多信徒回饋 &raquo;</a></div>
 </section>
 
 <section id="clothes-process" class="clothes-process-section">
-    <div class="section-header" style="text-align:center; border:none; padding:0;">
+    <div class="yuanbao-header">
+        <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
         <h2>衣物收驚服務流程</h2>
-        <span>親送或郵寄皆可，讓元帥的庇佑零距離</span>
+        <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
     </div>
+    <span class="header-subtitle">親送或郵寄皆可，讓元帥的庇佑零距離</span>
 
     <div class="process-card-container">
         <div class="process-card">
             <div class="card-title">步驟一：準備衣物</div>
-            <div class="card-desc">準備一件輕薄衣物，並將個人資訊寫於紅紙後，夾帶於衣服中。<br> 每一件都要寫！</div>
+            <div class="card-desc">準備一件輕薄衣物，並將個人資訊寫於<br> 紅紙後，夾帶於衣服中。<br> 每一件都要寫！</div>
             <div class="card-image-box"><img src="{{ url_for('static', filename='images/pages/shoujing/card1.png') }}" alt="步驟一"></div>
             <button class="card-btn" onclick="openModal('modal-step1')">紅紙寫法與規範</button>
         </div>
@@ -228,11 +312,15 @@
 
 <section class="donation-promo-section">
     <div class="donation-promo-content">
-        <img src="{{ url_for('static', filename='images/pages/incense/product1.png') }}" alt="捐香" class="donation-icon">
-        <h2 class="donation-promo-title">代辦捐香 ‧ 護持公壇</h2>
+        <img src="{{ url_for('static', filename='images/pages/index/service-icon2.png') }}" alt="捐香" class="donation-icon">
+        <div class="yuanbao-header">
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
+            <h2>線上捐香 ‧ 護持公壇</h2>
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
+        </div>
         <p class="donation-promo-desc">
             您的每一份護持，都將化作公壇辦事時的裊裊香煙。<br>
-            我們將於辦事時向元帥稟報您的心意與祈願。
+            我們將於辦事時向元帥稟報您的心意。
         </p>
         <a href="{{ url_for('donation_page') }}" class="btn-action">我要線上捐香</a>
     </div>
@@ -253,7 +341,6 @@
                     <div class="red-paper-row">電話：0912-345-678</div>
                 </div>
             </div>
-            
             <h4 style="color:#C48945; margin-top:20px;">1️⃣ 個人資料要求</h4>
             <ul>
                 <li>字體需端正、大、清楚。</li>
@@ -261,11 +348,9 @@
                 <li>紅單左上角請註明「寄件日期」。</li>
                 <li><span style="color:red;">禁止備註特殊祈願</span>。</li>
             </ul>
-
             <h4 style="color:#C48945;">2️⃣ 衣物要求</h4>
             <p>⭕ 輕薄、乾淨、穿過洗淨的長短袖上衣。</p>
             <p>❌ 無袖、厚重衣物、大學T、針織毛衣、外套、帽T。</p>
-            
             <h4 style="color:#C48945;">3️⃣ 使用方式</h4>
             <p>📌 完成後可直接穿，或放枕頭下睡。</p>
         </div>
@@ -290,7 +375,6 @@
                 <ul style="margin-bottom:0;">
                     <li>收件人：承天中承府 (收驚組)</li>
                     <li>地址：嘉義市新生路 337 號</li>
-                    <li>電話：(寄件不需要電話)</li>
                 </ul>
             </div>
         </div>
@@ -305,7 +389,6 @@
             <p style="background:#ffeaea; color:red; padding:10px; border-radius:5px; font-weight:bold;">
                 ⚠ 請注意：處理完畢公告於群組，請於 6 個月內取回，逾期回收。
             </p>
-            
             <h4 style="color:#C48945;">🐱 黑貓宅急便 App 預約教學 (自行叫車)</h4>
             <ol>
                 <li>下載並開啟「黑貓宅急便 App」。</li>
@@ -320,14 +403,13 @@
                 </li>
                 <li><strong>收件人資訊 (您的資料)</strong>：
                     <ul>
-                        <li>姓名：您的名字 + 收驚編號 (若有多件填其中一件即可)</li>
+                        <li>姓名：您的名字 + 收驚編號</li>
                         <li>地址：您的收件地址</li>
                     </ul>
                 </li>
                 <li>內容：填寫「衣服總件數」 (如：3)。</li>
                 <li><strong>寄件日</strong>：請依照下方系統顯示的日期填寫。</li>
             </ol>
-
             <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
                 <p style="font-weight:bold; color:#333;">已收到完成通知，並預約好黑貓了嗎？</p>
                 <a href="{{ url_for('ship_clothes_page') }}" class="btn-action" style="text-decoration:none; display:inline-block; padding:12px 30px; border-radius:50px;">
@@ -340,19 +422,26 @@
 
 <script>
     function openModal(id) { document.getElementById(id).classList.add('show'); }
-    
-    // 關閉 Modal (支援點擊 X 和 背景)
     function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-    
-    // 全域點擊監聽 (點背景關閉)
     window.onclick = function(event) {
         if (event.target.classList.contains('modal-overlay')) {
             event.target.classList.remove('show');
         }
     }
     
-    // 跑馬燈
     document.addEventListener('DOMContentLoaded', () => {
+        // 1. 公壇圖片淡入淡出輪播
+        const slides = document.querySelectorAll('.carousel-img');
+        if (slides.length > 1) {
+            let currentSlide = 0;
+            setInterval(() => {
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (currentSlide + 1) % slides.length;
+                slides[currentSlide].classList.add('active');
+            }, 4000); // 4秒換一張
+        }
+
+        // 2. 跑馬燈
         fetch('/api/feedback/approved').then(r=>r.json()).then(data => {
             const track = document.getElementById('feedback-track');
             if(!data.length) { track.innerHTML = '<div style="padding:20px; width:100vw; text-align:center;">暫無回饋資料</div>'; return; }
@@ -365,10 +454,13 @@
                     <div class="fb-content">${i.content}</div>
                 </div>`).join('');
             
-            // 複製內容以填滿跑馬燈
+            // 複製足夠多的內容以填滿跑馬燈，確保無限循環不留白
+            // 至少複製到 20 個卡片以上，或重複 6 次
             let content = cards;
-            if(data.length < 5) content += content + content;
-            track.innerHTML = content + content;
+            while (content.length < 5000 && content.split('feedback-card').length < 20) {
+                 content += cards;
+            }
+            track.innerHTML = content;
         });
     });
 </script>
