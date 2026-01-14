@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tab = btn.dataset.tab;
                 if(tab === 'tab-products') fetchProducts();
                 if(tab === 'tab-donations') fetchDonations(); // ★ 新增捐贈
-                if(tab === 'tab-orders') fetchOrders();
+                if(tab === 'tab-orders') fetchOrders(); // ★ 一般訂單
                 if(tab === 'tab-feedback') { fetchPendingFeedback(); fetchApprovedFeedback(); }
                 if(tab === 'tab-fund') { fetchFundSettings(); fetchAndRenderAnnouncements(); }
                 if(tab === 'tab-qa') { fetchFaqCategories().then(renderFaqCategoryBtns).then(fetchAndRenderFaqs); }
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       4. ★ 捐贈管理 (全新功能)
+       4. 捐贈管理 (獨立分頁)
        ========================================= */
     const donationsList = document.getElementById('donations-list');
     
@@ -312,67 +312,133 @@ document.addEventListener('DOMContentLoaded', () => {
         const start = document.getElementById('don-start').value;
         const end = document.getElementById('don-end').value;
         if(!start || !end) return alert('請先選擇匯出區間');
-        
         try {
             const res = await fetch('/api/donations/export', {
-                method:'POST', 
-                headers:{'Content-Type':'application/json', 'X-CSRFToken': getCsrfToken()},
+                method:'POST', headers:{'Content-Type':'application/json', 'X-CSRFToken': getCsrfToken()},
                 body: JSON.stringify({start, end})
             });
             const blob = await res.blob();
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `稟報清單_${start}_${end}.csv`;
-            a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `稟報清單_${start}_${end}.csv`; a.click();
         } catch(e) { alert('匯出失敗'); }
     };
 
-    window.cleanupUnpaid = async () => {
-        if(confirm('確定要刪除「超過 76 小時」且「未付款」的訂單嗎？此動作無法復原。')) {
-            const res = await apiFetch('/api/donations/cleanup-unpaid', {method:'DELETE'});
-            alert(`已清除 ${res.count} 筆資料`);
-            fetchDonations();
-        }
-    };
-
-    window.cleanupOld = async () => {
-        if(confirm('確定要刪除「所有超過 60 天」的舊資料嗎？(包含已完成訂單)')) {
-            const res = await apiFetch('/api/donations/cleanup', {method:'DELETE'});
-            alert(`已清除 ${res.count} 筆資料`);
-            fetchDonations();
-        }
-    };
+    window.cleanupUnpaid = async () => { if(confirm('確定清除？')) { await apiFetch('/api/donations/cleanup-unpaid', {method:'DELETE'}); fetchDonations(); } };
+    window.cleanupOld = async () => { if(confirm('確定清除？')) { await apiFetch('/api/donations/cleanup', {method:'DELETE'}); fetchDonations(); } };
 
     /* =========================================
-       5. 一般訂單管理
+       5. 一般訂單管理 (三段式：Pending -> ToShip -> Shipped)
        ========================================= */
     const ordersList = document.getElementById('orders-list');
+    
     async function fetchOrders() {
         if(!ordersList) return;
         const orders = await apiFetch('/api/orders');
-        if(orders.length === 0) { ordersList.innerHTML = '<p>無待處理訂單</p>'; return; }
         
-        ordersList.innerHTML = orders.map(o => `
-            <div class="feedback-card" style="border-left:5px solid ${o.status==='paid'?'#28a745':(o.status==='shipped'?'blue':'#dc3545')}">
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <b>${o.orderId}</b> 
-                    <span style="font-weight:bold; color:${o.status==='paid'?'green':'red'}">${o.status==='paid'?'已付款':(o.status==='shipped'?'已出貨':'待核對')}</span>
+        // 狀態分類
+        const pending = orders.filter(o => o.status === 'pending');
+        const toShip = orders.filter(o => o.status === 'paid'); // 已收款 = 待出貨
+        const shipped = orders.filter(o => o.status === 'shipped');
+
+        // 生成三段式區塊
+        ordersList.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:30px;">
+                <div>
+                    <h3 style="background:#dc3545; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">
+                        1. 未付款 / 待核對 (${pending.length})
+                    </h3>
+                    ${pending.length ? pending.map(o => renderShopOrder(o, 'pending')).join('') : '<p style="color:#999; padding:10px;">目前無待核對訂單</p>'}
                 </div>
-                <div style="line-height:1.6; font-size:14px; color:#555;">
-                    <div>金額: <b>$${o.total}</b> (後五碼: <span style="color:#C48945; font-weight:bold;">${o.customer.last5}</span>)</div>
-                    <div>姓名: ${o.customer.name} / ${o.customer.phone}</div>
-                    <div style="background:#f9f9f9; padding:5px; margin-top:5px; border-radius:4px;">
-                        ${o.items.map(i => `${i.name} (${i.variantName||''}) x${i.qty}`).join('<br>')}
+
+                <div>
+                    <h3 style="background:#28a745; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">
+                        2. 已收款 / 待出貨 (${toShip.length})
+                    </h3>
+                    ${toShip.length ? toShip.map(o => renderShopOrder(o, 'toship')).join('') : '<p style="color:#999; padding:10px;">目前無待出貨訂單</p>'}
+                </div>
+
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:#007bff; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">
+                        <h3 style="margin:0; font-size:18px;">3. 已出貨 / 歷史紀錄 (${shipped.length})</h3>
+                        <button class="btn btn--red" style="padding:5px 10px; border:1px solid #fff; font-size:12px;" onclick="cleanupShipped()">🗑️ 清除 14 天前舊單</button>
                     </div>
+                    ${shipped.length ? shipped.map(o => renderShopOrder(o, 'shipped')).join('') : '<p style="color:#999; padding:10px;">無歷史訂單</p>'}
                 </div>
-                <div style="text-align:right; margin-top:10px;">
-                    ${o.status==='pending' ? `<button class="btn btn--green" onclick="confirmOrder('${o._id}')">確認收款</button>` : ''}
-                    <button class="btn btn--red" onclick="delOrder('${o._id}', 'shop')">刪除</button>
-                </div>
-            </div>`).join('');
+            </div>
+        `;
     }
-    
-    window.confirmOrder = async (id) => { if(confirm('確認已收到款項？')) { await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'}); fetchOrders(); } };
+
+    function renderShopOrder(o, type) {
+        let actionBtns = '';
+        let statusDateHtml = `<div style="font-size:12px; color:#777;">訂單時間：${o.createdAt}</div>`;
+        let deleteBtn = ''; // ★ 刪除按鈕變數
+
+        if(type === 'pending') {
+            actionBtns = `<button class="btn btn--green" onclick="confirmOrder('${o._id}', '${o.orderId}')">✅ 確認收款</button>`;
+            // ★ 只有未付款才顯示刪除
+            deleteBtn = `<button class="btn btn--red" onclick="delOrder('${o._id}', 'shop')">刪除</button>`;
+        } else if(type === 'toship') {
+            actionBtns = `<button class="btn btn--blue" onclick="shipOrder('${o._id}')">🚚 確認出貨</button>`;
+            // 已收款：不顯示刪除
+        } else {
+            actionBtns = `<span style="color:blue; font-weight:bold; margin-right:10px;">已出貨</span>`;
+            if(o.shippedAt) {
+                statusDateHtml += `<div style="font-size:12px; color:#007bff; font-weight:bold;">出貨時間：${o.shippedAt}</div>`;
+            }
+            // 已出貨：不顯示刪除
+        }
+
+        return `
+        <div class="feedback-card" style="border-left:5px solid ${type==='pending'?'#dc3545':(type==='toship'?'#28a745':'#007bff')};">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <b>${o.orderId}</b> 
+                <div>${statusDateHtml}</div>
+            </div>
+            <div style="line-height:1.6; font-size:14px; color:#555;">
+                <div style="font-size:16px;">金額: <b>$${o.total}</b> (後五碼: <span style="color:#C48945; font-weight:bold;">${o.customer.last5}</span>)</div>
+                <div>姓名: ${o.customer.name} / ${o.customer.phone}</div>
+                <div>地址: ${o.customer.address}</div>
+                ${o.trackingNumber ? `<div style="color:blue;">物流單號: ${o.trackingNumber}</div>` : ''}
+                <div style="background:#f9f9f9; padding:5px; margin-top:5px; border-radius:4px;">
+                    ${o.items.map(i => `${i.name} (${i.variantName||i.variant||''}) x${i.qty}`).join('<br>')}
+                </div>
+            </div>
+            <div style="text-align:right; margin-top:10px;">
+                ${actionBtns}
+                ${deleteBtn}
+            </div>
+        </div>`;
+    }
+
+    // 確認收款
+    window.confirmOrder = async (id, orderId) => {
+        if(confirm(`確認收款訂單編號：${orderId}，將回信待出貨？`)) {
+            await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'});
+            fetchOrders();
+        }
+    };
+
+    // 確認出貨
+    window.shipOrder = async (id) => {
+        const trackNum = prompt("請輸入物流單號 (若無可留白，直接按確定)：");
+        if(trackNum !== null) { 
+            await apiFetch(`/api/orders/${id}/ship`, {
+                method:'PUT', 
+                body: JSON.stringify({trackingNumber: trackNum})
+            });
+            alert("已標記為出貨，並發送通知信！");
+            fetchOrders();
+        }
+    };
+
+    // 清除 14 天前舊單
+    window.cleanupShipped = async () => {
+        if(confirm('確定要刪除「已出貨超過 14 天」的舊訂單嗎？(此動作無法復原)')) {
+            const res = await apiFetch('/api/orders/cleanup-shipped', {method:'DELETE'});
+            alert(`已清除 ${res.count} 筆舊資料`);
+            fetchOrders();
+        }
+    };
+
     window.delOrder = async (id, type) => { 
         if(confirm('確定刪除此訂單？')) { 
             await apiFetch(`/api/orders/${id}`, {method:'DELETE'}); 
@@ -396,15 +462,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await apiFetch('/api/feedback/approved');
         approvedList.innerHTML = data.length ? data.map(i => renderFbCard(i, 'approved')).join('') : '<p>無已刊登資料</p>';
     }
-    
-    // 使用 pre-wrap class 確保換行
     function renderFbCard(item, type) {
         const btns = type === 'pending' 
             ? `<button class="btn btn--grey" onclick='editFb(${JSON.stringify(item).replace(/'/g, "&apos;")})'>編輯</button> 
                <button class="btn btn--brown" onclick="approveFb('${item._id}')">同意</button> 
                <button class="btn btn--red" onclick="delFb('${item._id}')">刪除</button>`
             : `<button class="btn btn--grey" onclick='viewFb(${JSON.stringify(item).replace(/'/g, "&apos;")})'>查看</button>`;
-        
         return `<div class="feedback-card" style="${item.isMarked?'background:#f0f9eb':''}">
             <div style="font-weight:bold; margin-bottom:5px;">${item.nickname} / ${item.category}</div>
             <div class="pre-wrap" style="max-height:100px; overflow:hidden;">${item.content}</div>
@@ -423,7 +486,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fbEditForm.category.value = Array.isArray(item.category) ? item.category[0] : item.category;
         fbEditModal.classList.add('is-visible');
     };
-    
     if(fbEditForm) fbEditForm.onsubmit = async (e) => {
         e.preventDefault();
         const data = {
@@ -433,29 +495,15 @@ document.addEventListener('DOMContentLoaded', () => {
         await apiFetch(`/api/feedback/${fbEditForm.feedbackId.value}`, {method:'PUT', body:JSON.stringify(data)});
         fbEditModal.classList.remove('is-visible'); fetchPendingFeedback();
     };
-    
     window.viewFb = (item) => {
         document.getElementById('view-modal-body').innerHTML = `<p>姓名: ${item.realName}</p><p>電話: ${item.phone}</p><p>地址: ${item.address}</p><hr>${item.content}`;
-        const delBtn = document.getElementById('delete-feedback-btn');
-        delBtn.onclick = async () => { if(confirm('刪除？')) { await apiFetch(`/api/feedback/${item._id}`, {method:'DELETE'}); document.getElementById('view-modal').classList.remove('is-visible'); fetchApprovedFeedback(); }};
+        document.getElementById('delete-feedback-btn').onclick = async () => { if(confirm('刪除？')) { await apiFetch(`/api/feedback/${item._id}`, {method:'DELETE'}); document.getElementById('view-modal').classList.remove('is-visible'); fetchApprovedFeedback(); }};
         document.getElementById('view-modal').classList.add('is-visible');
     };
-    
-    document.getElementById('export-btn').onclick = async () => {
-        if(!confirm('匯出並標記已寄送？')) return;
-        const res = await fetch('/api/feedback/download-unmarked', {method:'POST', headers:{'X-CSRFToken':getCsrfToken()}});
-        if(res.status===404) return alert('無新資料');
-        const blob = await res.blob();
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='list.txt'; a.click();
-        fetchApprovedFeedback();
-    };
-    document.getElementById('mark-all-btn').onclick = async () => {
-        if(confirm('全部標記已讀？')) { await apiFetch('/api/feedback/mark-all-approved', {method:'PUT'}); fetchApprovedFeedback(); }
-    };
+    document.getElementById('export-btn').onclick = async () => { if(!confirm('匯出並標記已寄送？')) return; const res = await fetch('/api/feedback/download-unmarked', {method:'POST', headers:{'X-CSRFToken':getCsrfToken()}}); if(res.status===404) return alert('無新資料'); const blob = await res.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='list.txt'; a.click(); fetchApprovedFeedback(); };
+    document.getElementById('mark-all-btn').onclick = async () => { if(confirm('全部標記已讀？')) { await apiFetch('/api/feedback/mark-all-approved', {method:'PUT'}); fetchApprovedFeedback(); } };
 
-    /* =========================================
-       7. 基金與公告
-       ========================================= */
+    // 基金與公告
     const fundForm = document.getElementById('fund-form');
     const annModal = document.getElementById('announcement-modal');
     const annForm = document.getElementById('announcement-form');
@@ -486,54 +534,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>`).join('');
     }
-    
     window.delAnn = async (id) => { if(confirm('刪除？')) { await apiFetch(`/api/announcements/${id}`, {method:'DELETE'}); fetchAndRenderAnnouncements(); } };
-    
     window.editAnn = (a) => {
-        annForm.reset();
-        document.getElementById('ann-modal-title').textContent = '編輯公告';
-        annForm.announcementId.value = a._id;
-        annForm.date.value = a.date;
-        annForm.title.value = a.title;
-        annForm.content.value = a.content;
-        annForm.isPinned.checked = a.isPinned;
+        annForm.reset(); document.getElementById('ann-modal-title').textContent = '編輯公告';
+        annForm.announcementId.value = a._id; annForm.date.value = a.date; annForm.title.value = a.title; annForm.content.value = a.content; annForm.isPinned.checked = a.isPinned;
         annModal.classList.add('is-visible');
     };
-    
-    document.getElementById('add-announcement-btn').onclick = () => { 
-        annForm.reset(); 
-        document.getElementById('ann-modal-title').textContent = '新增公告';
-        annForm.announcementId.value = ''; 
-        annModal.classList.add('is-visible'); 
-    };
-    
+    document.getElementById('add-announcement-btn').onclick = () => { annForm.reset(); document.getElementById('ann-modal-title').textContent = '新增公告'; annForm.announcementId.value = ''; annModal.classList.add('is-visible'); };
     if(annForm) annForm.onsubmit = async (e) => {
         e.preventDefault();
         const id = annForm.announcementId.value;
-        const data = {
-            date: annForm.date.value,
-            title: annForm.title.value,
-            content: annForm.content.value,
-            isPinned: annForm.isPinned.checked
-        };
-        await apiFetch(id ? `/api/announcements/${id}` : '/api/announcements', { 
-            method: id ? 'PUT' : 'POST', 
-            body: JSON.stringify(data) 
-        });
-        annModal.classList.remove('is-visible'); 
-        fetchAndRenderAnnouncements();
+        await apiFetch(id ? `/api/announcements/${id}` : '/api/announcements', { method: id ? 'PUT' : 'POST', body: JSON.stringify({ date: annForm.date.value, title: annForm.title.value, content: annForm.content.value, isPinned: annForm.isPinned.checked }) });
+        annModal.classList.remove('is-visible'); fetchAndRenderAnnouncements();
     };
 
-    /* =========================================
-       8. FAQ
-       ========================================= */
+    // FAQ
     const faqList = document.getElementById('faq-list');
     const faqModal = document.getElementById('faq-modal');
     const faqForm = document.getElementById('faq-form');
-    
     async function fetchFaqCategories() { try { return await apiFetch('/api/faq/categories'); } catch(e){return [];} }
     function renderFaqCategoryBtns(cats) { document.getElementById('faq-modal-category-btns').innerHTML = cats.map(c => `<button type="button" class="btn btn--grey" style="margin:0 5px 5px 0" onclick="this.form.other_category.value='${c}'">${c}</button>`).join(''); }
-    
     async function fetchAndRenderFaqs() {
         const faqs = await apiFetch('/api/faq');
         faqList.innerHTML = faqs.map(f => `
@@ -546,50 +566,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>`).join('');
     }
-    
     window.delFaq = async (id) => { if(confirm('刪除？')) { await apiFetch(`/api/faq/${id}`, {method:'DELETE'}); fetchAndRenderFaqs(); } };
-    
     window.editFaq = (f) => {
-        faqForm.reset();
-        document.getElementById('faq-modal-title').textContent = '編輯問答';
-        faqForm.faqId.value = f._id;
-        faqForm.question.value = f.question;
-        faqForm.answer.value = f.answer;
-        faqForm.other_category.value = f.category;
-        faqForm.isPinned.checked = f.isPinned;
-        fetchFaqCategories().then(renderFaqCategoryBtns); 
-        faqModal.classList.add('is-visible');
+        faqForm.reset(); document.getElementById('faq-modal-title').textContent = '編輯問答';
+        faqForm.faqId.value = f._id; faqForm.question.value = f.question; faqForm.answer.value = f.answer; faqForm.other_category.value = f.category; faqForm.isPinned.checked = f.isPinned;
+        fetchFaqCategories().then(renderFaqCategoryBtns); faqModal.classList.add('is-visible');
     };
-
-    document.getElementById('add-faq-btn').onclick = async () => { 
-        const cats = await fetchFaqCategories(); renderFaqCategoryBtns(cats); 
-        faqForm.reset(); 
-        document.getElementById('faq-modal-title').textContent = '新增問答';
-        faqForm.faqId.value = '';
-        faqModal.classList.add('is-visible'); 
-    };
-    
+    document.getElementById('add-faq-btn').onclick = async () => { const cats = await fetchFaqCategories(); renderFaqCategoryBtns(cats); faqForm.reset(); document.getElementById('faq-modal-title').textContent = '新增問答'; faqForm.faqId.value = ''; faqModal.classList.add('is-visible'); };
     if(faqForm) faqForm.onsubmit = async (e) => {
-        e.preventDefault();
-        if(!faqForm.other_category.value) return alert('分類必填');
+        e.preventDefault(); if(!faqForm.other_category.value) return alert('分類必填');
         const id = faqForm.faqId.value;
-        const data = {
-            question: faqForm.question.value,
-            answer: faqForm.answer.value,
-            category: faqForm.other_category.value,
-            isPinned: faqForm.isPinned.checked
-        };
-        await apiFetch(id ? `/api/faq/${id}` : '/api/faq', { 
-            method: id ? 'PUT' : 'POST', 
-            body: JSON.stringify(data) 
-        });
-        faqModal.classList.remove('is-visible'); 
-        fetchAndRenderFaqs();
+        await apiFetch(id ? `/api/faq/${id}` : '/api/faq', { method: id ? 'PUT' : 'POST', body: JSON.stringify({ question: faqForm.question.value, answer: faqForm.answer.value, category: faqForm.other_category.value, isPinned: faqForm.isPinned.checked }) });
+        faqModal.classList.remove('is-visible'); fetchAndRenderFaqs();
     };
 
-    /* =========================================
-       9. 連結管理
-       ========================================= */
+    // 連結
     const linksList = document.getElementById('links-list');
     async function fetchLinks() {
         const links = await apiFetch('/api/links');

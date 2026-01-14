@@ -116,7 +116,91 @@ def send_email(to_email, subject, body, is_html=False):
         print(f"Email sent to {to_email}")
     except Exception as e:
         print(f"Email Error: {e}")
+# ★ 新增：商店訂單 Email 樣板 (支援「確認收款」與「已出貨」)
+def generate_shop_email_html(order, status_type, tracking_num=None):
+    # status_type: 'paid' (已收款/待出貨) or 'shipped' (已出貨)
+    cust = order['customer']
+    items = order['items']
+    
+    # 產生商品明細 HTML
+    items_rows = ""
+    for item in items:
+        spec = f" ({item['variant']})" if 'variant' in item and item['variant'] != '標準' else ""
+        items_rows += f"""
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 10px; color:#333;">{item['name']}{spec}</td>
+            <td style="padding: 10px; text-align: center; color:#333;">x{item['qty']}</td>
+            <td style="padding: 10px; text-align: right; color:#333;">${item['price'] * item['qty']}</td>
+        </tr>
+        """
+    
+    # 根據狀態決定標題與內文
+    if status_type == 'paid':
+        title = "款項確認通知"
+        color =="#28a745" # 綠色
+        status_text = "我們已收到您的款項，將盡快為您安排出貨。"
+        tracking_info = ""
+    else: # shipped
+        title = "訂單出貨通知"
+        color = "#C48945" # 金色
+        status_text = "您的訂單已出貨！"
+        if tracking_num and tracking_num.strip():
+            tracking_info = f"""
+            <div style="background: #f9f9f9; padding: 15px; border-left: 4px solid #C48945; margin: 20px 0;">
+                <p style="margin:0; font-weight:bold; color:#555;">物流單號：{tracking_num}</p>
+                <p style="margin:5px 0 0 0; font-size:13px; color:#888;">您可以至物流公司網站查詢配送進度。</p>
+            </div>
+            """
+        else:
+            tracking_info = f"""
+            <div style="background: #f9f9f9; padding: 15px; border-left: 4px solid #C48945; margin: 20px 0;">
+                <p style="margin:0; color:#555;">我們已透過物流寄出，預計 2-3 天內送達。</p>
+            </div>
+            """
 
+    return f"""
+    <div style="font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+        <div style="background: {color}; padding: 20px; text-align: center;">
+            <h2 style="color: #fff; margin: 0;">{title}</h2>
+            <p style="color: #fff; opacity: 0.9; margin: 5px 0 0 0;">訂單編號：{order['orderId']}</p>
+        </div>
+        <div style="padding: 30px;">
+            <p style="font-size: 16px; color: #333;">親愛的 <strong>{cust['name']}</strong> 信士 您好：</p>
+            <p style="font-size: 16px; color: #555; line-height: 1.6;">{status_text}</p>
+            
+            {tracking_info}
+
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
+                <thead>
+                    <tr style="background: #f2f2f2;">
+                        <th style="padding: 10px; text-align: left;">商品</th>
+                        <th style="padding: 10px; text-align: center;">數量</th>
+                        <th style="padding: 10px; text-align: right;">金額</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items_rows}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">總計 (含運)</td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold; color: #C48945;">NT$ {order['total']}</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="https://line.me/R/ti/p/@566dcres" style="background: #00B900; color: #fff; text-decoration: none; padding: 12px 30px; border-radius: 50px; font-weight: bold; display: inline-block;">
+                    加入官方 Line 客服
+                </a>
+                <p style="font-size: 12px; color: #999; margin-top: 10px;">若有任何問題，歡迎點擊按鈕聯繫我們。</p>
+            </div>
+        </div>
+        <div style="background: #eee; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+            承天中承府 ‧ 嘉義市新生路337號
+        </div>
+    </div>
+    """
 # ★ 補回遺漏的感謝狀生成函式
 def generate_donation_email_html(cust, order_id, items):
     items_str = "<br>".join([f"• {i['name']} x {i['qty']}" for i in items])
@@ -541,6 +625,7 @@ def create_order():
 
     return jsonify({"success": True, "orderId": order_id})
 
+# 修改：取得訂單列表 (加入台灣時間校正)
 @app.route('/api/orders', methods=['GET'])
 @login_required
 def get_orders():
@@ -549,9 +634,34 @@ def get_orders():
     results = []
     for doc in cursor:
         doc['_id'] = str(doc['_id'])
-        doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M')
+        
+        # ★ 時間校正：資料庫是 UTC，轉為台灣時間 (UTC+8) 顯示
+        if 'createdAt' in doc:
+            tw_created = doc['createdAt'] + timedelta(hours=8)
+            doc['createdAt'] = tw_created.strftime('%Y-%m-%d %H:%M')
+            
+        # ★ 處理出貨時間
+        if 'shippedAt' in doc and doc['shippedAt']:
+            tw_shipped = doc['shippedAt'] + timedelta(hours=8)
+            doc['shippedAt'] = tw_shipped.strftime('%Y-%m-%d %H:%M')
+        else:
+            doc['shippedAt'] = ''
+            
         results.append(doc)
     return jsonify(results)
+
+@app.route('/api/orders/cleanup-shipped', methods=['DELETE'])
+@login_required
+def cleanup_shipped_orders():
+    # 計算 14 天前的時間點
+    cutoff = datetime.utcnow() - timedelta(days=14)
+    
+    # 刪除條件：狀態是 shipped 且 shippedAt 早於 14 天前
+    result = db.orders.delete_many({
+        "status": "shipped",
+        "shippedAt": {"$lt": cutoff}
+    })
+    return jsonify({"success": True, "count": result.deleted_count})
 
 @app.route('/api/orders/<oid>/confirm', methods=['PUT'])
 @login_required
@@ -559,22 +669,25 @@ def confirm_order_payment(oid):
     order = db.orders.find_one({'_id': ObjectId(oid)})
     if not order: return jsonify({"error": "No order"}), 404
     
-    # ★ 更新狀態與時間
     now = datetime.utcnow()
+    # 更新為 paid (待出貨)
     db.orders.update_one(
         {'_id': ObjectId(oid)}, 
         {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}}
     )
     
-    # 寄信邏輯
     cust = order['customer']
+    # 寄信邏輯分流
     if order.get('orderType') == 'donation':
+        # 捐贈：寄感謝狀
         email_subject = f"【感謝狀】承天中承府 - 感謝您的護持 ({order['orderId']})"
         email_html = generate_donation_email_html(cust, order['orderId'], order['items'])
         send_email(cust.get('email'), email_subject, email_html, is_html=True)
     else:
-        email_body = f"您好，訂單 {order['orderId']} 款項已確認，預計 D+2 日出貨。"
-        send_email(cust.get('email'), f"收款確認 - {order['orderId']}", email_body)
+        # ★ 修改：商店訂單：寄送「款項確認/待出貨」信
+        email_subject = f"【承天中承府】款項確認通知 ({order['orderId']})"
+        email_html = generate_shop_email_html(order, 'paid')
+        send_email(cust.get('email'), email_subject, email_html, is_html=True)
     
     return jsonify({"success": True})
 
@@ -772,5 +885,37 @@ def update_link(lid):
     db.links.update_one({'_id': ObjectId(lid)}, {'$set': {'url': data['url']}})
     return jsonify({"success": True})
 
+@app.route('/api/orders/<oid>/ship', methods=['PUT'])
+@login_required
+def ship_order(oid):
+    data = request.get_json() or {}
+    tracking_num = data.get('trackingNumber', '').strip()
+    
+    order = db.orders.find_one({'_id': ObjectId(oid)})
+    if not order: return jsonify({"error": "No order"}), 404
+    
+    now = datetime.utcnow() # 存入資料庫仍維持 UTC 標準
+    
+    # 更新為 shipped (已出貨)
+    db.orders.update_one(
+        {'_id': ObjectId(oid)}, 
+        {'$set': {
+            'status': 'shipped', 
+            'updatedAt': now, 
+            'shippedAt': now, # ★ 這裡記錄當下時間
+            'trackingNumber': tracking_num
+        }}
+    )
+    
+    # 寄送出貨通知信
+    cust = order['customer']
+    email_subject = f"【承天中承府】訂單出貨通知 ({order['orderId']})"
+    email_html = generate_shop_email_html(order, 'shipped', tracking_num)
+    send_email(cust.get('email'), email_subject, email_html, is_html=True)
+    
+    return jsonify({"success": True})
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+    

@@ -6,108 +6,126 @@
 <style>
     /* === 頂部視覺 Hero === */
     .donation-hero {
-        background: url('{{ url_for("static", filename="images/pages/index/banner_PC.png") }}') no-repeat center center/cover;
+        background: url('{{ url_for("static", filename="images/pages/gongtan/signuppic.jpg") }}') no-repeat center center/cover;
         height: 60vh;
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: #fff;
-        text-align: center;
+        position: relative; display: flex; justify-content: center; align-items: center; color: #fff; text-align: center;
     }
-    .donation-hero::before {
-        content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
-        background: rgba(0,0,0,0.5);
-    }
+    .donation-hero::before { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); }
     .hero-text { position: relative; z-index: 2; padding: 20px; }
     .hero-text h1 { font-family: 'KouzanBrushFontOTF', serif; font-size: 3.5rem; margin-bottom: 10px; text-shadow: 2px 2px 5px rgba(0,0,0,0.7); }
     .hero-text p { font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.7); }
 
     /* === 內容區塊 === */
     .donation-container {
-        max-width: 1100px; margin: -50px auto 50px auto;
-        background: #fff; border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        position: relative; z-index: 3;
-        padding: 40px;
+        max-width: 1100px; margin: -50px auto 50px auto; background: #fff; border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; z-index: 3; padding: 40px;
         border-top: 5px solid #C48945;
     }
 
     /* === 1. 理念區 === */
-    .concept-section { text-align: center; margin-bottom: 50px; }
+    .concept-section { text-align: center; margin-bottom: 40px; }
     .concept-section h2 { color: #8B4513; margin-bottom: 20px; font-size: 2rem; position: relative; display: inline-block; }
     .concept-section h2::after { content:''; display:block; width: 60px; height: 3px; background: #C48945; margin: 10px auto 0 auto; }
     .concept-text { font-size: 1.1rem; line-height: 1.8; color: #555; max-width: 800px; margin: 0 auto; }
     .concept-highlight { color: #C48945; font-weight: bold; background: #fffcf5; padding: 15px; border-radius: 10px; border: 1px dashed #C48945; margin-top: 20px; }
 
-    /* === 2. 芳名錄區 (Marquee) - 修改為紅底 === */
+    /* === 2. 芳名錄區 (視覺升級：紅底金線) === */
     .honor-roll-section {
-        background: #8B0000; /* ★ 改為深紅色 */
+        background: #8B0000; /* 宮廟深紅 */
+        background-image: linear-gradient(180deg, #9E2A2B 0%, #800000 100%);
         color: #FFD700; /* 金色字體 */
-        padding: 20px;
-        border-radius: 10px; margin-bottom: 40px;
+        padding: 20px; 
+        border-radius: 12px; 
+        margin-bottom: 40px;
         display: flex; align-items: center; gap: 20px;
         overflow: hidden;
-        border: 2px solid #B22222;
-        box-shadow: 0 4px 10px rgba(139, 0, 0, 0.3);
+        /* 金色雙線邊框裝飾 */
+        border: 4px double #FFD700;
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.3);
     }
-    .honor-title { font-size: 1.5rem; font-weight: bold; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 5px; border-left: 2px solid #FFD700; padding-left: 10px; flex-shrink: 0; }
+    .honor-title { 
+        font-size: 1.5rem; font-weight: bold; writing-mode: vertical-rl; text-orientation: upright; 
+        letter-spacing: 5px; 
+        border-left: 3px solid #FFD700; /* 左側金線 */
+        padding-left: 15px; flex-shrink: 0; 
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
     
     .marquee-container { flex: 1; height: 150px; overflow: hidden; position: relative; }
-    .marquee-content { position: absolute; width: 100%; animation: scrollUp 20s linear infinite; }
-    .donor-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ffb3b3; font-size: 1.1rem; }
+    .marquee-content { position: absolute; width: 100%; animation: scrollUp 30s linear infinite; }
+    
+    /* 芳名錄項目 (金色分隔線) */
+    .donor-item { 
+        display: flex; justify-content: space-between; padding: 10px 5px; 
+        border-bottom: 1px dashed rgba(255, 215, 0, 0.5); 
+        font-size: 1.1rem; 
+    }
+    .donor-item span:first-child { font-weight: bold; }
     
     @keyframes scrollUp {
         0% { top: 100%; }
-        100% { top: -200%; } 
+        100% { top: -200%; }
     }
 
-    /* === 3. 展開按鈕區 (CTA) === */
-    .cta-container { text-align: center; margin: 40px 0; }
-    .btn-cta-show {
-        background: linear-gradient(135deg, #C48945, #d69d58);
-        color: #fff; font-size: 1.5rem; padding: 15px 50px;
-        border: none; border-radius: 50px; cursor: pointer;
+    /* === 啟動按鈕 (CTA) === */
+    .cta-container { text-align: center; margin: 30px 0; }
+    .start-donate-btn {
+        background: linear-gradient(45deg, #C48945, #FFD700); 
+        color: #fff; padding: 15px 50px; font-size: 22px; border-radius: 50px;
+        border: 2px solid #fff; cursor: pointer; transition: 0.3s; 
         box-shadow: 0 4px 15px rgba(196, 137, 69, 0.4);
-        transition: 0.3s; font-weight: bold;
-        animation: pulse 2s infinite;
+        display: inline-flex; align-items: center; gap: 10px; font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
     }
-    .btn-cta-show:hover { transform: scale(1.05); }
+    .start-donate-btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(196, 137, 69, 0.6); }
 
-    @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(196, 137, 69, 0.7); }
-        70% { box-shadow: 0 0 0 15px rgba(196, 137, 69, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(196, 137, 69, 0); }
-    }
+    /* === 捐贈表單區域 (預設隱藏) === */
+    #donation-process-area { display: none; opacity: 0; transition: opacity 0.5s ease; }
+    #donation-process-area.show { display: block; opacity: 1; }
 
-    /* === 4. 隱藏的表單操作區 === */
-    #donation-action-area { display: none; /* 預設隱藏 */ }
-
+    /* === 3. 捐贈項目卡片 === */
     .donation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
     .donation-card {
         border: 1px solid #eee; border-radius: 10px; overflow: hidden;
-        transition: 0.3s; position: relative; cursor: pointer;
+        transition: 0.3s; position: relative; background: #fff; display: flex; flex-direction: column;
     }
-    .donation-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(196, 137, 69, 0.2); border-color: #C48945; }
-    .donation-card.selected { border: 2px solid #C48945; background: #fffcf5; }
+    .donation-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(196, 137, 69, 0.2); }
+    .donation-card.active { border: 2px solid #C48945; background: #fffcf5; box-shadow: 0 0 10px rgba(196, 137, 69, 0.3); }
     
-    .d-img { width: 100%; height: 200px; object-fit: cover; background: #eee; }
-    .d-info { padding: 15px; text-align: center; }
-    .d-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
-    .d-price { color: #C48945; font-size: 1.1rem; font-weight: bold; }
-    .check-mark { position: absolute; top: 10px; right: 10px; background: #C48945; color: #fff; width: 30px; height: 30px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-weight: bold; }
-    .donation-card.selected .check-mark { display: flex; }
+    .d-img { width: 100%; height: 180px; object-fit: cover; background: #eee; }
+    .d-info { padding: 15px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .d-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; color: #333; }
+    .d-price { color: #C48945; font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; }
+    
+    /* 數量控制器 */
+    .qty-control { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+    .qty-btn { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #ddd; background: #fff; cursor: pointer; font-size: 18px; color: #555; transition: 0.2s; display: flex; justify-content: center; align-items: center; }
+    .qty-btn:hover { background: #C48945; color: #fff; border-color: #C48945; }
+    .qty-display { font-size: 18px; font-weight: bold; width: 40px; text-align: center; color: #333; }
 
-    /* === 表單區 === */
+    /* === 4. 摘要表與表單 === */
+    .summary-section { background: #fffcf5; border: 2px solid #E6BA67; border-radius: 10px; padding: 20px; margin-bottom: 30px; }
+    .summary-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .summary-table th { text-align: left; padding: 10px; border-bottom: 2px solid #E6BA67; color: #8B4513; }
+    .summary-table td { padding: 10px; border-bottom: 1px dashed #ddd; }
+    .summary-total { text-align: right; font-size: 1.3rem; font-weight: bold; color: #C48945; padding-top: 15px; }
+
     .form-section { background: #f9f9f9; padding: 30px; border-radius: 10px; }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
-    .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
     
+    .prayer-box { 
+        background-color: #ffeaea; border: 2px solid #e74c3c; 
+        color: #c0392b; font-weight: bold;
+    }
+    .prayer-box::placeholder { color: #e6b0aa; }
+
     .btn-submit {
         background: #C48945; color: #fff; width: 100%; padding: 15px;
         border: none; border-radius: 50px; font-size: 1.3rem; font-weight: bold;
         cursor: pointer; transition: 0.3s; margin-top: 20px;
+        text-align: center; display: block; text-decoration: none;
     }
     .btn-submit:hover { background: #a06d35; transform: scale(1.02); }
 
@@ -117,8 +135,9 @@
         .hero-text h1 { font-size: 2.2rem; }
         .donation-container { margin-top: 0; border-radius: 0; padding: 20px; }
         .donation-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-        .d-img { height: 150px; }
-        .donor-item { font-size: 0.9rem; }
+        .d-img { height: 140px; }
+        .qty-btn { width: 30px; height: 30px; font-size: 16px; }
+        .honor-title { font-size: 1.2rem; padding-left: 10px; letter-spacing: 2px; }
     }
 </style>
 
@@ -138,7 +157,7 @@
             <div class="concept-highlight">
                 🙏 您的心意，元帥都知道<br>
                 凡參與捐香之信徒，我們將於下一次公壇辦事時，<br>
-                由執事人員將您的姓名與祈願，完整向煙島元帥稟報。
+                由元帥娘將完整向煙島元帥稟報。
             </div>
         </div>
     </div>
@@ -147,37 +166,56 @@
         <div class="honor-title">捐贈芳名錄</div>
         <div class="marquee-container">
             <div class="marquee-content" id="honor-list">
-                <div style="padding:10px; text-align:center; color:#FFD700;">載入中...</div>
+                <div style="padding:10px; text-align:center;">載入中...</div>
             </div>
         </div>
     </div>
 
-    <div class="cta-container" id="cta-block">
-        <button class="btn-cta-show" onclick="showDonationForm()">🙋 我也要捐香</button>
+    <div class="cta-container" id="cta-container">
+        <button class="start-donate-btn" onclick="startDonation()">🙏 我也要捐香</button>
     </div>
 
-    <div id="donation-action-area">
+    <div id="donation-process-area">
         <form id="donation-form">
-            <h3 style="border-left: 5px solid #C48945; padding-left: 10px; margin-bottom: 20px;">第一步：選擇捐贈項目</h3>
+            <h3 style="border-left: 5px solid #C48945; padding-left: 10px; margin-bottom: 20px;">第一步：選擇護持項目</h3>
             <div class="donation-grid" id="donation-grid">
                 </div>
 
+            <div class="summary-section" id="summary-section" style="display:none;">
+                <h4 style="margin-top:0; color:#8B4513;">📋 您的護持清單</h4>
+                <table class="summary-table">
+                    <thead><tr><th>項目</th><th>數量</th><th>小計</th></tr></thead>
+                    <tbody id="summary-body"></tbody>
+                </table>
+                <div class="summary-total">總計金額：NT$ <span id="summary-total">0</span></div>
+            </div>
+
             <h3 style="border-left: 5px solid #C48945; padding-left: 10px; margin-bottom: 20px; margin-top: 40px;">第二步：填寫祈福資料</h3>
             <div class="form-section">
-                <p style="color:red; font-size:0.9rem; margin-bottom:15px;">※ 此為代捐項目，不會寄送實體商品</p>
+                <p style="color:red; font-size:0.9rem; margin-bottom:15px;">※ 此為代捐項目，不會寄送實體商品，但我們會寄送紙本感謝狀給您。</p>
                 
                 <div class="form-group"><label>信士姓名</label><input type="text" name="name" class="form-control" required placeholder="請填寫真實姓名"></div>
-                <div class="form-group"><label>聯絡電話</label><input type="tel" name="phone" class="form-control" required></div>
-                <div class="form-group"><label>電子信箱 (接收電子感謝狀)</label><input type="email" name="email" class="form-control" required></div>
-                <div class="form-group"><label>收件地址</label><input type="text" name="address" class="form-control" required></div>
-                <div class="form-group"><label>農曆生日 (格式：68年 5月 5日)</label><input type="text" name="lunarBirthday" class="form-control" placeholder="例：75年 8月 15日 吉時"></div>
-                <div class="form-group"><label>匯款帳號後五碼</label><input type="text" name="last5" class="form-control" maxlength="5" required></div>
                 
-                <div style="text-align:right; font-size:1.5rem; font-weight:bold; color:#C48945; margin: 20px 0;">
-                    總捐贈金額：NT$ <span id="total-amount">0</span>
+                <div class="form-group">
+                    <label>聯絡電話 (09XX-XXX-XXX)</label>
+                    <input type="tel" name="phone" id="phone-input" class="form-control" placeholder="09XX-XXX-XXX" required maxlength="12">
+                </div>
+                <div class="form-group"><label>電子信箱 (接收電子感謝狀)</label><input type="email" name="email" class="form-control" required></div>
+                <div class="form-group"><label>收件地址 (寄送紙本收據/感謝狀)</label><input type="text" name="address" class="form-control" required></div>
+                
+                <div class="form-group">
+                    <label>農曆生日 (請直接輸入數字，如：750815 或 1120101)</label>
+                    <input type="text" name="lunarBirthday" id="birthday-input" class="form-control" placeholder="例：750815" maxlength="10">
+                </div>
+                
+                <div class="form-group">
+                    <label>匯款帳號後五碼</label>
+                    <input type="text" name="last5" class="form-control" maxlength="5" pattern="\d{5}" placeholder="請填寫5碼數字" required title="請輸入5位數字">
                 </div>
 
-                <button type="submit" class="btn-submit">確認捐贈並送出</button>
+                <div style="margin-top:20px;">
+                    <button type="submit" class="btn-submit">確認捐贈並送出</button>
+                </div>
             </div>
         </form>
     </div>
@@ -188,117 +226,155 @@
         <h2 style="color:#C48945;">功德無量 🙏</h2>
         <p>您的捐贈訂單已送出。</p>
         <p>請於 2 小時內完成匯款，<br>我們核對後將會寄出電子感謝狀。</p>
-        <button onclick="location.href='{{ url_for('home') }}'" style="background:#C48945; color:#fff; padding:10px 30px; border:none; border-radius:5px; cursor:pointer; margin-top:20px;">回首頁</button>
+        <a href="{{ url_for('home') }}" class="btn-submit" style="text-decoration:none; display:inline-block; width:auto; margin-top:20px; padding:10px 30px;">回首頁</a>
     </div>
 </div>
 
 <script>
-    let donationItems = []; // 存購物車
-    
+    let products = [];
+    let selectedItems = {}; // { id: {name, price, qty} }
+
     document.addEventListener('DOMContentLoaded', () => {
         loadMarquee();
         loadProducts();
+        setupFormatters();
     });
 
-    // 展開表單功能
-    function showDonationForm() {
-        const area = document.getElementById('donation-action-area');
-        const btnBlock = document.getElementById('cta-block');
+    // ★ 啟動捐贈流程
+    window.startDonation = () => {
+        const area = document.getElementById('donation-process-area');
+        area.style.display = 'block';
+        // 延遲一點點讓 display:block 生效後再加 opacity，產生淡入效果
+        setTimeout(() => {
+            area.classList.add('show');
+            // 平滑捲動到選擇區
+            area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 10);
         
-        btnBlock.style.display = 'none'; // 隱藏按鈕
-        area.style.display = 'block'; // 顯示表單
-        
-        // 平滑滾動到表單區域
-        area.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+        // 隱藏按鈕本身 (可選，若想保留按鈕可註解掉下面這行)
+        document.getElementById('cta-container').style.display = 'none';
+    };
 
-    // 1. 載入芳名錄
-    function loadMarquee() {
-        fetch('/api/donations/public')
-            .then(res => res.json())
-            .then(data => {
-                const list = document.getElementById('honor-list');
-                if(data.length === 0) {
-                    list.innerHTML = '<div style="text-align:center; padding:10px; color:#FFD700;">目前尚無捐贈紀錄，歡迎成為第一位護持者！</div>';
-                    return;
-                }
-                const html = data.map(d => `
-                    <div class="donor-item">
-                        <span>${d.name}</span>
-                        <span>${d.items}</span>
-                    </div>
-                `).join('');
-                
-                list.innerHTML = html + html; 
-            });
-    }
-
-    // 2. 載入捐贈商品
+    // 1. 載入商品
     function loadProducts() {
         fetch('/api/products')
             .then(res => res.json())
-            .then(products => {
-                // 過濾 isDonation 為 true 的商品
-                const donations = products.filter(p => p.isDonation === true && p.isActive);
+            .then(data => {
+                products = data.filter(p => p.isDonation === true && p.isActive);
                 const grid = document.getElementById('donation-grid');
-                
-                if(donations.length === 0) {
-                    grid.innerHTML = '<p>目前沒有開放的捐贈項目。</p>';
-                    return;
-                }
+                if(products.length === 0) { grid.innerHTML = '<p>目前沒有開放的捐贈項目。</p>'; return; }
 
-                grid.innerHTML = donations.map(p => `
-                    <div class="donation-card" onclick="toggleItem('${p._id}', '${p.name}', ${p.price}, this)">
-                        <div class="check-mark">✔</div>
+                grid.innerHTML = products.map(p => `
+                    <div class="donation-card" id="card-${p._id}">
                         <img src="${p.image || '/static/images/common/default_product.png'}" class="d-img" onerror="this.src='/static/images/common/default_product.png'">
                         <div class="d-info">
                             <div class="d-title">${p.name}</div>
                             <div class="d-price">護持金 NT$ ${p.price}</div>
+                            <div class="qty-control">
+                                <button type="button" class="qty-btn" onclick="changeQty('${p._id}', -1)">-</button>
+                                <span class="qty-display" id="qty-${p._id}">0</span>
+                                <button type="button" class="qty-btn" onclick="changeQty('${p._id}', 1)">+</button>
+                            </div>
                         </div>
                     </div>
                 `).join('');
             });
     }
 
-    window.toggleItem = (id, name, price, cardEl) => {
-        const idx = donationItems.findIndex(x => x.id === id);
+    // 2. 數量變更邏輯
+    window.changeQty = (id, delta) => {
+        const p = products.find(x => x._id === id);
+        if(!selectedItems[id]) selectedItems[id] = { id: p._id, name: p.name, price: p.price, qty: 0 };
         
-        if (idx > -1) {
-            donationItems.splice(idx, 1);
-            cardEl.classList.remove('selected');
-        } else {
-            donationItems.push({ id, name, price, qty: 1 });
-            cardEl.classList.add('selected');
-        }
-        updateTotal();
+        selectedItems[id].qty += delta;
+        if(selectedItems[id].qty < 0) selectedItems[id].qty = 0;
+        
+        // UI 更新
+        document.getElementById(`qty-${id}`).textContent = selectedItems[id].qty;
+        const card = document.getElementById(`card-${id}`);
+        if(selectedItems[id].qty > 0) card.classList.add('active'); else card.classList.remove('active');
+        
+        if(selectedItems[id].qty === 0) delete selectedItems[id];
+        updateSummary();
     };
 
-    function updateTotal() {
-        const total = donationItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        document.getElementById('total-amount').textContent = total;
+    // 3. 更新摘要表
+    function updateSummary() {
+        const tbody = document.getElementById('summary-body');
+        const section = document.getElementById('summary-section');
+        const items = Object.values(selectedItems);
+        
+        if(items.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+        
+        section.style.display = 'block';
+        let total = 0;
+        tbody.innerHTML = items.map(item => {
+            const subtotal = item.price * item.qty;
+            total += subtotal;
+            return `<tr><td>${item.name}</td><td>${item.qty}</td><td>$${subtotal}</td></tr>`;
+        }).join('');
+        document.getElementById('summary-total').textContent = total;
     }
 
-    // 3. 送出表單 (已移除 prayer)
+    // 4. 自動格式化與驗證 (Auto-Format)
+    function setupFormatters() {
+        // 電話：09XX-XXX-XXX
+        const phoneInput = document.getElementById('phone-input');
+        phoneInput.addEventListener('input', (e) => {
+            let v = e.target.value.replace(/\D/g, ''); // 只留數字
+            if (v.length > 10) v = v.slice(0, 10);
+            if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
+            else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
+            e.target.value = v;
+        });
+
+        // 農曆生日：輸入純數字 -> 自動加斜線
+        const bdayInput = document.getElementById('birthday-input');
+        bdayInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+        bdayInput.addEventListener('blur', (e) => {
+            let v = e.target.value;
+            if(v.length === 6) {
+                e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
+            } else if (v.length === 7) {
+                e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
+            }
+        });
+    }
+
+    // 5. 送出表單
     document.getElementById('donation-form').onsubmit = async (e) => {
         e.preventDefault();
-        if (donationItems.length === 0) return alert('請至少選擇一個捐贈項目');
+        const items = Object.values(selectedItems);
+        if (items.length === 0) return alert('請至少選擇一個護持項目');
         
+        // 再次驗證
+        const phone = document.getElementById('phone-input').value;
+        if(!/^09\d{2}-\d{3}-\d{3}$/.test(phone)) return alert('電話格式錯誤，請確認為 09XX-XXX-XXX');
+        
+        const bday = document.getElementById('birthday-input').value;
+        // 允許 75/08/21 或 112/08/21
+        if(bday && !/^\d{2,3}\/\d{2}\/\d{2}$/.test(bday)) return alert('生日格式錯誤，請輸入民國年數字 (如 750821 或 1120101)');
+
         const f = e.target;
-        const total = parseInt(document.getElementById('total-amount').textContent);
-        
         const payload = {
-            orderType: 'donation', 
+            orderType: 'donation',
             name: f.name.value,
-            phone: f.phone.value,
+            phone: phone,
             email: f.email.value,
             address: f.address.value,
-            lunarBirthday: f.lunarBirthday.value,
+            lunarBirthday: bday,
+            prayer: f.prayer.value,
             last5: f.last5.value,
-            items: donationItems,
-            total: total
+            items: items,
+            total: parseInt(document.getElementById('summary-total').textContent)
         };
 
-        const btn = f.querySelector('.btn-submit');
+        const btn = f.querySelector('button[type="submit"]');
         btn.disabled = true; btn.textContent = "處理中...";
 
         try {
@@ -307,17 +383,28 @@
                 headers:{'Content-Type':'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content},
                 body: JSON.stringify(payload)
             });
-            const result = await res.json();
-            if(result.success) {
+            if((await res.json()).success) {
                 document.getElementById('success-modal').style.display = 'flex';
             } else {
-                alert('錯誤: ' + result.message);
-                btn.disabled = false; btn.textContent = "確認捐贈並送出";
+                alert('發生錯誤，請稍後再試');
+                btn.disabled = false;
+                btn.textContent = "確認捐贈並送出";
             }
         } catch(err) {
-            alert('送出失敗');
-            btn.disabled = false; btn.textContent = "確認捐贈並送出";
+            alert('送出失敗，請檢查網路');
+            btn.disabled = false;
+            btn.textContent = "確認捐贈並送出";
         }
     };
+
+    // 芳名錄
+    function loadMarquee() {
+        fetch('/api/donations/public').then(r=>r.json()).then(data => {
+            const list = document.getElementById('honor-list');
+            if(!data.length) { list.innerHTML='<div style="text-align:center;">尚無紀錄</div>'; return; }
+            const html = data.map(d => `<div class="donor-item"><span>${d.name}</span><span>${d.items}</span></div>`).join('');
+            list.innerHTML = html + html; 
+        });
+    }
 </script>
 {% endblock %}
