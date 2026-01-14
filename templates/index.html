@@ -77,31 +77,32 @@
         </div>
         <div class="about-text">
     </section>
+    
     <section class="services-section" id="services-section">
     <h2 class="section-title">服務項目</h2>
         <div class="services-grid">
             <div class="service-item">
-                <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon1.png') }}" alt="公壇與收驚服務">
+                <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon1.png') }}" alt="服務整合">
                 <div class="service-buttons">
-                <a href="{{ url_for('gongtan_page') }}" class="btn btn--brown">公壇</a>
-                <a href="{{ url_for('shoujing_page') }}" class="btn btn--brown">收驚</a>
-                <a href="{{ url_for('feedback_page') }}" class="btn btn--brown">信徒回饋</a>
+                    <a href="{{ url_for('services_page') }}" class="btn btn--brown">問事收驚</a>
+                    <a href="{{ url_for('ship_clothes_page') }}" class="btn btn--brown">衣物寄回</a>
+                    <a href="{{ url_for('donation_page') }}" class="btn btn--brown">捐香服務</a>
+                    <a href="{{ url_for('feedback_page') }}" class="btn btn--brown">信徒回饋</a>
                 </div>
             </div>
+            
             <div class="service-item">
-                <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon2.png') }}" alt="手工香品服務">
+                <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon2.png') }}" alt="周邊與賣場">
                 <div class="service-buttons">
-                    <a href="{{ url_for('incense_page') }}" class="btn btn--brown">元帥愛用</a>
-                    <a href="{{ links['手工香賣場'] or '#' }}" class="btn btn--brown" target="_blank">賣貨便</a>
-                    <a href="{{ links['手工香LINE群'] or '#' }}" class="btn btn--brown" target="_blank">手工香LINE群</a>
+                    <a href="{{ url_for('shop_page') }}" class="btn btn--brown">帥府周邊</a>
+                    <a href="{{ links['手工香賣場'] or '#' }}" class="btn btn--brown" target="_blank">賣場</a>
                 </div>
             </div>
+            
             <div class="service-item">
-                <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon3.jpg') }}" alt="力曼與LINE服務">
+                <img class="service-image" src="{{ url_for('static', filename='images/pages/index/service-icon3.jpg') }}" alt="建廟基金">
                 <div class="service-buttons">
-                    <a href="{{ links['力曼官網'] or '#' }}" class="btn btn--brown" target="_blank">力曼產品</a>
-                    <a href="{{ links['力曼賣場'] or '#' }}" class="btn btn--brown" target="_blank">元帥娘賣場</a>
-                    <a href="{{ links['力曼LINE討論群'] or '#'}}" class="btn btn--brown" target="_blank">力曼LINE群</a>
+                    <a href="{{ url_for('fund_page') }}" class="btn btn--brown">建廟基金</a>
                 </div>
             </div>
         </div>

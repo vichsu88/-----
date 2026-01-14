@@ -28,18 +28,9 @@
       <ul class="nav-links-desktop">
         <li><a href="{{ url_for('home') }}">首頁</a></li>
         <li><a href="{{ url_for('services_page') }}">收驚問事</a></li>
-        <li><a href="{{ url_for('ship_clothes_page') }}">寄回衣物登記</a></li>
-        <li class="dropdown">
-            <span class="dropbtn">周邊產品 ▾</span>
-            <div class="dropdown-content">
-                <a href="{{ url_for('incense_page') }}">手工香系列</a>
-                <a href="{{ url_for('skincare_page') }}">保養品系列</a>
-                <a href="{{ url_for('yuan_user_page') }}">元帥娘愛用</a>
-            </div>
-        </li>
+        <li><a href="{{ url_for('shop_page') }}">帥府周邊</a></li>
 
         <li><a href="{{ url_for('feedback_page') }}">信徒回饋</a></li>
-        <li><a href="{{ url_for('donation_page') }}">捐香服務</a></li>
         <li><a href="{{ url_for('fund_page') }}">建廟基金</a></li>
         <li><a href="{{ url_for('faq_page') }}">常見問題</a></li>
       </ul>
@@ -64,9 +55,11 @@
         <div class="footer-col footer-col-right">
           <h4 class="custom-link-title">官方社群</h4>
           <div class="footer-social">
-            <a href="{{ links['煙島元帥社群'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}"></a>
-            <a href="{{ links['FB'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}"></a>
-            <a href="{{ links['IG'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}"></a>
+            <a href="{{ links['煙島元帥社群'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}"></a>
+            <a href="{{ links['FB'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}"></a>
+            <a href="{{ links['IG'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}"></a>
+            <a href="{{ links['TikTok'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}"></a>
+            <a href="{{ links['YouTube'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}"></a>
           </div>
           <div class="footer-copyright">&copy; All copyright reserved | Eros design</div>
         </div>
@@ -79,22 +72,19 @@
     <ul class="overlay-nav-links">
       <li><a href="{{ url_for('home') }}">首頁</a></li>
       <li><a href="{{ url_for('services_page') }}">收驚問事</a></li>
-      <li><a href="{{ url_for('ship_clothes_page') }}">寄回衣物登記</a></li>
-      <li class="mobile-group-title">周邊產品系列</li>
-      <li class="mobile-sub-item"><a href="{{ url_for('incense_page') }}">手工香系列</a></li>
-      <li class="mobile-sub-item"><a href="{{ url_for('skincare_page') }}">保養品系列</a></li>
-      <li class="mobile-sub-item"><a href="{{ url_for('yuan_user_page') }}">元帥娘愛用</a></li>
+      <li><a href="{{ url_for('shop_page') }}">帥府周邊</a></li>
 
       <li><a href="{{ url_for('feedback_page') }}">信徒回饋</a></li>
-      <li><a href="{{ url_for('donation_page') }}">捐香服務</a></li>
       <li><a href="{{ url_for('fund_page') }}">建廟基金</a></li>
       <li><a href="{{ url_for('faq_page') }}">常見問題</a></li>
     </ul>
     
     <div class="overlay-social">
-       <a href="{{ links['FB'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}"></a>
-       <a href="{{ links['IG'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}"></a>
-       <a href="{{ links['元帥娘官方LINE'] or '#' }}"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}"></a>
+       <a href="{{ links['FB'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}"></a>
+       <a href="{{ links['IG'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}"></a>
+       <a href="{{ links['元帥娘官方LINE'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}"></a>
+       <a href="{{ links['TikTok'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}"></a>
+       <a href="{{ links['YouTube'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}"></a>
     </div>
   </div>
 
