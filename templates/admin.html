@@ -20,29 +20,19 @@
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .nav-item.active { background: rgba(0,0,0,0.2); color: #fff; border-left-color: var(--main-brown); }
         
-        /* ★ 關鍵修改 1：移除 max-width，讓內容填滿剩餘空間 */
         .admin-main { flex: 1; overflow-y: auto; padding: 30px; background: #f4f6f9; position: relative; width: 100%; }
         
         .tab-content { display: none; width: 100%; }
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ★ 關鍵修改 2：卡片全寬設定 */
         .feedback-card { 
             background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 15px; 
             border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            position: relative;
-            width: 100%; /* 強制全寬 */
-            box-sizing: border-box;
+            position: relative; width: 100%; box-sizing: border-box;
         }
         
-        /* ★ 關鍵修改 3：換行顯示樣式 */
-        .pre-wrap { 
-            white-space: pre-wrap; 
-            word-break: break-word; 
-            line-height: 1.6;
-            color: #555;
-        }
+        .pre-wrap { white-space: pre-wrap; word-break: break-word; line-height: 1.6; color: #555; }
 
         .btn { padding: 6px 12px; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 14px; transition: 0.2s; margin-left: 5px; }
         .btn:hover { opacity: 0.9; }
@@ -50,8 +40,8 @@
         .btn--red { background: #dc3545; } 
         .btn--green { background: #28a745; }
         .btn--grey { background: #6c757d; }
+        .btn--blue { background: #007bff; }
 
-        /* Modal */
         .admin-modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
         .admin-modal-overlay.is-visible { display: flex; }
         .admin-modal-content { background: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -63,7 +53,10 @@
         .variant-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
         .variant-row input { margin-bottom: 0; }
         
-        /* 手機版適配 */
+        /* 捐贈管理工具列 */
+        .donation-toolbar { display: flex; gap: 10px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .date-picker-group { display: flex; align-items: center; gap: 5px; }
+
         @media (max-width: 768px) {
             .admin-sidebar { position: fixed; left: -250px; height: 100%; z-index: 1000; transition: 0.3s; }
             .admin-sidebar.open { left: 0; }
@@ -95,10 +88,11 @@
                 </div>
                 <nav class="sidebar-nav">
                     <button class="nav-item active" data-tab="tab-products">🛍️ 商品管理</button>
-                    <button class="nav-item" data-tab="tab-orders">📦 訂單管理</button>
+                    <button class="nav-item" data-tab="tab-donations">🙏 捐贈管理</button>
+                    <button class="nav-item" data-tab="tab-orders">📦 一般訂單</button>
                     <button class="nav-item" data-tab="tab-feedback">💬 信徒回饋</button>
                     <button class="nav-item" data-tab="tab-fund">📊 基金與公告</button>
-                    <button class="nav-item" data-tab="tab-qa">❓ 常見問答 (FAQ)</button>
+                    <button class="nav-item" data-tab="tab-qa">❓ 常見問答</button>
                     <button class="nav-item" data-tab="tab-links">🔗 外部連結</button>
                 </nav>
                 <div style="padding:20px;">
@@ -116,9 +110,30 @@
                     <div id="products-list">載入中...</div>
                 </div>
 
+                <div id="tab-donations" class="tab-content">
+                    <div class="donation-toolbar">
+                        <div class="date-picker-group">
+                            <label style="margin:0;">區間：</label>
+                            <input type="date" id="don-start" style="margin:0; width:140px;">
+                            <span>~</span>
+                            <input type="date" id="don-end" style="margin:0; width:140px;">
+                        </div>
+                        <button class="btn btn--grey" onclick="fetchDonations()">🔍 篩選</button>
+                        <div style="flex:1;"></div>
+                        <button class="btn btn--green" onclick="exportDonationsReport()">📄 匯出稟報清單 (CSV)</button>
+                    </div>
+                    
+                    <div style="text-align:right; margin-bottom:15px; display:flex; gap:10px; justify-content:flex-end;">
+                        <button class="btn btn--red" onclick="cleanupUnpaid()">🗑️ 清除 76hr 未付</button>
+                        <button class="btn btn--red" onclick="cleanupOld()">🗑️ 清除 60天舊資料</button>
+                    </div>
+
+                    <div id="donations-list"></div>
+                </div>
+
                 <div id="tab-orders" class="tab-content">
                     <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="color:#666;">※ 未付款訂單超過 48 小時建議手動刪除</span>
+                        <span style="color:#666;">※ 僅顯示一般商品訂單</span>
                         <button class="btn btn--grey" onclick="fetchOrders()">🔄 重新整理</button>
                     </div>
                     <div id="orders-list"></div>
@@ -179,13 +194,11 @@
                 <input type="hidden" name="productId">
                 <label>分類</label>
                 <select name="category">
-                    <option value="手工香">手工香</option>
+                    <option value="手工香品">手工香品</option>
                     <option value="保養品">保養品</option>
-                    <option value="原力曼">原力曼</option>
-                    <option value="建廟基金">建廟基金</option>
-                    <option value="捐香">捐香</option>
-                    <option value="禮盒">禮盒/組合</option>
-                    <option value="茶品">健康茶品</option>
+                    <option value="元帥娘愛用">元帥娘愛用</option>
+                    <option value="健康茶品">健康茶品</option>
+                    <option value="其他">其他</option>
                 </select>
                 <label>商品名稱</label>
                 <input type="text" name="name" required>
@@ -203,9 +216,12 @@
                     <button type="button" id="add-variant-btn" class="btn btn--grey" style="width:100%; margin-top:10px; padding:5px;">+ 新增規格</button>
                 </div>
 
-                <div style="margin-top:20px;">
+                <div style="margin-top:20px; display:flex; gap:20px;">
                     <label style="display:inline-flex; align-items:center; cursor:pointer;">
                         <input type="checkbox" name="isActive" checked style="width:auto; margin:0 10px 0 0;"> 上架中
+                    </label>
+                    <label style="display:inline-flex; align-items:center; cursor:pointer; color:#C48945;">
+                        <input type="checkbox" name="isDonation" style="width:auto; margin:0 10px 0 0;"> 🙏 開放捐贈 (Donation)
                     </label>
                 </div>
                 <button type="submit" class="btn btn--brown" style="width:100%; margin-top:20px; font-size:16px; padding:12px;">儲存商品</button>

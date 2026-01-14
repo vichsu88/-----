@@ -1,13 +1,14 @@
-# --- app.py (V3: 含捐香服務、芳名錄、感謝狀 Email) ---
 import os
 import re
 import random
 import smtplib
+import csv
+import io
 from email.mime.text import MIMEText
 from email.header import Header
 from functools import wraps
 from datetime import datetime, timedelta
-from flask import Flask, jsonify, render_template, request, session, redirect, url_for, Response
+from flask import Flask, jsonify, render_template, request, session, redirect, url_for, Response, make_response
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect
 from pymongo import MongoClient
@@ -92,12 +93,11 @@ def mask_name(real_name):
     """姓名隱碼處理 (第二字變O)"""
     if not real_name: return ""
     if len(real_name) >= 2:
-        # 無論名字多長，就是第二個字變O
         return real_name[0] + "O" + real_name[2:]
     return real_name
 
 def send_email(to_email, subject, body, is_html=False):
-    """發送郵件工具 (支援 HTML)"""
+    """發送郵件工具"""
     if not MAIL_USERNAME or not MAIL_PASSWORD or not to_email:
         print("Email not set or credential missing")
         return
@@ -116,6 +116,37 @@ def send_email(to_email, subject, body, is_html=False):
         print(f"Email sent to {to_email}")
     except Exception as e:
         print(f"Email Error: {e}")
+
+# ★ 補回遺漏的感謝狀生成函式
+def generate_donation_email_html(cust, order_id, items):
+    items_str = "<br>".join([f"• {i['name']} x {i['qty']}" for i in items])
+    return f"""
+    <div style="font-family: 'KaiTi', 'Microsoft JhengHei', serif; max-width: 600px; margin: 0 auto; border: 4px double #C48945; padding: 40px; background-color: #fffcf5; color: #333;">
+        <div style="text-align: center;">
+            <h1 style="color: #C48945; font-size: 32px; margin-bottom: 10px;">感謝狀</h1>
+            <p style="font-size: 16px; color: #888;">承天中承府 ‧ 煙島中壇元帥</p>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #C48945; margin: 20px 0;">
+        <p style="font-size: 18px; line-height: 1.8;">
+            茲感謝信士 <strong>{cust['name']}</strong><br>
+            發心護持公壇聖務，捐贈項目如下：
+        </p>
+        <div style="background: #f0ebe5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            {items_str}
+        </div>
+        <p style="font-size: 18px; line-height: 1.8;">
+            您的心意將上達天聽，祈求元帥庇佑您：<br>
+            <strong>{cust.get('prayer', '闔家平安，萬事如意')}</strong>
+        </p>
+        <p style="margin-top: 40px; text-align: right; font-size: 16px;">
+            承天中承府 敬謝<br>
+            {datetime.now().strftime('%Y 年 %m 月 %d 日')}
+        </p>
+        <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #999;">
+            (此為系統自動發送之電子感謝狀，請妥善保存)
+        </div>
+    </div>
+    """
 
 @app.context_processor
 def inject_links():
@@ -141,12 +172,17 @@ def ship_clothes_page(): return render_template('shipclothes.html')
 @app.route('/shop')
 def shop_page(): return render_template('shop.html')
 
-# ★ 新增：捐香頁面
 @app.route('/donation')
 def donation_page(): return render_template('donation.html')
 
 @app.route('/fund')
 def fund_page(): return render_template('fund.html')
+
+@app.route('/feedback')
+def feedback_page(): return render_template('feedback.html')
+
+@app.route('/faq')
+def faq_page(): return render_template('faq.html')
 
 # 轉址路由
 @app.route('/gongtan')
@@ -159,10 +195,6 @@ def incense_page(): return redirect(url_for('shop_page'))
 def skincare_page(): return redirect(url_for('shop_page'))
 @app.route('/products/yuan-shuai-niang')
 def yuan_user_page(): return redirect(url_for('shop_page'))
-@app.route('/feedback')
-def feedback_page(): return render_template('feedback.html')
-@app.route('/faq')
-def faq_page(): return render_template('faq.html')
 
 # =========================================
 # 5. 後台頁面路由
@@ -194,25 +226,10 @@ def api_logout():
     return jsonify({"success": True})
 
 # =========================================
-# 7. API: 信徒回饋 & 衣物 (省略部分，維持原樣)
+# 7. API: 信徒回饋 & 衣物 & 捐贈芳名錄
 # =========================================
-# (此處省略 feedback 與 shipclothes 代碼，請保留原 app.py 中的代碼)
-# ... (Feedback API Code) ...
-# ... (ShipClothes API Code) ...
 
-@app.route('/api/shipclothes/calc-date', methods=['GET'])
-def get_pickup_date_preview():
-    today = datetime.utcnow() + timedelta(hours=8)
-    pickup_date = calculate_business_d2(today)
-    return jsonify({"pickupDate": pickup_date.strftime('%Y/%m/%d (%a)')})
-
-@app.route('/api/captcha', methods=['GET'])
-def get_captcha():
-    num1 = random.randint(1, 10)
-    num2 = random.randint(1, 10)
-    session['captcha_answer'] = str(num1 + num2)
-    return jsonify({"question": f"{num1} + {num2} = ?"})
-
+# --- Feedback API ---
 @app.route('/api/feedback', methods=['POST'])
 def add_feedback():
     if db is None: return jsonify({"error": "資料庫未連線"}), 500
@@ -292,6 +309,13 @@ def download_unmarked_feedback():
     db.feedback.update_many({'_id': {'$in': ids}}, {'$set': {'isMarked': True}})
     return Response(text, mimetype='text/plain', headers={"Content-Disposition": f"attachment;filename=list_{datetime.now().strftime('%Y%m%d')}.txt"})
 
+# --- ShipClothes API ---
+@app.route('/api/shipclothes/calc-date', methods=['GET'])
+def get_pickup_date_preview():
+    today = datetime.utcnow() + timedelta(hours=8)
+    pickup_date = calculate_business_d2(today)
+    return jsonify({"pickupDate": pickup_date.strftime('%Y/%m/%d (%a)')})
+
 @app.route('/api/shipclothes', methods=['POST'])
 def submit_ship_clothes():
     if db is None: return jsonify({"success": False, "message": "資料庫未連線"}), 500
@@ -353,38 +377,117 @@ def get_ship_clothes_list():
         return jsonify(results)
     except Exception as e: return jsonify({"error": str(e)}), 500
 
-# =========================================
-# 8. ★ 新增：捐香 API 與 芳名錄
-# =========================================
+# --- Donation Public API ---
 @app.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
-    """芳名錄：只抓取 Status='paid' 且 Type='donation' 的訂單，最新的30筆"""
+    """前台芳名錄：只抓已付款捐贈，最新的30筆"""
     if db is None: return jsonify([]), 500
     try:
-        # 只顯示已付款的捐贈訂單
-        cursor = db.orders.find(
-            {"status": "paid", "orderType": "donation"}
-        ).sort("updatedAt", -1).limit(30) # 依照更新時間(付款時間)排序
-
+        cursor = db.orders.find({"status": "paid", "orderType": "donation"}).sort("updatedAt", -1).limit(30)
         results = []
         for doc in cursor:
             customer = doc.get('customer', {})
-            # 遮罩姓名
-            masked_name = mask_name(customer.get('name', '善信'))
-            # 整理捐贈項目摘要 (例如：手工香x1, 瓦片x2)
             items_summary = []
             for item in doc.get('items', []):
                 items_summary.append(f"{item['name']} x{item['qty']}")
-            
             results.append({
-                "name": masked_name,
-                "wish": customer.get('prayer', '祈求平安'), # 祈福語
+                "name": mask_name(customer.get('name', '善信')),
+                "wish": customer.get('prayer', '祈求平安'),
                 "items": ", ".join(items_summary)
             })
         return jsonify(results)
     except Exception as e:
-        print(e)
         return jsonify([])
+
+# =========================================
+# 8. ★ 後台捐贈管理 API (新增區塊)
+# =========================================
+
+@app.route('/api/donations/admin', methods=['GET'])
+@login_required
+def get_admin_donations():
+    """後台取得捐贈訂單，支援日期篩選"""
+    start_str = request.args.get('start')
+    end_str = request.args.get('end')
+    
+    query = {"orderType": "donation"}
+    
+    if start_str and end_str:
+        try:
+            start_date = datetime.strptime(start_str, '%Y-%m-%d')
+            end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1) # 含當天
+            query["createdAt"] = {"$gte": start_date, "$lt": end_date}
+        except: pass
+    
+    cursor = db.orders.find(query).sort([("status", 1), ("createdAt", -1)]) # 未付款在前，新單在前
+    results = []
+    for doc in cursor:
+        doc['_id'] = str(doc['_id'])
+        doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M')
+        # 如果有付款時間就顯示付款時間，否則顯示建立時間
+        doc['paidAt'] = doc.get('paidAt').strftime('%Y-%m-%d %H:%M') if doc.get('paidAt') else ''
+        results.append(doc)
+    return jsonify(results)
+
+@app.route('/api/donations/export', methods=['POST'])
+@login_required
+def export_donations_report():
+    """匯出稟報清單 (CSV)"""
+    data = request.get_json()
+    start_str = data.get('start')
+    end_str = data.get('end')
+    
+    query = {"orderType": "donation", "status": "paid"} # 只匯出已付款
+    
+    if start_str and end_str:
+        try:
+            start_date = datetime.strptime(start_str, '%Y-%m-%d')
+            end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
+            query["updatedAt"] = {"$gte": start_date, "$lt": end_date} # 用付款時間篩選
+        except: pass
+        
+    cursor = db.orders.find(query).sort("updatedAt", 1)
+    
+    # 產生 CSV
+    si = io.StringIO()
+    cw = csv.writer(si)
+    # 表頭：捐贈日期(付款日)、姓名、農曆生日、地址、捐贈項目、祈願內容
+    cw.writerow(['捐贈日期', '姓名', '農曆生日', '地址', '捐贈項目', '祈願內容'])
+    
+    for doc in cursor:
+        cust = doc.get('customer', {})
+        items_str = "、".join([f"{i['name']}x{i['qty']}" for i in doc.get('items', [])])
+        paid_date = doc.get('updatedAt').strftime('%Y/%m/%d') if doc.get('updatedAt') else ''
+        
+        cw.writerow([
+            paid_date,
+            cust.get('name', ''),
+            cust.get('lunarBirthday', ''),
+            cust.get('address', ''),
+            items_str,
+            cust.get('prayer', '')
+        ])
+        
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename=donation_report_{datetime.now().strftime('%Y%m%d')}.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
+@app.route('/api/donations/cleanup', methods=['DELETE'])
+@login_required
+def cleanup_old_donations():
+    """刪除所有超過 60 天的資料 (含 Shop 與 Donation)"""
+    cutoff = datetime.utcnow() - timedelta(days=60)
+    result = db.orders.delete_many({"createdAt": {"$lt": cutoff}})
+    return jsonify({"success": True, "count": result.deleted_count})
+
+@app.route('/api/donations/cleanup-unpaid', methods=['DELETE'])
+@login_required
+def cleanup_unpaid_orders():
+    """刪除超過 76 小時未付款的訂單"""
+    cutoff = datetime.utcnow() - timedelta(hours=76)
+    result = db.orders.delete_many({"status": "pending", "createdAt": {"$lt": cutoff}})
+    return jsonify({"success": True, "count": result.deleted_count})
 
 # =========================================
 # 9. API: 訂單系統 (Shop & Donation)
@@ -394,8 +497,7 @@ def create_order():
     if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
     
-    # 判斷訂單類型
-    order_type = data.get('orderType', 'shop') # 'shop' or 'donation'
+    order_type = data.get('orderType', 'shop')
     order_id = f"{'DON' if order_type == 'donation' else 'ORD'}{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
     
     customer_info = {
@@ -404,7 +506,6 @@ def create_order():
         "email": data.get('email', ''),
         "address": data.get('address'),
         "last5": data.get('last5'),
-        # 捐贈才有的欄位
         "lunarBirthday": data.get('lunarBirthday', ''),
         "prayer": data.get('prayer', '') 
     }
@@ -421,22 +522,19 @@ def create_order():
     }
     db.orders.insert_one(order)
     
-    # 郵件通知 (通用)
-    items_str = "\n".join([f"- {i['name']} x {i['qty']} (NT$ {i['price']*i['qty']})" for i in data['items']])
+    # 寄送確認信
+    items_str = "\n".join([f"- {i['name']} x {i['qty']}" for i in data['items']])
     type_text = "【捐贈確認】" if order_type == 'donation' else "【訂購確認】"
-    
     email_subject = f"承天中承府 - {type_text} 訂單 {order_id}"
     email_body = f"""
     親愛的 {customer_info['name']} 信士 您好：
     感謝您的{'護持與捐贈' if order_type == 'donation' else '訂購'}。
-    
     單號：{order_id}
     --------------------------------
     {items_str}
     --------------------------------
     總金額：NT$ {data['total']}
     匯款後五碼：{customer_info['last5']}
-    
     請於 2 小時內完成匯款，確認收款後我們將寄出確認信。
     """
     send_email(customer_info['email'], email_subject, email_body)
@@ -446,19 +544,12 @@ def create_order():
 @app.route('/api/orders', methods=['GET'])
 @login_required
 def get_orders():
-    # 支援篩選功能 (後台使用)
-    filter_type = request.args.get('type') # 'shop' or 'donation'
-    query = {}
-    if filter_type:
-        query['orderType'] = filter_type
-        
-    cursor = db.orders.find(query).sort("createdAt", -1)
+    """一般訂單列表 (排除 Donation)"""
+    cursor = db.orders.find({"orderType": {"$ne": "donation"}}).sort("createdAt", -1)
     results = []
     for doc in cursor:
         doc['_id'] = str(doc['_id'])
         doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M')
-        # 顯示訂單類型
-        doc['orderType'] = doc.get('orderType', 'shop')
         results.append(doc)
     return jsonify(results)
 
@@ -468,53 +559,52 @@ def confirm_order_payment(oid):
     order = db.orders.find_one({'_id': ObjectId(oid)})
     if not order: return jsonify({"error": "No order"}), 404
     
-    # 更新狀態為 paid，並更新時間 (影響芳名錄排序)
+    # ★ 更新狀態與時間
+    now = datetime.utcnow()
     db.orders.update_one(
         {'_id': ObjectId(oid)}, 
-        {'$set': {'status': 'paid', 'updatedAt': datetime.utcnow()}}
+        {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}}
     )
     
-    # ★ 針對「捐贈」發送特殊的感謝狀 Email
+    # 寄信邏輯
+    cust = order['customer']
     if order.get('orderType') == 'donation':
-        cust = order['customer']
-        items_str = "<br>".join([f"• {i['name']} x {i['qty']}" for i in order['items']])
-        
-        # HTML 感謝狀模板
         email_subject = f"【感謝狀】承天中承府 - 感謝您的護持 ({order['orderId']})"
-        email_html = f"""
-        <div style="font-family: 'KaiTi', 'Microsoft JhengHei', serif; max-width: 600px; margin: 0 auto; border: 4px double #C48945; padding: 40px; background-color: #fffcf5; color: #333;">
-            <div style="text-align: center;">
-                <h1 style="color: #C48945; font-size: 32px; margin-bottom: 10px;">感謝狀</h1>
-                <p style="font-size: 16px; color: #888;">承天中承府 ‧ 煙島中壇元帥</p>
-            </div>
-            <hr style="border: 0; border-top: 1px solid #C48945; margin: 20px 0;">
-            <p style="font-size: 18px; line-height: 1.8;">
-                茲感謝信士 <strong>{cust['name']}</strong><br>
-                發心護持公壇聖務，捐贈項目如下：
-            </p>
-            <div style="background: #f0ebe5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                {items_str}
-            </div>
-            <p style="font-size: 18px; line-height: 1.8;">
-                您的心意將上達天聽，祈求元帥庇佑您：<br>
-                <strong>{cust.get('prayer', '闔家平安，萬事如意')}</strong>
-            </p>
-            <p style="margin-top: 40px; text-align: right; font-size: 16px;">
-                承天中承府 敬謝<br>
-                {datetime.now().strftime('%Y 年 %m 月 %d 日')}
-            </p>
-            <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #999;">
-                (此為系統自動發送之電子感謝狀，請妥善保存)
-            </div>
-        </div>
-        """
+        email_html = generate_donation_email_html(cust, order['orderId'], order['items'])
         send_email(cust.get('email'), email_subject, email_html, is_html=True)
-        
     else:
-        # 一般購物訂單確認信
         email_body = f"您好，訂單 {order['orderId']} 款項已確認，預計 D+2 日出貨。"
-        send_email(order['customer'].get('email'), f"收款確認 - {order['orderId']}", email_body)
+        send_email(cust.get('email'), f"收款確認 - {order['orderId']}", email_body)
     
+    return jsonify({"success": True})
+
+@app.route('/api/orders/<oid>/resend-email', methods=['POST'])
+@login_required
+def resend_order_email(oid):
+    """重寄確認信/感謝狀功能"""
+    data = request.get_json()
+    new_email = data.get('email')
+    
+    order = db.orders.find_one({'_id': ObjectId(oid)})
+    if not order: return jsonify({"error": "No order"}), 404
+
+    # 如果有提供新 Email，先更新資料庫
+    cust = order['customer']
+    target_email = cust.get('email')
+    if new_email and new_email != target_email:
+        db.orders.update_one({'_id': ObjectId(oid)}, {'$set': {'customer.email': new_email}})
+        cust['email'] = new_email
+        target_email = new_email
+
+    # 重寄邏輯
+    if order.get('orderType') == 'donation':
+        email_subject = f"【補寄感謝狀】承天中承府 - 感謝您的護持 ({order['orderId']})"
+        email_html = generate_donation_email_html(cust, order['orderId'], order['items'])
+        send_email(target_email, email_subject, email_html, is_html=True)
+    else:
+        email_body = f"您好，這是補寄的收款確認信。訂單 {order['orderId']} 款項已確認。"
+        send_email(target_email, f"收款確認(補寄) - {order['orderId']}", email_body)
+
     return jsonify({"success": True})
 
 @app.route('/api/orders/<oid>', methods=['DELETE'])
@@ -524,7 +614,7 @@ def delete_order(oid):
     return jsonify({"success": True})
 
 # =========================================
-# 10. API: 商品管理 (支援 isDonation)
+# 10. API: 商品管理 (完整)
 # =========================================
 @app.route('/api/products', methods=['GET'])
 def get_products():
@@ -542,7 +632,7 @@ def add_product():
         "name": data.get('name'), "category": data.get('category', '其他'),
         "price": int(data.get('price', 0)), "description": data.get('description', ''),
         "image": data.get('image', ''), "isActive": data.get('isActive', True),
-        "isDonation": data.get('isDonation', False), # ★ 新增欄位
+        "isDonation": data.get('isDonation', False), # 支援捐贈標記
         "variants": data.get('variants', []),
         "createdAt": datetime.utcnow()
     }
@@ -553,7 +643,6 @@ def add_product():
 @login_required
 def update_product(pid):
     data = request.get_json()
-    # 允許更新 isDonation
     fields = {k: data.get(k) for k in ['name', 'category', 'price', 'description', 'image', 'isActive', 'variants', 'isDonation'] if k in data}
     if 'price' in fields: fields['price'] = int(fields['price'])
     db.products.update_one({'_id': ObjectId(pid)}, {'$set': fields})
@@ -565,10 +654,9 @@ def delete_product(pid):
     db.products.delete_one({'_id': ObjectId(pid)})
     return jsonify({"success": True})
 
-# (公告與FAQ與Fund維持原樣，此處省略，請保留...)
-# ... (Announcement API) ...
-# ... (FAQ API) ...
-# ... (Fund API) ...
+# =========================================
+# 11. API: 公告、FAQ、基金、外部連結
+# =========================================
 
 @app.route('/api/announcements', methods=['GET'])
 def get_announcements():

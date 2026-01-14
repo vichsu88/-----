@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 根據分頁載入資料
                 const tab = btn.dataset.tab;
                 if(tab === 'tab-products') fetchProducts();
+                if(tab === 'tab-donations') fetchDonations(); // ★ 新增捐贈
                 if(tab === 'tab-orders') fetchOrders();
                 if(tab === 'tab-feedback') { fetchPendingFeedback(); fetchApprovedFeedback(); }
                 if(tab === 'tab-fund') { fetchFundSettings(); fetchAndRenderAnnouncements(); }
@@ -154,6 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
             prodForm.name.value = p.name;
             prodForm.description.value = p.description;
             prodForm.isActive.checked = p.isActive;
+            prodForm.isDonation.checked = p.isDonation || false; // ★ 載入 isDonation
+            
             if(p.image) { imgPreview.src = p.image; imgPreview.style.display='block'; imgHidden.value=p.image; }
             
             // 載入規格
@@ -174,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const products = await apiFetch('/api/products');
             productsList.innerHTML = products.map(p => {
                 let varsHtml = '';
-                if(p.variants && p.variants.length > 0) varsHtml = p.variants.map(v => `<small>${v.name}: $${v.price}</small>`).join('<br>');
+                if(p.variants && p.variants.length > 0) varsHtml = p.variants.map(v => `<small>${v.name}: $${v.price}</small>`).join(' | ');
                 else varsHtml = `<small>單價: $${p.price}</small>`;
 
                 return `
@@ -184,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div style="flex:1;">
                         <span style="border:1px solid #ddd; padding:2px 6px; font-size:12px; border-radius:4px; color:#666;">${p.category}</span>
+                        ${p.isDonation ? '<span style="background:#C48945; color:#fff; padding:2px 6px; font-size:12px; border-radius:4px;">捐贈項目</span>' : ''}
                         <h4 style="margin:5px 0;">${p.name}</h4>
                         <div style="color:#555;">${varsHtml}</div>
                     </div>
@@ -216,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             description: prodForm.description.value,
             image: imgHidden.value,
             isActive: prodForm.isActive.checked,
+            isDonation: prodForm.isDonation.checked,
             variants: variants,
             price: variants[0].price // 相容性欄位
         };
@@ -226,13 +231,126 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       4. 訂單管理
+       4. ★ 捐贈管理 (全新功能)
+       ========================================= */
+    const donationsList = document.getElementById('donations-list');
+    
+    window.fetchDonations = async () => {
+        if(!donationsList) return;
+        const start = document.getElementById('don-start').value;
+        const end = document.getElementById('don-end').value;
+        let url = '/api/donations/admin';
+        if(start && end) url += `?start=${start}&end=${end}`;
+        
+        donationsList.innerHTML = '<p>載入中...</p>';
+        try {
+            const orders = await apiFetch(url);
+            if(orders.length === 0) { donationsList.innerHTML = '<p style="padding:20px; text-align:center;">此區間無捐贈資料</p>'; return; }
+            
+            donationsList.innerHTML = orders.map(o => {
+                const isPaid = o.status === 'paid';
+                const statusHtml = isPaid 
+                    ? `<span style="color:green; font-weight:bold;">✅ 已付款 (${o.paidAt || o.updatedAt || ''})</span>` 
+                    : `<span style="color:red; font-weight:bold;">⏳ 待確認</span>`;
+                
+                return `
+                <div class="feedback-card" style="border-left:5px solid ${isPaid?'#28a745':'#dc3545'};">
+                    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:10px;">
+                        <div>
+                            <span style="font-size:12px; background:#eee; padding:2px 5px; border-radius:4px;">${o.orderId}</span>
+                            <span style="font-weight:bold; font-size:18px; margin-left:10px;">${o.customer.name}</span>
+                        </div>
+                        <div>${statusHtml}</div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; background:#f9f9f9; padding:10px; border-radius:5px; margin-bottom:10px;">
+                        <div>
+                            <div>匯款後五碼：<b style="color:#C48945; font-size:18px;">${o.customer.last5}</b></div>
+                            <div>總金額：<b style="font-size:18px;">$${o.total}</b></div>
+                        </div>
+                        <div style="text-align:right; font-size:14px; color:#555;">
+                            建立時間：${o.createdAt}<br>
+                            電話：${o.customer.phone}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom:10px; color:#555; font-size:14px;">
+                        <b>捐贈項目：</b><br>
+                        ${o.items.map(i => `• ${i.name} x${i.qty}`).join('<br>')}
+                    </div>
+                    
+                    ${o.customer.prayer ? `<div style="background:#fffcf5; border:1px dashed #C48945; padding:8px; font-size:14px; color:#8B4513;">🎋 祈願：${o.customer.prayer}</div>` : ''}
+
+                    <div style="text-align:right; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+                        ${!isPaid ? `<button class="btn btn--green" onclick="confirmDonation('${o._id}')">✅ 確認收款</button>` : ''}
+                        ${isPaid ? `<button class="btn btn--blue" onclick="resendEmail('${o._id}', '${o.customer.email}')">📩 重寄感謝狀</button>` : ''}
+                        <button class="btn btn--red" onclick="delOrder('${o._id}', 'donation')">🗑️ 刪除</button>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch(e) { donationsList.innerHTML = '載入失敗'; }
+    };
+
+    window.confirmDonation = async (id) => {
+        if(confirm('確認已收到款項？(將寄出電子感謝狀並列入芳名錄)')) {
+            await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'});
+            fetchDonations();
+        }
+    };
+
+    window.resendEmail = async (id, oldEmail) => {
+        const newEmail = prompt("請確認接收 Email (若要修改請直接編輯):", oldEmail);
+        if(newEmail) {
+            try {
+                await apiFetch(`/api/orders/${id}/resend-email`, {method:'POST', body:JSON.stringify({email: newEmail})});
+                alert('已發送重寄請求');
+            } catch(e) { alert('發送失敗'); }
+        }
+    };
+
+    window.exportDonationsReport = async () => {
+        const start = document.getElementById('don-start').value;
+        const end = document.getElementById('don-end').value;
+        if(!start || !end) return alert('請先選擇匯出區間');
+        
+        try {
+            const res = await fetch('/api/donations/export', {
+                method:'POST', 
+                headers:{'Content-Type':'application/json', 'X-CSRFToken': getCsrfToken()},
+                body: JSON.stringify({start, end})
+            });
+            const blob = await res.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `稟報清單_${start}_${end}.csv`;
+            a.click();
+        } catch(e) { alert('匯出失敗'); }
+    };
+
+    window.cleanupUnpaid = async () => {
+        if(confirm('確定要刪除「超過 76 小時」且「未付款」的訂單嗎？此動作無法復原。')) {
+            const res = await apiFetch('/api/donations/cleanup-unpaid', {method:'DELETE'});
+            alert(`已清除 ${res.count} 筆資料`);
+            fetchDonations();
+        }
+    };
+
+    window.cleanupOld = async () => {
+        if(confirm('確定要刪除「所有超過 60 天」的舊資料嗎？(包含已完成訂單)')) {
+            const res = await apiFetch('/api/donations/cleanup', {method:'DELETE'});
+            alert(`已清除 ${res.count} 筆資料`);
+            fetchDonations();
+        }
+    };
+
+    /* =========================================
+       5. 一般訂單管理
        ========================================= */
     const ordersList = document.getElementById('orders-list');
     async function fetchOrders() {
         if(!ordersList) return;
         const orders = await apiFetch('/api/orders');
-        if(orders.length === 0) { ordersList.innerHTML = '<p>無訂單</p>'; return; }
+        if(orders.length === 0) { ordersList.innerHTML = '<p>無待處理訂單</p>'; return; }
         
         ordersList.innerHTML = orders.map(o => `
             <div class="feedback-card" style="border-left:5px solid ${o.status==='paid'?'#28a745':(o.status==='shipped'?'blue':'#dc3545')}">
@@ -249,15 +367,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div style="text-align:right; margin-top:10px;">
                     ${o.status==='pending' ? `<button class="btn btn--green" onclick="confirmOrder('${o._id}')">確認收款</button>` : ''}
-                    <button class="btn btn--red" onclick="delOrder('${o._id}')">刪除</button>
+                    <button class="btn btn--red" onclick="delOrder('${o._id}', 'shop')">刪除</button>
                 </div>
             </div>`).join('');
     }
+    
     window.confirmOrder = async (id) => { if(confirm('確認已收到款項？')) { await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'}); fetchOrders(); } };
-    window.delOrder = async (id) => { if(confirm('刪除訂單？')) { await apiFetch(`/api/orders/${id}`, {method:'DELETE'}); fetchOrders(); } };
+    window.delOrder = async (id, type) => { 
+        if(confirm('確定刪除此訂單？')) { 
+            await apiFetch(`/api/orders/${id}`, {method:'DELETE'}); 
+            if(type === 'donation') fetchDonations(); else fetchOrders();
+        } 
+    };
 
     /* =========================================
-       5. 信徒回饋 (換行顯示 + 編輯)
+       6. 信徒回饋、FAQ、公告、基金
        ========================================= */
     const pendingList = document.getElementById('pending-feedback-list');
     const approvedList = document.getElementById('approved-feedback-list');
@@ -330,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       6. 基金與公告 (換行顯示 + 編輯邏輯)
+       7. 基金與公告
        ========================================= */
     const fundForm = document.getElementById('fund-form');
     const annModal = document.getElementById('announcement-modal');
@@ -352,7 +476,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAndRenderAnnouncements() {
         const data = await apiFetch('/api/announcements');
-        // 加入編輯按鈕，內文使用 pre-wrap 確保換行
         annList.innerHTML = data.map(a => `
             <div class="feedback-card">
                 <div><small>${a.date}</small> <b>${a.title}</b> ${a.isPinned?'<span style="color:red">[置頂]</span>':''}</div>
@@ -366,7 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     window.delAnn = async (id) => { if(confirm('刪除？')) { await apiFetch(`/api/announcements/${id}`, {method:'DELETE'}); fetchAndRenderAnnouncements(); } };
     
-    // 編輯公告邏輯
     window.editAnn = (a) => {
         annForm.reset();
         document.getElementById('ann-modal-title').textContent = '編輯公告';
@@ -394,7 +516,6 @@ document.addEventListener('DOMContentLoaded', () => {
             content: annForm.content.value,
             isPinned: annForm.isPinned.checked
         };
-        // 判斷 ID 是否存在來決定是 PUT (編輯) 還是 POST (新增)
         await apiFetch(id ? `/api/announcements/${id}` : '/api/announcements', { 
             method: id ? 'PUT' : 'POST', 
             body: JSON.stringify(data) 
@@ -404,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       7. FAQ (換行顯示 + 編輯邏輯)
+       8. FAQ
        ========================================= */
     const faqList = document.getElementById('faq-list');
     const faqModal = document.getElementById('faq-modal');
@@ -415,7 +536,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function fetchAndRenderFaqs() {
         const faqs = await apiFetch('/api/faq');
-        // 加入編輯按鈕，答案使用 pre-wrap 確保換行
         faqList.innerHTML = faqs.map(f => `
             <div class="feedback-card">
                 <div><span style="background:#C48945; color:#fff; padding:2px 5px; border-radius:4px; font-size:12px;">${f.category}</span> ${f.isPinned?'<span style="color:red">[置頂]</span>':''} <b>${f.question}</b></div>
@@ -429,7 +549,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     window.delFaq = async (id) => { if(confirm('刪除？')) { await apiFetch(`/api/faq/${id}`, {method:'DELETE'}); fetchAndRenderFaqs(); } };
     
-    // 編輯 FAQ 邏輯
     window.editFaq = (f) => {
         faqForm.reset();
         document.getElementById('faq-modal-title').textContent = '編輯問答';
@@ -460,7 +579,6 @@ document.addEventListener('DOMContentLoaded', () => {
             category: faqForm.other_category.value,
             isPinned: faqForm.isPinned.checked
         };
-        // 判斷 ID 是否存在來決定是 PUT (編輯) 還是 POST (新增)
         await apiFetch(id ? `/api/faq/${id}` : '/api/faq', { 
             method: id ? 'PUT' : 'POST', 
             body: JSON.stringify(data) 
@@ -470,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       8. 連結管理
+       9. 連結管理
        ========================================= */
     const linksList = document.getElementById('links-list');
     async function fetchLinks() {
