@@ -425,10 +425,27 @@ def inject_links():
     except: return dict(links={})
 
 # =========================================
-# 4. 前台頁面路由
+# 4. 前台頁面路由 (修正：加入 SSR 資料預載)
 # =========================================
+
 @app.route('/')
-def home(): return render_template('index.html')
+def home():
+    # SEO 優化：伺服器端渲染 (SSR) 最新消息
+    announcements_data = []
+    try:
+        if db is not None:
+            # 預設抓取最新的 10 筆公告，讓爬蟲可以讀取
+            cursor = db.announcements.find().sort([("isPinned", -1), ("date", -1)]).limit(10)
+            for doc in cursor:
+                doc['_id'] = str(doc['_id'])
+                if 'date' in doc and isinstance(doc['date'], datetime):
+                    doc['date'] = doc['date'].strftime('%Y/%m/%d')
+                announcements_data.append(doc)
+    except Exception as e:
+        print(f"SSR Error (Home): {e}")
+    
+    # 將資料傳遞給 index.html
+    return render_template('index.html', announcements=announcements_data)
 
 @app.route('/services')
 def services_page(): return render_template('services.html')
@@ -446,10 +463,41 @@ def donation_page(): return render_template('donation.html')
 def fund_page(): return render_template('fund.html')
 
 @app.route('/feedback')
-def feedback_page(): return render_template('feedback.html')
+def feedback_page():
+    # SEO 優化：伺服器端渲染 (SSR) 信徒回饋
+    # 讓爬蟲可以抓取到信徒分享的故事，增加長尾關鍵字曝光
+    feedbacks_data = []
+    try:
+        if db is not None:
+            # 只抓取已核准的，並依照核准時間排序，取前 20 筆
+            cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", -1).limit(20)
+            for doc in cursor:
+                # 簡單過濾敏感個資，只傳遞需要的欄位
+                feedbacks_data.append({
+                    'nickname': doc.get('nickname', '匿名'),
+                    'content': doc.get('content', ''),
+                    'category': doc.get('category', [])
+                })
+    except Exception as e:
+        print(f"SSR Error (Feedback): {e}")
+
+    return render_template('feedback.html', feedbacks=feedbacks_data)
 
 @app.route('/faq')
-def faq_page(): return render_template('faq.html')
+def faq_page():
+    # SEO 優化：伺服器端渲染 (SSR) 常見問題
+    faq_data = []
+    try:
+        if db is not None:
+            # 抓取所有 FAQ 讓搜尋引擎建立索引
+            cursor = db.faq.find().sort([('isPinned', -1), ('createdAt', -1)])
+            for doc in cursor:
+                doc['_id'] = str(doc['_id'])
+                faq_data.append(doc)
+    except Exception as e:
+        print(f"SSR Error (FAQ): {e}")
+        
+    return render_template('faq.html', faqs=faq_data)
 
 @app.route('/gongtan')
 def gongtan_page(): return redirect(url_for('services_page', _anchor='gongtan-section'))
