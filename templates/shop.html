@@ -582,9 +582,23 @@
         try {
             const res = await fetch('/api/orders', {
                 method:'POST', 
-                headers:{'Content-Type':'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content},
+                headers:{
+                    'Content-Type':'application/json', 
+                    // 確保這裡抓到的 token 是存在的，建議檢查一下 meta
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
                 body: JSON.stringify(payload)
             });
+
+            // ✨=== 修改重點開始：先檢查伺服器狀態碼 ===✨
+            if (!res.ok) {
+                // 如果狀態碼不是 200-299 (例如 400 Bad Request 或 500 Internal Server Error)
+                const errorText = await res.text(); // 先讀取文字內容 (因為報錯時回傳的通常是 HTML 而不是 JSON)
+                console.error("❌ 伺服器錯誤詳細內容:", errorText); // 在 F12 Console 印出錯誤
+                throw new Error(`伺服器回應錯誤 (Status: ${res.status}) - 請查看 Console 詳細訊息`);
+            }
+            // ✨=== 修改重點結束 ===✨
+
             const result = await res.json();
             
             if(result.success) {
@@ -597,14 +611,14 @@
                 alert('發生錯誤：' + (result.message || '請稍後再試'));
             }
         } catch(e) { 
-            console.error(e);
-            alert('送出失敗，請檢查網路連線'); 
+            console.error("❌ Catch Error:", e);
+            // 讓跳出的警告視窗稍微詳細一點，方便您直接看
+            alert('送出失敗：' + e.message); 
         } finally {
             btn.disabled = false;
             btn.textContent = "確認送出訂單";
         }
     };
-
     updateCart();
 </script>
 {% endblock %}
