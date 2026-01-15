@@ -147,8 +147,8 @@ def generate_feedback_email_html(feedback, status_type, tracking_num=None):
     elif status_type == 'approved':
         title = "您的回饋已核准刊登"
         content_body = f"""
-        感謝您的感應故事分享！您的文章已審核通過，並正式<strong>刊登於承天中承府官方網站</strong>。這份法布施將讓更多有緣人感受到元帥的威靈與慈悲。<br><br>
-        為了感謝您的發心，帥府特別準備了一份「小神衣」要與您結緣。<br><br>
+        感謝分享您與元帥的故事！您的文章已審核通過，並正式<strong>刊登於承天中承府官方網站</strong>。這份法布施將讓更多有緣人感受到元帥的威靈與慈悲。<br><br>
+        為了感謝您的發心，元帥娘特別準備了一份「小神衣」要與您結緣。<br><br>
         <div style="background:#fffcf5; padding:15px; border-left:4px solid #C48945; margin:15px 0; color:#555;">
             <strong>⚡ 元帥娘開符加持中</strong><br>
             目前元帥娘正在親自為小神衣進行「開符」與加持儀式，以確保將滿滿的祝福送到您手中。待儀式圓滿並寄出後，系統會再發送一封信件通知您，這段時間請您留意 Email 信箱。
@@ -157,7 +157,7 @@ def generate_feedback_email_html(feedback, status_type, tracking_num=None):
         再次感謝您的分享！
         """
     elif status_type == 'sent':
-        title = "結緣品寄出通知"
+        title = "小神衣寄出通知"
         content_body = f"""
         讓您久等了！<br>
         經過元帥娘開符加持的「小神衣」已於今日為您寄出。這份結緣品承載著帥府的祝福，希望能常伴您左右，護佑平安。<br><br>
@@ -459,10 +459,23 @@ def get_pending_feedback():
 # 2. 已核准/待寄送 (approved)
 @app.route('/api/feedback/approved', methods=['GET']) # 相容舊網址
 @app.route('/api/feedback/status/approved', methods=['GET'])
-@login_required
+# @login_required  <--- 【修正點 1】請註解掉或刪除這行，讓前台可以存取
 def get_approved_feedback():
+    # 取得已核准的資料
     cursor = db.feedback.find({"status": "approved"}).sort("createdAt", -1)
-    return jsonify([{**doc, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S')} for doc in cursor])
+    
+    results = []
+    for doc in cursor:
+        results.append({
+            '_id': str(doc['_id']),
+            'nickname': doc.get('nickname', '匿名'),  # 只回傳暱稱
+            'category': doc.get('category', []),      # 回傳類別
+            'content': doc.get('content', ''),        # 回傳內容
+            'createdAt': doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S') # 回傳時間
+            # 注意：不要加入 realName, phone, address, email 等個資欄位
+        })
+        
+    return jsonify(results)
 
 # 3. 已寄送 (sent) - 新增
 @app.route('/api/feedback/status/sent', methods=['GET'])
