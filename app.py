@@ -117,94 +117,157 @@ def send_email(to_email, subject, body, is_html=False):
     except Exception as e:
         print(f"Email Error: {e}")
 
-# ★ 修改：商店訂單 Email 樣板 (已修正為宮廟感謝狀風格 + LINE 按鈕)
+# ★ 修改：商店訂單 Email 樣板 (支援 下單/付款/出貨 三階段 + LINE 按鈕)
 def generate_shop_email_html(order, status_type, tracking_num=None):
-    # status_type: 'paid' (已收款/待出貨) or 'shipped' (已出貨)
+    # status_type: 'created'(已下單), 'paid'(已付款), 'shipped'(已出貨)
     cust = order['customer']
     items = order['items']
     
-    # 產生商品明細 HTML (調整為適合宮廟風格的表格)
+    # 台灣時間 (用於顯示信件內的日期)
+    tw_now = datetime.utcnow() + timedelta(hours=8)
+    date_str = tw_now.strftime('%Y/%m/%d %H:%M')
+    
+    # 訂單成立時間 (用於第一階段顯示)
+    created_at_dt = order.get('createdAt')
+    if created_at_dt and isinstance(created_at_dt, datetime):
+        created_at_str = (created_at_dt + timedelta(hours=8)).strftime('%Y/%m/%d %H:%M')
+    else:
+        created_at_str = date_str
+
+    # ★ 請在此填入您的收款帳號 ★
+    BANK_INFO = """
+    銀行代碼：<strong>808 (玉山銀行)</strong><br>
+    銀行帳號：<strong>1234-5678-9012</strong>
+    """
+    
+    # 1. 根據狀態決定：標題、配色、內文、特殊區塊
+    if status_type == 'created':
+        title = "訂單確認通知"
+        color = "#C48945" # 品牌金
+        
+        status_text = f"""
+        謝謝您的下單！我們已收到您的訂單。<br>
+        訂單成立時間：{created_at_str}<br>
+        <br>
+        <strong>【付款資訊】</strong><br>
+        請於 <strong>2 小時內</strong> 完成匯款，以保留您的訂單資格。<br>
+        <span style="color:#C48945; font-size:18px; font-weight:bold;">訂單總金額：NT$ {order['total']}</span><br>
+        您的匯款後五碼：<strong>{cust['last5']}</strong><br>
+        <br>
+        <div style="background:#fffcf5; padding:15px; border-left:4px solid #C48945; margin:15px 0; color:#555;">
+            {BANK_INFO}
+            <div style="margin-top:8px; font-size:13px; color:#d9534f;">
+                ※ 若未於 2 小時內付款，系統將取消此筆訂單，需請您重新下單。
+            </div>
+        </div>
+        <br>
+        <strong>【防詐騙提醒】</strong><br>
+        <span style="color:#666; font-size:14px;">所有匯款請依照官方網頁公告之匯款帳號，我們不會另外通知您重新匯款。若有疑慮，一律請由下方按鈕向官方 LINE 詢問查證。</span>
+        """
+        show_price = True # 顯示金額
+        
+    elif status_type == 'paid':
+        title = "收款確認通知"
+        color = "#28a745" # 成功綠
+        
+        status_text = f"""
+        您的款項已確認！<br>
+        帥府將盡速為您安排出貨，請您耐心等候。<br>
+        <br>
+        <strong>確認時間：{date_str}</strong>
+        """
+        show_price = True # 顯示金額
+        
+    else: # status_type == 'shipped'
+        title = "帥府出貨通知"
+        color = "#C48945" # 品牌金
+        
+        status_text = f"""
+        您的訂單已於今日出貨！<br>
+        <br>
+        <div style="background:#f0ebe5; padding:15px; border:1px solid #C48945; border-radius:8px;">
+            <strong>📦 物流單號：{tracking_num}</strong><br>
+            <span style="font-size:13px; color:#666;">請依照上方單號，自行至物流網站查詢配送進度。</span>
+        </div>
+        <br>
+        <strong>出貨日期：{date_str}</strong><br>
+        <br>
+        <span style="color:#666;">商品收到若有問題，請點擊下方按鈕詢問官方 LINE。</span>
+        """
+        show_price = False # ★ 出貨通知不顯示金額
+
+    # 2. 產生商品表格 (根據 show_price 決定是否隱藏金額欄位)
     items_rows = ""
     for item in items:
         spec = f" ({item['variant']})" if 'variant' in item and item['variant'] != '標準' else ""
+        
+        # 金額欄位 HTML
+        price_td = f'<td style="padding:10px; text-align:right;">${item["price"] * item["qty"]}</td>' if show_price else ''
+        
         items_rows += f"""
-        <tr style="border-bottom: 1px dashed #D9B88A;">
-            <td style="padding: 12px 5px; color:#555;">{item['name']}{spec}</td>
-            <td style="padding: 12px 5px; text-align: center; color:#555;">x{item['qty']}</td>
-            <td style="padding: 12px 5px; text-align: right; color:#555;">${item['price'] * item['qty']}</td>
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 10px; color:#333;">{item['name']}{spec}</td>
+            <td style="padding: 10px; text-align: center; color:#333;">x{item['qty']}</td>
+            {price_td}
         </tr>
         """
     
-    # 根據狀態決定標題與內文
-    if status_type == 'paid':
-        title = "訂單確認通知"
-        status_text = "您的款項已確認入帳，帥府將盡速為您安排出貨，請您耐心等候。"
-        tracking_info = ""
-    else: # shipped
-        title = "法寶出貨通知"
-        status_text = "您的訂單法寶已完成出貨，預計 2-3 天內送達府上，請留意查收。"
-        if tracking_num and tracking_num.strip():
-            tracking_info = f"""
-            <div style="background: #f0ebe5; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #C48945;">
-                <p style="margin:0; font-weight:bold; color:#8B4513;">📦 物流單號：{tracking_num}</p>
-                <p style="margin:5px 0 0 0; font-size:13px; color:#888;">可至黑貓宅急便網站查詢配送進度。</p>
-            </div>
-            """
-        else:
-            tracking_info = f"""
-            <div style="background: #f0ebe5; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #C48945;">
-                <p style="margin:0; color:#8B4513;">我們已透過物流寄出，預計 2-3 天內送達。</p>
-            </div>
-            """
+    # 表格標頭與結尾 (總計)
+    price_th = '<th style="padding:10px; text-align:right;">金額</th>' if show_price else ''
+    
+    total_row = ""
+    if show_price:
+        total_row = f"""
+        <tfoot>
+            <tr>
+                <td colspan="2" style="padding:15px 10px; text-align:right; font-weight:bold; color:#333;">總計 (含運)</td>
+                <td style="padding:15px 10px; text-align:right; font-weight:bold; color:#C48945; font-size:18px;">NT$ {order['total']}</td>
+            </tr>
+        </tfoot>
+        """
 
-    # 使用捐贈感謝狀的 CSS 樣式 (金框、米底、標楷體)
+    # 3. 組合完整 HTML 信件
     return f"""
-    <div style="font-family: 'KaiTi', 'Microsoft JhengHei', serif; max-width: 600px; margin: 0 auto; border: 4px double #C48945; padding: 40px; background-color: #fffcf5; color: #333;">
-        <div style="text-align: center;">
-            <h1 style="color: #C48945; font-size: 32px; margin-bottom: 10px;">{title}</h1>
-            <p style="font-size: 16px; color: #888;">承天中承府 ‧ 煙島中壇元帥</p>
+    <div style="font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color:#fff;">
+        <div style="background: {color}; padding: 20px; text-align: center;">
+            <h2 style="color: #fff; margin: 0; letter-spacing: 1px;">{title}</h2>
+            <p style="color: #fff; opacity: 0.9; margin: 5px 0 0 0; font-size: 14px;">訂單編號：{order['orderId']}</p>
         </div>
-        <hr style="border: 0; border-top: 1px solid #C48945; margin: 20px 0;">
         
-        <p style="font-size: 18px; line-height: 1.8;">
-            茲通知信士 <strong>{cust['name']}</strong> 您好：<br>
-            {status_text}
-        </p>
+        <div style="padding: 30px;">
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">親愛的 <strong>{cust['name']}</strong> 您好：</p>
+            
+            <div style="font-size: 15px; color: #555; line-height: 1.6;">
+                {status_text}
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <h3 style="font-size:16px; color:#8B4513; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:0;">訂單明細</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="background: #f9f9f9; color:#666;">
+                            <th style="padding: 10px; text-align: left;">商品</th>
+                            <th style="padding: 10px; text-align: center;">數量</th>
+                            {price_th}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {items_rows}
+                    </tbody>
+                    {total_row}
+                </table>
+            </div>
 
-        {tracking_info}
-
-        <div style="margin-top: 30px;">
-            <h3 style="color: #8B4513; font-size: 18px; border-bottom: 2px solid #E6BA67; display: inline-block; padding-bottom: 5px; margin-bottom: 10px;">訂單明細 ({order['orderId']})</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
-                <thead>
-                    <tr style="color: #8B4513; font-weight: bold; border-bottom: 2px solid #C48945;">
-                        <th style="padding: 10px 5px; text-align: left;">品項</th>
-                        <th style="padding: 10px 5px; text-align: center;">數量</th>
-                        <th style="padding: 10px 5px; text-align: right;">金額</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {items_rows}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="2" style="padding: 15px 5px; text-align: right; font-weight: bold; color: #8B4513;">總計 (含運)</td>
-                        <td style="padding: 15px 5px; text-align: right; font-weight: bold; color: #C48945; font-size: 20px;">NT$ {order['total']}</td>
-                    </tr>
-                </tfoot>
-            </table>
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; display: inline-block; box-shadow: 0 4px 10px rgba(0,185,0,0.3); letter-spacing: 1px;">
+                    加入官方 LINE 客服
+                </a>
+            </div>
         </div>
-
-        <p style="margin-top: 40px; text-align: right; font-size: 16px;">
-            承天中承府 敬啟<br>
-            {datetime.now().strftime('%Y 年 %m 月 %d 日')}
-        </p>
         
-        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #D9B88A;">
-            <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="display: inline-block; background-color: #06c755; color: #ffffff; padding: 12px 35px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(6, 199, 85, 0.3);">
-                加入官方 LINE 客服
-            </a>
-            <p style="margin-top: 15px; font-size: 13px; color: #999;">若有任何訂單問題，歡迎點擊按鈕聯繫我們</p>
+        <div style="background: #eee; padding: 15px; text-align: center; font-size: 12px; color: #999;">
+            承天中承府 ‧ 嘉義市新生路337號<br>
+            <span style="font-size:11px;">(此為系統自動發送信件，請勿直接回覆)</span>
         </div>
     </div>
     """
@@ -584,7 +647,6 @@ def cleanup_unpaid_orders():
 # =========================================
 # 9. API: 訂單系統 (Shop & Donation)
 # =========================================
-@csrf.exempt
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     if db is None: return jsonify({"error": "DB Error"}), 500
@@ -615,22 +677,30 @@ def create_order():
     }
     db.orders.insert_one(order)
     
-    # 寄送確認信
-    items_str = "\n".join([f"- {i['name']} x {i['qty']}" for i in data['items']])
-    type_text = "【捐贈確認】" if order_type == 'donation' else "【訂購確認】"
-    email_subject = f"承天中承府 - {type_text} 訂單 {order_id}"
-    email_body = f"""
-    親愛的 {customer_info['name']} 信士 您好：
-    感謝您的{'護持與捐贈' if order_type == 'donation' else '訂購'}。
-    單號：{order_id}
-    --------------------------------
-    {items_str}
-    --------------------------------
-    總金額：NT$ {data['total']}
-    匯款後五碼：{customer_info['last5']}
-    請於 2 小時內完成匯款，確認收款後我們將寄出確認信。
-    """
-    send_email(customer_info['email'], email_subject, email_body)
+    # ★ 修改：寄送確認信邏輯
+    if order_type == 'donation':
+        # 捐贈訂單維持簡單通知 (或依您的需求另外設計)
+        items_str = "\n".join([f"- {i['name']} x {i['qty']}" for i in data['items']])
+        email_subject = f"承天中承府 - 捐贈確認 ({order_id})"
+        email_body = f"""
+        親愛的 {customer_info['name']} 信士 您好：
+        感謝您的護持與捐贈。
+        單號：{order_id}
+        --------------------------------
+        {items_str}
+        --------------------------------
+        總金額：NT$ {data['total']}
+        匯款後五碼：{customer_info['last5']}
+        請於 2 小時內完成匯款，感謝您的發心。
+        """
+        send_email(customer_info['email'], email_subject, email_body)
+    else:
+        # ★ 一般商店訂單：使用新的 HTML 樣板 (status_type='created')
+        email_subject = f"【承天中承府】訂單確認通知 ({order_id})"
+        # 呼叫函式生成 HTML
+        email_html = generate_shop_email_html(order, 'created')
+        # 發送 HTML 信件 (is_html=True)
+        send_email(customer_info['email'], email_subject, email_html, is_html=True)
 
     return jsonify({"success": True, "orderId": order_id})
 
@@ -693,8 +763,8 @@ def confirm_order_payment(oid):
         email_html = generate_donation_email_html(cust, order['orderId'], order['items'])
         send_email(cust.get('email'), email_subject, email_html, is_html=True)
     else:
-        # ★ 修改：商店訂單：寄送「款項確認/待出貨」信
-        email_subject = f"【承天中承府】款項確認通知 ({order['orderId']})"
+        # ★ 修改：商店訂單：寄送「款項確認/待出貨」信 (套用新樣式)
+        email_subject = f"【承天中承府】收款確認通知 ({order['orderId']})"
         email_html = generate_shop_email_html(order, 'paid')
         send_email(cust.get('email'), email_subject, email_html, is_html=True)
     
@@ -724,9 +794,17 @@ def resend_order_email(oid):
         email_html = generate_donation_email_html(cust, order['orderId'], order['items'])
         send_email(target_email, email_subject, email_html, is_html=True)
     else:
-        email_body = f"您好，這是補寄的收款確認信。訂單 {order['orderId']} 款項已確認。"
-        # 一般補寄先用簡易文字，或您也可改用 generate_shop_email_html(order, 'paid')
-        send_email(target_email, f"收款確認(補寄) - {order['orderId']}", email_body)
+        # ★ 商店訂單重寄：根據狀態寄送對應信件
+        email_subject = f"【承天中承府】訂單信件補寄 ({order['orderId']})"
+        # 判斷狀態
+        if order.get('status') == 'shipped':
+            email_html = generate_shop_email_html(order, 'shipped', order.get('trackingNumber'))
+        elif order.get('status') == 'paid':
+            email_html = generate_shop_email_html(order, 'paid')
+        else:
+            email_html = generate_shop_email_html(order, 'created') # 預設補寄下單信
+            
+        send_email(target_email, email_subject, email_html, is_html=True)
 
     return jsonify({"success": True})
 
