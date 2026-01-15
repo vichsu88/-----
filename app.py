@@ -117,186 +117,119 @@ def send_email(to_email, subject, body, is_html=False):
     except Exception as e:
         print(f"Email Error: {e}")
 
-# ★ 修改：商店訂單 Email 樣板 (支援 下單/付款/出貨 三階段 + LINE 按鈕)
+# === Email 樣板產生器 ===
+
+def get_bank_info():
+    """從資料庫讀取匯款資訊，若無則使用預設"""
+    if db is None: return "請聯繫廟方確認匯款資訊"
+    settings = db.settings.find_one({"type": "bank_info"}) or {}
+    code = settings.get('bankCode', '808')
+    name = settings.get('bankName', '玉山銀行')
+    account = settings.get('account', '1234-5678-9012')
+    return f"""
+    銀行代碼：<strong>{code} ({name})</strong><br>
+    銀行帳號：<strong>{account}</strong>
+    """
+
 def generate_shop_email_html(order, status_type, tracking_num=None):
-    # status_type: 'created'(已下單), 'paid'(已付款), 'shipped'(已出貨)
     cust = order['customer']
     items = order['items']
-    
-    # 台灣時間 (用於顯示信件內的日期)
     tw_now = datetime.utcnow() + timedelta(hours=8)
     date_str = tw_now.strftime('%Y/%m/%d %H:%M')
     
-    # 訂單成立時間 (用於第一階段顯示)
+    # 訂單成立時間
     created_at_dt = order.get('createdAt')
     if created_at_dt and isinstance(created_at_dt, datetime):
         created_at_str = (created_at_dt + timedelta(hours=8)).strftime('%Y/%m/%d %H:%M')
     else:
         created_at_str = date_str
 
-    # ★ 請在此填入您的收款帳號 ★
-    BANK_INFO = """
-    銀行代碼：<strong>808 (玉山銀行)</strong><br>
-    銀行帳號：<strong>1234-5678-9012</strong>
-    """
+    bank_html = get_bank_info()
     
-    # 1. 根據狀態決定：標題、配色、內文、特殊區塊
     if status_type == 'created':
         title = "訂單確認通知"
-        color = "#C48945" # 品牌金
-        
+        color = "#C48945"
         status_text = f"""
         謝謝您的下單！我們已收到您的訂單。<br>
-        訂單成立時間：{created_at_str}<br>
-        <br>
+        訂單成立時間：{created_at_str}<br><br>
         <strong>【付款資訊】</strong><br>
         請於 <strong>2 小時內</strong> 完成匯款，以保留您的訂單資格。<br>
         <span style="color:#C48945; font-size:18px; font-weight:bold;">訂單總金額：NT$ {order['total']}</span><br>
-        您的匯款後五碼：<strong>{cust['last5']}</strong><br>
-        <br>
+        您的匯款後五碼：<strong>{cust['last5']}</strong><br><br>
         <div style="background:#fffcf5; padding:15px; border-left:4px solid #C48945; margin:15px 0; color:#555;">
-            {BANK_INFO}
-            <div style="margin-top:8px; font-size:13px; color:#d9534f;">
-                ※ 若未於 2 小時內付款，系統將取消此筆訂單，需請您重新下單。
-            </div>
-        </div>
-        <br>
+            {bank_html}
+            <div style="margin-top:8px; font-size:13px; color:#d9534f;">※ 若未於 2 小時內付款，系統將取消此筆訂單。</div>
+        </div><br>
         <strong>【防詐騙提醒】</strong><br>
-        <span style="color:#666; font-size:14px;">所有匯款請依照官方網頁公告之匯款帳號，我們不會另外通知您重新匯款。若有疑慮，一律請由下方按鈕向官方 LINE 詢問查證。</span>
+        <span style="color:#666; font-size:14px;">所有匯款請依照官方網頁公告之匯款帳號，若有疑慮請向官方 LINE 查證。</span>
         """
-        show_price = True # 顯示金額
-        
+        show_price = True
     elif status_type == 'paid':
         title = "收款確認通知"
-        color = "#28a745" # 成功綠
-        
+        color = "#28a745"
         status_text = f"""
         您的款項已確認！<br>
-        帥府將盡速為您安排出貨，請您耐心等候。<br>
-        <br>
+        帥府將盡速為您安排出貨，請您耐心等候。<br><br>
         <strong>確認時間：{date_str}</strong>
         """
-        show_price = True # 顯示金額
-        
-    else: # status_type == 'shipped'
+        show_price = True
+    else: # shipped
         title = "帥府出貨通知"
-        color = "#C48945" # 品牌金
-        
+        color = "#C48945"
         status_text = f"""
-        您的訂單已於今日出貨！<br>
-        <br>
+        您的訂單已於今日出貨！<br><br>
         <div style="background:#f0ebe5; padding:15px; border:1px solid #C48945; border-radius:8px;">
             <strong>📦 物流單號：{tracking_num}</strong><br>
             <span style="font-size:13px; color:#666;">請依照上方單號，自行至物流網站查詢配送進度。</span>
-        </div>
-        <br>
-        <strong>出貨日期：{date_str}</strong><br>
-        <br>
+        </div><br>
+        <strong>出貨日期：{date_str}</strong><br><br>
         <span style="color:#666;">商品收到若有問題，請點擊下方按鈕詢問官方 LINE。</span>
         """
-        show_price = False # ★ 出貨通知不顯示金額
+        show_price = False
 
-    # 2. 產生商品表格 (根據 show_price 決定是否隱藏金額欄位)
     items_rows = ""
     for item in items:
         spec = f" ({item['variant']})" if 'variant' in item and item['variant'] != '標準' else ""
-        
-        # 金額欄位 HTML
         price_td = f'<td style="padding:10px; text-align:right;">${item["price"] * item["qty"]}</td>' if show_price else ''
-        
-        items_rows += f"""
-        <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding:10px; color:#333;">{item['name']}{spec}</td>
-            <td style="padding:10px; text-align: center; color:#333;">x{item['qty']}</td>
-            {price_td}
-        </tr>
-        """
+        items_rows += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}{spec}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td>{price_td}</tr>'
     
-    # 表格標頭與結尾 (總計)
     price_th = '<th style="padding:10px; text-align:right;">金額</th>' if show_price else ''
-    
-    total_row = ""
-    if show_price:
-        total_row = f"""
-        <tfoot>
-            <tr>
-                <td colspan="2" style="padding:15px 10px; text-align:right; font-weight:bold; color:#333;">總計 (含運)</td>
-                <td style="padding:15px 10px; text-align:right; font-weight:bold; color:#C48945; font-size:18px;">NT$ {order['total']}</td>
-            </tr>
-        </tfoot>
-        """
+    total_row = f'<tfoot><tr><td colspan="2" style="padding:15px 10px; text-align:right; font-weight:bold; color:#333;">總計 (含運)</td><td style="padding:15px 10px; text-align:right; font-weight:bold; color:#C48945; font-size:18px;">NT$ {order["total"]}</td></tr></tfoot>' if show_price else ''
 
-    # 3. 組合完整 HTML 信件
     return f"""
     <div style="font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color:#fff;">
         <div style="background: {color}; padding: 20px; text-align: center;">
             <h2 style="color: #fff; margin: 0; letter-spacing: 1px;">{title}</h2>
             <p style="color: #fff; opacity: 0.9; margin: 5px 0 0 0; font-size: 14px;">訂單編號：{order['orderId']}</p>
         </div>
-        
         <div style="padding: 30px;">
             <p style="font-size: 16px; color: #333; margin-bottom: 20px;">親愛的 <strong>{cust['name']}</strong> 您好：</p>
-            
-            <div style="font-size: 15px; color: #555; line-height: 1.6;">
-                {status_text}
-            </div>
-            
+            <div style="font-size: 15px; color: #555; line-height: 1.6;">{status_text}</div>
             <div style="margin-top: 30px;">
                 <h3 style="font-size:16px; color:#8B4513; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:0;">訂單明細</h3>
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                    <thead>
-                        <tr style="background: #f9f9f9; color:#666;">
-                            <th style="padding: 10px; text-align: left;">商品</th>
-                            <th style="padding: 10px; text-align: center;">數量</th>
-                            {price_th}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items_rows}
-                    </tbody>
-                    {total_row}
+                    <thead><tr style="background: #f9f9f9; color:#666;"><th style="padding: 10px; text-align: left;">商品</th><th style="padding: 10px; text-align: center;">數量</th>{price_th}</tr></thead>
+                    <tbody>{items_rows}</tbody>{total_row}
                 </table>
             </div>
-
             <div style="text-align: center; margin-top: 40px;">
-                <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; display: inline-block; box-shadow: 0 4px 10px rgba(0,185,0,0.3); letter-spacing: 1px;">
-                    加入官方 LINE 客服
-                </a>
+                <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; display: inline-block; box-shadow: 0 4px 10px rgba(0,185,0,0.3); letter-spacing: 1px;">加入官方 LINE 客服</a>
             </div>
         </div>
-        
-        <div style="background: #eee; padding: 15px; text-align: center; font-size: 12px; color: #999;">
-            承天中承府 ‧ 嘉義市新生路337號<br>
-            <span style="font-size:11px;">(此為系統自動發送信件，請勿直接回覆)</span>
-        </div>
+        <div style="background: #eee; padding: 15px; text-align: center; font-size: 12px; color: #999;">承天中承府 ‧ 嘉義市新生路337號<br><span style="font-size:11px;">(此為系統自動發送信件，請勿直接回覆)</span></div>
     </div>
     """
 
-# ★ 1. 第一階段：護持登記確認信 (HTML)
 def generate_donation_created_email(order):
     cust = order['customer']
     items = order['items']
-    
-    # 台灣時間
     tw_now = datetime.utcnow() + timedelta(hours=8)
     created_at_str = tw_now.strftime('%Y/%m/%d %H:%M')
-
-    # 項目列表
+    bank_html = get_bank_info()
+    
     items_rows = ""
     for item in items:
-        items_rows += f"""
-        <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 10px; color:#333;">{item['name']}</td>
-            <td style="padding: 10px; text-align: center; color:#333;">x{item['qty']}</td>
-            <td style="padding: 10px; text-align: right;">${item['price'] * item['qty']}</td>
-        </tr>
-        """
-
-    # 銀行資訊
-    BANK_INFO = """
-    銀行代碼：<strong>808 (玉山銀行)</strong><br>
-    銀行帳號：<strong>1234-5678-9012</strong>
-    """
+        items_rows += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td><td style="padding: 10px; text-align: right;">${item["price"] * item["qty"]}</td></tr>'
 
     return f"""
     <div style="font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color:#fff;">
@@ -304,64 +237,33 @@ def generate_donation_created_email(order):
             <h2 style="color: #fff; margin: 0; letter-spacing: 1px;">護持登記確認</h2>
             <p style="color: #fff; opacity: 0.9; margin: 5px 0 0 0; font-size: 14px;">單號：{order['orderId']}</p>
         </div>
-        
         <div style="padding: 30px;">
             <p style="font-size: 16px; color: #333; margin-bottom: 20px;">親愛的 <strong>{cust['name']}</strong> 您好：</p>
-            
             <div style="font-size: 15px; color: #555; line-height: 1.6;">
-                感恩您的發心！我們已收到您護持公壇的意願登記。<br>
-                這是一份來自善念的承諾，為了讓這份心意能順利化作助人的力量，請您於 <strong>2 小時內</strong> 完成匯款，以圓滿此次護持。
-                <br><br>
-                <strong>【您的護持項目】</strong>
+                感恩您的發心！我們已收到您護持公壇的意願登記。<br>這是一份來自善念的承諾，為了讓這份心意能順利化作助人的力量，請您於 <strong>2 小時內</strong> 完成匯款，以圓滿此次護持。<br><br><strong>【您的護持項目】</strong>
             </div>
-            
             <div style="margin-top: 15px;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                    <thead>
-                        <tr style="background: #f9f9f9; color:#666;">
-                            <th style="padding: 10px; text-align: left;">項目</th>
-                            <th style="padding: 10px; text-align: center;">數量</th>
-                            <th style="padding: 10px; text-align: right;">金額</th>
-                        </tr>
-                    </thead>
+                    <thead><tr style="background: #f9f9f9; color:#666;"><th style="padding: 10px; text-align: left;">項目</th><th style="padding: 10px; text-align: center;">數量</th><th style="padding: 10px; text-align: right;">金額</th></tr></thead>
                     <tbody>{items_rows}</tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="2" style="padding:15px 10px; text-align:right; font-weight:bold; color:#333;">護持總金額</td>
-                            <td style="padding:15px 10px; text-align:right; font-weight:bold; color:#C48945; font-size:18px;">NT$ {order['total']}</td>
-                        </tr>
-                    </tfoot>
+                    <tfoot><tr><td colspan="2" style="padding:15px 10px; text-align:right; font-weight:bold; color:#333;">護持總金額</td><td style="padding:15px 10px; text-align:right; font-weight:bold; color:#C48945; font-size:18px;">NT$ {order['total']}</td></tr></tfoot>
                 </table>
             </div>
-
             <div style="background:#fffcf5; padding:15px; border-left:4px solid #C48945; margin:20px 0; color:#555;">
-                <strong>【匯款資訊】</strong><br>
-                {BANK_INFO}
+                <strong>【匯款資訊】</strong><br>{bank_html}
                 <div style="margin-top:8px;">您的匯款後五碼：<strong>{cust['last5']}</strong></div>
             </div>
-
             <div style="font-size: 14px; color: #666; margin-top: 20px; border-top: 1px dashed #ddd; padding-top: 15px;">
-                <strong>【重要提醒】</strong>
-                <ol style="margin-left: -20px; margin-top: 5px;">
-                    <li>確認善款入帳後，我們將寄發「電子感謝狀」給您。</li>
-                    <li><strong>防詐騙提醒</strong>：帥府人員不會致電要求您操作 ATM 或變更轉帳設定。若有疑慮，請務必點擊下方按鈕向官方 LINE 查證。</li>
-                </ol>
+                <strong>【重要提醒】</strong><ol style="margin-left: -20px; margin-top: 5px;"><li>確認善款入帳後，我們將寄發「電子感謝狀」給您。</li><li><strong>防詐騙提醒</strong>：帥府人員不會致電要求您操作 ATM 或變更轉帳設定。若有疑慮，請務必點擊下方按鈕向官方 LINE 查證。</li></ol>
             </div>
-
             <div style="text-align: center; margin-top: 30px;">
-                <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; display: inline-block; box-shadow: 0 4px 10px rgba(0,185,0,0.3); letter-spacing: 1px;">
-                    加入官方 LINE 客服
-                </a>
+                <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; display: inline-block; box-shadow: 0 4px 10px rgba(0,185,0,0.3); letter-spacing: 1px;">加入官方 LINE 客服</a>
             </div>
         </div>
-        
-        <div style="background: #eee; padding: 15px; text-align: center; font-size: 12px; color: #999;">
-            承天中承府 ‧ 嘉義市新生路337號
-        </div>
+        <div style="background: #eee; padding: 15px; text-align: center; font-size: 12px; color: #999;">承天中承府 ‧ 嘉義市新生路337號</div>
     </div>
     """
 
-# ★ 2. 第二階段：電子感謝狀 (已收款)
 def generate_donation_paid_email(cust, order_id, items):
     items_str = "<br>".join([f"• {i['name']} x {i['qty']}" for i in items])
     return f"""
@@ -371,42 +273,24 @@ def generate_donation_paid_email(cust, order_id, items):
             <p style="font-size: 16px; color: #888;">承天中承府 ‧ 煙島中壇元帥</p>
         </div>
         <hr style="border: 0; border-top: 1px solid #C48945; margin: 20px 0;">
-        
         <p style="font-size: 18px; line-height: 1.8;">
             親愛的 <strong>{cust['name']}</strong> 您好：<br><br>
             感謝您的無私護持！您的善款已確認入帳。<br>
-            承天中承府的公壇，不只是神明的駐地，更是十方善信共同守護的心靈家園。
-            每一次開壇辦事、每一份為信徒解惑的努力，背後都仰賴著志工們的汗水，以及像您這樣發心護持的善信。<br>
+            承天中承府的公壇，不只是神明的駐地，更是十方善信共同守護的心靈家園。每一次開壇辦事、每一份為信徒解惑的努力，背後都仰賴著志工們的汗水，以及像您這樣發心護持的善信。<br>
             是您的這份心意，讓帥府的香火得以延續，讓濟世的聖務能夠圓滿。
         </p>
-
         <div style="background: #f0ebe5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #8B4513;">
             <h3 style="margin-top:0; color:#8B4513; font-size:20px;">【稟報通知】</h3>
             <p style="margin-bottom:0; font-size:16px; line-height:1.6;">
-                您的名字與護持項目，將錄入芳名錄。<br>
-                我們將於 <strong>下一次公壇辦事日</strong>，由 <strong>元帥娘</strong> 親自向 <strong>煙島中壇元帥</strong> 逐一稟報，將您的心意上達天聽。
+                您的名字與護持項目，將錄入芳名錄。<br>我們將於 <strong>下一次公壇辦事日</strong>，由 <strong>元帥娘</strong> 親自向 <strong>煙島中壇元帥</strong> 逐一稟報，將您的心意上達天聽。
             </p>
         </div>
-
         <p style="font-size: 18px; font-weight: bold; color: #C48945; margin-bottom: 10px;">【護持項目明細】</p>
-        <div style="padding-left: 15px; margin-bottom: 20px; font-size: 16px; line-height: 1.6;">
-            {items_str}
-        </div>
-
-        <p style="font-size: 18px; line-height: 1.8;">
-            祈求元帥庇佑您：<br>
-            <strong>闔家平安，萬事如意</strong>
-        </p>
-
-        <p style="margin-top: 40px; text-align: right; font-size: 16px;">
-            承天中承府 敬謝<br>
-            {datetime.now().strftime('%Y 年 %m 月 %d 日')}
-        </p>
-        
+        <div style="padding-left: 15px; margin-bottom: 20px; font-size: 16px; line-height: 1.6;">{items_str}</div>
+        <p style="font-size: 18px; line-height: 1.8;">祈求元帥庇佑您：<br><strong>闔家平安，萬事如意</strong></p>
+        <p style="margin-top: 40px; text-align: right; font-size: 16px;">承天中承府 敬謝<br>{datetime.now().strftime('%Y 年 %m 月 %d 日')}</p>
         <div style="text-align: center; margin-top: 40px;">
-            <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 50px; font-size: 14px; display: inline-block;">
-                加入官方 LINE 客服
-            </a>
+            <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 50px; font-size: 14px; display: inline-block;">加入官方 LINE 客服</a>
             <div style="margin-top: 10px; font-size: 12px; color: #999;">(此為系統自動發送之電子感謝狀，請妥善保存)</div>
         </div>
     </div>
@@ -448,7 +332,6 @@ def feedback_page(): return render_template('feedback.html')
 @app.route('/faq')
 def faq_page(): return render_template('faq.html')
 
-# 轉址路由
 @app.route('/gongtan')
 def gongtan_page(): return redirect(url_for('services_page', _anchor='gongtan-section'))
 @app.route('/shoujing')
@@ -461,14 +344,11 @@ def skincare_page(): return redirect(url_for('shop_page'))
 def yuan_user_page(): return redirect(url_for('shop_page'))
 
 # =========================================
-# 5. 後台頁面路由
+# 5. 後台頁面路由 & API
 # =========================================
 @app.route('/admin')
 def admin_page(): return render_template('admin.html')
 
-# =========================================
-# 6. API: 認證系統
-# =========================================
 @app.route('/api/session_check', methods=['GET'])
 def session_check():
     return jsonify({"logged_in": session.get('logged_in', False)})
@@ -489,38 +369,135 @@ def api_logout():
     session.pop('logged_in', None)
     return jsonify({"success": True})
 
-# =========================================
-# 7. API: 信徒回饋 & 衣物 & 捐贈芳名錄
-# =========================================
-
-# --- Feedback API ---
+# --- Feedback API (新增 3 階段支援 + 寄信) ---
 @app.route('/api/feedback', methods=['POST'])
 def add_feedback():
-    if db is None: return jsonify({"error": "資料庫未連線"}), 500
+    if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
     if not data.get('agreed'): return jsonify({"error": "必須勾選同意條款"}), 400
-
     new_feedback = {
         "realName": data.get('realName'), "nickname": data.get('nickname'),
         "category": data.get('category', []), "content": data.get('content'),
         "lunarBirthday": data.get('lunarBirthday', ''), "birthTime": data.get('birthTime') or '吉時',
         "address": data.get('address', ''), "phone": data.get('phone', ''),
-        "agreed": True, "createdAt": datetime.utcnow(), "status": "pending", "isMarked": False
+        "email": data.get('email', ''), # 確保前端有傳 email
+        "agreed": True, "createdAt": datetime.utcnow(), 
+        "status": "pending", "isMarked": False
     }
     db.feedback.insert_one(new_feedback)
     return jsonify({"success": True, "message": "回饋已送出"})
 
-@app.route('/api/feedback/pending', methods=['GET'])
+# 1. 待審核 (pending)
+@app.route('/api/feedback/pending', methods=['GET']) # 相容舊網址
+@app.route('/api/feedback/status/pending', methods=['GET'])
 @login_required
 def get_pending_feedback():
     cursor = db.feedback.find({"status": "pending"}).sort("createdAt", 1)
     return jsonify([{**doc, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S')} for doc in cursor])
 
-@app.route('/api/feedback/approved', methods=['GET'])
+# 2. 已核准/待寄送 (approved)
+@app.route('/api/feedback/approved', methods=['GET']) # 相容舊網址
+@app.route('/api/feedback/status/approved', methods=['GET'])
 @login_required
 def get_approved_feedback():
     cursor = db.feedback.find({"status": "approved"}).sort("createdAt", -1)
     return jsonify([{**doc, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S')} for doc in cursor])
+
+# 3. 已寄送 (sent) - 新增
+@app.route('/api/feedback/status/sent', methods=['GET'])
+@login_required
+def get_sent_feedback():
+    cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
+    return jsonify([{**doc, '_id': str(doc['_id']), 'sentAt': doc.get('sentAt', doc['createdAt']).strftime('%Y-%m-%d %H:%M')} for doc in cursor])
+
+# 核准回饋 (自動寄信)
+@app.route('/api/feedback/<fid>/approve', methods=['PUT'])
+@login_required
+def approve_feedback(fid):
+    fb = db.feedback.find_one({'_id': ObjectId(fid)})
+    if not fb: return jsonify({"error": "No data"}), 404
+    
+    # 產生編號 (FB + 日期 + 隨機)
+    fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
+    
+    db.feedback.update_one({'_id': ObjectId(fid)}, {
+        '$set': {
+            'status': 'approved', 
+            'feedbackId': fb_id,
+            'approvedAt': datetime.utcnow()
+        }
+    })
+    
+    # 寄信通知
+    if fb.get('email'):
+        subject = "【承天中承府】您的回饋已核准刊登"
+        body = f"""
+        親愛的 {fb['realName']} 您好：
+        感謝您的感應故事分享，我們已審核通過並刊登於官網。
+        這份法布施將讓更多人感受到元帥的威靈。
+        
+        為了感謝您的發心，我們將準備一份「小神衣」與您結緣。
+        待結緣品寄出時，會再發信通知您留意查收。
+        
+        承天中承府 敬上
+        """
+        send_email(fb['email'], subject, body)
+        
+    return jsonify({"success": True})
+
+# 寄送禮物 (更新狀態 + 寄信)
+@app.route('/api/feedback/<fid>/ship', methods=['PUT'])
+@login_required
+def ship_feedback(fid):
+    data = request.get_json()
+    tracking = data.get('trackingNumber', '')
+    fb = db.feedback.find_one({'_id': ObjectId(fid)})
+    if not fb: return jsonify({"error": "No data"}), 404
+    
+    db.feedback.update_one({'_id': ObjectId(fid)}, {
+        '$set': {
+            'status': 'sent', 
+            'trackingNumber': tracking,
+            'sentAt': datetime.utcnow()
+        }
+    })
+    
+    if fb.get('email'):
+        subject = "【承天中承府】結緣品寄出通知"
+        body = f"""
+        親愛的 {fb['realName']} 您好：
+        
+        元帥娘親自開符加持的「小神衣」已於今日寄出！
+        物流單號：{tracking}
+        
+        願元帥庇佑您平安順遂，萬事如意。
+        
+        承天中承府 敬上
+        """
+        send_email(fb['email'], subject, body)
+        
+    return jsonify({"success": True})
+
+# 刪除回饋 (寄送遺憾信)
+@app.route('/api/feedback/<fid>', methods=['DELETE'])
+@login_required
+def delete_feedback(fid):
+    fb = db.feedback.find_one({'_id': ObjectId(fid)})
+    if fb and fb.get('email'):
+        subject = "【承天中承府】關於您的回饋投稿"
+        body = f"""
+        親愛的 {fb['realName']} 您好：
+        
+        感謝您撥冗分享與元帥的故事。
+        經內部審核，您的投稿內容可能因版面規劃或其他考量，此次暫無法刊登，敬請見諒。
+        
+        感謝您的支持與諒解。
+        承天中承府 敬上
+        """
+        send_email(fb['email'], subject, body)
+        
+    db.feedback.delete_one({'_id': ObjectId(fid)})
+    return jsonify({"success": True})
 
 @app.route('/api/feedback/<fid>', methods=['PUT'])
 @login_required
@@ -530,50 +507,52 @@ def update_feedback(fid):
     db.feedback.update_one({'_id': ObjectId(fid)}, {'$set': fields})
     return jsonify({"success": True})
 
-@app.route('/api/feedback/<fid>/approve', methods=['PUT'])
-@login_required
-def approve_feedback(fid):
-    db.feedback.update_one({'_id': ObjectId(fid)}, {'$set': {'status': 'approved'}})
-    return jsonify({"success": True})
-
-@app.route('/api/feedback/<fid>', methods=['DELETE'])
-@login_required
-def delete_feedback(fid):
-    db.feedback.delete_one({'_id': ObjectId(fid)})
-    return jsonify({"success": True})
-
-@app.route('/api/feedback/<fid>/mark', methods=['PUT'])
-@login_required
-def mark_feedback(fid):
-    data = request.get_json()
-    db.feedback.update_one({'_id': ObjectId(fid)}, {'$set': {'isMarked': data.get('isMarked', False)}})
-    return jsonify({"success": True})
-
-@app.route('/api/feedback/mark-all-approved', methods=['PUT'])
-@login_required
-def mark_all_approved_feedback():
-    db.feedback.update_many({'status': 'approved'}, {'$set': {'isMarked': True}})
-    return jsonify({"success": True})
-
 @app.route('/api/feedback/download-unmarked', methods=['POST'])
 @login_required
 def download_unmarked_feedback():
-    if db is None: return jsonify({"error": "DB Error"}), 500
-    cursor = db.feedback.find({"status": "approved", "isMarked": False}).sort("address", 1)
-    feedback_list = list(cursor)
-    if not feedback_list: return jsonify({"error": "無新資料"}), 404
+    return jsonify({"error": "Deprecated"}), 410
 
-    text = f"匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n{'='*30}\n\n"
-    ids = []
-    for i, doc in enumerate(feedback_list, 1):
-        ids.append(doc['_id'])
-        text += f"【{i}】\n姓名: {doc.get('realName')}\n電話: {doc.get('phone')}\n地址: {doc.get('address')}\n"
-        text += f"生日: {doc.get('lunarBirthday')} ({doc.get('birthTime')})\n"
-        text += f"內容: {doc.get('content')[:50]}...\n{'-'*20}\n\n"
-    db.feedback.update_many({'_id': {'$in': ids}}, {'$set': {'isMarked': True}})
-    return Response(text, mimetype='text/plain', headers={"Content-Disposition": f"attachment;filename=list_{datetime.now().strftime('%Y%m%d')}.txt"})
+# 匯出未寄送名單 (TXT)
+@app.route('/api/feedback/export-txt', methods=['POST'])
+@login_required
+def export_feedback_txt():
+    cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", 1)
+    if db.feedback.count_documents({"status": "approved"}) == 0:
+        return jsonify({"error": "無資料"}), 404
+    
+    si = io.StringIO()
+    si.write(f"匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n")
+    for doc in cursor:
+        si.write(f"【編號】{doc.get('feedbackId', '無')}\n")
+        si.write(f"姓名：{doc['realName']}\n")
+        si.write(f"電話：{doc['phone']}\n")
+        si.write(f"地址：{doc['address']}\n")
+        si.write("-" * 30 + "\n")
+    
+    return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": "attachment;filename=feedback_list.txt"})
 
-# --- ShipClothes API ---
+# --- Settings API (匯款資訊) ---
+@app.route('/api/settings/bank', methods=['GET', 'POST'])
+@login_required
+def handle_bank_settings():
+    if request.method == 'GET':
+        settings = db.settings.find_one({"type": "bank_info"}) or {}
+        settings['_id'] = str(settings.get('_id', ''))
+        return jsonify(settings)
+    else:
+        data = request.get_json()
+        db.settings.update_one(
+            {"type": "bank_info"},
+            {"$set": {
+                "bankCode": data.get('bankCode'),
+                "bankName": data.get('bankName'),
+                "account": data.get('account')
+            }},
+            upsert=True
+        )
+        return jsonify({"success": True})
+
+# --- 其他 API ---
 @app.route('/api/shipclothes/calc-date', methods=['GET'])
 def get_pickup_date_preview():
     today = datetime.utcnow() + timedelta(hours=8)
@@ -584,36 +563,19 @@ def get_pickup_date_preview():
 def submit_ship_clothes():
     if db is None: return jsonify({"success": False, "message": "資料庫未連線"}), 500
     data = request.get_json()
-    
     user_captcha = data.get('captcha', '').strip()
     correct_answer = session.get('captcha_answer')
     session.pop('captcha_answer', None)
-    if not correct_answer or user_captcha != correct_answer:
-        return jsonify({"success": False, "message": "驗證碼錯誤"}), 400
-
-    if not all(k in data and data[k] for k in ['name', 'lineGroup', 'lineName', 'birthYear', 'clothes']):
-        return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
-
+    if not correct_answer or user_captcha != correct_answer: return jsonify({"success": False, "message": "驗證碼錯誤"}), 400
+    if not all(k in data and data[k] for k in ['name', 'lineGroup', 'lineName', 'birthYear', 'clothes']): return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
     now_tw = datetime.utcnow() + timedelta(hours=8)
     pickup_date = calculate_business_d2(now_tw)
-
-    submission = {
-        "name": data['name'],
-        "birthYear": data['birthYear'],
-        "lineGroup": data['lineGroup'],
-        "lineName": data['lineName'],
-        "clothes": data['clothes'],
-        "submitDate": now_tw,
-        "submitDateStr": now_tw.strftime('%Y/%m/%d'),
-        "pickupDate": pickup_date,
-        "pickupDateStr": pickup_date.strftime('%Y/%m/%d')
-    }
-    
-    db.shipments.insert_one(submission)
-    return jsonify({
-        "success": True, 
-        "pickupDate": pickup_date.strftime('%Y/%m/%d')
+    db.shipments.insert_one({
+        "name": data['name'], "birthYear": data['birthYear'], "lineGroup": data['lineGroup'], "lineName": data['lineName'],
+        "clothes": data['clothes'], "submitDate": now_tw, "submitDateStr": now_tw.strftime('%Y/%m/%d'),
+        "pickupDate": pickup_date, "pickupDateStr": pickup_date.strftime('%Y/%m/%d')
     })
+    return jsonify({"success": True, "pickupDate": pickup_date.strftime('%Y/%m/%d')})
 
 @app.route('/api/shipclothes/list', methods=['GET'])
 def get_ship_clothes_list():
@@ -622,223 +584,150 @@ def get_ship_clothes_list():
     today_date = now_tw.replace(hour=0, minute=0, second=0, microsecond=0)
     start_date = today_date - timedelta(days=1)
     end_date = today_date + timedelta(days=5)
-    
-    try:
-        cursor = db.shipments.find({
-            "pickupDate": { "$gte": start_date, "$lte": end_date }
-        }).sort("pickupDate", 1)
-        results = []
-        for doc in cursor:
-            masked_sender = mask_name(doc['name'])
-            masked_clothes = []
-            for item in doc.get('clothes', []):
-                masked_clothes.append({'id': item.get('id', ''), 'owner': mask_name(item.get('owner', ''))})
-            results.append({
-                "name": masked_sender, "birthYear": doc.get('birthYear', ''),
-                "lineGroup": doc['lineGroup'], "lineName": doc.get('lineName', ''),
-                "clothes": masked_clothes, "submitDate": doc['submitDateStr'], "pickupDate": doc['pickupDateStr']
-            })
-        return jsonify(results)
-    except Exception as e: return jsonify({"error": str(e)}), 500
+    cursor = db.shipments.find({"pickupDate": { "$gte": start_date, "$lte": end_date }}).sort("pickupDate", 1)
+    results = []
+    for doc in cursor:
+        masked_clothes = [{'id': i.get('id',''), 'owner': mask_name(i.get('owner',''))} for i in doc.get('clothes', [])]
+        results.append({
+            "name": mask_name(doc['name']), "birthYear": doc.get('birthYear', ''),
+            "lineGroup": doc['lineGroup'], "lineName": doc.get('lineName', ''),
+            "clothes": masked_clothes, "submitDate": doc['submitDateStr'], "pickupDate": doc['pickupDateStr']
+        })
+    return jsonify(results)
 
-# --- Donation Public API ---
 @app.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
-    """前台芳名錄：只抓已付款捐贈，最新的30筆"""
     if db is None: return jsonify([]), 500
-    try:
-        cursor = db.orders.find({"status": "paid", "orderType": "donation"}).sort("updatedAt", -1).limit(30)
-        results = []
-        for doc in cursor:
-            customer = doc.get('customer', {})
-            items_summary = []
-            for item in doc.get('items', []):
-                items_summary.append(f"{item['name']} x{item['qty']}")
-            results.append({
-                "name": mask_name(customer.get('name', '善信')),
-                "wish": customer.get('prayer', '祈求平安'),
-                "items": ", ".join(items_summary)
-            })
-        return jsonify(results)
-    except Exception as e:
-        return jsonify([])
-
-# =========================================
-# 8. ★ 後台捐贈管理 API
-# =========================================
+    cursor = db.orders.find({"status": "paid", "orderType": "donation"}).sort("updatedAt", -1).limit(30)
+    results = []
+    for doc in cursor:
+        items_summary = [f"{i['name']} x{i['qty']}" for i in doc.get('items', [])]
+        results.append({
+            "name": mask_name(doc.get('customer', {}).get('name', '善信')),
+            "wish": doc.get('customer', {}).get('prayer', '祈求平安'),
+            "items": ", ".join(items_summary)
+        })
+    return jsonify(results)
 
 @app.route('/api/donations/admin', methods=['GET'])
 @login_required
 def get_admin_donations():
-    """後台取得捐贈訂單，支援日期篩選"""
     start_str = request.args.get('start')
     end_str = request.args.get('end')
-    
     query = {"orderType": "donation"}
-    
-    if start_str and end_str:
-        try:
-            start_date = datetime.strptime(start_str, '%Y-%m-%d')
-            end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1) # 含當天
-            query["createdAt"] = {"$gte": start_date, "$lt": end_date}
-        except: pass
-    
-    cursor = db.orders.find(query).sort([("status", 1), ("createdAt", -1)]) # 未付款在前，新單在前
-    results = []
-    for doc in cursor:
-        doc['_id'] = str(doc['_id'])
-        doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M')
-        # 如果有付款時間就顯示付款時間，否則顯示建立時間
-        doc['paidAt'] = doc.get('paidAt').strftime('%Y-%m-%d %H:%M') if doc.get('paidAt') else ''
-        results.append(doc)
-    return jsonify(results)
-
-@app.route('/api/donations/export', methods=['POST'])
-@login_required
-def export_donations_report():
-    """匯出稟報清單 (CSV)"""
-    data = request.get_json()
-    start_str = data.get('start')
-    end_str = data.get('end')
-    
-    query = {"orderType": "donation", "status": "paid"} # 只匯出已付款
-    
     if start_str and end_str:
         try:
             start_date = datetime.strptime(start_str, '%Y-%m-%d')
             end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
-            query["updatedAt"] = {"$gte": start_date, "$lt": end_date} # 用付款時間篩選
+            query["createdAt"] = {"$gte": start_date, "$lt": end_date}
         except: pass
-        
+    cursor = db.orders.find(query).sort([("status", 1), ("createdAt", -1)])
+    results = []
+    for doc in cursor:
+        doc['_id'] = str(doc['_id'])
+        doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M')
+        doc['paidAt'] = doc.get('paidAt').strftime('%Y-%m-%d %H:%M') if doc.get('paidAt') else ''
+        results.append(doc)
+    return jsonify(results)
+
+# 捐贈匯出 (TXT 格式)
+@app.route('/api/donations/export-txt', methods=['POST'])
+@login_required
+def export_donations_txt():
+    data = request.get_json()
+    start_str = data.get('start')
+    end_str = data.get('end')
+    query = {"orderType": "donation", "status": "paid"}
+    if start_str and end_str:
+        try:
+            start_date = datetime.strptime(start_str, '%Y-%m-%d')
+            end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
+            query["updatedAt"] = {"$gte": start_date, "$lt": end_date}
+        except: pass
     cursor = db.orders.find(query).sort("updatedAt", 1)
     
-    # 產生 CSV
     si = io.StringIO()
-    cw = csv.writer(si)
-    # 表頭：捐贈日期(付款日)、姓名、農曆生日、地址、捐贈項目、祈願內容
-    cw.writerow(['捐贈日期', '姓名', '農曆生日', '地址', '捐贈項目', '祈願內容'])
+    si.write(f"捐贈稟報清單\n匯出日期：{datetime.now().strftime('%Y-%m-%d')}\n")
+    si.write("="*40 + "\n\n")
     
+    idx = 1
     for doc in cursor:
         cust = doc.get('customer', {})
         items_str = "、".join([f"{i['name']}x{i['qty']}" for i in doc.get('items', [])])
         paid_date = doc.get('updatedAt').strftime('%Y/%m/%d') if doc.get('updatedAt') else ''
         
-        cw.writerow([
-            paid_date,
-            cust.get('name', ''),
-            cust.get('lunarBirthday', ''),
-            cust.get('address', ''),
-            items_str,
-            cust.get('prayer', '')
-        ])
+        si.write(f"【{idx}】\n")
+        si.write(f"日期：{paid_date}\n")
+        si.write(f"姓名：{cust.get('name', '')}\n")
+        si.write(f"農曆：{cust.get('lunarBirthday', '')}\n")
+        si.write(f"地址：{cust.get('address', '')}\n")
+        si.write(f"項目：{items_str}\n")
+        si.write("-" * 20 + "\n")
+        idx += 1
         
-    output = make_response(si.getvalue())
-    output.headers["Content-Disposition"] = f"attachment; filename=donation_report_{datetime.now().strftime('%Y%m%d')}.csv"
-    output.headers["Content-type"] = "text/csv"
-    return output
-
-@app.route('/api/donations/cleanup', methods=['DELETE'])
-@login_required
-def cleanup_old_donations():
-    """刪除所有超過 60 天的資料 (含 Shop 與 Donation)"""
-    cutoff = datetime.utcnow() - timedelta(days=60)
-    result = db.orders.delete_many({"createdAt": {"$lt": cutoff}})
-    return jsonify({"success": True, "count": result.deleted_count})
+    return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": f"attachment; filename=donation_list.txt"})
 
 @app.route('/api/donations/cleanup-unpaid', methods=['DELETE'])
 @login_required
 def cleanup_unpaid_orders():
-    """刪除超過 76 小時未付款的訂單"""
     cutoff = datetime.utcnow() - timedelta(hours=76)
+    # 刪除前先寄信
+    cursor = db.orders.find({"status": "pending", "createdAt": {"$lt": cutoff}})
+    for order in cursor:
+        if order.get('customer', {}).get('email'):
+            subject = f"【承天中承府】訂單/捐贈登記已取消 ({order['orderId']})"
+            body = f"親愛的 {order['customer']['name']} 您好：\n您的訂單/捐贈登記 ({order['orderId']}) 因超過付款期限，系統已自動取消。如需服務請重新下單。"
+            send_email(order['customer']['email'], subject, body)
+    
     result = db.orders.delete_many({"status": "pending", "createdAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
-# =========================================
-# 9. API: 訂單系統 (Shop & Donation)
-# =========================================
-@csrf.exempt
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
-    
     order_type = data.get('orderType', 'shop')
     order_id = f"{'DON' if order_type == 'donation' else 'ORD'}{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
-    
     customer_info = {
-        "name": data.get('name'),
-        "phone": data.get('phone'),
-        "email": data.get('email', ''),
-        "address": data.get('address'),
-        "last5": data.get('last5'),
-        "lunarBirthday": data.get('lunarBirthday', ''),
-        "prayer": data.get('prayer', '') 
+        "name": data.get('name'), "phone": data.get('phone'), "email": data.get('email', ''),
+        "address": data.get('address'), "last5": data.get('last5'),
+        "lunarBirthday": data.get('lunarBirthday', ''), "prayer": data.get('prayer', '') 
     }
-
     order = {
-        "orderId": order_id,
-        "orderType": order_type,
-        "customer": customer_info,
-        "items": data['items'],
-        "total": data['total'],
-        "status": "pending",
-        "createdAt": datetime.utcnow(),
-        "updatedAt": datetime.utcnow()
+        "orderId": order_id, "orderType": order_type, "customer": customer_info,
+        "items": data['items'], "total": data['total'], "status": "pending",
+        "createdAt": datetime.utcnow(), "updatedAt": datetime.utcnow()
     }
-    
-    # ★ 1. 修正：先插入訂單到資料庫
     db.orders.insert_one(order)
     
-    # 寄送確認信邏輯
     if order_type == 'donation':
-        # ★ 2. 捐贈：使用「護持登記確認」HTML 模板
         email_subject = f"【承天中承府】護持登記確認通知 ({order_id})"
         email_html = generate_donation_created_email(order)
         send_email(customer_info['email'], email_subject, email_html, is_html=True)
     else:
-        # 商店：使用「訂單確認」HTML 模板
         email_subject = f"【承天中承府】訂單確認通知 ({order_id})"
         email_html = generate_shop_email_html(order, 'created')
         send_email(customer_info['email'], email_subject, email_html, is_html=True)
-
     return jsonify({"success": True, "orderId": order_id})
 
-# 修改：取得訂單列表 (加入台灣時間校正)
 @app.route('/api/orders', methods=['GET'])
 @login_required
 def get_orders():
-    """一般訂單列表 (排除 Donation)"""
     cursor = db.orders.find({"orderType": {"$ne": "donation"}}).sort("createdAt", -1)
     results = []
     for doc in cursor:
         doc['_id'] = str(doc['_id'])
-        
-        # ★ 時間校正：資料庫是 UTC，轉為台灣時間 (UTC+8) 顯示
-        if 'createdAt' in doc:
-            tw_created = doc['createdAt'] + timedelta(hours=8)
-            doc['createdAt'] = tw_created.strftime('%Y-%m-%d %H:%M')
-            
-        # ★ 處理出貨時間
-        if 'shippedAt' in doc and doc['shippedAt']:
-            tw_shipped = doc['shippedAt'] + timedelta(hours=8)
-            doc['shippedAt'] = tw_shipped.strftime('%Y-%m-%d %H:%M')
-        else:
-            doc['shippedAt'] = ''
-            
+        if 'createdAt' in doc: doc['createdAt'] = (doc['createdAt'] + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
+        if 'shippedAt' in doc and doc['shippedAt']: doc['shippedAt'] = (doc['shippedAt'] + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
+        else: doc['shippedAt'] = ''
         results.append(doc)
     return jsonify(results)
 
 @app.route('/api/orders/cleanup-shipped', methods=['DELETE'])
 @login_required
 def cleanup_shipped_orders():
-    # 計算 14 天前的時間點
     cutoff = datetime.utcnow() - timedelta(days=14)
-    
-    # 刪除條件：狀態是 shipped 且 shippedAt 早於 14 天前
-    result = db.orders.delete_many({
-        "status": "shipped",
-        "shippedAt": {"$lt": cutoff}
-    })
+    result = db.orders.delete_many({"status": "shipped", "shippedAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
 @app.route('/api/orders/<oid>/confirm', methods=['PUT'])
@@ -846,84 +735,61 @@ def cleanup_shipped_orders():
 def confirm_order_payment(oid):
     order = db.orders.find_one({'_id': ObjectId(oid)})
     if not order: return jsonify({"error": "No order"}), 404
-    
     now = datetime.utcnow()
-    # 更新為 paid (待出貨)
-    db.orders.update_one(
-        {'_id': ObjectId(oid)}, 
-        {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}}
-    )
-    
+    db.orders.update_one({'_id': ObjectId(oid)}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}})
     cust = order['customer']
-    # 寄信邏輯分流
     if order.get('orderType') == 'donation':
-        # ★ 3. 捐贈已付款：寄出「電子感謝狀」
         email_subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order['orderId']})"
         email_html = generate_donation_paid_email(cust, order['orderId'], order['items'])
         send_email(cust.get('email'), email_subject, email_html, is_html=True)
     else:
-        # 商店訂單：寄送「款項確認/待出貨」信
         email_subject = f"【承天中承府】收款確認通知 ({order['orderId']})"
         email_html = generate_shop_email_html(order, 'paid')
         send_email(cust.get('email'), email_subject, email_html, is_html=True)
-    
     return jsonify({"success": True})
 
 @app.route('/api/orders/<oid>/resend-email', methods=['POST'])
 @login_required
 def resend_order_email(oid):
-    """重寄確認信/感謝狀功能"""
     data = request.get_json()
     new_email = data.get('email')
-    
     order = db.orders.find_one({'_id': ObjectId(oid)})
     if not order: return jsonify({"error": "No order"}), 404
-
-    # 如果有提供新 Email，先更新資料庫
     cust = order['customer']
     target_email = cust.get('email')
     if new_email and new_email != target_email:
         db.orders.update_one({'_id': ObjectId(oid)}, {'$set': {'customer.email': new_email}})
         cust['email'] = new_email
         target_email = new_email
-
-    # 重寄邏輯
+        
     if order.get('orderType') == 'donation':
-        # 捐贈訂單補寄
         if order.get('status') == 'paid':
             email_subject = f"【補寄感謝狀】承天中承府 - 功德無量 ({order['orderId']})"
             email_html = generate_donation_paid_email(cust, order['orderId'], order['items'])
         else:
             email_subject = f"【補寄】護持登記確認通知 ({order['orderId']})"
             email_html = generate_donation_created_email(order)
-            
-        send_email(target_email, email_subject, email_html, is_html=True)
     else:
-        # 商店訂單重寄
         email_subject = f"【承天中承府】訂單信件補寄 ({order['orderId']})"
-        if order.get('status') == 'shipped':
-            email_html = generate_shop_email_html(order, 'shipped', order.get('trackingNumber'))
-        elif order.get('status') == 'paid':
-            email_html = generate_shop_email_html(order, 'paid')
-        else:
-            email_html = generate_shop_email_html(order, 'created')
-            
-        send_email(target_email, email_subject, email_html, is_html=True)
-
+        if order.get('status') == 'shipped': email_html = generate_shop_email_html(order, 'shipped', order.get('trackingNumber'))
+        elif order.get('status') == 'paid': email_html = generate_shop_email_html(order, 'paid')
+        else: email_html = generate_shop_email_html(order, 'created')
+    send_email(target_email, email_subject, email_html, is_html=True)
     return jsonify({"success": True})
 
 @app.route('/api/orders/<oid>', methods=['DELETE'])
 @login_required
 def delete_order(oid):
+    order = db.orders.find_one({'_id': ObjectId(oid)})
+    if order and order.get('customer', {}).get('email'):
+        subject = f"【承天中承府】訂單/登記已取消 ({order['orderId']})"
+        body = f"親愛的 {order['customer']['name']} 您好：\n您的訂單/登記 ({order['orderId']}) 已被取消。如為誤操作或有任何疑問，請聯繫官方 LINE。"
+        send_email(order['customer']['email'], subject, body)
     db.orders.delete_one({'_id': ObjectId(oid)})
     return jsonify({"success": True})
 
-# =========================================
-# 10. API: 商品管理 (完整)
-# =========================================
 @app.route('/api/products', methods=['GET'])
 def get_products():
-    if db is None: return jsonify({"error": "DB Error"}), 500
     products = list(db.products.find().sort([("category", 1), ("createdAt", -1)]))
     for p in products: p['_id'] = str(p['_id'])
     return jsonify(products)
@@ -931,15 +797,11 @@ def get_products():
 @app.route('/api/products', methods=['POST'])
 @login_required
 def add_product():
-    if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
     new_product = {
-        "name": data.get('name'), "category": data.get('category', '其他'),
-        "price": int(data.get('price', 0)), "description": data.get('description', ''),
-        "image": data.get('image', ''), "isActive": data.get('isActive', True),
-        "isDonation": data.get('isDonation', False), # 支援捐贈標記
-        "variants": data.get('variants', []),
-        "createdAt": datetime.utcnow()
+        "name": data.get('name'), "category": data.get('category', '其他'), "price": int(data.get('price', 0)),
+        "description": data.get('description', ''), "image": data.get('image', ''), "isActive": data.get('isActive', True),
+        "isDonation": data.get('isDonation', False), "variants": data.get('variants', []), "createdAt": datetime.utcnow()
     }
     db.products.insert_one(new_product)
     return jsonify({"success": True})
@@ -959,10 +821,6 @@ def delete_product(pid):
     db.products.delete_one({'_id': ObjectId(pid)})
     return jsonify({"success": True})
 
-# =========================================
-# 11. API: 公告、FAQ、基金、外部連結
-# =========================================
-
 @app.route('/api/announcements', methods=['GET'])
 def get_announcements():
     cursor = db.announcements.find().sort([("isPinned", -1), ("_id", -1)])
@@ -977,29 +835,21 @@ def get_announcements():
 @login_required
 def add_announcement():
     data = request.get_json()
-    date_obj = datetime.strptime(data['date'], '%Y/%m/%d')
     db.announcements.insert_one({
-        "date": date_obj, "title": data['title'], "content": data['content'],
-        "isPinned": data.get('isPinned', False), "createdAt": datetime.utcnow()
+        "date": datetime.strptime(data['date'], '%Y/%m/%d'), "title": data['title'],
+        "content": data['content'], "isPinned": data.get('isPinned', False), "createdAt": datetime.utcnow()
     })
     return jsonify({"success": True})
 
 @app.route('/api/announcements/<aid>', methods=['PUT'])
 @login_required
 def update_announcement(aid):
-    if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
-    try:
-        date_obj = datetime.strptime(data['date'], '%Y/%m/%d')
-        update_fields = {
-            "date": date_obj,
-            "title": data['title'],
-            "content": data['content'],
-            "isPinned": data.get('isPinned', False)
-        }
-        db.announcements.update_one({'_id': ObjectId(aid)}, {'$set': update_fields})
-        return jsonify({"success": True})
-    except Exception as e: return jsonify({"error": str(e)}), 500
+    db.announcements.update_one({'_id': ObjectId(aid)}, {'$set': {
+        "date": datetime.strptime(data['date'], '%Y/%m/%d'), "title": data['title'],
+        "content": data['content'], "isPinned": data.get('isPinned', False)
+    }})
+    return jsonify({"success": True})
 
 @app.route('/api/announcements/<aid>', methods=['DELETE'])
 @login_required
@@ -1030,18 +880,11 @@ def add_faq():
 @app.route('/api/faq/<fid>', methods=['PUT'])
 @login_required
 def update_faq(fid):
-    if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
-    try:
-        update_fields = {
-            "question": data['question'],
-            "answer": data['answer'],
-            "category": data['category'],
-            "isPinned": data.get('isPinned', False)
-        }
-        db.faq.update_one({'_id': ObjectId(fid)}, {'$set': update_fields})
-        return jsonify({"success": True})
-    except Exception as e: return jsonify({"error": str(e)}), 500
+    db.faq.update_one({'_id': ObjectId(fid)}, {'$set': {
+        "question": data['question'], "answer": data['answer'], "category": data['category'], "isPinned": data.get('isPinned', False)
+    }})
+    return jsonify({"success": True})
 
 @app.route('/api/faq/<fid>', methods=['DELETE'])
 @login_required
@@ -1059,11 +902,7 @@ def get_fund_settings():
 @login_required
 def update_fund_settings():
     data = request.get_json()
-    db.temple_fund.update_one(
-        {"type": "main_fund"},
-        {"$set": {"goal_amount": int(data.get('goal_amount', 0)), "current_amount": int(data.get('current_amount', 0))}},
-        upsert=True
-    )
+    db.temple_fund.update_one({"type": "main_fund"}, {"$set": {"goal_amount": int(data.get('goal_amount', 0)), "current_amount": int(data.get('current_amount', 0))}}, upsert=True)
     return jsonify({"success": True})
 
 @app.route('/api/links', methods=['GET'])
@@ -1082,31 +921,17 @@ def update_link(lid):
 def ship_order(oid):
     data = request.get_json() or {}
     tracking_num = data.get('trackingNumber', '').strip()
-    
     order = db.orders.find_one({'_id': ObjectId(oid)})
     if not order: return jsonify({"error": "No order"}), 404
-    
-    now = datetime.utcnow() # 存入資料庫仍維持 UTC 標準
-    
-    # 更新為 shipped (已出貨)
-    db.orders.update_one(
-        {'_id': ObjectId(oid)}, 
-        {'$set': {
-            'status': 'shipped', 
-            'updatedAt': now, 
-            'shippedAt': now, # ★ 這裡記錄當下時間
-            'trackingNumber': tracking_num
-        }}
-    )
-    
-    # 寄送出貨通知信
+    now = datetime.utcnow()
+    db.orders.update_one({'_id': ObjectId(oid)}, {'$set': {
+        'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 'trackingNumber': tracking_num
+    }})
     cust = order['customer']
     email_subject = f"【承天中承府】訂單出貨通知 ({order['orderId']})"
     email_html = generate_shop_email_html(order, 'shipped', tracking_num)
     send_email(cust.get('email'), email_subject, email_html, is_html=True)
-    
     return jsonify({"success": True})
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

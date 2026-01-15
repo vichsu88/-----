@@ -297,6 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function renderDonationCard(o, isPaid) {
+        // ★ 核心修改：如果已付款 (isPaid=true)，不顯示刪除按鈕
         return `
         <div class="feedback-card" style="border-left:5px solid ${isPaid?'#28a745':'#dc3545'};">
             <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:10px;">
@@ -326,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="text-align:right; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
                 ${!isPaid ? `<button class="btn btn--green" onclick="confirmDonation('${o._id}')">✅ 確認收款 (寄感謝狀)</button>` : ''}
                 ${isPaid ? `<button class="btn btn--blue" onclick="resendEmail('${o._id}', '${o.customer.email}')">📩 補寄感謝狀</button>` : ''}
-                <button class="btn btn--red" onclick="delOrder('${o._id}', 'donation')">🗑️ 刪除 (寄取消信)</button>
+                ${!isPaid ? `<button class="btn btn--red" onclick="delOrder('${o._id}', 'donation')">🗑️ 刪除 (寄取消信)</button>` : ''}
             </div>
         </div>`;
     }
@@ -335,6 +336,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if(confirm('確認已收到款項？(將寄出電子感謝狀並列入芳名錄)')) {
             await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'});
             fetchDonations();
+        }
+    };
+
+    // 補寄信功能 (共用)
+    window.resendEmail = async (id, oldEmail) => {
+        const newEmail = prompt("請確認接收 Email (若要修改請直接編輯):", oldEmail);
+        if(newEmail) {
+            try {
+                await apiFetch(`/api/orders/${id}/resend-email`, {method:'POST', body:JSON.stringify({email: newEmail})});
+                alert('已發送重寄請求');
+            } catch(e) { alert('發送失敗'); }
         }
     };
 
@@ -387,13 +399,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderShopOrder(o, type) {
-        let btns = '';
+        let btns = `<button class="btn btn--grey" onclick='viewOrderDetails(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🔍 查看詳情</button>`; // ★ 新增查看詳情按鈕
+        
         if(type === 'pending') {
-            btns = `<button class="btn btn--green" onclick="confirmOrder('${o._id}', '${o.orderId}')">✅ 確認收款</button>
-                    <button class="btn btn--red" onclick="delOrder('${o._id}', 'shop')">刪除 (寄信)</button>`;
+            btns += `<button class="btn btn--green" onclick="confirmOrder('${o._id}', '${o.orderId}')">✅ 確認收款</button>
+                     <button class="btn btn--red" onclick="delOrder('${o._id}', 'shop')">刪除</button>`;
         } else if(type === 'toship') {
-            btns = `<button class="btn btn--blue" onclick="shipOrder('${o._id}')">🚚 出貨</button>`;
+            btns += `<button class="btn btn--blue" onclick="shipOrder('${o._id}')">🚚 出貨</button>`;
         }
+        
         return `
         <div class="feedback-card" style="border-left:5px solid ${type==='pending'?'#dc3545':(type==='toship'?'#28a745':'#007bff')};">
             <div style="display:flex; justify-content:space-between;"><b>${o.orderId}</b> <small>${o.createdAt}</small></div>
@@ -403,7 +417,29 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
     }
 
-    window.confirmOrder = async (id, orderId) => { if(confirm('確認收款？')) { await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'}); fetchOrders(); } };
+    // ★ 訂單詳情彈窗
+    window.viewOrderDetails = (o) => {
+        const modalBody = document.getElementById('order-detail-body');
+        modalBody.innerHTML = `
+            <p><b>訂單編號:</b> ${o.orderId}</p>
+            <p><b>建立時間:</b> ${o.createdAt}</p>
+            <hr>
+            <h4>客戶資料</h4>
+            <p><b>姓名:</b> ${o.customer.name}</p>
+            <p><b>電話:</b> ${o.customer.phone}</p>
+            <p><b>地址:</b> ${o.customer.address}</p>
+            <p><b>Email:</b> ${o.customer.email}</p>
+            <p><b>匯款後五碼:</b> ${o.customer.last5}</p>
+            <hr>
+            <h4>訂單內容</h4>
+            <ul>${o.items.map(i => `<li>${i.name} (${i.variantName||i.variant||'標準'}) x${i.qty} - $${i.price*i.qty}</li>`).join('')}</ul>
+            <p style="text-align:right; font-size:18px; color:#C48945;"><b>總金額: $${o.total}</b></p>
+            ${o.trackingNumber ? `<hr><p><b>物流單號:</b> ${o.trackingNumber}</p>` : ''}
+        `;
+        document.getElementById('order-detail-modal').classList.add('is-visible');
+    }
+
+    window.confirmOrder = async (id, orderId) => { if(confirm(`確認收款訂單編號：${orderId}，將回信待出貨？`)) { await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'}); fetchOrders(); } };
     
     // ★ 訂單出貨 (物流單號)
     window.shipOrder = async (id) => {
@@ -542,12 +578,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 載入匯款資訊
     async function fetchBankInfo() {
-        const data = await apiFetch('/api/settings/bank');
-        if(bankForm) {
-            bankForm.bankCode.value = data.bankCode || '808';
-            bankForm.bankName.value = data.bankName || '玉山銀行';
-            bankForm.account.value = data.account || '';
-        }
+        try {
+            const data = await apiFetch('/api/settings/bank');
+            if(bankForm) {
+                bankForm.bankCode.value = data.bankCode || '808';
+                bankForm.bankName.value = data.bankName || '玉山銀行';
+                bankForm.account.value = data.account || '';
+            }
+        } catch(e) { console.error('Bank info load fail'); }
     }
 
     if(bankForm) bankForm.onsubmit = async (e) => {
