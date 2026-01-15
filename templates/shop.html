@@ -44,24 +44,86 @@
     /* === 購物主區塊 === */
     #shopping-section { display: none; padding: 40px 10px; background: #F8F5F2; min-height: 100vh; }
 
-    /* 訂購須知區塊 */
+    /* === 訂購流程視覺化區塊 (新版) === */
     .shop-instructions {
-        max-width: 1000px; margin: 0 auto 30px auto;
-        background: #fff; padding: 25px; border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;
-        border: 1px solid #eee;
+        max-width: 1100px; margin: 0 auto 40px auto;
+        background: #fff; padding: 30px; border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid #E6BA67;
+        position: relative;
+        overflow: hidden;
     }
-    .shop-instructions h2 { color: #8B4513; margin-bottom: 10px; font-size: 1.5rem; }
-    .shop-instructions p { color: #555; line-height: 1.6; margin-bottom: 10px; }
     
-    /* 區塊內的 7-11 按鈕 (維持小尺寸) */
-    .btn-711-inline {
-        display: inline-block; background: #009c6f; color: white; 
-        padding: 8px 20px; border-radius: 20px; text-decoration: none; 
-        font-weight: bold; font-size: 0.95rem; margin-top: 5px;
-        transition: 0.3s;
+    /* 標題區 */
+    .instruction-header {
+        text-align: center; margin-bottom: 30px; border-bottom: 2px dashed #eee; padding-bottom: 15px;
     }
-    .btn-711-inline:hover { background: #007c58; transform: scale(1.05); }
+    .instruction-header h2 {
+        color: #8B4513; margin: 0 0 10px 0; font-size: 1.8rem; font-family: 'KouzanBrushFontOTF', serif;
+    }
+    .shipping-badge {
+        display: inline-block; background: #d32f2f; color: white; 
+        padding: 4px 12px; border-radius: 4px; font-size: 0.9rem; font-weight: bold;
+        box-shadow: 0 2px 5px rgba(211, 47, 47, 0.3);
+    }
+
+    /* 流程步驟容器 (Flexbox) */
+    .process-steps {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 0; margin: 0; list-style: none; position: relative;
+    }
+    
+    /* 連接線 (桌機版) */
+    .process-steps::before {
+        content: ''; position: absolute; top: 40px; left: 50px; right: 50px;
+        height: 3px; background: #E6BA67; z-index: 0;
+        opacity: 0.5;
+    }
+
+    /* 單一步驟 */
+    .step-item {
+        flex: 1; text-align: center; position: relative; z-index: 1; padding: 0 10px;
+    }
+
+    /* 圖示圓圈 */
+    .step-icon-box {
+        width: 80px; height: 80px; margin: 0 auto 15px auto;
+        background: #fff; border: 3px solid #C48945; border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        font-size: 32px; box-shadow: 0 4px 10px rgba(196, 137, 69, 0.2);
+        transition: transform 0.3s;
+    }
+    .step-item:hover .step-icon-box { transform: scale(1.1); background: #fffbf5; }
+
+    /* 步驟文字 */
+    .step-title { font-weight: bold; color: #8B4513; font-size: 1.1rem; margin-bottom: 8px; display: block; }
+    .step-desc { font-size: 0.9rem; color: #666; line-height: 1.5; display: block; }
+
+    /* 特殊圖示微調 */
+    .icon-custom { width: 45px; height: auto; }
+    
+    /* 重點強調 (匯款時間) */
+    .highlight-text { color: #d32f2f; font-weight: bold; }
+
+    /* === 響應式調整 (手機版轉直式) === */
+    @media (max-width: 768px) {
+        .process-steps { flex-direction: column; gap: 20px; align-items: center; }
+        .process-steps::before { 
+            /* 直式連接線 */
+            width: 3px; height: calc(100% - 80px); top: 40px; left: 40px; right: auto; 
+        }
+        .step-item { 
+            display: flex; align-items: center; text-align: left; width: 100%; gap: 15px; 
+            background: #fff; /* 蓋住背後的線 */
+            padding-right: 0;
+        }
+        .step-icon-box { margin: 0; width: 60px; height: 60px; font-size: 24px; flex-shrink: 0; }
+        .process-steps::before { left: 29px; /* 對齊圓圈中心 */ }
+        
+        .icon-custom { width: 30px; }
+        .shop-instructions { padding: 20px 15px; }
+        .instruction-header h2 { font-size: 1.5rem; }
+    }
 
     /* 分類按鈕 */
     .category-nav { display: flex; justify-content: center; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
@@ -108,7 +170,6 @@
         flex: 1; background: #333; color: #fff; border: none; padding: 10px; 
         border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;
     }
-    /* 手機版移除 active 狀態下的文字變化，避免畫面跳動，改用下方購物車動畫回饋 */
     .add-btn:active { transform: scale(0.95); } 
 
     /* === 懸浮購物車與動畫 === */
@@ -121,14 +182,12 @@
         cursor: pointer; z-index: 990; transition: transform 0.2s;
     }
     
-    /* 定義彈跳動畫 */
     @keyframes cart-bounce {
         0% { transform: scale(1); }
-        40% { transform: scale(1.3); } /* 放大 */
-        100% { transform: scale(1); }  /* 恢復 */
+        40% { transform: scale(1.3); } 
+        100% { transform: scale(1); } 
     }
     
-    /* 加入購物車時觸發的 class */
     .floating-cart.animating {
         animation: cart-bounce 0.4s ease-out;
     }
@@ -167,8 +226,6 @@
         .add-box { flex-direction: column; gap: 5px; }
         .qty-in { width: 100%; padding: 5px; }
         .add-btn { padding: 6px; font-size: 14px; }
-        
-        /* 手機版按鈕寬度調整為螢幕 85%，保持一致性 */
         .landing-btn { width: 85%; font-size: 18px; }
     }
 </style>
@@ -189,9 +246,52 @@
 
 <div id="shopping-section">
     <div class="shop-instructions">
-        <h2>帥府商店訂購須知</h2>
-        <p>請依分類選購，下單後請於2小時內完成匯款。</p>
-        <p>全館統一運費：NT$ 120</p>
+        <div class="instruction-header">
+            <h2>帥府商店訂購流程</h2>
+            <div class="shipping-badge">🚚 全館統一運費：NT$ 120</div>
+        </div>
+        
+        <ol class="process-steps">
+            <li class="step-item">
+                <div class="step-icon-box" title="選購商品">
+                    🛒
+                </div>
+                <div class="step-text">
+                    <span class="step-title">Step 1：選購商品</span>
+                    <span class="step-desc">挑選您喜愛的法寶，點擊加入購物車。</span>
+                </div>
+            </li>
+            
+            <li class="step-item">
+                <div class="step-icon-box" title="填寫資料">
+                    📝
+                </div>
+                <div class="step-text">
+                    <span class="step-title">Step 2：填寫資料</span>
+                    <span class="step-desc">確認收件人姓名、電話與地址正確無誤。</span>
+                </div>
+            </li>
+            
+            <li class="step-item">
+                <div class="step-icon-box" style="border-color: #d32f2f;" title="完成匯款">
+                    <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="icon-custom" alt="元寶">
+                </div>
+                <div class="step-text">
+                    <span class="step-title" style="color:#d32f2f;">Step 3：完成匯款</span>
+                    <span class="step-desc">請於下單後 <span class="highlight-text">2 小時內</span> 完成轉帳，逾時訂單將自動取消。</span>
+                </div>
+            </li>
+            
+            <li class="step-item">
+                <div class="step-icon-box" title="確認出貨">
+                    🐈‍⬛
+                </div>
+                <div class="step-text">
+                    <span class="step-title">Step 4：確認出貨</span>
+                    <span class="step-desc">帥府確認款項後，將盡速安排黑貓宅配寄出，請留意 Email 通知。</span>
+                </div>
+            </li>
+        </ol>
     </div>
 
     <div class="category-nav">
@@ -373,16 +473,9 @@
         
         updateCart();
         
-        // ★★★ 優化：移除按鈕文字變化，改用購物車動畫回饋 ★★★
         const cartBtn = document.getElementById('floating-cart');
-        
-        // 移除 class 以重置動畫 (如果連續點擊)
         cartBtn.classList.remove('animating');
-        
-        // 觸發 reflow (讓瀏覽器知道需要重新渲染，這樣才能重新執行 CSS 動畫)
         void cartBtn.offsetWidth; 
-        
-        // 加入 class 開始動畫
         cartBtn.classList.add('animating');
     };
 
