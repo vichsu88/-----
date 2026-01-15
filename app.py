@@ -105,15 +105,15 @@ def mask_name(real_name):
 
 def send_email_task(to_email, subject, body, is_html=False):
     """
-    【背景任務】
-    這是實際執行寄信的分身。
-    它使用 SendGrid V3 API (HTTP Port 443)，不會被 Render 防火牆擋住。
+    【背景任務】加強 Debug 版
     """
+    print(f"--- 準備寄信給: {to_email} ---") # Debug: 確認有進入函式
+
     if not SENDGRID_API_KEY:
-        print("⚠️ 警告: 未設定 SENDGRID_API_KEY，無法寄信")
+        print("❌ 錯誤: 環境變數 SENDGRID_API_KEY 未設定")
         return
     if not MAIL_SENDER:
-        print("⚠️ 警告: 未設定 MAIL_USERNAME (寄件者)，無法寄信")
+        print("❌ 錯誤: 環境變數 MAIL_USERNAME 未設定 (這應該是您的寄件者 Email)")
         return
 
     # SendGrid API 網址
@@ -136,7 +136,6 @@ def send_email_task(to_email, subject, body, is_html=False):
     }
 
     try:
-        # 使用標準庫 urllib 發送請求 (無需額外安裝 requests 套件)
         req = urllib.request.Request(
             url, 
             data=json.dumps(payload).encode('utf-8'), 
@@ -145,21 +144,20 @@ def send_email_task(to_email, subject, body, is_html=False):
         )
         
         with urllib.request.urlopen(req) as response:
-            # 2xx 代表成功
-            if 200 <= response.status < 300:
-                print(f"✅ SendGrid Email 成功寄出給 {to_email}")
-            else:
-                print(f"⚠️ SendGrid 回應狀態碼: {response.status}")
+            print(f"✅ SendGrid 寄信成功! Status: {response.status}")
 
     except urllib.error.HTTPError as e:
-        # 讀取錯誤訊息以便除錯
+        # 讀取詳細錯誤訊息
         try:
-            error_msg = e.read().decode('utf-8')
+            error_body = e.read().decode('utf-8')
         except:
-            error_msg = "無法讀取錯誤訊息"
-        print(f"❌ SendGrid API 錯誤 ({e.code}): {error_msg}")
+            error_body = "無法讀取內容"
+        print(f"❌ SendGrid API 回傳錯誤 ({e.code}):")
+        print(f"   錯誤內容: {error_body}")
+        print(f"   檢查重點: 1. API Key 是否正確? 2. MAIL_USERNAME ({MAIL_SENDER}) 是否已在 SendGrid 驗證過?")
+        
     except Exception as e:
-        print(f"❌ 寄信發生未知錯誤: {e}")
+        print(f"❌ 寄信發生未知例外錯誤: {str(e)}")
 
 def send_email(to_email, subject, body, is_html=False):
     """
