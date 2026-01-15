@@ -124,7 +124,11 @@
     }
     
     .form-fieldset label, .single-choice{display:block;margin-bottom:12px;font-size:15px;}
-    .form-fieldset input[type=text], .form-fieldset input[type=tel], .form-fieldset textarea, .form-fieldset select { 
+    .form-fieldset input[type=text], 
+    .form-fieldset input[type=tel], 
+    .form-fieldset input[type=email], 
+    .form-fieldset textarea, 
+    .form-fieldset select { 
         width:100%;border:1px solid #ccc;border-radius:6px;padding:8px 10px; font-size:15px;box-sizing:border-box; 
     }
     .single-choice label{margin-right:10px;font-weight:normal; display: inline-block;}
@@ -156,7 +160,7 @@
     .review-table th {
         background: #E6BA67;
         color: white;
-        width: 120px; /* 固定標題寬度 */
+        width: 130px; /* 固定標題寬度 */
         font-weight: normal;
     }
     /* ★★★ 內容防爆版關鍵 ★★★ */
@@ -187,7 +191,7 @@
     </a>
 
     <div id="feedback-list-container">
-        </div>
+    </div>
 </main>
 
 <div id="feedback-form-modal" class="modal-overlay">
@@ -221,17 +225,17 @@
                 </label>
 
                 <div class="form-group">
-                    <label for="lunarBirthday">農曆生日 (YYYY/MM/DD) <span style="color:red;font-size:12px;">*必填</span></label>
+                    <label for="lunarBirthday">農曆生日 (請直接輸入數字) <span style="color:red;font-size:12px;">*必填</span></label>
                     <input type="text" id="lunarBirthday" name="lunarBirthday" 
-                          placeholder="例如：1995/08/21" maxlength="10" required>
-                    <small style="color:#888;">格式範例：1995/01/01 (月日請補0)</small>
+                           placeholder="例如：750815 或 19950815" maxlength="10" required>
+                    <small style="color:#888;">系統將自動轉換為日期格式 (YYYY/MM/DD)</small>
                 </div>
 
                 <div class="form-group">
                     <label for="birthTime">出生時辰 <span style="color:red;font-size:12px;">*必填</span></label>
                     <select id="birthTime" name="birthTime" required>
                         <option value="" disabled selected>請選擇時辰</option>
-                        <option value="吉時 (不知道)">吉時</option>
+                        <option value="吉時">吉時</option>
                         <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
                         <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
                         <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
@@ -247,8 +251,25 @@
                     </select>
                 </div>
 
-                <label>寄件地址：<input type="text" name="address" required placeholder="請填寫完整收件地址"></label>
-                <label>聯絡電話：<input type="tel" name="phone" required placeholder="例如：0912345678"></label>
+                <div class="form-group">
+                    <label>電子信箱 (Email) <span style="color:red;font-size:12px;">*必填</span></label>
+                    <input type="email" name="email" required placeholder="example@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>聯絡電話 (自動格式化) <span style="color:red;font-size:12px;">*必填</span></label>
+                    <input type="tel" name="phone" id="phone-input" required placeholder="09XX-XXX-XXX" maxlength="12">
+                </div>
+                
+                <div class="form-group">
+                    <label>寄件地址 <span style="color:red;font-size:12px;">*必填</span></label>
+                    <input type="text" name="address" required placeholder="請填寫完整收件地址">
+                </div>
+
+                <div class="form-group">
+                    <label>匯款帳號後五碼 <span style="color:red;font-size:12px;">*必填</span></label>
+                    <input type="text" name="last5" required maxlength="5" pattern="\d{5}" placeholder="請填寫 5 碼數字" title="請輸入5位數字">
+                </div>
             </div>
 
             <button type="button" id="go-to-review-btn" class="btn-primary" disabled>下一步：確認資料</button>
@@ -266,8 +287,10 @@
             <tr><th>類別</th><td id="review-category"></td></tr>
             <tr><th>農曆生日</th><td id="review-lunarBirthday"></td></tr>
             <tr><th>時辰</th><td id="review-birthTime"></td></tr>
-            <tr><th>電話</th><td id="review-phone"></td></tr>
+            <tr><th>電子信箱</th><td id="review-email"></td></tr>
+            <tr><th>聯絡電話</th><td id="review-phone"></td></tr>
             <tr><th>地址</th><td id="review-address"></td></tr>
+            <tr><th>帳號後五碼</th><td id="review-last5"></td></tr>
             <tr>
                 <th colspan="2" style="text-align:center; background:#f0f0f0; color:#555;">回饋內容</th>
             </tr>
@@ -313,7 +336,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Form Inputs
   const feedbackForm = document.getElementById('feedback-form');
   const agreeCheckbox = document.getElementById('review-agreed');
-  const lunarInput = document.getElementById('lunarBirthday');
+  const phoneInput = document.getElementById('phone-input');
+  const birthdayInput = document.getElementById('lunarBirthday');
 
   // --- 1. 自動載入回饋列表 ---
   async function fetchAndRenderFeedback() {
@@ -350,72 +374,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- 2. Fix: 農曆生日輸入修正 (解決重複輸入問題 + 範圍驗證) ---
-  if(lunarInput){
-      let isComposing = false; 
-
-      lunarInput.addEventListener('compositionstart', () => { isComposing = true; });
-      lunarInput.addEventListener('compositionend', () => { isComposing = false; handleInput(); });
-
-      lunarInput.addEventListener('input', (e) => {
-          if (isComposing) return;
-          handleInput(e);
+  // --- 2. 欄位格式化 (比照 donation.html) ---
+  function setupFormatters() {
+      // 電話：09XX-XXX-XXX
+      phoneInput.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/\D/g, ''); // 只留數字
+          if (v.length > 10) v = v.slice(0, 10);
+          if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
+          else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
+          e.target.value = v;
+          checkFormValidity();
       });
 
-      function handleInput(e) {
-        let v = lunarInput.value.replace(/\D/g, ''); // 只保留數字
-        if (v.length > 8) v = v.slice(0, 8); // YYYYMMDD 最多8碼
-
-        // 格式化邏輯
-        let formatted = '';
-        if (v.length > 4) {
-          formatted = v.slice(0, 4) + '/' + v.slice(4);
-        } else if (v.length === 4) {
-           // 只有在不是刪除鍵操作時才自動補斜線
-           if(e && e.inputType !== 'deleteContentBackward') formatted = v + '/';
-           else formatted = v;
-        } else {
-          formatted = v;
-        }
-
-        if (formatted.length > 7) {
-           // formatted 現在像 1995/08
-           let rawDate = v.slice(4, 6); // 月份部分
-           
-           // 自動補第二個斜線
-           if(v.length >= 7) {
-               formatted = v.slice(0, 4) + '/' + v.slice(4, 6) + '/' + v.slice(6);
-           }
-        }
-        
-        // 只有當格式化後的字串跟當前顯示的不一樣時才更新
-        if (lunarInput.value !== formatted) {
-            lunarInput.value = formatted;
-        }
-        
-        checkFormValidity(); // 每次輸入都檢查按鈕狀態
-      }
-  }
-
-  // 日期有效性檢查 (YYYY/MM/DD)
-  function isValidDate(dateString) {
-      const regex = /^\d{4}\/\d{2}\/\d{2}$/;
-      if (!regex.test(dateString)) return false;
+      // 農曆生日：輸入純數字 -> Blur 自動加斜線
+      birthdayInput.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/\D/g, '');
+          checkFormValidity();
+      });
+      birthdayInput.addEventListener('blur', (e) => {
+          let v = e.target.value;
+          // 支援 6碼 (YYMMDD), 7碼 (YYYMMDD), 8碼 (YYYYMMDD)
+          if(v.length === 6) {
+              e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
+          } else if (v.length === 7) {
+              e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
+          } else if (v.length === 8) {
+              e.target.value = v.replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3');
+          }
+          checkFormValidity();
+      });
       
-      const parts = dateString.split('/');
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10);
-      const day = parseInt(parts[2], 10);
-
-      // 檢查範圍
-      if (month < 1 || month > 12) return false;
-      if (day < 1 || day > 31) return false;
-      
-      // 簡單檢查年份合理性
-      if (year < 1900 || year > new Date().getFullYear()) return false;
-
-      return true;
+      // 匯款後五碼限制
+      const last5Input = feedbackForm.last5;
+      last5Input.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+          checkFormValidity();
+      });
   }
+  setupFormatters();
 
   // --- 3. 檢查表單完整性 (所有欄位必填) ---
   function checkFormValidity() {
@@ -423,21 +419,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const isNickname = feedbackForm.nickname.value.trim().length > 0;
     const isCategory = !!feedbackForm.category.value;
     const isContentOk = feedbackForm.content.value.trim().length >= 100;
-    const isPhone = feedbackForm.phone.value.trim().length > 0;
     const isAddress = feedbackForm.address.value.trim().length > 0;
     const isBirthTime = feedbackForm.birthTime.value !== "";
     
-    // 日期檢查
-    const dateVal = lunarInput.value;
-    const isDateOk = isValidDate(dateVal);
+    // 新增欄位驗證
+    const isEmail = feedbackForm.email.checkValidity() && feedbackForm.email.value.trim().length > 0;
+    const isLast5 = /^\d{5}$/.test(feedbackForm.last5.value);
+
+    // 電話驗證 (比照 donation.html)
+    const isPhone = /^09\d{2}-\d{3}-\d{3}$/.test(feedbackForm.phone.value);
+    
+    // 日期驗證 (允許 YYYY/MM/DD 或 YYY/MM/DD)
+    const isDateOk = /^\d{2,4}\/\d{2}\/\d{2}$/.test(birthdayInput.value);
 
     // 只有全部通過，按鈕才啟用
-    const allValid = isRealName && isNickname && isCategory && isContentOk && isPhone && isAddress && isBirthTime && isDateOk;
+    const allValid = isRealName && isNickname && isCategory && isContentOk && isPhone && isAddress && isBirthTime && isDateOk && isEmail && isLast5;
     goToReviewBtn.disabled = !allValid;
   }
 
   feedbackForm.addEventListener('input', checkFormValidity);
-  feedbackForm.addEventListener('change', checkFormValidity); // 針對 radio 和 select
+  feedbackForm.addEventListener('change', checkFormValidity);
 
   // --- 4. 點擊「下一步：確認資料」 ---
   goToReviewBtn.addEventListener('click', () => {
@@ -446,8 +447,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('review-category').textContent = feedbackForm.category.value;
     document.getElementById('review-lunarBirthday').textContent = feedbackForm.lunarBirthday.value;
     document.getElementById('review-birthTime').textContent = feedbackForm.birthTime.value;
+    document.getElementById('review-email').textContent = feedbackForm.email.value;
     document.getElementById('review-phone').textContent = feedbackForm.phone.value;
     document.getElementById('review-address').textContent = feedbackForm.address.value;
+    document.getElementById('review-last5').textContent = feedbackForm.last5.value;
     document.getElementById('review-content').textContent = feedbackForm.content.value;
     
     agreeCheckbox.checked = false;
@@ -480,8 +483,10 @@ document.addEventListener('DOMContentLoaded', () => {
       content: feedbackForm.content.value.trim(),
       lunarBirthday: feedbackForm.lunarBirthday.value.trim(),
       birthTime: feedbackForm.birthTime.value,
-      address: feedbackForm.address.value.trim(),
+      email: feedbackForm.email.value.trim(),
       phone: feedbackForm.phone.value.trim(),
+      address: feedbackForm.address.value.trim(),
+      last5: feedbackForm.last5.value.trim(),
       agreed: true 
     };
 

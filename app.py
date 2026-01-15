@@ -131,6 +131,67 @@ def get_bank_info():
     銀行帳號：<strong>{account}</strong>
     """
 
+# --- 新增：回饋信件樣板 ---
+def generate_feedback_email_html(feedback, status_type, tracking_num=None):
+    """產生信徒回饋相關的 Email HTML"""
+    name = feedback.get('realName', '信徒')
+    
+    if status_type == 'rejected':
+        title = "感謝您的投稿與分享"
+        content_body = f"""
+        非常感謝您撥冗寫下與元帥的故事，我們已經收到您的投稿。<br><br>
+        每一份分享都是對帥府最珍貴的支持。經內部審閱與討論後，由於目前的版面規劃與內容篩選考量，很遺憾此次<strong>暫時無法將您的文章刊登於官網</strong>，還請您見諒。<br><br>
+        雖然文字未能在網上呈現，但您對元帥的這份心意，帥府上下都已深深感受到。歡迎您持續關注我們，也期待未來還有機會聽到您的分享。<br><br>
+        闔家平安，萬事如意
+        """
+    elif status_type == 'approved':
+        title = "您的回饋已核准刊登"
+        content_body = f"""
+        感謝您的感應故事分享！您的文章已審核通過，並正式<strong>刊登於承天中承府官方網站</strong>。這份法布施將讓更多有緣人感受到元帥的威靈與慈悲。<br><br>
+        為了感謝您的發心，帥府特別準備了一份「小神衣」要與您結緣。<br><br>
+        <div style="background:#fffcf5; padding:15px; border-left:4px solid #C48945; margin:15px 0; color:#555;">
+            <strong>⚡ 元帥娘開符加持中</strong><br>
+            目前元帥娘正在親自為小神衣進行「開符」與加持儀式，以確保將滿滿的祝福送到您手中。待儀式圓滿並寄出後，系統會再發送一封信件通知您，這段時間請您留意 Email 信箱。
+        </div>
+        <br>
+        再次感謝您的分享！
+        """
+    elif status_type == 'sent':
+        title = "結緣品寄出通知"
+        content_body = f"""
+        讓您久等了！<br>
+        經過元帥娘開符加持的「小神衣」已於今日為您寄出。這份結緣品承載著帥府的祝福，希望能常伴您左右，護佑平安。<br><br>
+        <div style="background:#f0ebe5; padding:15px; border:1px solid #C48945; border-radius:8px;">
+            <strong>📦 物流單號：{tracking_num}</strong><br>
+            <span style="font-size:13px; color:#666;">您可以透過此單號查詢配送進度。</span>
+        </div><br>
+        收到後若有任何問題，歡迎隨時透過官方 LINE 與我們聯繫。<br><br>
+        願 煙島中壇元帥 庇佑您<br>
+        身體健康，順心如意
+        """
+    else:
+        title = "承天中承府通知"
+        content_body = ""
+
+    # 使用與 Shop Email 相同的 HTML 結構
+    return f"""
+    <div style="font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color:#fff;">
+        <div style="background: #C48945; padding: 20px; text-align: center;">
+            <h2 style="color: #fff; margin: 0; letter-spacing: 1px;">{title}</h2>
+        </div>
+        <div style="padding: 30px;">
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">親愛的 <strong>{name}</strong> 您好：</p>
+            <div style="font-size: 15px; color: #555; line-height: 1.6;">
+                {content_body}
+            </div>
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; display: inline-block; box-shadow: 0 4px 10px rgba(0,185,0,0.3); letter-spacing: 1px;">加入官方 LINE 客服</a>
+            </div>
+        </div>
+        <div style="background: #eee; padding: 15px; text-align: center; font-size: 12px; color: #999;">承天中承府 ‧ 嘉義市新生路337號<br><span style="font-size:11px;">(此為系統自動發送信件，請勿直接回覆)</span></div>
+    </div>
+    """
+
 def generate_shop_email_html(order, status_type, tracking_num=None):
     cust = order['customer']
     items = order['items']
@@ -431,17 +492,10 @@ def approve_feedback(fid):
     # 寄信通知
     if fb.get('email'):
         subject = "【承天中承府】您的回饋已核准刊登"
-        body = f"""
-        親愛的 {fb['realName']} 您好：
-        感謝您的感應故事分享，我們已審核通過並刊登於官網。
-        這份法布施將讓更多人感受到元帥的威靈。
-        
-        為了感謝您的發心，我們將準備一份「小神衣」與您結緣。
-        待結緣品寄出時，會再發信通知您留意查收。
-        
-        承天中承府 敬上
-        """
-        send_email(fb['email'], subject, body)
+        # 使用 HTML 樣板生成內容
+        body = generate_feedback_email_html(fb, 'approved')
+        # 務必加上 is_html=True
+        send_email(fb['email'], subject, body, is_html=True)
         
     return jsonify({"success": True})
 
@@ -464,17 +518,10 @@ def ship_feedback(fid):
     
     if fb.get('email'):
         subject = "【承天中承府】結緣品寄出通知"
-        body = f"""
-        親愛的 {fb['realName']} 您好：
-        
-        元帥娘親自開符加持的「小神衣」已於今日寄出！
-        物流單號：{tracking}
-        
-        願元帥庇佑您平安順遂，萬事如意。
-        
-        承天中承府 敬上
-        """
-        send_email(fb['email'], subject, body)
+        # 使用 HTML 樣板生成內容
+        body = generate_feedback_email_html(fb, 'sent', tracking)
+        # 務必加上 is_html=True
+        send_email(fb['email'], subject, body, is_html=True)
         
     return jsonify({"success": True})
 
@@ -484,17 +531,11 @@ def ship_feedback(fid):
 def delete_feedback(fid):
     fb = db.feedback.find_one({'_id': ObjectId(fid)})
     if fb and fb.get('email'):
-        subject = "【承天中承府】關於您的回饋投稿"
-        body = f"""
-        親愛的 {fb['realName']} 您好：
-        
-        感謝您撥冗分享與元帥的故事。
-        經內部審核，您的投稿內容可能因版面規劃或其他考量，此次暫無法刊登，敬請見諒。
-        
-        感謝您的支持與諒解。
-        承天中承府 敬上
-        """
-        send_email(fb['email'], subject, body)
+        subject = "【承天中承府】感謝您的投稿與分享"
+        # 使用 HTML 樣板生成內容
+        body = generate_feedback_email_html(fb, 'rejected')
+        # 務必加上 is_html=True
+        send_email(fb['email'], subject, body, is_html=True)
         
     db.feedback.delete_one({'_id': ObjectId(fid)})
     return jsonify({"success": True})
