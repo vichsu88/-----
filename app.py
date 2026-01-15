@@ -565,7 +565,28 @@ def update_feedback(fid):
 @login_required
 def download_unmarked_feedback():
     return jsonify({"error": "Deprecated"}), 410
-
+# --- 新增：匯出已寄送名單 (TXT) ---
+@app.route('/api/feedback/export-sent-txt', methods=['POST'])
+@login_required
+def export_sent_feedback_txt():
+    # 搜尋所有狀態為 sent 的資料
+    cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
+    if db.feedback.count_documents({"status": "sent"}) == 0:
+        return jsonify({"error": "無已寄送資料"}), 404
+    
+    si = io.StringIO()
+    si.write(f"已寄送名單匯出\n匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+    si.write("=" * 50 + "\n")
+    
+    # 格式：姓名  電話  地址 (橫列)
+    for doc in cursor:
+        name = doc.get('realName', '無姓名')
+        phone = doc.get('phone', '無電話')
+        address = doc.get('address', '無地址')
+        # 使用 tab 或空格分隔
+        si.write(f"{name}\t{phone}\t{address}\n")
+    
+    return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": "attachment;filename=sent_feedback_list.txt"})
 # 匯出未寄送名單 (TXT)
 @app.route('/api/feedback/export-txt', methods=['POST'])
 @login_required

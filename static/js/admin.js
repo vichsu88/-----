@@ -501,13 +501,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>`).join('') : '<p>無</p>';
             
-        // 3. 已寄送
+        // 3. 已寄送 (修改為只顯示 暱稱、編號，點擊看詳情)
         fbSentList.innerHTML = sent.length ? sent.map(i => `
-            <div class="feedback-card" style="border-left:5px solid #007bff; background:#f0f0f0;">
-                <div><b>${i.feedbackId}</b> ${i.nickname}</div>
-                <small>物流: ${i.trackingNumber} (${i.sentAt})</small>
+            <div class="feedback-card" 
+                 style="border-left:5px solid #007bff; background:#f0f0f0; cursor:pointer; transition:0.2s;" 
+                 onmouseover="this.style.background='#e2e6ea'" 
+                 onmouseout="this.style.background='#f0f0f0'"
+                 onclick='viewSentFbDetail(${JSON.stringify(i).replace(/'/g, "&apos;")})'>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:16px; font-weight:bold; color:#333;">${i.nickname}</span>
+                    <span style="background:#dbeafe; color:#007bff; padding:2px 8px; border-radius:12px; font-size:12px;">
+                        ${i.feedbackId || '無編號'}
+                    </span>
+                </div>
+                <div style="text-align:right; font-size:12px; color:#888; margin-top:5px;">
+                    寄出日: ${i.sentAt || '未知'} (點擊查看詳情)
+                </div>
             </div>`).join('') : '<p>無</p>';
-    }
+        }
     
     // 核准回饋 (自動寄信)
     window.approveFb = async (id) => { 
@@ -681,7 +693,54 @@ document.addEventListener('DOMContentLoaded', () => {
         await apiFetch(id ? `/api/faq/${id}` : '/api/faq', { method: id ? 'PUT' : 'POST', body: JSON.stringify({ question: faqForm.question.value, answer: faqForm.answer.value, category: faqForm.other_category.value, isPinned: faqForm.isPinned.checked }) });
         faqModal.classList.remove('is-visible'); fetchAndRenderFaqs();
     };
+    // --- 新增功能：匯出已寄送名單 ---
+    window.exportSentFeedbackTxt = async () => {
+        try {
+            const res = await fetch('/api/feedback/export-sent-txt', {
+                method: 'POST', 
+                headers: {'X-CSRFToken': getCsrfToken()}
+            });
+            
+            if(res.status === 404) return alert('目前無已寄送資料');
+            if(!res.ok) throw new Error('匯出失敗');
 
+            const blob = await res.blob();
+            const a = document.createElement('a'); 
+            a.href = URL.createObjectURL(blob); 
+            a.download = `已寄送名單_${new Date().toISOString().slice(0,10)}.txt`; 
+            a.click();
+        } catch(e) { 
+            console.error(e);
+            alert('匯出失敗'); 
+        }
+    };
+
+    // --- 新增功能：查看已寄送詳情 (Modal) ---
+    window.viewSentFbDetail = (item) => {
+        const modal = document.getElementById('feedback-detail-modal');
+        const body = document.getElementById('feedback-detail-body');
+        
+        body.innerHTML = `
+            <div style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px;">
+                <p><strong>編號：</strong> ${item.feedbackId || '無'}</p>
+                <p><strong>寄出時間：</strong> ${item.sentAt || '未知'}</p>
+                <p><strong>物流單號：</strong> ${item.trackingNumber || '無'}</p>
+            </div>
+            
+            <p><strong>真實姓名：</strong> ${item.realName}</p>
+            <p><strong>暱稱：</strong> ${item.nickname}</p>
+            <p><strong>電話：</strong> ${item.phone}</p>
+            <p><strong>地址：</strong> ${item.address}</p>
+            <p><strong>分類：</strong> ${Array.isArray(item.category) ? item.category.join(', ') : item.category}</p>
+            
+            <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #ddd; margin-top:10px;">
+                <strong>回饋內容：</strong><br>
+                <div class="pre-wrap">${item.content}</div>
+            </div>
+        `;
+        
+        modal.classList.add('is-visible');
+    };
     // 啟動檢查
     checkSession();
 });

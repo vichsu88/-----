@@ -140,15 +140,18 @@
                         <div>
                             <h3 style="background:#28a745; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">2. 已刊登 / 待寄送</h3>
                             <div style="text-align:right; margin-bottom:10px;">
-                                <button class="btn btn--green" onclick="exportFeedbackTxt()">📄 匯出名單 (TXT)</button>
+                                <button class="btn btn--green" onclick="exportFeedbackTxt()">匯出名單</button>
                             </div>
                             <div id="fb-approved-list"></div>
                         </div>
                     </div>
                     <div style="margin-top:30px;">
-                        <h3 style="background:#007bff; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">3. 已寄送 (歷史紀錄)</h3>
-                        <div id="fb-sent-list"></div>
+                            <h3 style="background:#007bff; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">3. 已寄送 (歷史紀錄)</h3>
+                            <div style="text-align:right; margin-bottom:10px;">
+                                <button class="btn btn--blue" onclick="exportSentFeedbackTxt()">匯出名單</button>
                     </div>
+                    <div id="fb-sent-list"></div>
+                </div>
                 </div>
                 
                 <div id="tab-fund" class="tab-content">
@@ -295,7 +298,14 @@
             </form>
         </div>
     </div>
-
+    <div id="feedback-detail-modal" class="admin-modal-overlay">
+        <div class="admin-modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h3>回饋詳細資料</h3>
+            <div id="feedback-detail-body" style="line-height:1.8; color:#333;">
+                </div>
+        </div>
+    </div>
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>
