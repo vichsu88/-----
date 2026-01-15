@@ -1,9 +1,12 @@
 import os
 import re
 import random
-import smtplib
-import csv
+import json
+import threading
+import urllib.request
+import urllib.error
 import io
+import csv
 from email.mime.text import MIMEText
 from email.header import Header
 from functools import wraps
@@ -32,9 +35,11 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.permanent_session_lifetime = timedelta(hours=8)
 
-# 郵件設定
-MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+# === 郵件設定 (改用 SendGrid API) ===
+# 請在 Render 環境變數設定 SENDGRID_API_KEY
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+# MAIL_USERNAME 作為 "寄件人信箱" (必須與 SendGrid 驗證的 Sender Identity 一致)
+MAIL_SENDER = os.environ.get('MAIL_USERNAME') 
 
 # 流量限制
 limiter = Limiter(
@@ -96,26 +101,81 @@ def mask_name(real_name):
         return real_name[0] + "O" + real_name[2:]
     return real_name
 
-def send_email(to_email, subject, body, is_html=False):
-    """發送郵件工具"""
-    if not MAIL_USERNAME or not MAIL_PASSWORD or not to_email:
-        print("Email not set or credential missing")
+# === 新版寄信功能 (SendGrid API + 雙階段背景執行) ===
+
+def send_email_task(to_email, subject, body, is_html=False):
+    """
+    【背景任務】
+    這是實際執行寄信的分身。
+    它使用 SendGrid V3 API (HTTP Port 443)，不會被 Render 防火牆擋住。
+    """
+    if not SENDGRID_API_KEY:
+        print("⚠️ 警告: 未設定 SENDGRID_API_KEY，無法寄信")
         return
+    if not MAIL_SENDER:
+        print("⚠️ 警告: 未設定 MAIL_USERNAME (寄件者)，無法寄信")
+        return
+
+    # SendGrid API 網址
+    url = "https://api.sendgrid.com/v3/mail/send"
+
+    # 建構 JSON 資料
+    payload = {
+        "personalizations": [{"to": [{"email": to_email}]}],
+        "from": {"email": MAIL_SENDER},
+        "subject": subject,
+        "content": [{
+            "type": "text/html" if is_html else "text/plain",
+            "value": body
+        }]
+    }
+
+    headers = {
+        "Authorization": f"Bearer {SENDGRID_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
     try:
-        msg_type = 'html' if is_html else 'plain'
-        msg = MIMEText(body, msg_type, 'utf-8')
-        msg['Subject'] = Header(subject, 'utf-8')
-        msg['From'] = MAIL_USERNAME
-        msg['To'] = to_email
+        # 使用標準庫 urllib 發送請求 (無需額外安裝 requests 套件)
+        req = urllib.request.Request(
+            url, 
+            data=json.dumps(payload).encode('utf-8'), 
+            headers=headers, 
+            method='POST'
+        )
         
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(MAIL_USERNAME, MAIL_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        print(f"Email sent to {to_email}")
+        with urllib.request.urlopen(req) as response:
+            # 2xx 代表成功
+            if 200 <= response.status < 300:
+                print(f"✅ SendGrid Email 成功寄出給 {to_email}")
+            else:
+                print(f"⚠️ SendGrid 回應狀態碼: {response.status}")
+
+    except urllib.error.HTTPError as e:
+        # 讀取錯誤訊息以便除錯
+        try:
+            error_msg = e.read().decode('utf-8')
+        except:
+            error_msg = "無法讀取錯誤訊息"
+        print(f"❌ SendGrid API 錯誤 ({e.code}): {error_msg}")
     except Exception as e:
-        print(f"Email Error: {e}")
+        print(f"❌ 寄信發生未知錯誤: {e}")
+
+def send_email(to_email, subject, body, is_html=False):
+    """
+    【主程式呼叫點】
+    老闆只負責發號施令，建立一個新執行緒 (Thread) 去寄信，
+    然後立刻返回，確保訂單流程不卡頓。
+    """
+    if not to_email:
+        return
+        
+    # 啟動背景執行緒 (Fire-and-forget)
+    thread = threading.Thread(
+        target=send_email_task, 
+        args=(to_email, subject, body, is_html)
+    )
+    thread.start()
 
 # === Email 樣板產生器 ===
 
@@ -131,7 +191,7 @@ def get_bank_info():
     銀行帳號：<strong>{account}</strong>
     """
 
-# --- 新增：回饋信件樣板 ---
+# --- 回饋信件樣板 ---
 def generate_feedback_email_html(feedback, status_type, tracking_num=None):
     """產生信徒回饋相關的 Email HTML"""
     name = feedback.get('realName', '信徒')
@@ -173,7 +233,6 @@ def generate_feedback_email_html(feedback, status_type, tracking_num=None):
         title = "承天中承府通知"
         content_body = ""
 
-    # 使用與 Shop Email 相同的 HTML 結構
     return f"""
     <div style="font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color:#fff;">
         <div style="background: #C48945; padding: 20px; text-align: center;">
@@ -198,7 +257,6 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
     tw_now = datetime.utcnow() + timedelta(hours=8)
     date_str = tw_now.strftime('%Y/%m/%d %H:%M')
     
-    # 訂單成立時間
     created_at_dt = order.get('createdAt')
     if created_at_dt and isinstance(created_at_dt, datetime):
         created_at_str = (created_at_dt + timedelta(hours=8)).strftime('%Y/%m/%d %H:%M')
@@ -234,7 +292,7 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
         <strong>確認時間：{date_str}</strong>
         """
         show_price = True
-    else: # shipped
+    else: 
         title = "帥府出貨通知"
         color = "#C48945"
         status_text = f"""
@@ -430,7 +488,7 @@ def api_logout():
     session.pop('logged_in', None)
     return jsonify({"success": True})
 
-# --- Feedback API (新增 3 階段支援 + 寄信) ---
+# --- Feedback API ---
 @app.route('/api/feedback', methods=['POST'])
 def add_feedback():
     if db is None: return jsonify({"error": "DB Error"}), 500
@@ -441,57 +499,48 @@ def add_feedback():
         "category": data.get('category', []), "content": data.get('content'),
         "lunarBirthday": data.get('lunarBirthday', ''), "birthTime": data.get('birthTime') or '吉時',
         "address": data.get('address', ''), "phone": data.get('phone', ''),
-        "email": data.get('email', ''), # 確保前端有傳 email
+        "email": data.get('email', ''), 
         "agreed": True, "createdAt": datetime.utcnow(), 
         "status": "pending", "isMarked": False
     }
     db.feedback.insert_one(new_feedback)
     return jsonify({"success": True, "message": "回饋已送出"})
 
-# 1. 待審核 (pending)
-@app.route('/api/feedback/pending', methods=['GET']) # 相容舊網址
+@app.route('/api/feedback/pending', methods=['GET']) 
 @app.route('/api/feedback/status/pending', methods=['GET'])
 @login_required
 def get_pending_feedback():
     cursor = db.feedback.find({"status": "pending"}).sort("createdAt", 1)
     return jsonify([{**doc, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S')} for doc in cursor])
 
-# 2. 已核准/待寄送 (approved)
-@app.route('/api/feedback/approved', methods=['GET']) # 相容舊網址
+@app.route('/api/feedback/approved', methods=['GET']) 
 @app.route('/api/feedback/status/approved', methods=['GET'])
-# @login_required  <--- 【修正點 1】請註解掉或刪除這行，讓前台可以存取
 def get_approved_feedback():
-    # 取得已核准的資料
+    # 這裡為了保護隱私，只回傳暱稱和內容
     cursor = db.feedback.find({"status": "approved"}).sort("createdAt", -1)
-    
     results = []
     for doc in cursor:
         results.append({
             '_id': str(doc['_id']),
-            'nickname': doc.get('nickname', '匿名'),  # 只回傳暱稱
-            'category': doc.get('category', []),      # 回傳類別
-            'content': doc.get('content', ''),        # 回傳內容
-            'createdAt': doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S') # 回傳時間
-            # 注意：不要加入 realName, phone, address, email 等個資欄位
+            'nickname': doc.get('nickname', '匿名'),  
+            'category': doc.get('category', []),      
+            'content': doc.get('content', ''),        
+            'createdAt': doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S') 
         })
-        
     return jsonify(results)
 
-# 3. 已寄送 (sent) - 新增
 @app.route('/api/feedback/status/sent', methods=['GET'])
 @login_required
 def get_sent_feedback():
     cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
     return jsonify([{**doc, '_id': str(doc['_id']), 'sentAt': doc.get('sentAt', doc['createdAt']).strftime('%Y-%m-%d %H:%M')} for doc in cursor])
 
-# 核准回饋 (自動寄信)
 @app.route('/api/feedback/<fid>/approve', methods=['PUT'])
 @login_required
 def approve_feedback(fid):
     fb = db.feedback.find_one({'_id': ObjectId(fid)})
     if not fb: return jsonify({"error": "No data"}), 404
     
-    # 產生編號 (FB + 日期 + 隨機)
     fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
     
     db.feedback.update_one({'_id': ObjectId(fid)}, {
@@ -502,17 +551,13 @@ def approve_feedback(fid):
         }
     })
     
-    # 寄信通知
     if fb.get('email'):
         subject = "【承天中承府】您的回饋已核准刊登"
-        # 使用 HTML 樣板生成內容
         body = generate_feedback_email_html(fb, 'approved')
-        # 務必加上 is_html=True
         send_email(fb['email'], subject, body, is_html=True)
         
     return jsonify({"success": True})
 
-# 寄送禮物 (更新狀態 + 寄信)
 @app.route('/api/feedback/<fid>/ship', methods=['PUT'])
 @login_required
 def ship_feedback(fid):
@@ -531,23 +576,18 @@ def ship_feedback(fid):
     
     if fb.get('email'):
         subject = "【承天中承府】結緣品寄出通知"
-        # 使用 HTML 樣板生成內容
         body = generate_feedback_email_html(fb, 'sent', tracking)
-        # 務必加上 is_html=True
         send_email(fb['email'], subject, body, is_html=True)
         
     return jsonify({"success": True})
 
-# 刪除回饋 (寄送遺憾信)
 @app.route('/api/feedback/<fid>', methods=['DELETE'])
 @login_required
 def delete_feedback(fid):
     fb = db.feedback.find_one({'_id': ObjectId(fid)})
     if fb and fb.get('email'):
         subject = "【承天中承府】感謝您的投稿與分享"
-        # 使用 HTML 樣板生成內容
         body = generate_feedback_email_html(fb, 'rejected')
-        # 務必加上 is_html=True
         send_email(fb['email'], subject, body, is_html=True)
         
     db.feedback.delete_one({'_id': ObjectId(fid)})
@@ -565,11 +605,10 @@ def update_feedback(fid):
 @login_required
 def download_unmarked_feedback():
     return jsonify({"error": "Deprecated"}), 410
-# --- 新增：匯出已寄送名單 (TXT) ---
+
 @app.route('/api/feedback/export-sent-txt', methods=['POST'])
 @login_required
 def export_sent_feedback_txt():
-    # 搜尋所有狀態為 sent 的資料
     cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
     if db.feedback.count_documents({"status": "sent"}) == 0:
         return jsonify({"error": "無已寄送資料"}), 404
@@ -578,16 +617,14 @@ def export_sent_feedback_txt():
     si.write(f"已寄送名單匯出\n匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
     si.write("=" * 50 + "\n")
     
-    # 格式：姓名  電話  地址 (橫列)
     for doc in cursor:
         name = doc.get('realName', '無姓名')
         phone = doc.get('phone', '無電話')
         address = doc.get('address', '無地址')
-        # 使用 tab 或空格分隔
         si.write(f"{name}\t{phone}\t{address}\n")
     
     return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": "attachment;filename=sent_feedback_list.txt"})
-# 匯出未寄送名單 (TXT)
+
 @app.route('/api/feedback/export-txt', methods=['POST'])
 @login_required
 def export_feedback_txt():
@@ -606,7 +643,7 @@ def export_feedback_txt():
     
     return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": "attachment;filename=feedback_list.txt"})
 
-# --- Settings API (匯款資訊) ---
+# --- Settings API ---
 @app.route('/api/settings/bank', methods=['GET', 'POST'])
 @login_required
 def handle_bank_settings():
@@ -705,7 +742,6 @@ def get_admin_donations():
         results.append(doc)
     return jsonify(results)
 
-# 捐贈匯出 (TXT 格式)
 @app.route('/api/donations/export-txt', methods=['POST'])
 @login_required
 def export_donations_txt():
@@ -775,14 +811,16 @@ def create_order():
     }
     db.orders.insert_one(order)
     
-    # if order_type == 'donation':
-    #     email_subject = f"【承天中承府】護持登記確認通知 ({order_id})"
-    #     email_html = generate_donation_created_email(order)
-    #     send_email(customer_info['email'], email_subject, email_html, is_html=True)
-    # else:
-    #     email_subject = f"【承天中承府】訂單確認通知 ({order_id})"
-    #     email_html = generate_shop_email_html(order, 'created')
-    #     send_email(customer_info['email'], email_subject, email_html, is_html=True)
+    # === 使用新的非同步 SendGrid 寄信 ===
+    if order_type == 'donation':
+        email_subject = f"【承天中承府】護持登記確認通知 ({order_id})"
+        email_html = generate_donation_created_email(order)
+        send_email(customer_info['email'], email_subject, email_html, is_html=True)
+    else:
+        email_subject = f"【承天中承府】訂單確認通知 ({order_id})"
+        email_html = generate_shop_email_html(order, 'created')
+        send_email(customer_info['email'], email_subject, email_html, is_html=True)
+        
     return jsonify({"success": True, "orderId": order_id})
 
 @app.route('/api/orders', methods=['GET'])
@@ -1007,42 +1045,17 @@ def ship_order(oid):
     email_html = generate_shop_email_html(order, 'shipped', tracking_num)
     send_email(cust.get('email'), email_subject, email_html, is_html=True)
     return jsonify({"success": True})
-# 放在 app.py 最後面
-@app.route('/api/debug-connection-advanced')
-def debug_connection_advanced():
+
+# 放在 app.py 最後面：健康檢查 (確認資料庫連線)
+@app.route('/api/debug-connection')
+def debug_connection():
     status = {}
-    
-    # 1. 測試資料庫 (已確認沒問題，簡單帶過)
     try:
         db.command('ping') 
         status['database'] = "✅ MongoDB 連線成功"
     except Exception as e:
         status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
-
-    # 2. 深度測試 Email 三大通道
-    import socket
-    
-    ports_to_test = [
-        (25, "Port 25 (Standard)"),
-        (465, "Port 465 (SSL)"),
-        (587, "Port 587 (TLS)")
-    ]
-    
-    email_results = []
-    
-    for port, name in ports_to_test:
-        try:
-            # 建立一個 socket 連線嘗試 (設定 3 秒超時)
-            sock = socket.create_connection(("smtp.gmail.com", port), timeout=3)
-            sock.close()
-            email_results.append(f"✅ {name}: 通暢！可以連線")
-        except OSError as e:
-            # Errno 101 就是這裡抓到的
-            email_results.append(f"❌ {name}: 失敗 ({e})")
-        except Exception as e:
-            email_results.append(f"❌ {name}: 未知錯誤 ({e})")
-            
-    status['email_ports_check'] = email_results
     return jsonify(status)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
