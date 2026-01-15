@@ -79,6 +79,30 @@
     }
     .start-donate-btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(196, 137, 69, 0.6); }
 
+    /* === 捐贈流程圖 (Flowchart) === */
+    .process-flow-wrapper {
+        margin-bottom: 40px;
+        padding: 20px 0;
+        border-bottom: 1px dashed #ddd;
+    }
+    .process-flow {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        position: relative; max-width: 900px; margin: 0 auto;
+    }
+    /* 連接線 */
+    .process-flow::before {
+        content: ''; position: absolute; top: 25px; left: 5%; width: 90%; height: 2px; background: #e0e0e0; z-index: 0;
+    }
+    .p-step { position: relative; z-index: 1; text-align: center; flex: 1; padding: 0 5px; }
+    .p-icon {
+        width: 50px; height: 50px; background: #fffcf5; border: 2px solid #C48945; border-radius: 50%;
+        margin: 0 auto 10px auto; display: flex; justify-content: center; align-items: center;
+        font-weight: bold; color: #C48945; font-size: 1.2rem; 
+        box-shadow: 0 0 0 5px #fff; /* 用白色陰影遮擋橫線 */
+    }
+    .p-text { font-size: 1rem; color: #333; font-weight: bold; line-height: 1.4; }
+    .p-desc { font-size: 0.85rem; color: #777; margin-top: 5px; line-height: 1.4; }
+
     /* === 捐贈表單區域 (預設隱藏) === */
     #donation-process-area { display: none; opacity: 0; transition: opacity 0.5s ease; }
     #donation-process-area.show { display: block; opacity: 1; }
@@ -115,12 +139,6 @@
     .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
     .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
     
-    .prayer-box { 
-        background-color: #ffeaea; border: 2px solid #e74c3c; 
-        color: #c0392b; font-weight: bold;
-    }
-    .prayer-box::placeholder { color: #e6b0aa; }
-
     .btn-submit {
         background: #C48945; color: #fff; width: 100%; padding: 15px;
         border: none; border-radius: 50px; font-size: 1.3rem; font-weight: bold;
@@ -138,6 +156,15 @@
         .d-img { height: 140px; }
         .qty-btn { width: 30px; height: 30px; font-size: 16px; }
         .honor-title { font-size: 1.2rem; padding-left: 10px; letter-spacing: 2px; }
+
+        /* 流程圖手機版垂直排列 */
+        .process-flow { flex-direction: column; gap: 20px; align-items: flex-start; padding-left: 10px; }
+        .process-flow::before {
+            width: 2px; height: 90%; top: 0; left: 35px; /* 垂直連線 */
+        }
+        .p-step { display: flex; align-items: flex-start; gap: 15px; text-align: left; width: 100%; }
+        .p-icon { margin: 0; flex-shrink: 0; }
+        .p-info-box { flex: 1; }
     }
 </style>
 
@@ -176,6 +203,40 @@
     </div>
 
     <div id="donation-process-area">
+        <div class="process-flow-wrapper">
+            <h3 style="text-align:center; color:#8B4513; margin-bottom:30px;">護持流程說明</h3>
+            <div class="process-flow">
+                <div class="p-step">
+                    <div class="p-icon">1</div>
+                    <div class="p-info-box">
+                        <div class="p-text">選擇項目</div>
+                        <div class="p-desc">挑選您欲護持的香品項目與數量。</div>
+                    </div>
+                </div>
+                <div class="p-step">
+                    <div class="p-icon">2</div>
+                    <div class="p-info-box">
+                        <div class="p-text">銀行匯款</div>
+                        <div class="p-desc">填單後請於2小時內完成匯款轉帳。</div>
+                    </div>
+                </div>
+                <div class="p-step">
+                    <div class="p-icon">3</div>
+                    <div class="p-info-box">
+                        <div class="p-text">核對紀錄</div>
+                        <div class="p-desc">確認款項後，登錄芳名錄並寄送電子感謝狀。</div>
+                    </div>
+                </div>
+                <div class="p-step">
+                    <div class="p-icon">4</div>
+                    <div class="p-info-box">
+                        <div class="p-text">公壇稟報</div>
+                        <div class="p-desc">於下次公壇辦事時，向元帥完整稟報您的心意。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <form id="donation-form">
             <h3 style="border-left: 5px solid #C48945; padding-left: 10px; margin-bottom: 20px;">第一步：選擇護持項目</h3>
             <div class="donation-grid" id="donation-grid">
@@ -192,7 +253,7 @@
 
             <h3 style="border-left: 5px solid #C48945; padding-left: 10px; margin-bottom: 20px; margin-top: 40px;">第二步：填寫祈福資料</h3>
             <div class="form-section">
-                <p style="color:red; font-size:0.9rem; margin-bottom:15px;">※ 此為代捐項目，不會寄送實體商品，但我們會寄送紙本感謝狀給您。</p>
+                <p style="color:red; font-size:0.9rem; margin-bottom:15px;">※ 此為代捐項目，不會寄送實體商品。</p>
                 
                 <div class="form-group"><label>信士姓名</label><input type="text" name="name" class="form-control" required placeholder="請填寫真實姓名"></div>
                 
@@ -207,7 +268,7 @@
                     <label>農曆生日 (請直接輸入數字，如：750815 或 1120101)</label>
                     <input type="text" name="lunarBirthday" id="birthday-input" class="form-control" placeholder="例：750815" maxlength="10">
                 </div>
-                
+
                 <div class="form-group">
                     <label>匯款帳號後五碼</label>
                     <input type="text" name="last5" class="form-control" maxlength="5" pattern="\d{5}" placeholder="請填寫5碼數字" required title="請輸入5位數字">
@@ -368,7 +429,7 @@
             email: f.email.value,
             address: f.address.value,
             lunarBirthday: bday,
-            prayer: f.prayer.value,
+            prayer: '', // ★ 已移除祈願欄位，傳送空值
             last5: f.last5.value,
             items: items,
             total: parseInt(document.getElementById('summary-total').textContent)

@@ -206,8 +206,8 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
         
         items_rows += f"""
         <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 10px; color:#333;">{item['name']}{spec}</td>
-            <td style="padding: 10px; text-align: center; color:#333;">x{item['qty']}</td>
+            <td style="padding:10px; color:#333;">{item['name']}{spec}</td>
+            <td style="padding:10px; text-align: center; color:#333;">x{item['qty']}</td>
             {price_td}
         </tr>
         """
@@ -272,8 +272,97 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
     </div>
     """
 
-# ★ 補回遺漏的感謝狀生成函式
-def generate_donation_email_html(cust, order_id, items):
+# ★ 1. 第一階段：護持登記確認信 (HTML)
+def generate_donation_created_email(order):
+    cust = order['customer']
+    items = order['items']
+    
+    # 台灣時間
+    tw_now = datetime.utcnow() + timedelta(hours=8)
+    created_at_str = tw_now.strftime('%Y/%m/%d %H:%M')
+
+    # 項目列表
+    items_rows = ""
+    for item in items:
+        items_rows += f"""
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 10px; color:#333;">{item['name']}</td>
+            <td style="padding: 10px; text-align: center; color:#333;">x{item['qty']}</td>
+            <td style="padding: 10px; text-align: right;">${item['price'] * item['qty']}</td>
+        </tr>
+        """
+
+    # 銀行資訊
+    BANK_INFO = """
+    銀行代碼：<strong>808 (玉山銀行)</strong><br>
+    銀行帳號：<strong>1234-5678-9012</strong>
+    """
+
+    return f"""
+    <div style="font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color:#fff;">
+        <div style="background: #C48945; padding: 20px; text-align: center;">
+            <h2 style="color: #fff; margin: 0; letter-spacing: 1px;">護持登記確認</h2>
+            <p style="color: #fff; opacity: 0.9; margin: 5px 0 0 0; font-size: 14px;">單號：{order['orderId']}</p>
+        </div>
+        
+        <div style="padding: 30px;">
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">親愛的 <strong>{cust['name']}</strong> 您好：</p>
+            
+            <div style="font-size: 15px; color: #555; line-height: 1.6;">
+                感恩您的發心！我們已收到您護持公壇的意願登記。<br>
+                這是一份來自善念的承諾，為了讓這份心意能順利化作助人的力量，請您於 <strong>2 小時內</strong> 完成匯款，以圓滿此次護持。
+                <br><br>
+                <strong>【您的護持項目】</strong>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="background: #f9f9f9; color:#666;">
+                            <th style="padding: 10px; text-align: left;">項目</th>
+                            <th style="padding: 10px; text-align: center;">數量</th>
+                            <th style="padding: 10px; text-align: right;">金額</th>
+                        </tr>
+                    </thead>
+                    <tbody>{items_rows}</tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="padding:15px 10px; text-align:right; font-weight:bold; color:#333;">護持總金額</td>
+                            <td style="padding:15px 10px; text-align:right; font-weight:bold; color:#C48945; font-size:18px;">NT$ {order['total']}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div style="background:#fffcf5; padding:15px; border-left:4px solid #C48945; margin:20px 0; color:#555;">
+                <strong>【匯款資訊】</strong><br>
+                {BANK_INFO}
+                <div style="margin-top:8px;">您的匯款後五碼：<strong>{cust['last5']}</strong></div>
+            </div>
+
+            <div style="font-size: 14px; color: #666; margin-top: 20px; border-top: 1px dashed #ddd; padding-top: 15px;">
+                <strong>【重要提醒】</strong>
+                <ol style="margin-left: -20px; margin-top: 5px;">
+                    <li>確認善款入帳後，我們將寄發「電子感謝狀」給您。</li>
+                    <li><strong>防詐騙提醒</strong>：帥府人員不會致電要求您操作 ATM 或變更轉帳設定。若有疑慮，請務必點擊下方按鈕向官方 LINE 查證。</li>
+                </ol>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; display: inline-block; box-shadow: 0 4px 10px rgba(0,185,0,0.3); letter-spacing: 1px;">
+                    加入官方 LINE 客服
+                </a>
+            </div>
+        </div>
+        
+        <div style="background: #eee; padding: 15px; text-align: center; font-size: 12px; color: #999;">
+            承天中承府 ‧ 嘉義市新生路337號
+        </div>
+    </div>
+    """
+
+# ★ 2. 第二階段：電子感謝狀 (已收款)
+def generate_donation_paid_email(cust, order_id, items):
     items_str = "<br>".join([f"• {i['name']} x {i['qty']}" for i in items])
     return f"""
     <div style="font-family: 'KaiTi', 'Microsoft JhengHei', serif; max-width: 600px; margin: 0 auto; border: 4px double #C48945; padding: 40px; background-color: #fffcf5; color: #333;">
@@ -282,23 +371,43 @@ def generate_donation_email_html(cust, order_id, items):
             <p style="font-size: 16px; color: #888;">承天中承府 ‧ 煙島中壇元帥</p>
         </div>
         <hr style="border: 0; border-top: 1px solid #C48945; margin: 20px 0;">
+        
         <p style="font-size: 18px; line-height: 1.8;">
-            茲感謝信士 <strong>{cust['name']}</strong><br>
-            發心護持公壇聖務，捐贈項目如下：
+            親愛的 <strong>{cust['name']}</strong> 您好：<br><br>
+            感謝您的無私護持！您的善款已確認入帳。<br>
+            承天中承府的公壇，不只是神明的駐地，更是十方善信共同守護的心靈家園。
+            每一次開壇辦事、每一份為信徒解惑的努力，背後都仰賴著志工們的汗水，以及像您這樣發心護持的善信。<br>
+            是您的這份心意，讓帥府的香火得以延續，讓濟世的聖務能夠圓滿。
         </p>
-        <div style="background: #f0ebe5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+
+        <div style="background: #f0ebe5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #8B4513;">
+            <h3 style="margin-top:0; color:#8B4513; font-size:20px;">【稟報通知】</h3>
+            <p style="margin-bottom:0; font-size:16px; line-height:1.6;">
+                您的名字與護持項目，將錄入芳名錄。<br>
+                我們將於 <strong>下一次公壇辦事日</strong>，由 <strong>元帥娘</strong> 親自向 <strong>煙島中壇元帥</strong> 逐一稟報，將您的心意上達天聽。
+            </p>
+        </div>
+
+        <p style="font-size: 18px; font-weight: bold; color: #C48945; margin-bottom: 10px;">【護持項目明細】</p>
+        <div style="padding-left: 15px; margin-bottom: 20px; font-size: 16px; line-height: 1.6;">
             {items_str}
         </div>
+
         <p style="font-size: 18px; line-height: 1.8;">
-            您的心意將上達天聽，祈求元帥庇佑您：<br>
-            <strong>{cust.get('prayer', '闔家平安，萬事如意')}</strong>
+            祈求元帥庇佑您：<br>
+            <strong>闔家平安，萬事如意</strong>
         </p>
+
         <p style="margin-top: 40px; text-align: right; font-size: 16px;">
             承天中承府 敬謝<br>
             {datetime.now().strftime('%Y 年 %m 月 %d 日')}
         </p>
-        <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #999;">
-            (此為系統自動發送之電子感謝狀，請妥善保存)
+        
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 50px; font-size: 14px; display: inline-block;">
+                加入官方 LINE 客服
+            </a>
+            <div style="margin-top: 10px; font-size: 12px; color: #999;">(此為系統自動發送之電子感謝狀，請妥善保存)</div>
         </div>
     </div>
     """
@@ -555,7 +664,7 @@ def get_public_donations():
         return jsonify([])
 
 # =========================================
-# 8. ★ 後台捐贈管理 API (新增區塊)
+# 8. ★ 後台捐贈管理 API
 # =========================================
 
 @app.route('/api/donations/admin', methods=['GET'])
@@ -647,6 +756,7 @@ def cleanup_unpaid_orders():
 # =========================================
 # 9. API: 訂單系統 (Shop & Donation)
 # =========================================
+@csrf.exempt
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     if db is None: return jsonify({"error": "DB Error"}), 500
@@ -675,31 +785,20 @@ def create_order():
         "createdAt": datetime.utcnow(),
         "updatedAt": datetime.utcnow()
     }
+    
+    # ★ 1. 修正：先插入訂單到資料庫
     db.orders.insert_one(order)
     
-    # ★ 修改：寄送確認信邏輯
+    # 寄送確認信邏輯
     if order_type == 'donation':
-        # 捐贈訂單維持簡單通知 (或依您的需求另外設計)
-        items_str = "\n".join([f"- {i['name']} x {i['qty']}" for i in data['items']])
-        email_subject = f"承天中承府 - 捐贈確認 ({order_id})"
-        email_body = f"""
-        親愛的 {customer_info['name']} 信士 您好：
-        感謝您的護持與捐贈。
-        單號：{order_id}
-        --------------------------------
-        {items_str}
-        --------------------------------
-        總金額：NT$ {data['total']}
-        匯款後五碼：{customer_info['last5']}
-        請於 2 小時內完成匯款，感謝您的發心。
-        """
-        send_email(customer_info['email'], email_subject, email_body)
+        # ★ 2. 捐贈：使用「護持登記確認」HTML 模板
+        email_subject = f"【承天中承府】護持登記確認通知 ({order_id})"
+        email_html = generate_donation_created_email(order)
+        send_email(customer_info['email'], email_subject, email_html, is_html=True)
     else:
-        # ★ 一般商店訂單：使用新的 HTML 樣板 (status_type='created')
+        # 商店：使用「訂單確認」HTML 模板
         email_subject = f"【承天中承府】訂單確認通知 ({order_id})"
-        # 呼叫函式生成 HTML
         email_html = generate_shop_email_html(order, 'created')
-        # 發送 HTML 信件 (is_html=True)
         send_email(customer_info['email'], email_subject, email_html, is_html=True)
 
     return jsonify({"success": True, "orderId": order_id})
@@ -758,12 +857,12 @@ def confirm_order_payment(oid):
     cust = order['customer']
     # 寄信邏輯分流
     if order.get('orderType') == 'donation':
-        # 捐贈：寄感謝狀
-        email_subject = f"【感謝狀】承天中承府 - 感謝您的護持 ({order['orderId']})"
-        email_html = generate_donation_email_html(cust, order['orderId'], order['items'])
+        # ★ 3. 捐贈已付款：寄出「電子感謝狀」
+        email_subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order['orderId']})"
+        email_html = generate_donation_paid_email(cust, order['orderId'], order['items'])
         send_email(cust.get('email'), email_subject, email_html, is_html=True)
     else:
-        # ★ 修改：商店訂單：寄送「款項確認/待出貨」信 (套用新樣式)
+        # 商店訂單：寄送「款項確認/待出貨」信
         email_subject = f"【承天中承府】收款確認通知 ({order['orderId']})"
         email_html = generate_shop_email_html(order, 'paid')
         send_email(cust.get('email'), email_subject, email_html, is_html=True)
@@ -790,19 +889,24 @@ def resend_order_email(oid):
 
     # 重寄邏輯
     if order.get('orderType') == 'donation':
-        email_subject = f"【補寄感謝狀】承天中承府 - 感謝您的護持 ({order['orderId']})"
-        email_html = generate_donation_email_html(cust, order['orderId'], order['items'])
+        # 捐贈訂單補寄
+        if order.get('status') == 'paid':
+            email_subject = f"【補寄感謝狀】承天中承府 - 功德無量 ({order['orderId']})"
+            email_html = generate_donation_paid_email(cust, order['orderId'], order['items'])
+        else:
+            email_subject = f"【補寄】護持登記確認通知 ({order['orderId']})"
+            email_html = generate_donation_created_email(order)
+            
         send_email(target_email, email_subject, email_html, is_html=True)
     else:
-        # ★ 商店訂單重寄：根據狀態寄送對應信件
+        # 商店訂單重寄
         email_subject = f"【承天中承府】訂單信件補寄 ({order['orderId']})"
-        # 判斷狀態
         if order.get('status') == 'shipped':
             email_html = generate_shop_email_html(order, 'shipped', order.get('trackingNumber'))
         elif order.get('status') == 'paid':
             email_html = generate_shop_email_html(order, 'paid')
         else:
-            email_html = generate_shop_email_html(order, 'created') # 預設補寄下單信
+            email_html = generate_shop_email_html(order, 'created')
             
         send_email(target_email, email_subject, email_html, is_html=True)
 
