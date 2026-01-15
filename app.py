@@ -1007,29 +1007,42 @@ def ship_order(oid):
     email_html = generate_shop_email_html(order, 'shipped', tracking_num)
     send_email(cust.get('email'), email_subject, email_html, is_html=True)
     return jsonify({"success": True})
-@app.route('/api/debug-connection')
-def debug_connection():
+# 放在 app.py 最後面
+@app.route('/api/debug-connection-advanced')
+def debug_connection_advanced():
     status = {}
     
-    # 1. 測試資料庫連線
+    # 1. 測試資料庫 (已確認沒問題，簡單帶過)
     try:
-        # 強制執行一個超輕量的指令
         db.command('ping') 
         status['database'] = "✅ MongoDB 連線成功"
     except Exception as e:
         status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
 
-    # 2. 測試 Email 連線 (如果有開啟的話)
-    try:
-        import smtplib
-        # 測試連線到 Gmail (不寄信，只測連線)
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
-        server.starttls()
-        server.quit()
-        status['email_server'] = "✅ Gmail SMTP 連線成功"
-    except Exception as e:
-        status['email_server'] = f"❌ Gmail SMTP 連線失敗: {str(e)}"
-        
+    # 2. 深度測試 Email 三大通道
+    import socket
+    
+    ports_to_test = [
+        (25, "Port 25 (Standard)"),
+        (465, "Port 465 (SSL)"),
+        (587, "Port 587 (TLS)")
+    ]
+    
+    email_results = []
+    
+    for port, name in ports_to_test:
+        try:
+            # 建立一個 socket 連線嘗試 (設定 3 秒超時)
+            sock = socket.create_connection(("smtp.gmail.com", port), timeout=3)
+            sock.close()
+            email_results.append(f"✅ {name}: 通暢！可以連線")
+        except OSError as e:
+            # Errno 101 就是這裡抓到的
+            email_results.append(f"❌ {name}: 失敗 ({e})")
+        except Exception as e:
+            email_results.append(f"❌ {name}: 未知錯誤 ({e})")
+            
+    status['email_ports_check'] = email_results
     return jsonify(status)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
