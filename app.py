@@ -775,14 +775,14 @@ def create_order():
     }
     db.orders.insert_one(order)
     
-    if order_type == 'donation':
-        email_subject = f"【承天中承府】護持登記確認通知 ({order_id})"
-        email_html = generate_donation_created_email(order)
-        send_email(customer_info['email'], email_subject, email_html, is_html=True)
-    else:
-        email_subject = f"【承天中承府】訂單確認通知 ({order_id})"
-        email_html = generate_shop_email_html(order, 'created')
-        send_email(customer_info['email'], email_subject, email_html, is_html=True)
+    # if order_type == 'donation':
+    #     email_subject = f"【承天中承府】護持登記確認通知 ({order_id})"
+    #     email_html = generate_donation_created_email(order)
+    #     send_email(customer_info['email'], email_subject, email_html, is_html=True)
+    # else:
+    #     email_subject = f"【承天中承府】訂單確認通知 ({order_id})"
+    #     email_html = generate_shop_email_html(order, 'created')
+    #     send_email(customer_info['email'], email_subject, email_html, is_html=True)
     return jsonify({"success": True, "orderId": order_id})
 
 @app.route('/api/orders', methods=['GET'])
@@ -1007,6 +1007,29 @@ def ship_order(oid):
     email_html = generate_shop_email_html(order, 'shipped', tracking_num)
     send_email(cust.get('email'), email_subject, email_html, is_html=True)
     return jsonify({"success": True})
+@app.route('/api/debug-connection')
+def debug_connection():
+    status = {}
+    
+    # 1. 測試資料庫連線
+    try:
+        # 強制執行一個超輕量的指令
+        db.command('ping') 
+        status['database'] = "✅ MongoDB 連線成功"
+    except Exception as e:
+        status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
 
+    # 2. 測試 Email 連線 (如果有開啟的話)
+    try:
+        import smtplib
+        # 測試連線到 Gmail (不寄信，只測連線)
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
+        server.starttls()
+        server.quit()
+        status['email_server'] = "✅ Gmail SMTP 連線成功"
+    except Exception as e:
+        status['email_server'] = f"❌ Gmail SMTP 連線失敗: {str(e)}"
+        
+    return jsonify(status)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
