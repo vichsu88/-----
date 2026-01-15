@@ -137,6 +137,25 @@
     .captcha-row { display: flex; gap: 10px; align-items: center; }
     .captcha-q { background: #eee; padding: 10px; border-radius: 6px; font-weight: bold; min-width: 80px; text-align: center; }
     .btn--brown { background: #C48945; color: #fff; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; }
+    
+    /* 修正後的按鈕樣式 */
+    .btn-action {
+        display: inline-block; 
+        padding: 15px 50px; 
+        font-size: 1.3rem; 
+        font-weight: bold;
+        background: #C48945; /* 直接使用色碼，避免 var(--primary-gold) 失效 */
+        color: white; 
+        text-decoration: none; 
+        border-radius: 50px;
+        box-shadow: 0 5px 15px rgba(196, 137, 69, 0.4); 
+        transition: 0.3s;
+        cursor: pointer;
+    }
+    .btn-action:hover {
+        transform: scale(1.05);
+    }
+
 </style>
 
 <main class="ship-wrapper">
@@ -151,13 +170,33 @@
     </div>
 
     <div class="instruction-box">
-        <div class="instruction-title">📦 Step2:預約黑貓寄件</div>
-        <p style="line-height:1.8;">
-            1. 先填寫"我要寄回單"確認八八可收件日期。<br>
-            2. 前往黑貓官網預約運費到付寄件。<br>
-            <strong>收件資訊：</strong>600嘉義市東區新生路337號
-        </p>
-        <a href="https://www.t-cat.com.tw/" target="_blank" class="black-cat-btn">前往黑貓宅急便官網 ➤</a>
+            <h3 style="color:#C48945;">Step2:黑貓宅急便 App 預約教學</h3>
+            <ol>
+                <li>下載並開啟「黑貓宅急便 App」。</li>
+                <li>選擇「常溫宅急便」 &gt; 件數選「1」。</li>
+                <li>寄件方式選「到府 (黑貓到府印單寄包裹)」。</li>
+                <li>付費方式選「<strong>到付宅急便</strong>」。</li>
+                <li><strong>寄件人資訊 (八八菸酒)</strong>：
+                    <ul>
+                        <li>姓名：八八菸酒</li>
+                        <li>地址：600嘉義市東區新生路337號</li>
+                    </ul>
+                </li>
+                <li><strong>收件人資訊 (您的資料)</strong>：
+                    <ul>
+                        <li>姓名：您的名字 + 收驚編號</li>
+                        <li>地址：您的收件地址</li>
+                    </ul>
+                </li>
+                <li>內容：填寫「衣服總件數」 (如：3)。</li>
+                <li><strong>寄件日</strong>：請依照下方系統顯示的日期填寫。</li>
+            </ol>
+            <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
+                <p style="font-weight:bold; color:#333;">已填寫寄件申請，拿到收件日期了嗎</p>
+                <a href="https://www.t-cat.com.tw/consign/icatapp.aspx" id="open-ship-form-btn-2" class="btn-action">
+                    Step2:黑貓APP
+                </a>
+            </div>
     </div>
 </main>
 
@@ -218,7 +257,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('ship-modal');
-    const openBtn = document.getElementById('open-ship-form-btn');
+    const openBtn = document.getElementById('open-ship-form-btn');     // 懸浮按鈕
+    const openBtn2 = document.getElementById('open-ship-form-btn-2'); // 下方按鈕 (新增)
     const closeBtn = document.querySelector('.modal-close-btn');
     const form = document.getElementById('ship-form');
     const boardList = document.getElementById('board-list');
@@ -227,8 +267,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const clothesContainer = document.getElementById('clothes-container');
     const addClothingBtn = document.getElementById('add-clothing-btn');
 
-    openBtn.onclick = async () => { modal.classList.add('is-visible'); openBtn.style.opacity=0; openBtn.style.zIndex=-1; await fetchCaptcha(); await fetchDatePreview(); };
-    function closeModal() { modal.classList.remove('is-visible'); openBtn.style.opacity=1; openBtn.style.zIndex=900; }
+    // 定義開啟彈窗的函式 (共用)
+    const openModalFunc = async () => {
+        modal.classList.add('is-visible');
+        // 開啟時隱藏懸浮按鈕，避免遮擋
+        if(openBtn) {
+            openBtn.style.opacity = 0;
+            openBtn.style.zIndex = -1;
+        }
+        await fetchCaptcha();
+        await fetchDatePreview();
+    };
+
+    // 綁定事件到兩個按鈕
+    if(openBtn) openBtn.onclick = openModalFunc;
+    if(openBtn2) openBtn2.onclick = openModalFunc;
+
+    function closeModal() { 
+        modal.classList.remove('is-visible'); 
+        // 關閉時恢復懸浮按鈕
+        if(openBtn) {
+            openBtn.style.opacity = 1; 
+            openBtn.style.zIndex = 900; 
+        }
+    }
     closeBtn.onclick = closeModal;
     modal.onclick = (e) => { if(e.target===modal) closeModal(); };
 

@@ -302,10 +302,10 @@
             <button class="card-btn" onclick="openModal('modal-step2')">查看收件資訊</button>
         </div>
         <div class="process-card">
-            <div class="card-title">步驟三：進度與領取</div>
-            <div class="card-desc"><p>關注群組通知。<br><strong>自取</strong>：依公告編號取回。<br><strong>寄回</strong>：自行安排到付快遞。</p></div>
+            <div class="card-title">步驟三：完成取回</div>
+            <div class="card-desc"><p>關注群組收驚進度。<br><strong>1.自取</strong>：依公告編號取回。<br><strong>2.寄回</strong>：自行安排到付快遞。</p></div>
             <div class="card-image-box"><img src="{{ url_for('static', filename='images/pages/shoujing/card3.png') }}" alt="步驟三"></div>
-            <button class="card-btn" onclick="openModal('modal-step3')">黑貓預約與登記</button>
+            <button class="card-btn" onclick="openModal('modal-step3')">寄回衣服申請</button>
         </div>
     </div>
 </section>
@@ -332,7 +332,7 @@
         <div class="modal-title">紅紙填寫與衣物規範</div>
         <div class="modal-body">
             <div class="red-paper-visual">
-                <div class="red-paper-date">寄件日期 (左上角)</div>
+                <div class="red-paper-date">寄件日期</div>
                 <div class="red-paper-content">
                     <div class="red-paper-row">姓名：王大明</div>
                     <div class="red-paper-row">地址：嘉義市...</div>
@@ -346,11 +346,10 @@
                 <li>字體需端正、大、清楚。</li>
                 <li><strong>每件衣物</strong>皆需附一張資料，依順序疊好。</li>
                 <li>紅單左上角請註明「寄件日期」。</li>
-                <li><span style="color:red;">禁止備註特殊祈願</span>。</li>
             </ul>
             <h4 style="color:#C48945;">2️⃣ 衣物要求</h4>
-            <p>⭕ 輕薄、乾淨、穿過洗淨的長短袖上衣。</p>
-            <p>❌ 無袖、厚重衣物、大學T、針織毛衣、外套、帽T。</p>
+            <p>⭕ 輕薄、穿過洗淨的長短袖上衣。</p>
+            <p>❌ 無袖、厚重衣物、針織毛衣、外套、帽T。</p>
             <h4 style="color:#C48945;">3️⃣ 使用方式</h4>
             <p>📌 完成後可直接穿，或放枕頭下睡。</p>
         </div>
@@ -389,7 +388,13 @@
             <p style="background:#ffeaea; color:red; padding:10px; border-radius:5px; font-weight:bold;">
                 ⚠ 請注意：處理完畢公告於群組，請於 6 個月內取回，逾期回收。
             </p>
-            <h4 style="color:#C48945;">🐱 黑貓宅急便 App 預約教學 (自行叫車)</h4>
+            <h3 style="color:#C48945;">Step1:線上填寫寄回單</h3>
+            <ol>
+                <li>點選「我要寄件」。</li>
+                <li>填寫完整資料，取得可收件日。</li>
+                <li>按照系統提供可收件日期，安排黑貓到帥府取貨。</li>
+            </ol>
+            <h3 style="color:#C48945;">Step2:黑貓宅急便 App 預約教學</h3>
             <ol>
                 <li>下載並開啟「黑貓宅急便 App」。</li>
                 <li>選擇「常溫宅急便」 &gt; 件數選「1」。</li>

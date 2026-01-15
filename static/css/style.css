@@ -1327,3 +1327,93 @@ body::before {
     font-size: 24px !important; /* 比主項目(30px)小 */
     color: #6d4c41 !important; /* 顏色稍微深一點區隔 */
 }
+/* =========================================
+   收驚紅紙疏文樣式 (V3 - 自動拓寬版)
+   ========================================= */
+
+/* 1. 自動偵測：如果彈窗內有紅紙，強制把彈窗變寬 */
+.modal-content:has(.red-paper-visual) {
+    max-width: 1000px !important; /* 電腦版改為 900px 寬，大氣！ */
+    width: 95% !important;       /* 手機版佔 95% 寬 */
+    padding: 0 !important;       /* 移除預設內距，讓紅紙滿版 */
+    background: transparent !important; /* 讓背景透明，只秀紅紙 */
+    box-shadow: none !important; /* 移除原本彈窗陰影 */
+    border: none !important;     /* 移除邊框 */
+}
+
+/* 2. 紅紙本體設定 */
+.red-paper-visual {
+    /* --- 核心設定：直書模式 --- */
+    writing-mode: vertical-rl; /* 直書：行從右到左 */
+    text-orientation: mixed;   /* 中文正立 */
+    
+    /* --- 排版佈局 --- */
+    display: flex;
+    /* 直書模式下的 column-reverse = 從左到右排列區塊 */
+    /* 這樣「日期」會在最左邊，「資料」會在最右邊 */
+    flex-direction: column-reverse; 
+    
+    /* 讓兩區塊分別靠左與靠右，中間留白 */
+    justify-content: space-between; 
+    
+    /* --- 外觀與尺寸 --- */
+    background-color: #D43636;
+    background-image: linear-gradient(45deg, #D43636 25%, #c0392b 25%, #c0392b 50%, #D43636 50%, #D43636 75%, #c0392b 75%, #c0392b 100%);
+    background-size: 20px 20px;
+    box-shadow: 10px 10px 30px rgba(0,0,0,0.5); /* 更有立體感 */
+    border-radius: 8px;
+    
+    width: 100%;           /* 跟隨彈窗變寬 */
+    min-height: 300px;     /* 直書的高度 (即文字長度) */
+    max-height: 80vh;      /* 防止太高超出螢幕 */
+    
+    padding: 15px 15px;    /* 上下左右留白 */
+    box-sizing: border-box;
+    
+    color: #000;
+    font-family: 'KouzanBrushFontOTF', 'BiauKai', '標楷體', serif;
+    
+    /* 防止出現捲軸，強制內容在範圍內 */
+    overflow: hidden; 
+}
+
+/* 3. 內容區塊 (右側：姓名、地址...) */
+.red-paper-content {
+    display: flex;
+    flex-direction: column; /* 內部行：從右到左 */
+    gap: 15px;              /* 行距加寬，更易閱讀 */
+    font-size: 15px;        /* 字體加大 */
+    letter-spacing: 4px;    /* 字距加大 */
+    height: 100%;
+}
+
+/* 4. 每一行的樣式 */
+.red-paper-row {
+    white-space: nowrap;    /* 強制不換行 */
+    padding-left: 10px;
+    border-left: 1px solid rgba(0,0,0,0.1); /* 淡淡的分隔線 */
+}
+
+/* 5. 日期區塊 (左側) */
+.red-paper-date {
+    font-size: 20px;
+    color: #333;
+    white-space: nowrap;
+    align-self: flex-end;   /* 視覺上的下方 */
+    margin-left: 20px;      /* 與邊緣的距離 */
+}
+
+/* --- 手機版 RWD 調整 --- */
+@media (max-width: 768px) {
+    .red-paper-visual {
+        min-height: 400px; /* 手機版不需要那麼長 */
+        padding: 30px 20px;
+    }
+    .red-paper-content {
+        font-size: 13px;   /* 手機字體縮小 */
+        gap: 5px;         /* 行距縮小 */
+    }
+    .red-paper-date {
+        font-size: 10px;
+    }
+}
