@@ -20,10 +20,10 @@ body {
     box-sizing: border-box;
 }
 
-@font-face {
+/* @font-face {
     font-family: 'KouzanBrushFontOTF';
     src: url('../fonts/subset-KouzanBrushFontOTF.woff2') format('woff2');
-}
+} */
 
 body {
     margin: 0;
@@ -148,7 +148,7 @@ body::before {
 }
 
 .section-title {
-    font-family: 'KouzanBrushFontOTF', sans-serif;
+    font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
     font-size: clamp(28px, 5vw, 40px);
     color: #333;
     position: relative; 
@@ -355,7 +355,7 @@ body::before {
 
 .deity-info p {
     margin: 5px 0;
-    font-family: 'KouzanBrushFontOTF', 'BiauKai', '標楷體', sans-serif;
+    font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
 }
 
 .temple-name {
@@ -551,7 +551,7 @@ body::before {
 }
 
 .footer-title {
-    font-family: 'KouzanBrushFontOTF', '標楷體', sans-serif;
+    font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
     font-size: 30px;
     margin: 0 0 10px 0;
     font-weight: normal;
@@ -795,7 +795,7 @@ body::before {
 
 .overlay-nav-links a {
     text-decoration: none;
-    font-family: 'KouzanBrushFontOTF', sans-serif;
+    font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
     font-size: 30px; /* 放大字體以利點擊 */
     color: #4b2c1c;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
@@ -872,7 +872,7 @@ body::before {
     /* 電腦版文字連結樣式 */
     .nav-links-desktop a {
         text-decoration: none;
-        font-family: 'KouzanBrushFontOTF', sans-serif;
+        font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
         font-size: 26px; /* 您要求的字體大小 */
         color: #4b2c1c; /* 您要求的字體顏色 */
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* 您要求的陰影 */
@@ -1371,7 +1371,7 @@ body::before {
     box-sizing: border-box;
     
     color: #000;
-    font-family: 'KouzanBrushFontOTF', 'BiauKai', '標楷體', serif;
+    font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
     
     /* 防止出現捲軸，強制內容在範圍內 */
     overflow: hidden; 
