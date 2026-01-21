@@ -8,7 +8,42 @@
 </h1>
 
 <style>
-    /* === 1. 統一的元寶標題樣式 === */
+    /* =========================================
+       1. 主視覺專用樣式 (強制滿版修正)
+       ========================================= */
+    .hero-section {
+        position: relative;
+        /* 以下五行是強制突破外層容器限制的關鍵寫法 */
+        width: 100vw;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        
+        overflow: hidden; /* 防止出現橫向卷軸 */
+        padding: 0;
+        line-height: 0; /* 消除圖片底部的微小白邊 */
+        background-color: #000; /* 圖片載入前的背景色 */
+    }
+
+    .hero-section img {
+        width: 100% !important;  /* 強制寬度跟隨螢幕 */
+        height: auto !important; /* 高度自動等比例調整 */
+        display: block;          /* 消除行內元素間隙 */
+        max-width: 100%;         /* 雙重保險 */
+    }
+
+    /* 手機版特別優化 (可選) */
+    @media (max-width: 768px) {
+        .hero-section {
+            /* 如果手機版覺得圖片太小，可以考慮在這裡切換成手機專用直式圖
+               目前設定維持等比例縮放 */
+        }
+    }
+
+    /* =========================================
+       2. 統一的元寶標題樣式
+       ========================================= */
     .yuanbao-title-box {
         display: flex; 
         justify-content: center; 
@@ -34,12 +69,17 @@
         height: auto;
     }
 
-    /* === 2. 服務項目區塊 === */
+    /* =========================================
+       3. 服務項目區塊
+       ========================================= */
     .services-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 20px;
         padding: 0 10px;
+        /* 確保內容不會太貼邊 */
+        max-width: 1200px;
+        margin: 0 auto;
     }
     
     .service-item {
@@ -114,7 +154,9 @@
     .service-buttons .glow-btn:nth-child(3) { animation-delay: 1.0s; }
     .service-buttons .glow-btn:nth-child(4) { animation-delay: 1.5s; }
 
-    /* === 3. 最新消息區塊 === */
+    /* =========================================
+       4. 最新消息區塊
+       ========================================= */
     .news-section { margin-top: 40px; }
 
     .news-card {
@@ -128,6 +170,8 @@
         position: relative;
         min-height: 200px;
         overflow: visible;
+        max-width: 1200px; /* 限制最大寬度 */
+        margin: 0 auto;    /* 置中 */
     }
 
     .news-content-wrapper {
@@ -148,6 +192,7 @@
         padding-right: 10px;
     }
 
+    /* 捲軸美化 */
     .news-window::-webkit-scrollbar { width: 6px; }
     .news-window::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
     .news-window::-webkit-scrollbar-thumb { background: #C48945; border-radius: 3px; }
@@ -185,7 +230,6 @@
         white-space: normal; line-height: 1.4;
     }
 
-    /* 置頂標籤樣式 */
     .pinned-badge {
         background: #d9534f; color: white; 
         font-size: 0.8rem; padding: 2px 6px; 
@@ -203,7 +247,6 @@
         white-space: normal;
         word-wrap: break-word;
         text-align: left;
-        /* 限制顯示行數，超過顯示... */
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -227,7 +270,9 @@
         75% { transform: rotate(5deg); }
     }
 
-    /* === 4. 其他樣式 === */
+    /* =========================================
+       5. 其他區塊與動畫
+       ========================================= */
     .video-responsive-wrapper {
         position: relative; padding-bottom: 56.25%; height: 0; width: 100%;
         max-width: 1200px; margin: 0 auto 40px auto;
@@ -239,7 +284,9 @@
     .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
     .reveal.active { opacity: 1; transform: translateY(0); }
 
-    /* === 5. RWD 手機版調整 === */
+    /* =========================================
+       6. RWD 手機版調整
+       ========================================= */
     @media (max-width: 768px) {
         .yuanbao-title-text { font-size: 2rem; }
         .yuanbao-icon { width: 35px; }
@@ -273,13 +320,8 @@
             gap: 8px;
         }
         
-        .news-title { 
-            font-size: 1.2rem;
-        }
-
-        .news-preview {
-            font-size: 1rem;
-        }
+        .news-title { font-size: 1.2rem; }
+        .news-preview { font-size: 1rem; }
         
         .news-avatar {
             width: 110px; 
@@ -296,7 +338,12 @@
              loading="eager">
     </div>
 
-    <section class="hero-section" aria-label="承天中承府主視覺"></section>
+    <section class="hero-section" aria-label="承天中承府主視覺">
+        <img src="{{ url_for('static', filename='images/pages/index/banner_PC.jpg') }}" 
+             alt="承天中承府眾神-中壇元帥與眾神尊" 
+             fetchpriority="high" 
+             loading="eager">
+    </section>
 
     <section class="news-section reveal">
         <div class="news-card">
