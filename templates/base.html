@@ -12,7 +12,10 @@
   <meta name="keywords" content="{% block meta_keywords %}承天中承府, 煙島中壇元帥, 嘉義收驚, 嘉義問事, 補財庫, 嘉義廟宇, 祭改, 線上收驚, 嘉義市東區{% endblock %}">
   
   <meta name="author" content="承天中承府">
-  <meta name="robots" content="index, follow"> <link rel="canonical" href="{{ request.url }}"> <meta property="og:type" content="website">
+  <meta name="robots" content="index, follow"> 
+  <link rel="canonical" href="{{ request.url }}"> 
+
+  <meta property="og:type" content="website">
   <meta property="og:site_name" content="承天中承府">
   <meta property="og:locale" content="zh_TW">
   <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
@@ -37,6 +40,7 @@
     "image": [
       "{{ url_for('static', filename='images/pages/index/banner.png', _external=True) }}"
     ],
+    "description": "承天中承府主祀煙島中壇元帥，位於嘉義市東區，提供免費收驚、問事、補財庫等濟世服務。",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "新生路337號",
@@ -62,7 +66,7 @@
         "closes": "03:00"
       }
     ],
-    "priceRange": "$"
+    "priceRange": "免費 (隨喜功德)"
   }
   </script>
 
@@ -77,7 +81,7 @@
 
   <header class="main-header">
     <nav class="main-nav">
-      <a href="{{ url_for('home') }}" class="nav-logo">
+      <a href="{{ url_for('home') }}" class="nav-logo" aria-label="承天中承府首頁">
         <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="承天中承府 Logo">
       </a>
 
@@ -118,11 +122,11 @@
         <div class="footer-col footer-col-right">
           <h4 class="custom-link-title">官方社群</h4>
           <div class="footer-social">
-            <a href="{{ links['煙島元帥社群'] or '#' }}" target="_blank" aria-label="加入社群"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line"></a>
-            <a href="{{ links['FB'] or '#' }}" target="_blank" aria-label="Facebook 粉絲專頁"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
-            <a href="{{ links['IG'] or '#' }}" target="_blank" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
-            <a href="{{ links['TikTok'] or '#' }}" target="_blank" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
-            <a href="{{ links['YouTube'] or '#' }}" target="_blank" aria-label="YouTube 頻道"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
+            <a href="{{ links.get('煙島元帥社群', '#') }}" target="_blank" aria-label="加入社群"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line"></a>
+            <a href="{{ links.get('FB', '#') }}" target="_blank" aria-label="Facebook 粉絲專頁"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
+            <a href="{{ links.get('IG', '#') }}" target="_blank" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
+            <a href="{{ links.get('TikTok', '#') }}" target="_blank" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
+            <a href="{{ links.get('YouTube', '#') }}" target="_blank" aria-label="YouTube 頻道"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
           </div>
           <div class="footer-copyright">&copy; All copyright reserved | Eros design</div>
         </div>
@@ -142,11 +146,11 @@
     </ul>
     
     <div class="overlay-social">
-       <a href="{{ links['FB'] or '#' }}" target="_blank" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
-       <a href="{{ links['IG'] or '#' }}" target="_blank" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
-       <a href="{{ links['元帥娘官方LINE'] or '#' }}" target="_blank" aria-label="官方 Line"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line"></a>
-       <a href="{{ links['TikTok'] or '#' }}" target="_blank" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
-       <a href="{{ links['YouTube'] or '#' }}" target="_blank" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
+       <a href="{{ links.get('FB', '#') }}" target="_blank" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
+       <a href="{{ links.get('IG', '#') }}" target="_blank" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
+       <a href="{{ links.get('元帥娘官方LINE', '#') }}" target="_blank" aria-label="官方 Line"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line"></a>
+       <a href="{{ links.get('TikTok', '#') }}" target="_blank" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
+       <a href="{{ links.get('YouTube', '#') }}" target="_blank" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
     </div>
   </div>
 

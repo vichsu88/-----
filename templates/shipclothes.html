@@ -6,9 +6,111 @@
 <style>
     .ship-wrapper {
         padding: 40px 20px;
-        max-width: 900px;
+        max-width: 1000px; /* 稍微加寬以容納流程圖 */
         margin: 0 auto;
         position: relative;
+    }
+
+    /* === 流程圖區塊 (Process Flow) === */
+    .process-section {
+        margin-bottom: 50px;
+        text-align: center;
+    }
+    
+    .process-title {
+        font-size: 2rem;
+        color: #C48945;
+        font-weight: bold;
+        margin-bottom: 30px;
+        font-family: 'KouzanBrushFontOTF', serif; /* 統一標題字體 */
+    }
+
+    .process-container {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        position: relative;
+    }
+
+    /* 步驟卡片 */
+    .step-card {
+        flex: 1;
+        background: #fff;
+        border: 2px solid #E6BA67;
+        border-radius: 15px;
+        padding: 20px 15px;
+        position: relative;
+        box-shadow: 0 5px 15px rgba(196, 137, 69, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.3s;
+    }
+
+    .step-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(196, 137, 69, 0.2);
+    }
+
+    /* 步驟編號圓圈 */
+    .step-number {
+        background: #C48945;
+        color: #fff;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 15px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    }
+
+    .step-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .step-desc {
+        font-size: 0.9rem;
+        color: #666;
+        line-height: 1.5;
+        text-align: left;
+        width: 100%;
+    }
+    
+    .step-desc ul {
+        padding-left: 20px;
+        margin: 5px 0;
+    }
+
+    .step-desc li {
+        margin-bottom: 4px;
+    }
+
+    /* 手機版 RWD */
+    @media (max-width: 768px) {
+        .process-container {
+            flex-direction: column;
+        }
+        .step-card {
+            flex-direction: row; /* 手機版改為橫向排列 */
+            align-items: flex-start;
+            text-align: left;
+            padding: 15px;
+        }
+        .step-number {
+            margin-right: 15px;
+            margin-bottom: 0;
+            flex-shrink: 0; /* 防止圓圈被壓縮 */
+        }
+        .step-content-wrapper {
+            flex: 1;
+        }
     }
     
     /* === 留言板區塊 (Board) === */
@@ -144,7 +246,7 @@
         padding: 15px 50px; 
         font-size: 1.3rem; 
         font-weight: bold;
-        background: #C48945; /* 直接使用色碼，避免 var(--primary-gold) 失效 */
+        background: #C48945; /* 直接使用色碼 */
         color: white; 
         text-decoration: none; 
         border-radius: 50px;
@@ -155,10 +257,68 @@
     .btn-action:hover {
         transform: scale(1.05);
     }
-
 </style>
 
 <main class="ship-wrapper">
+    <section class="process-section">
+        <h2 class="process-title">衣物寄回服務流程</h2>
+        <div class="process-container">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-content-wrapper">
+                    <div class="step-title">確認名單</div>
+                    <div class="step-desc">
+                        <ul>
+                            <li>至 LINE 群組查看公告。</li>
+                            <li>確認名單上有您的名字或衣物編號。</li>
+                            <li>代表收驚完成，可進入打包程序。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-content-wrapper">
+                    <div class="step-title">系統預約</div>
+                    <div class="step-desc">
+                        <ul>
+                            <li>點擊下方按鈕，填寫「預約單」。</li>
+                            <li>系統將計算<strong>可取件日期</strong>。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-content-wrapper">
+                    <div class="step-title">預約物流</div>
+                    <div class="step-desc">
+                        <ul>
+                            <li>自行聯繫黑貓宅急便。</li>
+                            <li>選<strong>「到府收件」、「運費到付」</strong>。</li>
+                            <li><strong>取件時間：</strong>務必設定在系統給的日期之後。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <div class="step-content-wrapper">
+                    <div class="step-title">等待收貨</div>
+                    <div class="step-desc">
+                        <ul>
+                            <li><strong>流程：</strong>司機至廟收貨 &rarr; 配送 &rarr; 您在家收貨並付款。</li>
+                            <li><strong>圓滿：</strong>流程結束，闔家平安。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <div id="open-ship-form-btn" class="feedback-floating-btn">
         <img src="{{ url_for('static', filename='images/pages/feedback/ship.png') }}" alt="我要登記">
     </div>
@@ -170,7 +330,7 @@
     </div>
 
     <div class="instruction-box">
-            <h3 style="color:#C48945;">Step2:黑貓宅急便 App 預約教學</h3>
+            <h3 style="color:#C48945;">Step3: 黑貓宅急便 App 預約教學</h3>
             <ol>
                 <li>下載並開啟「黑貓宅急便 App」。</li>
                 <li>選擇「常溫宅急便」 &gt; 件數選「1」。</li>
@@ -189,7 +349,7 @@
                     </ul>
                 </li>
                 <li>內容：填寫「衣服總件數」 (如：3)。</li>
-                <li><strong>寄件日</strong>：請依照下方系統顯示的日期填寫。</li>
+                <li><strong>寄件日</strong>：請依照上方系統顯示的日期填寫。</li>
             </ol>
             <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
                 <p style="font-weight:bold; color:#333;">已填寫寄件申請，拿到收件日期了嗎</p>
@@ -258,7 +418,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('ship-modal');
     const openBtn = document.getElementById('open-ship-form-btn');     // 懸浮按鈕
-    const openBtn2 = document.getElementById('open-ship-form-btn-2'); // 下方按鈕 (新增)
+    const openBtn2 = document.getElementById('open-ship-form-btn-2'); // 下方按鈕
     const closeBtn = document.querySelector('.modal-close-btn');
     const form = document.getElementById('ship-form');
     const boardList = document.getElementById('board-list');
@@ -268,7 +428,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const addClothingBtn = document.getElementById('add-clothing-btn');
 
     // 定義開啟彈窗的函式 (共用)
-    const openModalFunc = async () => {
+    const openModalFunc = async (e) => {
+        if(e) e.preventDefault();
         modal.classList.add('is-visible');
         // 開啟時隱藏懸浮按鈕，避免遮擋
         if(openBtn) {
@@ -281,7 +442,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 綁定事件到兩個按鈕
     if(openBtn) openBtn.onclick = openModalFunc;
-    if(openBtn2) openBtn2.onclick = openModalFunc;
+    
+    // 注意：原本 openBtn2 是連去黑貓官網的連結，如果您希望它也是打開登記表單，請保留下方這行；
+    // 如果您希望它是去黑貓，請將這行註解掉，或是確認您的業務邏輯。
+    // 目前根據代碼邏輯，這裡還是讓它打開登記表單比較合理 (因為文字是寫 Step2)
+    // 但原連結是 t-cat.com.tw，這裡我先幫您改成打開表單，因為這樣才能 "拿到收件日期"
+    if(openBtn2) {
+        openBtn2.removeAttribute('href'); // 移除跳轉
+        openBtn2.style.cursor = 'pointer';
+        openBtn2.onclick = openModalFunc;
+        openBtn2.textContent = "立即填寫預約單"; // 修改按鈕文字更直覺
+    }
 
     function closeModal() { 
         modal.classList.remove('is-visible'); 
@@ -319,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/shipclothes/calc-date');
             const data = await res.json();
-            datePreview.textContent = `黑貓收件日：${data.pickupDate}`;
+            datePreview.textContent = `預計黑貓可收件日：${data.pickupDate}`;
         } catch(e){}
     }
 
@@ -352,9 +523,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await res.json();
             if(result.success) {
-                alert(`登記成功！\n預計收件日：${result.pickupDate}`);
+                alert(`登記成功！\n請務必預約黑貓於此日期後收件：${result.pickupDate}`);
                 form.reset();
-                clothesContainer.innerHTML = `<div class="clothing-row"><input type="text" class="form-control clothing-id" placeholder="編號 (例如 A001)" required><input type="text" class="form-control clothing-owner" placeholder="主人姓名 (本名)" required></div>`;
+                clothesContainer.innerHTML = `<div class="clothing-row"><input type="text" class="form-control clothing-id" placeholder="編號 (例如 A001)" required><input type="text" class="form-control clothing-owner" placeholder="主人姓名 (本名)" required><input type="text" id="birthYear" class="form-control" placeholder="民國年份" required></div>`;
                 closeModal();
                 fetchBoardData();
             } else {
@@ -371,7 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if(data.length === 0) { boardList.innerHTML = '<p style="text-align:center;color:#999;">目前無資料</p>'; return; }
 
-            // 1. 資料分組： { "2023/10/27": [item1, item2], "2023/10/28": [item3] }
+            // 1. 資料分組
             const grouped = {};
             data.forEach(item => {
                 if(!grouped[item.pickupDate]) grouped[item.pickupDate] = [];
@@ -381,7 +552,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // 2. 渲染 HTML
             let html = '';
             for (const [date, items] of Object.entries(grouped)) {
-                // 生成該日期的所有申請卡片
                 const itemsHtml = items.map(item => {
                     const clothesHtml = item.clothes.map(c => 
                         `<span class="cloth-item"><b>${c.id}</b> <small>(${c.owner})</small></span>`
@@ -400,7 +570,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>`;
                 }).join('');
 
-                // 組合日期區塊
                 html += `
                 <div class="date-group">
                     <div class="date-header">📅 預計收件日：${date}</div>
