@@ -958,8 +958,8 @@ def get_products():
 def add_product():
     data = request.get_json()
     new_product = {
-        "name": data.get('name'), "category": data.get('category', '其他'), "price": int(data.get('price', 0)),
-        "description": data.get('description', ''), "image": data.get('image', ''), "isActive": data.get('isActive', True),
+        "name": data.get('name'), "category": data.get('category', '其他'),
+        "series": data.get('series', ''),"seriesSort": int(data.get('seriesSort', 0)),"price": int(data.get('price', 0)),"description": data.get('description', ''), "image": data.get('image', ''), "isActive": data.get('isActive', True),
         "isDonation": data.get('isDonation', False), "variants": data.get('variants', []), "createdAt": datetime.utcnow()
     }
     db.products.insert_one(new_product)
@@ -969,8 +969,9 @@ def add_product():
 @login_required
 def update_product(pid):
     data = request.get_json()
-    fields = {k: data.get(k) for k in ['name', 'category', 'price', 'description', 'image', 'isActive', 'variants', 'isDonation'] if k in data}
+    fields = {k: data.get(k) for k in ['name', 'category', 'price', 'description', 'image', 'isActive', 'variants', 'isDonation', 'series', 'seriesSort'] if k in data}
     if 'price' in fields: fields['price'] = int(fields['price'])
+    if 'seriesSort' in fields: fields['seriesSort'] = int(fields['seriesSort'])
     db.products.update_one({'_id': ObjectId(pid)}, {'$set': fields})
     return jsonify({"success": True})
 

@@ -28,7 +28,26 @@
         margin-bottom: 15px;
     }
     .landing-btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
+    /* === 在 <style> 區塊內新增 === */
 
+    /* 系列標題樣式 */
+    .series-header {
+        grid-column: 1 / -1; /* 讓標題橫跨整個 Grid (佔滿一行) */
+        margin-top: 30px;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #E6BA67; /* 金色底線 */
+        color: #8B4513;
+        font-size: 1.4rem;
+        font-weight: bold;
+        font-family: 'KouzanBrushFontOTF', serif; /* 沿用書法字體 */
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* 讓第一個標題上面不要空太大 */
+    .series-header:first-child { margin-top: 0; }
     /* 官方賣場 (金色) */
     .btn-official {
         background: linear-gradient(45deg, #C48945, #FFD700); 
@@ -402,9 +421,12 @@
         render(cat);
     }
 
+// === 修改 render 函式 ===
     function render(cat) {
         const grid = document.getElementById('grid');
         grid.innerHTML = '';
+        
+        // 1. 先篩選出該分類的商品
         const list = cat === 'all' ? products : products.filter(p => p.category.includes(cat) || cat.includes(p.category));
         
         if (list.length === 0) {
@@ -412,38 +434,89 @@
             return;
         }
 
+        // 2. 進行分組 (Group by Series)
+        // 結構範例: { "招財系列": [商品A, 商品B], "其他": [商品C] }
+        const groups = {};
+        const groupSorts = {}; // 紀錄每個系列的排序權重
+
         list.forEach(p => {
             if(!p.isActive) return;
             
-            let variantsHtml = '';
-            let priceDisplay = p.price;
+            // 如果沒填系列，就歸類到 "其他精選" (或者空白，視您喜好)
+            const seriesName = p.series ? p.series : '其他精選';
             
-            if (p.variants && p.variants.length > 0) {
-                priceDisplay = `<span id="price-${p._id}">${p.variants[0].price}</span>`;
-                const options = p.variants.map((v, i) => `<option value="${i}" data-price="${v.price}">${v.name} ($${v.price})</option>`).join('');
-                variantsHtml = `<select id="var-${p._id}" class="variant-select" onchange="updatePrice('${p._id}', this)">${options}</select>`;
+            if(!groups[seriesName]) {
+                groups[seriesName] = [];
+                // 抓取該系列第一個商品的排序值當作該系列的排序權重
+                groupSorts[seriesName] = p.seriesSort || 0; 
+            }
+            groups[seriesName].push(p);
+        });
+
+        // 3. 決定系列的顯示順序
+        // 取得所有系列名稱
+        const seriesNames = Object.keys(groups);
+        
+        // 排序：有設定數字小的排前面 (升冪)，數字一樣則依筆畫
+        seriesNames.sort((a, b) => {
+            const sortA = groupSorts[a];
+            const sortB = groupSorts[b];
+            
+            // 特殊處理："其他精選" 永遠排最後
+            if(a === '其他精選') return 1;
+            if(b === '其他精選') return -1;
+
+            if (sortA !== sortB) return sortA - sortB;
+            return a.localeCompare(b);
+        });
+
+        // 4. 開始渲染
+        seriesNames.forEach(sName => {
+            const items = groups[sName];
+            
+            // (A) 如果不只一個系列，或者該系列有設定名稱，才顯示標題
+            // 這樣如果全都是 "其他精選"，就不會突兀地跑出一個標題
+            const showHeader = (seriesNames.length > 1) || (sName !== '其他精選');
+
+            if(showHeader) {
+                const header = document.createElement('div');
+                header.className = 'series-header';
+                header.innerHTML = `<span>◈ ${sName}</span>`; // 可以加個裝飾符號
+                grid.appendChild(header);
             }
 
-            const card = document.createElement('div');
-            card.className = 'product-card';
-            card.innerHTML = `
-                <img src="${p.image || '/static/images/common/default_product.png'}" 
-                     class="p-img" 
-                     onerror="this.onerror=null; this.src='/static/images/common/default_product.png';">
-                <div class="p-info">
-                    <div class="p-title">${p.name}</div>
-                    <div class="p-price">NT$ ${priceDisplay}</div>
-                    <div class="p-desc">${p.description}</div>
-                    ${variantsHtml}
-                    <div class="add-box">
-                        <input type="number" value="1" min="1" class="qty-in" id="qty-${p._id}">
-                        <button class="add-btn" onclick="add('${p._id}')">加入</button>
-                    </div>
-                </div>`;
-            grid.appendChild(card);
+            // (B) 渲染該系列下的商品卡片
+            items.forEach(p => {
+                // ... (這裡保留原本產生卡片的程式碼，完全不用動) ...
+                let variantsHtml = '';
+                let priceDisplay = p.price;
+                
+                if (p.variants && p.variants.length > 0) {
+                    priceDisplay = `<span id="price-${p._id}">${p.variants[0].price}</span>`;
+                    const options = p.variants.map((v, i) => `<option value="${i}" data-price="${v.price}">${v.name} ($${v.price})</option>`).join('');
+                    variantsHtml = `<select id="var-${p._id}" class="variant-select" onchange="updatePrice('${p._id}', this)">${options}</select>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${p.image || '/static/images/common/default_product.png'}" 
+                         class="p-img" 
+                         onerror="this.onerror=null; this.src='/static/images/common/default_product.png';">
+                    <div class="p-info">
+                        <div class="p-title">${p.name}</div>
+                        <div class="p-price">NT$ ${priceDisplay}</div>
+                        <div class="p-desc">${p.description}</div>
+                        ${variantsHtml}
+                        <div class="add-box">
+                            <input type="number" value="1" min="1" class="qty-in" id="qty-${p._id}">
+                            <button class="add-btn" onclick="add('${p._id}')">加入</button>
+                        </div>
+                    </div>`;
+                grid.appendChild(card);
+            });
         });
     }
-
     window.updatePrice = (id, select) => {
         const price = select.options[select.selectedIndex].dataset.price;
         document.getElementById(`price-${id}`).textContent = price;

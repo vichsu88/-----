@@ -206,7 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
         variantsContainer.innerHTML=''; 
         imgPreview.style.display='none'; 
         imgHidden.value='';
-        
+        // === [新增] 嘗試自動填入一個預設的跳號排序 (非必須，但很方便) ===
+        // 這裡簡單設為 10，您也可以手動輸入
+        prodForm.seriesSort.value = 10;
         if(p) {
             document.getElementById('product-modal-title').textContent = '編輯商品';
             prodForm.productId.value = p._id;
@@ -215,7 +217,9 @@ document.addEventListener('DOMContentLoaded', () => {
             prodForm.description.value = p.description;
             prodForm.isActive.checked = p.isActive;
             prodForm.isDonation.checked = p.isDonation || false;
-            
+            // === [新增] 讀取系列資料 ===
+            prodForm.series.value = p.series || '';
+            prodForm.seriesSort.value = p.seriesSort || 0;
             if(p.image) { 
                 imgPreview.src = p.image; 
                 imgPreview.style.display='block'; 
@@ -293,6 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
             name: prodForm.name.value,
             description: prodForm.description.value,
             image: imgHidden.value, // 這裡會是 Cloudinary 的 URL
+            // === [新增] 收集這兩個欄位 ===
+            series: prodForm.series.value.trim(),
+            seriesSort: parseInt(prodForm.seriesSort.value) || 0,
+            // =========================
             isActive: prodForm.isActive.checked,
             isDonation: prodForm.isDonation.checked,
             variants: variants,
