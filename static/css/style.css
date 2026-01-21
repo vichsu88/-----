@@ -1417,3 +1417,141 @@ body::before {
         font-size: 10px;
     }
 }
+/* === 手機版 Overlay 選單樣式 (極速動畫版) === */
+.mobile-nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* [改動1] 移除圖片，改用 CSS 放射漸層 */
+    /* 這會營造出一種神聖的光暈感，但完全不吃流量 */
+    background: radial-gradient(circle at top right, #FDF6E9 0%, #F3F0EC 60%, #E6BA67 150%);
+    
+    z-index: 9999;
+    padding: 60px 40px 25px 40px;
+    box-sizing: border-box;
+
+    /* 預設狀態：隱藏 (移出畫面) */
+    transform: translateX(100%);
+    /* 這裡只讓背景做平滑移動 */
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 開啟狀態 */
+.mobile-nav-overlay.is-visible {
+    transform: translateX(0);
+}
+
+/* [改動2] 關閉按鈕優化 - 滑鼠移過去會旋轉 */
+.overlay-close-btn {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    background: none;
+    border: none;
+    color: #4b2c1c; /* 改深色，因為背景變淺了 */
+    font-size: 40px;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.3s ease, color 0.3s;
+}
+
+.overlay-close-btn:hover {
+    transform: rotate(90deg); /* 互動感 */
+    color: #C48945;
+}
+
+/* [改動3] 選單連結列表 - 準備做動畫 */
+.overlay-nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    width: 100%;
+}
+
+/* 列表項目預設狀態：往下沉一點點 + 透明 */
+.overlay-nav-links li {
+    margin-bottom: 25px;
+    opacity: 0; 
+    transform: translateY(20px);
+    transition: none; /* 關閉時不需要動畫，直接消失 */
+}
+
+/* [關鍵動畫] 當選單開啟時(is-visible)，項目一個個冒出來 */
+.mobile-nav-overlay.is-visible .overlay-nav-links li {
+    animation: fadeInUp 0.5s forwards; /* 執行進場動畫 */
+}
+
+/* 利用 nth-child 設定時間差 (瀑布效果) */
+.mobile-nav-overlay.is-visible .overlay-nav-links li:nth-child(1) { animation-delay: 0.1s; }
+.mobile-nav-overlay.is-visible .overlay-nav-links li:nth-child(2) { animation-delay: 0.15s; }
+.mobile-nav-overlay.is-visible .overlay-nav-links li:nth-child(3) { animation-delay: 0.2s; }
+.mobile-nav-overlay.is-visible .overlay-nav-links li:nth-child(4) { animation-delay: 0.25s; }
+.mobile-nav-overlay.is-visible .overlay-nav-links li:nth-child(5) { animation-delay: 0.3s; }
+.mobile-nav-overlay.is-visible .overlay-nav-links li:nth-child(6) { animation-delay: 0.35s; }
+
+/* 定義進場動畫 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.overlay-nav-links a {
+    text-decoration: none;
+    font-family: 'KouzanBrushFontOTF', sans-serif;
+    font-size: 32px;
+    color: #4b2c1c; /* 深咖啡色，對比米色背景 */
+    position: relative;
+    display: inline-block;
+}
+
+/* 連結 hover 效果：下方長出一條金線 */
+.overlay-nav-links a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -5px;
+    left: 50%;
+    background-color: #C48945;
+    transition: all 0.3s ease;
+}
+
+.overlay-nav-links a:hover::after {
+    width: 100%;
+    left: 0;
+}
+
+/* 底部社群連結 */
+.overlay-social {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-bottom: 30px;
+    opacity: 0; /* 預設隱藏 */
+}
+
+/* 社群圖示最後才出來 */
+.mobile-nav-overlay.is-visible .overlay-social {
+    animation: fadeInUp 0.5s forwards;
+    animation-delay: 0.5s; /* 等文字都出來後再出來 */
+}
+
+.overlay-social img {
+    height: 40px;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1)); /* 輕微陰影增加質感 */
+}
