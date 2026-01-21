@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* =========================================
-       3. 商品管理 (分組顯示)
+       3. 商品管理 (改為 Cloudinary 上傳)
        ========================================= */
     const productsList = document.getElementById('products-list');
     const prodModal = document.getElementById('product-modal');
@@ -120,17 +120,66 @@ document.addEventListener('DOMContentLoaded', () => {
     const imgPreview = document.getElementById('preview-image');
     const imgHidden = prodForm ? prodForm.querySelector('[name="image"]') : null;
 
-    // 圖片預覽
-    if(imgInput) imgInput.onchange = (e) => {
+    // ★ Cloudinary 設定 (請務必換成您自己的)
+    const CLOUD_NAME = 'dsvj25pma';     // 例如 'dxxxxxxxx'
+    const UPLOAD_PRESET = 'temple_upload'; // 例如 'temple_upload' (需設為 Unsigned)
+
+    // 圖片預覽與上傳邏輯
+    if(imgInput) imgInput.onchange = async (e) => {
         const file = e.target.files[0];
         if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => { 
-            imgPreview.src = ev.target.result; 
-            imgPreview.style.display='block'; 
-            imgHidden.value=ev.target.result; 
+
+        // 1. 先顯示本機預覽 (讓使用者感覺很快)
+        const localReader = new FileReader();
+        localReader.onload = (ev) => {
+            imgPreview.src = ev.target.result;
+            imgPreview.style.display = 'block';
         };
-        reader.readAsDataURL(file);
+        localReader.readAsDataURL(file);
+
+        // 2. 準備上傳到 Cloudinary
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+
+        // 取得 submit 按鈕以便鎖定，避免上傳未完成就送出
+        const submitBtn = document.querySelector('#product-form button[type="submit"]');
+        
+        try {
+            // 鎖定按鈕
+            if(submitBtn) { 
+                submitBtn.dataset.originalText = submitBtn.textContent;
+                submitBtn.textContent = '圖片上傳中...'; 
+                submitBtn.disabled = true; 
+                submitBtn.style.opacity = '0.7';
+            }
+
+            // 發送請求
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if(data.secure_url) {
+                // ★ 關鍵：把 Cloudinary 回傳的網址，填入隱藏欄位
+                imgHidden.value = data.secure_url; 
+                console.log('圖片上傳成功:', data.secure_url);
+            } else {
+                console.error('Cloudinary Error:', data);
+                alert('圖片上傳失敗，請檢查 Cloudinary 設定 (Cloud Name 或 Preset)');
+            }
+        } catch (err) {
+            console.error('Upload Error:', err);
+            alert('圖片上傳發生錯誤，請檢查網路');
+        } finally {
+            // 恢復按鈕
+            if(submitBtn) { 
+                submitBtn.textContent = submitBtn.dataset.originalText || '儲存商品'; 
+                submitBtn.disabled = false; 
+                submitBtn.style.opacity = '1';
+            }
+        }
     };
 
     function addVariantRow(name='', price='') {
@@ -167,7 +216,11 @@ document.addEventListener('DOMContentLoaded', () => {
             prodForm.isActive.checked = p.isActive;
             prodForm.isDonation.checked = p.isDonation || false;
             
-            if(p.image) { imgPreview.src = p.image; imgPreview.style.display='block'; imgHidden.value=p.image; }
+            if(p.image) { 
+                imgPreview.src = p.image; 
+                imgPreview.style.display='block'; 
+                imgHidden.value = p.image; 
+            }
             
             if(p.variants && p.variants.length > 0) p.variants.forEach(v => addVariantRow(v.name, v.price));
             else addVariantRow('標準', p.price);
@@ -179,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         prodModal.classList.add('is-visible');
     }
 
-    // ★ 修改：分組顯示商品
+    // 分組顯示商品
     async function fetchProducts() {
         if(!productsList) return;
         try {
@@ -239,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
             category: prodForm.category.value,
             name: prodForm.name.value,
             description: prodForm.description.value,
-            image: imgHidden.value,
+            image: imgHidden.value, // 這裡會是 Cloudinary 的 URL
             isActive: prodForm.isActive.checked,
             isDonation: prodForm.isDonation.checked,
             variants: variants,

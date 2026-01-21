@@ -4,8 +4,70 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light">
-  <title>{% block title %}承天中承府{% endblock %}</title>
+  
+  <title>{% block title %}承天中承府 - 嘉義煙島中壇元帥{% endblock %}</title>
+  
+  <meta name="description" content="{% block meta_description %}承天中承府位於嘉義市東區，主祀煙島中壇元帥。提供收驚、問事、補財庫、祭改、衣物寄回等濟世服務。歡迎十方善信蒞臨參拜，感受元帥威靈。營業時間：上午10:30至凌晨3:00。{% endblock %}">
+  
+  <meta name="keywords" content="{% block meta_keywords %}承天中承府, 煙島中壇元帥, 嘉義收驚, 嘉義問事, 補財庫, 嘉義廟宇, 祭改, 線上收驚, 嘉義市東區{% endblock %}">
+  
+  <meta name="author" content="承天中承府">
+  <meta name="robots" content="index, follow"> <link rel="canonical" href="{{ request.url }}"> <meta property="og:type" content="website">
+  <meta property="og:site_name" content="承天中承府">
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ self.meta_description() }}{% endblock %}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/pages/index/banner.png', _external=True) }}{% endblock %}">
+  <meta property="og:image:alt" content="承天中承府主視覺">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ self.title() }}">
+  <meta name="twitter:description" content="{{ self.meta_description() }}">
+  <meta name="twitter:image" content="{{ self.og_image() }}">
+
+  <link rel="icon" href="{{ url_for('static', filename='images/common/menu-avator.png') }}" type="image/png">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/common/menu-avator.png') }}">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "PlaceOfWorship",
+    "name": "承天中承府",
+    "image": [
+      "{{ url_for('static', filename='images/pages/index/banner.png', _external=True) }}"
+    ],
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "新生路337號",
+      "addressLocality": "東區",
+      "addressRegion": "嘉義市",
+      "postalCode": "600",
+      "addressCountry": "TW"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 23.491667, 
+      "longitude": 120.452778
+    },
+    "url": "{{ request.url_root }}",
+    "telephone": "", 
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+        ],
+        "opens": "10:30",
+        "closes": "03:00"
+      }
+    ],
+    "priceRange": "$"
+  }
+  </script>
+
   <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
@@ -16,7 +78,7 @@
   <header class="main-header">
     <nav class="main-nav">
       <a href="{{ url_for('home') }}" class="nav-logo">
-        <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="Logo">
+        <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="承天中承府 Logo">
       </a>
 
       <button class="nav-toggle" aria-label="開啟選單">
@@ -29,7 +91,6 @@
         <li><a href="{{ url_for('home') }}">首頁</a></li>
         <li><a href="{{ url_for('services_page') }}">收驚問事</a></li>
         <li><a href="{{ url_for('shop_page') }}">帥府周邊</a></li>
-
         <li><a href="{{ url_for('feedback_page') }}">信徒回饋</a></li>
         <li><a href="{{ url_for('fund_page') }}">建廟基金</a></li>
         <li><a href="{{ url_for('faq_page') }}">常見問題</a></li>
@@ -46,20 +107,22 @@
       <div class="footer-content">
         <div class="footer-col footer-col-left">
           <h3 class="footer-title">承天中承府</h3>
-          <p>地址：嘉義市新生路337號八八菸酒</p>
+          <address style="font-style: normal;">
+            <p>地址：嘉義市新生路337號八八菸酒</p>
+          </address>
           <p>營業時間：上午10:30～凌晨3:00</p>
         </div>
         <div class="footer-col footer-col-center">
-          <img src="{{ url_for('static', filename='images/common/footer-ill.png') }}" class="footer-illustration center-yuanbao" loading="lazy">
+          <img src="{{ url_for('static', filename='images/common/footer-ill.png') }}" class="footer-illustration center-yuanbao" loading="lazy" alt="招財元寶插圖">
         </div>
         <div class="footer-col footer-col-right">
           <h4 class="custom-link-title">官方社群</h4>
           <div class="footer-social">
-            <a href="{{ links['煙島元帥社群'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}"></a>
-            <a href="{{ links['FB'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}"></a>
-            <a href="{{ links['IG'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}"></a>
-            <a href="{{ links['TikTok'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}"></a>
-            <a href="{{ links['YouTube'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}"></a>
+            <a href="{{ links['煙島元帥社群'] or '#' }}" target="_blank" aria-label="加入社群"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line"></a>
+            <a href="{{ links['FB'] or '#' }}" target="_blank" aria-label="Facebook 粉絲專頁"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
+            <a href="{{ links['IG'] or '#' }}" target="_blank" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
+            <a href="{{ links['TikTok'] or '#' }}" target="_blank" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
+            <a href="{{ links['YouTube'] or '#' }}" target="_blank" aria-label="YouTube 頻道"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
           </div>
           <div class="footer-copyright">&copy; All copyright reserved | Eros design</div>
         </div>
@@ -68,27 +131,26 @@
   </footer>
 
   <div class="mobile-nav-overlay" id="mobile-nav-overlay">
-    <button class="overlay-close-btn" id="overlay-close-btn">&times;</button>
+    <button class="overlay-close-btn" id="overlay-close-btn" aria-label="關閉選單">&times;</button>
     <ul class="overlay-nav-links">
       <li><a href="{{ url_for('home') }}">首頁</a></li>
       <li><a href="{{ url_for('services_page') }}">收驚問事</a></li>
       <li><a href="{{ url_for('shop_page') }}">帥府周邊</a></li>
-
       <li><a href="{{ url_for('feedback_page') }}">信徒回饋</a></li>
       <li><a href="{{ url_for('fund_page') }}">建廟基金</a></li>
       <li><a href="{{ url_for('faq_page') }}">常見問題</a></li>
     </ul>
     
     <div class="overlay-social">
-       <a href="{{ links['FB'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}"></a>
-       <a href="{{ links['IG'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}"></a>
-       <a href="{{ links['元帥娘官方LINE'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}"></a>
-       <a href="{{ links['TikTok'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}"></a>
-       <a href="{{ links['YouTube'] or '#' }}" target="_blank"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}"></a>
+       <a href="{{ links['FB'] or '#' }}" target="_blank" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
+       <a href="{{ links['IG'] or '#' }}" target="_blank" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
+       <a href="{{ links['元帥娘官方LINE'] or '#' }}" target="_blank" aria-label="官方 Line"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line"></a>
+       <a href="{{ links['TikTok'] or '#' }}" target="_blank" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
+       <a href="{{ links['YouTube'] or '#' }}" target="_blank" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
     </div>
   </div>
 
-  <a href="#" class="back-to-top-btn">TOP</a>
+  <a href="#" class="back-to-top-btn" aria-label="回到頂部">TOP</a>
   <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 </body>
 </html>
