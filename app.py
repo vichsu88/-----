@@ -16,6 +16,7 @@ from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect
 from pymongo import MongoClient
 from bson import ObjectId
+from bson.errors import InvalidId  # [資安修正] 引入錯誤型別
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
 from flask_limiter import Limiter
@@ -52,8 +53,6 @@ limiter = Limiter(
 # CSRF & CORS
 csrf = CSRFProtect(app)
 # 設定允許的來源列表 (白名單)
-# 1. 本機開發用的 localhost
-# 2. 您在 Render 正式上線的網址 (請換成您真正的網址)
 allowed_origins = [
     "http://localhost:5000",
     "http://127.0.0.1:5000",
@@ -64,6 +63,7 @@ allowed_origins = [
 CORS(app, 
      resources={r"/api/*": {"origins": allowed_origins}}, 
      supports_credentials=True)
+
 # 管理員密碼
 ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH')
 
@@ -111,6 +111,16 @@ def mask_name(real_name):
     if len(real_name) >= 2:
         return real_name[0] + "O" + real_name[2:]
     return real_name
+
+def get_object_id(fid):
+    """
+    [資安修正] 安全地轉換 ObjectId
+    若格式錯誤，回傳 None，避免 500 Server Error
+    """
+    try:
+        return ObjectId(fid)
+    except (InvalidId, TypeError):
+        return None
 
 # === 新版寄信功能 (SendGrid API + 雙階段背景執行) ===
 
@@ -595,12 +605,16 @@ def get_sent_feedback():
 @app.route('/api/feedback/<fid>/approve', methods=['PUT'])
 @login_required
 def approve_feedback(fid):
-    fb = db.feedback.find_one({'_id': ObjectId(fid)})
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(fid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
+    fb = db.feedback.find_one({'_id': oid})
     if not fb: return jsonify({"error": "No data"}), 404
     
     fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
     
-    db.feedback.update_one({'_id': ObjectId(fid)}, {
+    db.feedback.update_one({'_id': oid}, {
         '$set': {
             'status': 'approved', 
             'feedbackId': fb_id,
@@ -618,12 +632,16 @@ def approve_feedback(fid):
 @app.route('/api/feedback/<fid>/ship', methods=['PUT'])
 @login_required
 def ship_feedback(fid):
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(fid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
     data = request.get_json()
     tracking = data.get('trackingNumber', '')
-    fb = db.feedback.find_one({'_id': ObjectId(fid)})
+    fb = db.feedback.find_one({'_id': oid})
     if not fb: return jsonify({"error": "No data"}), 404
     
-    db.feedback.update_one({'_id': ObjectId(fid)}, {
+    db.feedback.update_one({'_id': oid}, {
         '$set': {
             'status': 'sent', 
             'trackingNumber': tracking,
@@ -641,21 +659,29 @@ def ship_feedback(fid):
 @app.route('/api/feedback/<fid>', methods=['DELETE'])
 @login_required
 def delete_feedback(fid):
-    fb = db.feedback.find_one({'_id': ObjectId(fid)})
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(fid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
+    fb = db.feedback.find_one({'_id': oid})
     if fb and fb.get('email'):
         subject = "【承天中承府】感謝您的投稿與分享"
         body = generate_feedback_email_html(fb, 'rejected')
         send_email(fb['email'], subject, body, is_html=True)
         
-    db.feedback.delete_one({'_id': ObjectId(fid)})
+    db.feedback.delete_one({'_id': oid})
     return jsonify({"success": True})
 
 @app.route('/api/feedback/<fid>', methods=['PUT'])
 @login_required
 def update_feedback(fid):
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(fid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
     data = request.get_json()
     fields = {k: data.get(k) for k in ['realName', 'nickname', 'category', 'content', 'lunarBirthday', 'birthTime', 'address', 'phone']}
-    db.feedback.update_one({'_id': ObjectId(fid)}, {'$set': fields})
+    db.feedback.update_one({'_id': oid}, {'$set': fields})
     return jsonify({"success": True})
 
 @app.route('/api/feedback/download-unmarked', methods=['POST'])
@@ -903,10 +929,14 @@ def cleanup_shipped_orders():
 @app.route('/api/orders/<oid>/confirm', methods=['PUT'])
 @login_required
 def confirm_order_payment(oid):
-    order = db.orders.find_one({'_id': ObjectId(oid)})
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid_obj = get_object_id(oid)
+    if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
+
+    order = db.orders.find_one({'_id': oid_obj})
     if not order: return jsonify({"error": "No order"}), 404
     now = datetime.utcnow()
-    db.orders.update_one({'_id': ObjectId(oid)}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}})
+    db.orders.update_one({'_id': oid_obj}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}})
     cust = order['customer']
     if order.get('orderType') == 'donation':
         email_subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order['orderId']})"
@@ -921,14 +951,18 @@ def confirm_order_payment(oid):
 @app.route('/api/orders/<oid>/resend-email', methods=['POST'])
 @login_required
 def resend_order_email(oid):
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid_obj = get_object_id(oid)
+    if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
+
     data = request.get_json()
     new_email = data.get('email')
-    order = db.orders.find_one({'_id': ObjectId(oid)})
+    order = db.orders.find_one({'_id': oid_obj})
     if not order: return jsonify({"error": "No order"}), 404
     cust = order['customer']
     target_email = cust.get('email')
     if new_email and new_email != target_email:
-        db.orders.update_one({'_id': ObjectId(oid)}, {'$set': {'customer.email': new_email}})
+        db.orders.update_one({'_id': oid_obj}, {'$set': {'customer.email': new_email}})
         cust['email'] = new_email
         target_email = new_email
         
@@ -950,12 +984,16 @@ def resend_order_email(oid):
 @app.route('/api/orders/<oid>', methods=['DELETE'])
 @login_required
 def delete_order(oid):
-    order = db.orders.find_one({'_id': ObjectId(oid)})
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid_obj = get_object_id(oid)
+    if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
+
+    order = db.orders.find_one({'_id': oid_obj})
     if order and order.get('customer', {}).get('email'):
         subject = f"【承天中承府】訂單/登記已取消 ({order['orderId']})"
         body = f"親愛的 {order['customer']['name']} 您好：\n您的訂單/登記 ({order['orderId']}) 已被取消。如為誤操作或有任何疑問，請聯繫官方 LINE。"
         send_email(order['customer']['email'], subject, body)
-    db.orders.delete_one({'_id': ObjectId(oid)})
+    db.orders.delete_one({'_id': oid_obj})
     return jsonify({"success": True})
 
 @app.route('/api/products', methods=['GET'])
@@ -979,17 +1017,25 @@ def add_product():
 @app.route('/api/products/<pid>', methods=['PUT'])
 @login_required
 def update_product(pid):
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(pid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
     data = request.get_json()
     fields = {k: data.get(k) for k in ['name', 'category', 'price', 'description', 'image', 'isActive', 'variants', 'isDonation', 'series', 'seriesSort'] if k in data}
     if 'price' in fields: fields['price'] = int(fields['price'])
     if 'seriesSort' in fields: fields['seriesSort'] = int(fields['seriesSort'])
-    db.products.update_one({'_id': ObjectId(pid)}, {'$set': fields})
+    db.products.update_one({'_id': oid}, {'$set': fields})
     return jsonify({"success": True})
 
 @app.route('/api/products/<pid>', methods=['DELETE'])
 @login_required
 def delete_product(pid):
-    db.products.delete_one({'_id': ObjectId(pid)})
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(pid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
+    db.products.delete_one({'_id': oid})
     return jsonify({"success": True})
 
 @app.route('/api/announcements', methods=['GET'])
@@ -1015,8 +1061,12 @@ def add_announcement():
 @app.route('/api/announcements/<aid>', methods=['PUT'])
 @login_required
 def update_announcement(aid):
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(aid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
     data = request.get_json()
-    db.announcements.update_one({'_id': ObjectId(aid)}, {'$set': {
+    db.announcements.update_one({'_id': oid}, {'$set': {
         "date": datetime.strptime(data['date'], '%Y/%m/%d'), "title": data['title'],
         "content": data['content'], "isPinned": data.get('isPinned', False)
     }})
@@ -1025,7 +1075,11 @@ def update_announcement(aid):
 @app.route('/api/announcements/<aid>', methods=['DELETE'])
 @login_required
 def delete_announcement(aid):
-    db.announcements.delete_one({'_id': ObjectId(aid)})
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(aid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
+    db.announcements.delete_one({'_id': oid})
     return jsonify({"success": True})
 
 @app.route('/api/faq', methods=['GET'])
@@ -1051,8 +1105,12 @@ def add_faq():
 @app.route('/api/faq/<fid>', methods=['PUT'])
 @login_required
 def update_faq(fid):
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(fid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
     data = request.get_json()
-    db.faq.update_one({'_id': ObjectId(fid)}, {'$set': {
+    db.faq.update_one({'_id': oid}, {'$set': {
         "question": data['question'], "answer": data['answer'], "category": data['category'], "isPinned": data.get('isPinned', False)
     }})
     return jsonify({"success": True})
@@ -1060,7 +1118,11 @@ def update_faq(fid):
 @app.route('/api/faq/<fid>', methods=['DELETE'])
 @login_required
 def delete_faq(fid):
-    db.faq.delete_one({'_id': ObjectId(fid)})
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(fid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
+    db.faq.delete_one({'_id': oid})
     return jsonify({"success": True})
 
 @app.route('/api/fund-settings', methods=['GET'])
@@ -1083,19 +1145,27 @@ def get_links():
 @app.route('/api/links/<lid>', methods=['PUT'])
 @login_required
 def update_link(lid):
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid = get_object_id(lid)
+    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+
     data = request.get_json()
-    db.links.update_one({'_id': ObjectId(lid)}, {'$set': {'url': data['url']}})
+    db.links.update_one({'_id': oid}, {'$set': {'url': data['url']}})
     return jsonify({"success": True})
 
 @app.route('/api/orders/<oid>/ship', methods=['PUT'])
 @login_required
 def ship_order(oid):
+    # [資安修正] 使用 get_object_id 檢查格式
+    oid_obj = get_object_id(oid)
+    if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
+
     data = request.get_json() or {}
     tracking_num = data.get('trackingNumber', '').strip()
-    order = db.orders.find_one({'_id': ObjectId(oid)})
+    order = db.orders.find_one({'_id': oid_obj})
     if not order: return jsonify({"error": "No order"}), 404
     now = datetime.utcnow()
-    db.orders.update_one({'_id': ObjectId(oid)}, {'$set': {
+    db.orders.update_one({'_id': oid_obj}, {'$set': {
         'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 'trackingNumber': tracking_num
     }})
     cust = order['customer']
@@ -1116,4 +1186,5 @@ def debug_connection():
     return jsonify(status)
 
 if __name__ == '__main__':
+    # [資安修正] 確認 debug 設為 False
     app.run(host='0.0.0.0', port=5000, debug=False)
