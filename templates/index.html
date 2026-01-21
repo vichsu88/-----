@@ -1,32 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}承天中承府 - 首頁{% endblock %}
+{% block title %}承天中承府 - 嘉義煙島中壇元帥信仰中心 | 免費收驚問事{% endblock %}
 
 {% block content %}
 <style>
-    /* === 1. 統一的元寶標題樣式 (您的核心需求) === */
+    /* === 1. 統一的元寶標題樣式 === */
     .yuanbao-title-box {
         display: flex; 
         justify-content: center; 
         align-items: center; 
-        gap: 20px; /* 元寶跟字的距離 */
+        gap: 20px;
         margin-bottom: 30px;
         z-index: 2;
         position: relative;
     }
     
     .yuanbao-title-text {
-        font-family: 'KouzanBrushFontOTF', serif; /* 書法體 */
-        font-size: 2.5rem; /* ★ 尺寸加大，符合您原本的感覺 */
-        color: #000 !important; /* ★ 強制純黑色 */
+        font-family: 'KouzanBrushFontOTF', serif;
+        font-size: 2.5rem;
+        color: #000 !important;
         margin: 0; 
         font-weight: bold;
         line-height: 1.2;
-        text-shadow: none; /* 移除陰影，保持乾淨的黑色 */
+        text-shadow: none;
     }
     
     .yuanbao-icon {
-        width: 50px; /* 元寶圖片配合文字放大 */
+        width: 50px;
         height: auto;
     }
 
@@ -126,27 +126,24 @@
         overflow: visible;
     }
 
-    /* 排版設定 */
     .news-content-wrapper {
         display: flex; 
-        align-items: flex-start; /* 電腦版：靠上對齊 */
+        align-items: flex-start;
         justify-content: space-between;
         position: relative; 
         flex: 1;
         gap: 20px;
     }
 
-    /* 滑動視窗設定 */
     .news-window {
         flex: 1; 
         position: relative;
         margin-right: 0; 
-        height: 350px; /* 固定高度 */
-        overflow-y: auto; /* 開啟垂直捲軸 */
+        height: 350px;
+        overflow-y: auto;
         padding-right: 10px;
     }
 
-    /* 捲軸美化 */
     .news-window::-webkit-scrollbar { width: 6px; }
     .news-window::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
     .news-window::-webkit-scrollbar-thumb { background: #C48945; border-radius: 3px; }
@@ -156,7 +153,6 @@
         list-style: none; padding: 0; margin: 0; width: 100%;
     }
 
-    /* 列表項目 */
     .news-list li {
         display: flex; 
         flex-direction: column; 
@@ -165,7 +161,7 @@
         cursor: pointer;
         padding: 15px 0;
         width: 100%;
-        border-bottom: 1px dashed #ddd; /* 分隔線 */
+        border-bottom: 1px dashed #ddd;
     }
     
     .news-list li:last-child { border-bottom: none; }
@@ -183,6 +179,11 @@
     .news-title {
         font-size: 1.3rem; color: #333; font-weight: bold;
         white-space: normal; line-height: 1.4;
+    }
+    
+    .pinned-badge {
+        background: #d9534f; color: #fff; font-size: 0.8rem; padding: 1px 5px; 
+        border-radius: 3px; margin-left: 5px; vertical-align: middle;
     }
 
     .news-preview {
@@ -214,7 +215,6 @@
         75% { transform: rotate(5deg); }
     }
 
-    /* === 4. 其他樣式 === */
     .video-responsive-wrapper {
         position: relative; padding-bottom: 56.25%; height: 0; width: 100%;
         max-width: 1200px; margin: 0 auto 40px auto;
@@ -226,9 +226,7 @@
     .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
     .reveal.active { opacity: 1; transform: translateY(0); }
 
-    /* === 5. RWD 手機版調整 === */
     @media (max-width: 768px) {
-        /* 手機版標題稍微縮小一點點，避免換行 */
         .yuanbao-title-text { font-size: 2rem; }
         .yuanbao-icon { width: 35px; }
 
@@ -261,13 +259,8 @@
             gap: 8px;
         }
         
-        .news-title { 
-            font-size: 1.2rem;
-        }
-
-        .news-preview {
-            font-size: 1rem;
-        }
+        .news-title { font-size: 1.2rem; }
+        .news-preview { font-size: 1rem; }
         
         .news-avatar {
             width: 110px; 
@@ -277,9 +270,13 @@
     }
 </style>
 
+    <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">
+        承天中承府 - 嘉義中壇煙島元帥信仰中心 | 免費收驚問事、補財庫、點龍柱與公司招財科儀
+    </h1>
+
     <div id="intro-overlay" class="reveal">
         <img src="{{ url_for('static', filename='images/pages/index/banner.png') }}" 
-             alt="承天中承府眾神" 
+             alt="承天中承府-嘉義中壇元帥信仰中心首頁大圖" 
              fetchpriority="high" 
              loading="eager">
     </div>
@@ -297,10 +294,27 @@
             <div class="news-content-wrapper">
                 <div class="news-window">
                     <ul class="news-list" id="news-list">
-                        <li>載入中...</li>
+                        {% if announcements %}
+                            {% for news in announcements %}
+                            <li onclick='showNews({{ news | tojson | safe }})'>
+                                <div class="news-meta">
+                                    <span class="news-date">{{ news.date }}</span>
+                                    <span class="news-title">
+                                        {{ news.title }} 
+                                        {% if news.isPinned %}<span class="pinned-badge">置頂</span>{% endif %}
+                                    </span>
+                                </div>
+                                <div class="news-preview">
+                                    {{ (news.content or news.description or '') | replace('\n', '<br>') | safe }}
+                                </div>
+                            </li>
+                            {% endfor %}
+                        {% else %}
+                            <li>目前尚無最新公告，歡迎加入官方 LINE 獲取第一手消息。</li>
+                        {% endif %}
                     </ul>
                 </div>
-                <img class="news-avatar" src="{{ url_for('static', filename='images/pages/index/news-avator.png') }}" alt="小編報報">
+                <img class="news-avatar" src="{{ url_for('static', filename='images/pages/index/news-avator.png') }}" alt="承天中承府小編報報">
             </div>
         </div>
     </section>
@@ -313,44 +327,41 @@
         </div>
         
         <div class="video-responsive-wrapper">
-            <iframe src="https://www.youtube.com/embed/odpTDkvJBpw?autoplay=1&mute=1&loop=1&playlist=odpTDkvJBpw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            <iframe src="https://www.youtube.com/embed/odpTDkvJBpw?autoplay=1&mute=1&loop=1&playlist=odpTDkvJBpw" title="承天中承府-煙島中壇元帥介紹影片" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
         </div >
         
         <div class="photo-gallery activity-gallery">
-            <img src="{{ url_for('static', filename='images/pages/index/activity1.jpg') }}" alt="活動照片1" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity2.jpg') }}" alt="活動照片2" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity3.jpg') }}" alt="活動照片3" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity4.jpg') }}" alt="活動照片4" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity5.jpg') }}" alt="活動照片5" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity6.jpg') }}" alt="活動照片6" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity7.jpg') }}" alt="活動照片7" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity8.jpg') }}" alt="活動照片8" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity9.jpg') }}" alt="活動照片9" loading="lazy">
+            <img src="{{ url_for('static', filename='images/pages/index/activity1.jpg') }}" alt="承天中承府-中壇煙島元帥聖誕祝壽大典" loading="lazy">
+            <img src="{{ url_for('static', filename='images/pages/index/activity2.jpg') }}" alt="嘉義免費收驚問事-信徒虔誠參拜現場" loading="lazy">
+            <img src="{{ url_for('static', filename='images/pages/index/activity3.jpg') }}" alt="承天中承府進香活動-傳統信仰與文化傳承" loading="lazy">
+            <img src="{{ url_for('static', filename='images/pages/index/activity4.jpg') }}" alt="元帥娘發願濟世-癌症祈福與神蹟見證" loading="lazy">
+            <img src="{{ url_for('static', filename='images/pages/index/activity5.jpg') }}" alt="承天中承府公益活動-關懷社會弱勢" loading="lazy">
+            <img src="{{ url_for('static', filename='images/pages/index/activity6.jpg') }}" alt="嘉義補財庫推薦-公司行號招財科儀" loading="lazy">
+            <img src="{{ url_for('static', filename='images/pages/index/activity7.jpg') }}" alt="點龍柱祈福法會-祈求元帥庇佑闔家平安" loading="lazy">
+            <img src="{{ url_for('static', filename='images/pages/index/activity8.jpg') }}" alt="煙島元帥指定供品-金莎巧克力與奧利多水" loading="lazy">
+            <img src="{{ url_for('static', filename='images/pages/index/activity9.jpg') }}" alt="承天中承府-嘉義市東區新生路337號參拜人潮" loading="lazy">
         </div>
         
         <div class="deity-list-no-shrine">
-            <p>承天中承府座落於嘉義市東區新生路，主祀「煙島中壇元帥」。</p>
-            <p>元帥儀表堂堂、性格正直爽朗，故稱為「煙島」。象徵其獨特非凡、天上地下難得一見之神威風采。</p>
-            <p>府內供奉神明：</p>
+            <p>承天中承府座落於嘉義市東區新生路，主祀「煙島中壇元帥」。元帥性格正直爽朗、儀表堂堂，故稱「煙島」。</p>
+            <p>本府辦事十年來堅持「免費收驚、免費問事」，緣起於元帥娘感念元帥護佑癌症末期父親延壽三年的神蹟，因而發願濟世。</p>
+            <p>除靈驗的濟世服務外，亦提供補財庫、點龍柱、法會及公司行號招財科儀。元帥特別喜愛金莎巧克力與奧利多水，展現獨特親民的神威風采。歡迎十方善信蒞臨參拜，祈求平安與財運。</p>
+            <br>
+            <p><strong>府內供奉神明：</strong></p>
         </div>
         
         <div class="deity-carousel">
             <div class="deity-grid-track">
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god0.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">承天中承府</p><p class="deity-name">煙島元帥</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god1.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">花蓮勝安宮</p><p class="deity-name">王母娘娘</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god2.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">埔里寶湖宮</p><p class="deity-name">地母至尊</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god3.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">天上聖母</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god4.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">梅山玉<span class="font-fallback">虛</span>宮</p><p class="deity-name">玄天上帝</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god5.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">嘉義文財殿</p><p class="deity-name">文財神</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god6.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">北港武德宮</p><p class="deity-name">武財神</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god7.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">四湖參天宮</p><p class="deity-name">關聖帝君</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god8.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">世賢路福德宮</p><p class="deity-name">福德正神</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god9.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">山軍尊神（虎爺）</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god0.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">承天中承府</p><p class="deity-name">煙島元帥</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god1.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">花蓮勝安宮</p><p class="deity-name">王母娘娘</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god2.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">埔里寶湖宮</p><p class="deity-name">地母至尊</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god3.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">天上聖母</p></div></div>
-                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god4.jpg') }}" loading="lazy"><div class="deity-info"><p class="temple-name"> 梅山玉<span class="font-fallback">虛</span>宮</p><p class="deity-name">玄天上帝</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god0.jpg') }}" alt="承天中承府-煙島中壇元帥" loading="lazy"><div class="deity-info"><p class="temple-name">承天中承府</p><p class="deity-name">煙島元帥</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god1.jpg') }}" alt="花蓮勝安宮-王母娘娘" loading="lazy"><div class="deity-info"><p class="temple-name">花蓮勝安宮</p><p class="deity-name">王母娘娘</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god2.jpg') }}" alt="埔里寶湖宮-地母至尊" loading="lazy"><div class="deity-info"><p class="temple-name">埔里寶湖宮</p><p class="deity-name">地母至尊</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god3.jpg') }}" alt="朴子配天宮-天上聖母" loading="lazy"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">天上聖母</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god4.jpg') }}" alt="梅山玉虛宮-玄天上帝" loading="lazy"><div class="deity-info"><p class="temple-name">梅山玉虛宮</p><p class="deity-name">玄天上帝</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god5.jpg') }}" alt="嘉義文財殿-文財神" loading="lazy"><div class="deity-info"><p class="temple-name">嘉義文財殿</p><p class="deity-name">文財神</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god6.jpg') }}" alt="北港武德宮-武財神" loading="lazy"><div class="deity-info"><p class="temple-name">北港武德宮</p><p class="deity-name">武財神</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god7.jpg') }}" alt="四湖參天宮-關聖帝君" loading="lazy"><div class="deity-info"><p class="temple-name">四湖參天宮</p><p class="deity-name">關聖帝君</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god8.jpg') }}" alt="世賢路福德宮-福德正神" loading="lazy"><div class="deity-info"><p class="temple-name">世賢路福德宮</p><p class="deity-name">福德正神</p></div></div>
+                <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god9.jpg') }}" alt="朴子配天宮-山軍尊神" loading="lazy"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">山軍尊神（虎爺）</p></div></div>
             </div>
         </div>
     </section>
@@ -364,7 +375,7 @@
 
         <div class="services-grid">
             <div class="service-item">
-                <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon1.png') }}" alt="濟世服務">
+                <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon1.png') }}" alt="嘉義免費收驚問事服務">
                 <div class="service-overlay">
                     <div class="service-buttons btn-grid-2x2">
                         <a href="{{ url_for('services_page') }}" class="glow-btn">問事收驚</a>
@@ -376,7 +387,7 @@
             </div>
             
             <div class="service-item">
-                <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon2.png') }}" alt="結緣品">
+                <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon2.png') }}" alt="中壇元帥結緣品與賣場">
                 <div class="service-overlay">
                     <div class="service-buttons">
                         <a href="{{ url_for('shop_page') }}" class="glow-btn">帥府賣場</a>
@@ -386,7 +397,7 @@
             </div>
             
             <div class="service-item">
-                <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon3.png') }}" alt="建廟基金">
+                <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon3.png') }}" alt="承天中承府建廟基金護持">
                 <div class="service-overlay">
                     <div class="service-buttons">
                         <a href="{{ url_for('fund_page') }}" class="glow-btn">建廟護持</a>
@@ -424,31 +435,53 @@
         </div>
     </div>
 
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "PlaceOfWorship",
+      "name": "承天中承府",
+      "image": [
+        "https://www.chentien.com/static/images/pages/index/banner.png",
+        "https://www.chentien.com/static/images/pages/index/activity1.jpg"
+       ],
+      "description": "承天中承府位於嘉義市，主祀煙島中壇元帥。提供免費收驚、免費問事服務，並有點龍柱、補財庫、公司招財科儀等。元帥娘感念父親延壽神蹟發願濟世，歡迎善信參拜。",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "新生路337號",
+        "addressLocality": "東區",
+        "addressRegion": "嘉義市",
+        "postalCode": "600",
+        "addressCountry": "TW"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 23.480075,
+        "longitude": 120.449111
+      },
+      "url": "https://www.chentien.com",
+      "telephone": "+886-9-12345678",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
+        "opens": "10:30",
+        "closes": "03:00"
+      },
+      "priceRange": "免費 (隨喜功德)"
+    }
+    </script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. 載入公告
-            fetch('/api/announcements')
-                .then(res => res.json())
-                .then(data => {
-                    const list = document.getElementById('news-list');
-                    if(data.length === 0) { list.innerHTML = '<li>尚無最新公告</li>'; return; }
-                    
-                    // 改為直接列出所有資料，無輪播
-                    list.innerHTML = data.map((news) => {
-                        const contentText = news.content || news.description || '';
-                        
-                        return `
-                        <li onclick='showNews(${JSON.stringify(news)})'>
-                            <div class="news-meta">
-                                <span class="news-date">${news.date}</span>
-                                <span class="news-title">${news.title} ${news.isPinned ? '<span class="pinned-badge">置頂</span>' : ''}</span>
-                            </div>
-                            <div class="news-preview">
-                                ${contentText.replace(/\n/g, '<br>')} 
-                            </div>
-                        </li>
-                    `}).join('');
-                });
+            // 1. 公告載入邏輯：已改為 SSR 伺服器端渲染，不需要再 Fetch
+            // 這裡保留 Modal 的互動邏輯即可
 
             // 2. Modal
             const modal = document.getElementById('announcementModal');
