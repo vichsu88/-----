@@ -51,8 +51,19 @@ limiter = Limiter(
 
 # CSRF & CORS
 csrf = CSRFProtect(app)
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+# 設定允許的來源列表 (白名單)
+# 1. 本機開發用的 localhost
+# 2. 您在 Render 正式上線的網址 (請換成您真正的網址)
+allowed_origins = [
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+    "http://140.119.143.95:5000",
+    "https://yandao.onrender.com",
+]
 
+CORS(app, 
+     resources={r"/api/*": {"origins": allowed_origins}}, 
+     supports_credentials=True)
 # 管理員密碼
 ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH')
 
@@ -1105,4 +1116,4 @@ def debug_connection():
     return jsonify(status)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
