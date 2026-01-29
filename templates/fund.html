@@ -28,7 +28,6 @@
         position: relative;
         height: 90vh;
         min-height: 600px;
-        /* 請更換為您的建廟背景圖 */
         background: url('{{ url_for("static", filename="images/pages/index/banner.png") }}') no-repeat center center/cover;
         display: flex;
         justify-content: center;
@@ -38,10 +37,9 @@
     }
     .fund-hero::before {
         content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
-        background: rgba(0,0,0,0.6); /* 黑色遮罩讓圖表突出 */
+        background: rgba(0,0,0,0.6);
     }
     
-    /* 圓餅圖動畫 */
     .chart-container {
         position: relative;
         z-index: 2;
@@ -58,7 +56,7 @@
     .chart-inner {
         width: 240px;
         height: 240px;
-        background: #fff; /* 中間挖空 */
+        background: #fff;
         border-radius: 50%;
         display: flex;
         flex-direction: column;
@@ -75,7 +73,7 @@
     /* === 第二區：YouTube 影片 === */
     .video-wrapper {
         position: relative;
-        padding-bottom: 56.25%; /* 16:9 比例 */
+        padding-bottom: 56.25%;
         height: 0;
         overflow: hidden;
         max-width: 900px;
@@ -87,56 +85,167 @@
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     }
 
-    /* === 第三區：故事圖片牆 === */
-    .story-container {
+    /* === 第三區：未來願景 (起承轉合版) === */
+    .vision-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 60px;
+        text-align: left;
+        padding: 20px 0;
+    }
+    .vision-item {
         display: flex;
         flex-direction: column;
-        gap: 0; /* 圖片緊密連接，或設為 20px */
-        max-width: 900px;
-        margin: 0 auto;
+        gap: 20px;
     }
-    .story-img {
+    .vision-img-box {
         width: 100%;
-        height: auto;
-        display: block;
-        /* 預設樣式，您之後上傳圖片會自動撐開 */
+        height: 300px;
+        overflow: hidden;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .vision-img-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    .vision-item:hover .vision-img-box img {
+        transform: scale(1.05);
+    }
+    .vision-content h3 {
+        color: #8B4513;
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+        font-family: 'LXGW WenKai TC', serif;
+        border-bottom: 2px solid #E6BA67;
+        display: inline-block;
+        padding-bottom: 5px;
+    }
+    .vision-content p {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #555;
+        text-align: justify;
     }
 
-    /* === 第四區：捐款 CTA === */
+    @media (min-width: 768px) {
+        .vision-item {
+            flex-direction: row;
+            align-items: center;
+            gap: 40px;
+        }
+        .vision-item:nth-child(even) {
+            flex-direction: row-reverse; /* 偶數項圖片在右邊 */
+        }
+        .vision-img-box {
+            flex: 1;
+            height: 350px;
+        }
+        .vision-content {
+            flex: 1;
+        }
+    }
+
+    /* === 第四區：捐款 CTA 與 流程圖 === */
     .donation-section {
         background: #fff;
         border-top: 5px solid #C48945;
         padding: 80px 20px;
     }
-    .donation-options {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        flex-wrap: wrap;
-        margin-bottom: 40px;
+
+    /* 芳名錄樣式 */
+    .honor-roll-section {
+        max-width: 1000px;
+        margin: 0 auto 50px auto;
+        background: #8B0000;
+        background-image: linear-gradient(180deg, #9E2A2B 0%, #800000 100%);
+        color: #FFD700;
+        padding: 20px; 
+        border-radius: 12px;
+        border: 4px double #FFD700;
+        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.3);
+        text-align: left;
     }
-    .donate-card {
-        border: 2px solid #E6BA67;
-        border-radius: 15px;
-        padding: 20px;
-        width: 280px;
+    .honor-title {
+        font-size: 1.5rem;
+        font-weight: bold;
         text-align: center;
-        cursor: pointer;
-        transition: 0.3s;
-        background: #fff;
+        margin-bottom: 15px;
+        border-bottom: 1px solid rgba(255,215,0,0.3);
+        padding-bottom: 10px;
+    }
+    .marquee-container {
+        height: 150px; /* 顯示高度 */
+        overflow: hidden;
         position: relative;
     }
+    .marquee-content {
+        position: absolute;
+        width: 100%;
+        animation: scrollUp 10s linear infinite; /* 動畫 */
+    }
+    .donor-item { 
+        display: flex; justify-content: space-between; padding: 10px 5px; 
+        border-bottom: 1px dashed rgba(255, 215, 0, 0.5); 
+        font-size: 1.1rem; 
+    }
+    @keyframes scrollUp {
+        0% { top: 100%; }
+        100% { top: -100%; } /* 根據內容長度可能需要JS動態調整，這裡先設個大概 */
+    }
+
+    /* 流程圖樣式 */
+    .process-steps {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 0; margin: 0 auto 50px auto; list-style: none; position: relative;
+        max-width: 900px;
+    }
+    .process-steps::before {
+        content: ''; position: absolute; top: 40px; left: 50px; right: 50px;
+        height: 3px; background: #E6BA67; z-index: 0; opacity: 0.5;
+    }
+    .step-item {
+        flex: 1; text-align: center; position: relative; z-index: 1; padding: 0 10px;
+    }
+    .step-icon-box {
+        width: 80px; height: 80px; margin: 0 auto 15px auto;
+        background: #fff; border: 3px solid #C48945; border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        font-size: 32px; box-shadow: 0 4px 10px rgba(196, 137, 69, 0.2);
+        transition: transform 0.3s;
+    }
+    .step-item:hover .step-icon-box { transform: scale(1.1); background: #fffbf5; }
+    .step-title { font-weight: bold; color: #8B4513; font-size: 1.1rem; margin-bottom: 8px; display: block; }
+    .step-desc { font-size: 0.9rem; color: #666; line-height: 1.5; display: block; }
+    
+    @media (max-width: 768px) {
+        .process-steps { flex-direction: column; gap: 20px; align-items: center; max-width: 300px; }
+        .process-steps::before { 
+            width: 3px; height: calc(100% - 80px); top: 40px; left: 29px; right: auto; 
+        }
+        .step-item { 
+            display: flex; align-items: center; text-align: left; width: 100%; gap: 15px; 
+            background: #fff; padding-right: 0;
+        }
+        .step-icon-box { margin: 0; width: 60px; height: 60px; font-size: 24px; flex-shrink: 0; }
+    }
+
+    /* 捐款卡片樣式維持 */
+    .donation-options {
+        display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 40px;
+    }
+    .donate-card {
+        border: 2px solid #E6BA67; border-radius: 15px; padding: 20px; width: 280px;
+        text-align: center; cursor: pointer; transition: 0.3s; background: #fff; position: relative;
+    }
     .donate-card:hover, .donate-card.selected {
-        background: #C48945;
-        color: #fff;
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(196, 137, 69, 0.3);
+        background: #C48945; color: #fff; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(196, 137, 69, 0.3);
     }
     .donate-card h3 { margin: 10px 0; font-size: 1.5rem; }
     .donate-card .price { font-size: 1.8rem; font-weight: bold; margin-bottom: 15px; }
-    .qty-control {
-        display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px;
-    }
+    .qty-control { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; }
     .qty-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: #eee; color: #333; cursor: pointer; font-weight: bold; }
     .donate-card.selected .qty-btn { background: #fff; color: #C48945; }
     .qty-display { width: 40px; text-align: center; font-size: 1.2rem; }
@@ -192,22 +301,102 @@
     <div class="section-container">
         <h2 class="section-title-fund">建廟緣起</h2>
         <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/pqMRa8OWBvM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>        </div>
+            <iframe src="https://www.youtube.com/embed/pqMRa8OWBvM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>        
+        </div>
     </div>
 
     <div class="section-container" style="background:#fff;">
         <h2 class="section-title-fund">未來願景</h2>
-        <div class="story-container">
-            <img src="{{ url_for('static', filename='images/pages/incense/story1.jpg') }}" class="story-img" alt="願景圖1">
-            <img src="{{ url_for('static', filename='images/pages/incense/story2.jpg') }}" class="story-img" alt="願景圖2">
+        
+        <div class="vision-grid">
+            <div class="vision-item">
+                <div class="vision-img-box">
+                    <img src="{{ url_for('static', filename='images/pages/incense/story1.jpg') }}" alt="建廟緣起-狹窄空間">
+                </div>
+                <div class="vision-content">
+                    <h3>緣起：小空間裡的大慈悲</h3>
+                    <p>十年來，承天中承府承蒙元帥神威，為無數信徒收驚解惑。然而，隨著善信日益增加，僅有的空間已不足以容納這份日益增長的香火與期待。</p>
+                </div>
             </div>
+            
+            <div class="vision-item">
+                <div class="vision-img-box">
+                    <img src="{{ url_for('static', filename='images/pages/incense/story2.jpg') }}" alt="責任與挑戰">
+                </div>
+                <div class="vision-content">
+                    <h3>責任：我們需要一個更穩定的家</h3>
+                    <p>看見信徒在烈日下等待收驚的汗水，看見法會時大家擠在狹窄過道的虔誠。建廟，已是刻不容緩的使命。</p>
+                </div>
+            </div>
+
+            <div class="vision-item">
+                <div class="vision-img-box">
+                    <img src="{{ url_for('static', filename='images/pages/index/activity3.jpg') }}" alt="未來藍圖">
+                </div>
+                <div class="vision-content">
+                    <h3>藍圖：不只是一座廟</h3>
+                    <p>未來的帥府，將不再只是一座建築。它將是莊嚴殿堂，讓善信舒適參拜；它是文化基地，傳承信仰。</p>
+                </div>
+            </div>
+
+            <div class="vision-item">
+                <div class="vision-img-box">
+                    <img src="{{ url_for('static', filename='images/pages/index/donate.png') }}" alt="邀請與行動">
+                </div>
+                <div class="vision-content">
+                    <h3>邀請：萬丈高樓，起於您的一份心意</h3>
+                    <p>建廟大業，非一人之力可成。您捐獻的一磚一瓦，都將刻畫在歷史中。誠摯邀請您，成為建廟功德主，為自己與家人，種下萬世流芳的福田。</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="donation-section" id="donate">
         <div class="section-container" style="padding-top:0;">
+            
+            <div class="honor-roll-section">
+                <div class="honor-title">捐贈芳名錄</div>
+                <div class="marquee-container">
+                    <div class="marquee-content" id="honor-list">
+                        <div style="padding:10px; text-align:center;">載入中...</div>
+                    </div>
+                </div>
+            </div>
+
             <h2 class="section-title-fund">立即護持</h2>
             <p style="margin-bottom:40px; font-size:1.2rem; color:#666;">您的每一份心意，都將化作莊嚴廟宇的一部份。</p>
             
+            <ol class="process-steps">
+                <li class="step-item">
+                    <div class="step-icon-box" title="選擇項目">🙏</div>
+                    <div class="step-text">
+                        <span class="step-title">Step 1：選擇項目</span>
+                        <span class="step-desc">挑選您欲護持的磚瓦或龍柱。</span>
+                    </div>
+                </li>
+                <li class="step-item">
+                    <div class="step-icon-box" title="填寫疏文">✍️</div>
+                    <div class="step-text">
+                        <span class="step-title">Step 2：填寫疏文</span>
+                        <span class="step-desc">確認用於稟奏的姓名與生辰。</span>
+                    </div>
+                </li>
+                <li class="step-item">
+                    <div class="step-icon-box" title="完成匯款">💰</div>
+                    <div class="step-text">
+                        <span class="step-title">Step 3：完成匯款</span>
+                        <span class="step-desc">送出後請於 2 小時內匯款完成。</span>
+                    </div>
+                </li>
+                <li class="step-item">
+                    <div class="step-icon-box" title="功德圓滿">💮</div>
+                    <div class="step-text">
+                        <span class="step-title">Step 4：功德圓滿</span>
+                        <span class="step-desc">確認款項後將列入芳名錄並稟奏元帥。</span>
+                    </div>
+                </li>
+            </ol>
+
             <div class="donation-options">
                 <div class="donate-card" onclick="selectItem('suixi', 100)">
                     <h3>隨喜助建</h3>
@@ -253,7 +442,7 @@
         <div class="modal-header">填寫護持資料</div>
         <div class="emotional-text">
             感恩您的發心！<br>
-            您的一磚一瓦，我們都會詳細記錄，並於每月初一、十五向元帥稟奏疏文。<br>
+            您的一磚一瓦，我們都會詳細記錄，向元帥稟奏疏文。<br>
             您的功德將永留帥府，庇佑您閤家平安。
         </div>
         
@@ -265,13 +454,13 @@
                 </div>
                 <div class="form-group">
                     <label>農曆生日 (YYYY/MM/DD)</label>
-                    <input type="text" name="lunarBirthday" class="form-control" required placeholder="例如: 1990/01/01">
+                    <input type="text" name="lunarBirthday" class="form-control" required placeholder="例如: 1990/01/01" maxlength="10" data-mask="date">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label>聯絡電話</label>
-                    <input type="tel" name="phone" class="form-control" required>
+                    <input type="tel" name="phone" class="form-control" required placeholder="09xx-xxx-xxx" maxlength="12" data-mask="phone">
                 </div>
                 <div class="form-group">
                     <label>電子信箱 (接收確認信)</label>
@@ -279,7 +468,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>聯絡地址 (寄送感謝狀/收據)</label>
+                <label>聯絡地址</label>
                 <input type="text" name="address" class="form-control" required>
             </div>
             <div class="form-group">
@@ -299,6 +488,7 @@
         <table class="summary-table">
             <tr><td width="30%">姓名</td><td id="conf-name"></td></tr>
             <tr><td>農曆生日</td><td id="conf-birth"></td></tr>
+            <tr><td>聯絡電話</td><td id="conf-phone"></td></tr>
             <tr><td>護持項目</td><td id="conf-items"></td></tr>
             <tr><td>總金額</td><td id="conf-total" style="color:#C48945; font-weight:bold;"></td></tr>
         </table>
@@ -314,8 +504,8 @@
         <h2 style="color:#C48945;">功德無量</h2>
         <p>資料已成功送出，感謝您的護持！</p>
         <div style="background:#e3f2fd; padding:15px; border-radius:8px; margin:20px 0; text-align:left;">
-            <p><strong>匯款銀行：</strong>000 (範例銀行)</p>
-            <p><strong>匯款帳號：</strong>1234-5678-9012</p>
+            <p><strong>匯款銀行：</strong>103 新光銀行(北嘉義)</p>
+            <p><strong>匯款帳號：</strong>曾凡禎 0666509711333</p>
             <p style="color:red; font-size:13px;">請務必於 2 小時內完成匯款。</p>
         </div>
         <button class="btn-action" onclick="window.location.reload()">完成</button>
@@ -346,7 +536,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 20); // 動畫速度
     } catch(e) {}
 
-    // === 2. 捐款邏輯 ===
+    // === 2. 載入芳名錄 ===
+    loadMarquee();
+    function loadMarquee() {
+        fetch('/api/donations/public').then(r=>r.json()).then(data => {
+            const list = document.getElementById('honor-list');
+            if(!data.length) { list.innerHTML='<div style="text-align:center;">尚無紀錄</div>'; return; }
+            
+            // 為了讓跑馬燈無縫，內容要重複兩次
+            const html = data.map(d => `<div class="donor-item"><span>${d.name}</span><span>${d.items}</span></div>`).join('');
+            list.innerHTML = html + html; 
+            
+            // 動態調整動畫速度，根據內容多寡
+            const totalHeight = list.scrollHeight;
+            list.style.animationDuration = `${Math.max(10, data.length * 2)}s`;
+        }).catch(err => console.log('Honor list error', err));
+    }
+
+    // === 3. 輸入優化 (Input Mask) ===
+    const dateInput = document.querySelector('input[data-mask="date"]');
+    const phoneInput = document.querySelector('input[data-mask="phone"]');
+
+    if (dateInput) {
+        dateInput.addEventListener('input', (e) => {
+            let v = e.target.value.replace(/\D/g, ''); // 只留數字
+            if (v.length > 8) v = v.slice(0, 8);
+            if (v.length > 4) v = v.slice(0, 4) + '/' + v.slice(4);
+            if (v.length > 7) v = v.slice(0, 7) + '/' + v.slice(7);
+            e.target.value = v;
+        });
+    }
+
+    if (phoneInput) {
+        phoneInput.addEventListener('input', (e) => {
+            let v = e.target.value.replace(/\D/g, ''); // 只留數字
+            if (v.length > 10) v = v.slice(0, 10);
+            if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
+            if (v.length > 8) v = v.slice(0, 8) + '-' + v.slice(8);
+            e.target.value = v;
+        });
+    }
+
+    // === 4. 捐款邏輯 ===
     const items = {
         'suixi': { name: '隨喜助建', price: 100, qty: 0 },
         'tile': { name: '建廟瓦片', price: 600, qty: 0 },
@@ -366,9 +597,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     window.selectItem = (key) => {
-        // 點擊卡片本身也可以+1 (體驗優化)
-        // 但如果按到 +/- 按鈕會被 stopPropagation 擋住，不會觸發這個
-        // 這裡暫時留空，或可設計成點擊卡片就選 1
         if(items[key].qty === 0) updateQty(key, 1);
     };
 
@@ -378,7 +606,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('total-amount').innerText = total.toLocaleString();
     }
 
-    // === 3. 表單流程 ===
+    // === 5. 表單流程 ===
     const formModal = document.getElementById('fund-form-modal');
     const confirmModal = document.getElementById('confirm-modal');
     const successModal = document.getElementById('success-modal');
@@ -397,6 +625,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 收集資料並顯示確認 Modal
         document.getElementById('conf-name').innerText = form.name.value;
         document.getElementById('conf-birth').innerText = form.lunarBirthday.value;
+        document.getElementById('conf-phone').innerText = form.phone.value;
         
         let itemsHtml = '';
         for(let key in items) {
@@ -430,7 +659,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             address: form.address.value,
             last5: form.last5.value,
             email: form.email.value,
-            lunarBirthday: form.lunarBirthday.value, // 新增
+            lunarBirthday: form.lunarBirthday.value,
             items: orderItems,
             total: parseInt(document.getElementById('total-amount').innerText.replace(/,/g,''))
         };

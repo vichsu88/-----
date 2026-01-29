@@ -984,7 +984,6 @@ def resend_order_email(oid):
 @app.route('/api/orders/<oid>', methods=['DELETE'])
 @login_required
 def delete_order(oid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid_obj = get_object_id(oid)
     if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
 
@@ -1017,7 +1016,6 @@ def add_product():
 @app.route('/api/products/<pid>', methods=['PUT'])
 @login_required
 def update_product(pid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(pid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
 
@@ -1031,7 +1029,6 @@ def update_product(pid):
 @app.route('/api/products/<pid>', methods=['DELETE'])
 @login_required
 def delete_product(pid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(pid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
 
@@ -1061,7 +1058,6 @@ def add_announcement():
 @app.route('/api/announcements/<aid>', methods=['PUT'])
 @login_required
 def update_announcement(aid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(aid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
 
@@ -1075,7 +1071,6 @@ def update_announcement(aid):
 @app.route('/api/announcements/<aid>', methods=['DELETE'])
 @login_required
 def delete_announcement(aid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(aid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
 
@@ -1105,7 +1100,6 @@ def add_faq():
 @app.route('/api/faq/<fid>', methods=['PUT'])
 @login_required
 def update_faq(fid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(fid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
 
@@ -1118,7 +1112,6 @@ def update_faq(fid):
 @app.route('/api/faq/<fid>', methods=['DELETE'])
 @login_required
 def delete_faq(fid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(fid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
 
@@ -1145,7 +1138,6 @@ def get_links():
 @app.route('/api/links/<lid>', methods=['PUT'])
 @login_required
 def update_link(lid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(lid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
 
@@ -1156,7 +1148,6 @@ def update_link(lid):
 @app.route('/api/orders/<oid>/ship', methods=['PUT'])
 @login_required
 def ship_order(oid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid_obj = get_object_id(oid)
     if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
 
@@ -1174,7 +1165,6 @@ def ship_order(oid):
     send_email(cust.get('email'), email_subject, email_html, is_html=True)
     return jsonify({"success": True})
 
-# 放在 app.py 最後面：健康檢查 (確認資料庫連線)
 @app.route('/api/debug-connection')
 def debug_connection():
     status = {}
@@ -1186,5 +1176,4 @@ def debug_connection():
     return jsonify(status)
 
 if __name__ == '__main__':
-    # [資安修正] 確認 debug 設為 False
     app.run(host='0.0.0.0', port=5000, debug=False)
