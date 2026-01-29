@@ -876,17 +876,25 @@ def cleanup_unpaid_orders():
     result = db.orders.delete_many({"status": "pending", "createdAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
+# --- Order APIs (修正為與 Donation 分流) ---
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
+    
+    # ★ 自動判斷是否為護持訂單 (若商品名稱包含 [建廟])
     order_type = data.get('orderType', 'shop')
+    if any('[建廟]' in item['name'] for item in data['items']):
+        order_type = 'donation'
+        
     order_id = f"{'DON' if order_type == 'donation' else 'ORD'}{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
+    
     customer_info = {
         "name": data.get('name'), "phone": data.get('phone'), "email": data.get('email', ''),
         "address": data.get('address'), "last5": data.get('last5'),
-        "lunarBirthday": data.get('lunarBirthday', ''), "prayer": data.get('prayer', '') 
+        "lunarBirthday": data.get('lunarBirthday', '') # 護持單才有
     }
+    
     order = {
         "orderId": order_id, "orderType": order_type, "customer": customer_info,
         "items": data['items'], "total": data['total'], "status": "pending",
@@ -894,28 +902,27 @@ def create_order():
     }
     db.orders.insert_one(order)
     
-    # === 使用新的非同步 SendGrid 寄信 ===
+    # 寄信通知
     if order_type == 'donation':
-        email_subject = f"【承天中承府】護持登記確認通知 ({order_id})"
-        email_html = generate_donation_created_email(order)
-        send_email(customer_info['email'], email_subject, email_html, is_html=True)
+        subject = f"【承天中承府】護持登記確認 ({order_id})"
+        html = generate_donation_created_email(order)
     else:
-        email_subject = f"【承天中承府】訂單確認通知 ({order_id})"
-        email_html = generate_shop_email_html(order, 'created')
-        send_email(customer_info['email'], email_subject, email_html, is_html=True)
+        subject = f"【承天中承府】訂單確認 ({order_id})"
+        html = generate_shop_email_html(order, 'created') # 請使用完整版
         
+    send_email(customer_info['email'], subject, html, is_html=True)
     return jsonify({"success": True, "orderId": order_id})
 
 @app.route('/api/orders', methods=['GET'])
 @login_required
 def get_orders():
+    """一般訂單 API (排除 donation)"""
+    # 關鍵：排除護持單，讓商品訂單頁面乾淨
     cursor = db.orders.find({"orderType": {"$ne": "donation"}}).sort("createdAt", -1)
     results = []
     for doc in cursor:
         doc['_id'] = str(doc['_id'])
-        if 'createdAt' in doc: doc['createdAt'] = (doc['createdAt'] + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
-        if 'shippedAt' in doc and doc['shippedAt']: doc['shippedAt'] = (doc['shippedAt'] + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
-        else: doc['shippedAt'] = ''
+        doc['createdAt'] = (doc['createdAt'] + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
         results.append(doc)
     return jsonify(results)
 
