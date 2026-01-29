@@ -12,26 +12,10 @@
        1. 主視覺專用樣式 (強制滿版修正)
        ========================================= */
     .hero-section {
-        position: relative;
-        /* 以下五行是強制突破外層容器限制的關鍵寫法 */
-        width: 100vw;
-        left: 50%;
-        right: 50%;
-        margin-left: -50vw;
-        margin-right: -50vw;
-        
-        overflow: hidden; /* 防止出現橫向卷軸 */
-        padding: 0;
-        line-height: 0; /* 消除圖片底部的微小白邊 */
-        background-color: #000; /* 圖片載入前的背景色 */
+
+        background-color:transparent; /* 圖片載入前的背景色 */
     }
 
-    .hero-section img {
-        width: 100% !important;  /* 強制寬度跟隨螢幕 */
-        height: auto !important; /* 高度自動等比例調整 */
-        display: block;          /* 消除行內元素間隙 */
-        max-width: 100%;         /* 雙重保險 */
-    }
 
     /* 手機版特別優化 (可選) */
     @media (max-width: 768px) {
