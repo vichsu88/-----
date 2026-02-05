@@ -420,7 +420,7 @@ def generate_donation_paid_email(cust, order_id, items):
         <div style="background: #f0ebe5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #8B4513;">
             <h3 style="margin-top:0; color:#8B4513; font-size:20px;">【稟報通知】</h3>
             <p style="margin-bottom:0; font-size:16px; line-height:1.6;">
-                您的名字與護持項目，將錄入芳名錄。<br>我們將於 <strong>下一次公壇辦事日</strong>，由 <strong>元帥娘</strong> 親自向 <strong>煙島中壇元帥</strong> 逐一稟報，將您的心意上達天聽。
+                您的名字與護持項目，將錄入芳名錄。<br>我們將由 <strong>元帥娘</strong> 親自向 <strong>煙島中壇元帥</strong> 逐一稟報，將您的心意上達天聽。
             </p>
         </div>
         <p style="font-size: 18px; font-weight: bold; color: #C48945; margin-bottom: 10px;">【護持項目明細】</p>
