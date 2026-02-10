@@ -4,73 +4,128 @@
 
 {% block content %}
 <style>
-    /* === 共用設定 === */
-    .fund-page-wrapper {
-        background-color: #F3F0EC;
-        font-family: 'Noto Sans TC', sans-serif;
-    }
-    .section-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 60px 20px;
-        text-align: center;
-    }
-    .section-title-fund {
-        font-size: 2.5rem;
-        color: #C48945;
-        margin-bottom: 20px;
-        font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    /* === 皇家正紅：核心變數設定 === */
+    :root {
+        --royal-bg-dark: #1a0505;
+        --royal-bg-red: #4a0e0e;
+        --royal-gold-light: #fcf6ba; /* 亮金 */
+        --royal-gold-main: #bf953f;  /* 黃金 */
+        --royal-gold-dark: #8a6e2f;  /* 暗金 */
+        --royal-text-light: #fdfbf7;
+        --glass-bg: rgba(40, 10, 10, 0.65);
+        --glass-border: rgba(255, 215, 0, 0.3);
     }
 
-    /* === 第一區：Hero & 圓餅圖 === */
+    /* === 全局覆蓋 (Scoped to this page) === */
+    .fund-page-wrapper {
+        background-color: var(--royal-bg-dark);
+        /* 背景：深紅放射漸層，營造神壇聚焦感 */
+        background-image: radial-gradient(circle at 50% 20%, var(--royal-bg-red), var(--royal-bg-dark) 90%);
+        font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+        color: var(--royal-text-light);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .section-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 80px 20px;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* 黃金文字特效 */
+    .section-title-fund {
+        font-size: 3rem;
+        margin-bottom: 40px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        /* 金屬漸層文字 */
+        background: linear-gradient(to bottom, #fcf6ba 0%, #bf953f 40%, #b38728 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 2px 0px rgba(0,0,0,0.5));
+        position: relative;
+        display: inline-block;
+    }
+    /* 標題兩側裝飾線 */
+    .section-title-fund::after {
+        content: ''; display: block; width: 60px; height: 3px;
+        background: linear-gradient(90deg, transparent, var(--royal-gold-main), transparent);
+        margin: 15px auto 0;
+    }
+
+    /* === 第一區：Hero & 燃燒金環 === */
     .fund-hero {
         position: relative;
         height: 90vh;
-        min-height: 600px;
-        background: url('{{ url_for("static", filename="images/pages/index/banner.png") }}') no-repeat center center/cover;
+        min-height: 650px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.3), var(--royal-bg-dark)),
+                    url('{{ url_for("static", filename="images/pages/index/fund_banner.png") }}') no-repeat center center/cover;
         display: flex;
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        color: #fff;
     }
-    .fund-hero::before {
-        content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
-        background: rgba(0,0,0,0.6);
-    }
-    
+
+    /* 發光的圓餅圖容器 */
     .chart-container {
         position: relative;
-        z-index: 2;
-        width: 280px;
-        height: 280px;
+        width: 300px;
+        height: 300px;
         border-radius: 50%;
-        background: #eee;
+        box-shadow: 
+            0 0 20px var(--royal-gold-dark),
+            0 0 60px rgba(191, 149, 63, 0.2);
         display: flex;
         justify-content: center;
         align-items: center;
-        box-shadow: 0 0 30px rgba(196, 137, 69, 0.5);
-        margin-bottom: 30px;
+        margin-bottom: 40px;
+        animation: float 6s ease-in-out infinite;
     }
+
+    /* 內部遮罩 (形成圓環) */
     .chart-inner {
-        width: 240px;
-        height: 240px;
-        background: #fff;
+        width: 260px;
+        height: 260px;
+        background: radial-gradient(circle, #2b0808 0%, #000 100%);
         border-radius: 50%;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        color: #333;
+        color: var(--royal-gold-light);
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        z-index: 2;
     }
-    .chart-percent { font-size: 3rem; font-weight: bold; color: #C48945; }
-    .chart-label { font-size: 1rem; color: #666; }
-    .hero-text { position: relative; z-index: 2; margin-top: 20px; }
-    .hero-text h1 { font-size: clamp(2rem, 5vw, 3.5rem); margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
-    .hero-text p { font-size: 1.2rem; margin-top: 10px; opacity: 0.9; }
 
-    /* === 第二區：YouTube 影片 === */
+    .chart-percent { 
+        font-size: 3.5rem; 
+        font-weight: bold; 
+        background: linear-gradient(135deg, #fff 0%, #ffd700 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    .chart-label { font-size: 1.1rem; color: #aaa; letter-spacing: 1px; }
+    
+    .hero-text h1 { 
+        font-size: clamp(2.2rem, 5vw, 4rem); 
+        margin: 0; 
+        color: #fff;
+        text-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    }
+    .hero-text p { 
+        font-size: 1.3rem; 
+        margin-top: 15px; 
+        color: var(--royal-gold-light); 
+        letter-spacing: 3px;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+    }
+
+    /* === 第二區：影片外框 === */
     .video-wrapper {
         position: relative;
         padding-bottom: 56.25%;
@@ -78,205 +133,224 @@
         overflow: hidden;
         max-width: 900px;
         margin: 0 auto;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        border: 2px solid var(--royal-gold-dark);
+        border-radius: 10px;
+        box-shadow: 0 0 0 4px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.6);
     }
-    .video-wrapper iframe {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    }
+    .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-    /* === 第三區：未來願景 (起承轉合版) === */
+    /* === 第三區：願景 (黑金卡片) === */
     .vision-grid {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 60px;
+        gap: 80px;
         text-align: left;
         padding: 20px 0;
     }
     .vision-item {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 30px;
+        background: linear-gradient(145deg, rgba(30, 10, 10, 0.8), rgba(10, 0, 0, 0.9));
+        border: 1px solid rgba(191, 149, 63, 0.2);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .vision-item:hover {
+        transform: translateY(-5px);
+        border-color: var(--royal-gold-main);
+        box-shadow: 0 15px 40px rgba(191, 149, 63, 0.15);
     }
     .vision-img-box {
-        width: 100%;
-        height: 300px;
-        overflow: hidden;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        width: 100%; height: 300px; overflow: hidden; border-radius: 10px;
+        border: 1px solid var(--royal-gold-dark);
     }
     .vision-img-box img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.5s ease;
+        width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease;
     }
-    .vision-item:hover .vision-img-box img {
-        transform: scale(1.05);
-    }
+    .vision-item:hover .vision-img-box img { transform: scale(1.1); }
     .vision-content h3 {
-        color: #8B4513;
+        color: var(--royal-gold-main);
         font-size: 1.8rem;
         margin-bottom: 15px;
-        font-family: 'LXGW WenKai TC', serif;
-        border-bottom: 2px solid #E6BA67;
+        border-bottom: 1px solid rgba(191, 149, 63, 0.3);
+        padding-bottom: 10px;
         display: inline-block;
-        padding-bottom: 5px;
     }
-    .vision-content p {
-        font-size: 1.1rem;
-        line-height: 1.8;
-        color: #555;
-        text-align: justify;
-    }
+    .vision-content p { font-size: 1.1rem; line-height: 1.8; color: #ccc; text-align: justify; }
 
     @media (min-width: 768px) {
-        .vision-item {
-            flex-direction: row;
-            align-items: center;
-            gap: 40px;
-        }
-        .vision-item:nth-child(even) {
-            flex-direction: row-reverse; /* 偶數項圖片在右邊 */
-        }
-        .vision-img-box {
-            flex: 1;
-            height: 350px;
-        }
-        .vision-content {
-            flex: 1;
-        }
+        .vision-item { flex-direction: row; align-items: center; }
+        .vision-item:nth-child(even) { flex-direction: row-reverse; }
+        .vision-img-box { flex: 1; height: 350px; }
+        .vision-content { flex: 1; }
     }
 
-    /* === 第四區：捐款 CTA 與 流程圖 === */
+    /* === 第四區：捐款 === */
     .donation-section {
-        background: #fff;
-        border-top: 5px solid #C48945;
+        background: transparent;
         padding: 80px 20px;
+        position: relative;
+        border-top: 1px solid rgba(191, 149, 63, 0.3);
     }
-
-    /* 芳名錄樣式 */
+    
+    /* 聖旨芳名錄 */
     .honor-roll-section {
-        max-width: 1000px;
-        margin: 0 auto 50px auto;
-        background: #8B0000;
-        background-image: linear-gradient(180deg, #9E2A2B 0%, #800000 100%);
-        color: #FFD700;
-        padding: 20px; 
-        border-radius: 12px;
-        border: 4px double #FFD700;
-        box-shadow: 0 5px 15px rgba(139, 0, 0, 0.3);
-        text-align: left;
-    }
-    .honor-title {
-        font-size: 1.5rem;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 15px;
-        border-bottom: 1px solid rgba(255,215,0,0.3);
-        padding-bottom: 10px;
-    }
-    .marquee-container {
-        height: 150px; /* 顯示高度 */
-        overflow: hidden;
+        max-width: 900px;
+        margin: 0 auto 60px auto;
+        background-color: #8B0000;
+        border: 4px solid var(--royal-gold-main);
+        outline: 2px solid #8B0000;
+        outline-offset: 4px;
+        border-radius: 4px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         position: relative;
     }
-    .marquee-content {
-        position: absolute;
-        width: 100%;
-        animation: scrollUp 10s linear infinite; /* 動畫 */
+    /* 修正：聖旨捲軸頭（手機隱藏） */
+    .honor-roll-section::before, .honor-roll-section::after {
+        content: ''; position: absolute; width: 30px; height: 104%;
+        background: linear-gradient(90deg, #5e0000, #b38728, #5e0000);
+        top: -2%; border-radius: 5px; box-shadow: 2px 0 5px rgba(0,0,0,0.5);
     }
-    .donor-item { 
-        display: flex; justify-content: space-between; padding: 10px 5px; 
-        border-bottom: 1px dashed rgba(255, 215, 0, 0.5); 
-        font-size: 1.1rem; 
+    .honor-roll-section::before { left: -15px; }
+    .honor-roll-section::after { right: -15px; }
+
+    .honor-title {
+        font-size: 1.8rem; font-weight: bold; color: var(--royal-gold-light);
+        text-align: center; margin-bottom: 20px;
+        border-bottom: 1px dashed rgba(255, 215, 0, 0.4);
+        padding-bottom: 15px;
     }
-    @keyframes scrollUp {
-        0% { top: 100%; }
-        100% { top: -100%; } /* 根據內容長度可能需要JS動態調整，這裡先設個大概 */
+    .marquee-container { height: 180px; overflow: hidden; position: relative; mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent); }
+    .donor-item {
+        display: flex; justify-content: space-between; padding: 12px 10px;
+        border-bottom: 1px dotted rgba(255,215,0,0.2);
+        color: #ffebcd; font-size: 1.15rem;
     }
 
-    /* 流程圖樣式 */
+    /* 流程圖 */
     .process-steps {
         display: flex; justify-content: space-between; align-items: flex-start;
-        padding: 0; margin: 0 auto 50px auto; list-style: none; position: relative;
-        max-width: 900px;
+        padding: 0; margin: 0 auto 60px auto; list-style: none; position: relative; max-width: 900px;
     }
     .process-steps::before {
         content: ''; position: absolute; top: 40px; left: 50px; right: 50px;
-        height: 3px; background: #E6BA67; z-index: 0; opacity: 0.5;
+        height: 2px; background: rgba(191, 149, 63, 0.4); z-index: 0;
     }
-    .step-item {
-        flex: 1; text-align: center; position: relative; z-index: 1; padding: 0 10px;
-    }
+    .step-item { flex: 1; text-align: center; position: relative; z-index: 1; padding: 0 10px; }
     .step-icon-box {
-        width: 80px; height: 80px; margin: 0 auto 15px auto;
-        background: #fff; border: 3px solid #C48945; border-radius: 50%;
+        width: 80px; height: 80px; margin: 0 auto 20px auto;
+        background: radial-gradient(circle at 30% 30%, #751010, #000);
+        border: 2px solid var(--royal-gold-main);
+        border-radius: 50%;
         display: flex; justify-content: center; align-items: center;
-        font-size: 32px; box-shadow: 0 4px 10px rgba(196, 137, 69, 0.2);
-        transition: transform 0.3s;
+        font-size: 32px;
+        box-shadow: 0 0 15px rgba(191, 149, 63, 0.2);
+        transition: all 0.3s;
     }
-    .step-item:hover .step-icon-box { transform: scale(1.1); background: #fffbf5; }
-    .step-title { font-weight: bold; color: #8B4513; font-size: 1.1rem; margin-bottom: 8px; display: block; }
-    .step-desc { font-size: 0.9rem; color: #666; line-height: 1.5; display: block; }
-    
-    @media (max-width: 768px) {
-        .process-steps { flex-direction: column; gap: 20px; align-items: center; max-width: 300px; }
-        .process-steps::before { 
-            width: 3px; height: calc(100% - 80px); top: 40px; left: 29px; right: auto; 
-        }
-        .step-item { 
-            display: flex; align-items: center; text-align: left; width: 100%; gap: 15px; 
-            background: #fff; padding-right: 0;
-        }
-        .step-icon-box { margin: 0; width: 60px; height: 60px; font-size: 24px; flex-shrink: 0; }
+    .step-item:hover .step-icon-box {
+        background: var(--royal-gold-main); color: #fff;
+        box-shadow: 0 0 25px var(--royal-gold-main); transform: scale(1.1);
     }
+    .step-title { color: var(--royal-gold-main); font-size: 1.2rem; font-weight: bold; display: block; margin-bottom: 5px;}
+    .step-desc { color: #aaa; font-size: 0.95rem; }
 
-    /* 捐款卡片樣式維持 */
-    .donation-options {
-        display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 40px;
-    }
+    /* 捐款卡片 */
+    .donation-options { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 50px; }
     .donate-card {
-        border: 2px solid #E6BA67; border-radius: 15px; padding: 20px; width: 280px;
-        text-align: center; cursor: pointer; transition: 0.3s; background: #fff; position: relative;
+        background: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 15px; padding: 30px 20px; width: 280px;
+        text-align: center; cursor: pointer; transition: 0.4s;
     }
     .donate-card:hover, .donate-card.selected {
-        background: #C48945; color: #fff; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(196, 137, 69, 0.3);
+        background: linear-gradient(135deg, #8B0000 0%, #4a0000 100%);
+        border-color: var(--royal-gold-main);
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,215,0,0.5);
     }
-    .donate-card h3 { margin: 10px 0; font-size: 1.5rem; }
-    .donate-card .price { font-size: 1.8rem; font-weight: bold; margin-bottom: 15px; }
-    .qty-control { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; }
-    .qty-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: #eee; color: #333; cursor: pointer; font-weight: bold; }
-    .donate-card.selected .qty-btn { background: #fff; color: #C48945; }
-    .qty-display { width: 40px; text-align: center; font-size: 1.2rem; }
+    .donate-card h3 { margin: 10px 0; font-size: 1.6rem; color: #fff; }
+    .donate-card .price { font-size: 2rem; font-weight: bold; color: var(--royal-gold-main); margin-bottom: 20px; }
+    .qty-control { display: flex; justify-content: center; align-items: center; gap: 15px; }
+    .qty-btn {
+        width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--royal-gold-dark);
+        background: transparent; color: var(--royal-gold-main); cursor: pointer; font-size: 1.2rem;
+    }
+    .qty-btn:hover { background: var(--royal-gold-main); color: #000; }
+    .qty-display { width: 40px; text-align: center; font-size: 1.4rem; color: #fff; }
 
-    /* Modal 表單 */
+    /* 行動按鈕 (CTA) */
+    .btn-action {
+        display: block; width: 100%; max-width: 350px; margin: 20px auto 0;
+        padding: 18px; font-size: 1.2rem; font-weight: bold; color: #2b0808;
+        background: linear-gradient(to bottom, #fcf6ba 0%, #bf953f 50%, #8a6e2f 100%);
+        border: none; border-radius: 50px; cursor: pointer;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        position: relative; overflow: hidden;
+        animation: pulse-gold 2s infinite;
+    }
+    .btn-action:hover { background: linear-gradient(to bottom, #fff 0%, #ffd700 100%); transform: scale(1.02); }
+    .btn-action::after {
+        content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+        transform: skewX(-20deg);
+        animation: sheen 3s infinite;
+    }
+
+    /* === 重要修正：Modal 樣式 (預設隱藏) === */
     .modal-overlay {
-        display: none; position: fixed; top:0; left:0; width:100%; height:100%;
-        background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;
-        backdrop-filter: blur(5px);
+        display: none; /* [修正點] 預設必須是 none，否則會直接擋住畫面 */
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); /* 深色遮罩 */
+        backdrop-filter: blur(8px);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
     }
     .modal-content {
-        background: #fff; padding: 30px; border-radius: 15px; width: 90%; max-width: 600px;
-        max-height: 90vh; overflow-y: auto; position: relative; border: 3px solid #C48945;
+        background: #fdfbf7; /* 表單保持淺色底，方便閱讀 */
+        color: #333;
+        width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+        border: 4px solid var(--royal-gold-main);
+        border-radius: 15px; padding: 30px;
+        box-shadow: 0 0 50px rgba(191, 149, 63, 0.3);
     }
-    .modal-header { font-size: 1.5rem; font-weight: bold; color: #C48945; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-    .emotional-text {
-        background: #fdf6e9; padding: 15px; border-radius: 8px; font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 20px; border-left: 4px solid #C48945;
+    .modal-header { 
+        font-size: 1.5rem; font-weight: bold; color: #8B0000; 
+        margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 10px; 
     }
+    .emotional-text { 
+        background: #fff5e6; padding: 15px; border-radius: 8px; 
+        font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 20px; 
+        border-left: 4px solid #8B0000; 
+    }
+    /* 表單欄位與其他樣式 (繼承舊設定但微調) */
     .form-row { display: flex; gap: 15px; flex-wrap: wrap; }
-    .form-group { flex: 1; min-width: 200px; margin-bottom: 15px; }
-    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+    .form-group { flex: 1; min-width: 200px; margin-bottom: 15px; text-align: left; }
+    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #333; }
     .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-    .summary-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
+    .summary-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; color: #333; text-align: left; }
     .summary-table td { padding: 8px; border-bottom: 1px solid #eee; }
-    
-    .btn-action {
-        width: 100%; padding: 15px; font-size: 18px; font-weight: bold; color: #fff;
-        background: #C48945; border: none; border-radius: 50px; cursor: pointer; margin-top: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+
+    /* 動畫 Keyframes */
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+    @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(191, 149, 63, 0); } 100% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0); } }
+    @keyframes sheen { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+    @keyframes scrollUp { 0% { transform: translateY(100%); } 100% { transform: translateY(-100%); } }
+
+    @media (max-width: 768px) {
+        .section-title-fund { font-size: 2.2rem; }
+        .chart-container { width: 240px; height: 240px; }
+        .chart-inner { width: 210px; height: 210px; }
+        .process-steps { flex-direction: column; gap: 30px; align-items: center; max-width: 300px; }
+        .process-steps::before { width: 2px; height: 100%; top: 0; left: 50%; transform: translateX(-50%); }
+        .step-item { display: flex; flex-direction: column; align-items: center; background: transparent; padding: 0; }
+        .honor-roll-section::before, .honor-roll-section::after { display: none; }
     }
-    .btn-action:disabled { background: #ccc; cursor: not-allowed; }
 </style>
 
 <div class="fund-page-wrapper">
@@ -286,7 +360,7 @@
             <div class="chart-inner">
                 <span class="chart-percent" id="percent-text">0%</span>
                 <span class="chart-label">目前進度</span>
-                <div style="margin-top:10px; font-size:14px;">
+                <div style="margin-top:10px; font-size:14px; opacity:0.8;">
                     目標：<span id="goal-text">loading...</span><br>
                     已募：<span id="current-text">loading...</span>
                 </div>
@@ -295,6 +369,9 @@
         <div class="hero-text">
             <h1>一磚一瓦，共建聖殿</h1>
             <p>承天中承府 建廟基金募集中</p>
+        </div>
+        <div style="position:absolute; bottom:30px; animation: float 2s infinite;">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="var(--royal-gold-main)"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
         </div>
     </div>
 
@@ -305,7 +382,7 @@
         </div>
     </div>
 
-    <div class="section-container" style="background:#fff;">
+    <div class="section-container">
         <h2 class="section-title-fund">未來願景</h2>
         
         <div class="vision-grid">
@@ -364,7 +441,7 @@
             </div>
 
             <h2 class="section-title-fund">立即護持</h2>
-            <p style="margin-bottom:40px; font-size:1.2rem; color:#666;">您的每一份心意，都將化作莊嚴廟宇的一部份。</p>
+            <p style="margin-bottom:50px; font-size:1.3rem; color: #ccc;">您的每一份心意，都將化作莊嚴廟宇的一部份。</p>
             
             <ol class="process-steps">
                 <li class="step-item">
@@ -427,11 +504,11 @@
                 </div>
             </div>
 
-            <div style="text-align:center; font-size:1.5rem; font-weight:bold; margin-bottom:20px; color:#C48945;">
+            <div style="text-align:center; font-size:1.8rem; font-weight:bold; margin-bottom:20px; color:var(--royal-gold-main); text-shadow: 0 2px 10px rgba(0,0,0,0.5);">
                 總護持金額：NT$ <span id="total-amount">0</span>
             </div>
             
-            <button class="btn-action" style="max-width:300px;" onclick="openFormModal()">前往填寫資料</button>
+            <button class="btn-action" onclick="openFormModal()">前往填寫資料</button>
         </div>
     </div>
 
@@ -476,8 +553,8 @@
                 <input type="text" name="last5" class="form-control" maxlength="5" required placeholder="請填寫您的帳號後5碼">
             </div>
 
-            <button type="submit" class="btn-action">下一步：確認資料</button>
-            <button type="button" class="btn-action" style="background:#ccc; margin-top:10px;" onclick="closeModal('fund-form-modal')">取消</button>
+            <button type="submit" class="btn-action" style="margin-top:20px; box-shadow:none;">下一步：確認資料</button>
+            <button type="button" class="btn-action" style="background:#ccc; margin-top:10px; box-shadow:none; color:#333; animation:none;" onclick="closeModal('fund-form-modal')">取消</button>
         </form>
     </div>
 </div>
@@ -493,8 +570,8 @@
             <tr><td>總金額</td><td id="conf-total" style="color:#C48945; font-weight:bold;"></td></tr>
         </table>
         <p style="color:red; font-size:13px; text-align:center;">※ 資料送出後無法修改，請確認無誤。</p>
-        <button id="final-submit-btn" class="btn-action">確認送出</button>
-        <button class="btn-action" style="background:#ccc; margin-top:10px;" onclick="backToEdit()">返回修改</button>
+        <button id="final-submit-btn" class="btn-action" style="box-shadow:none;">確認送出</button>
+        <button class="btn-action" style="background:#ccc; margin-top:10px; box-shadow:none; color:#333; animation:none;" onclick="backToEdit()">返回修改</button>
     </div>
 </div>
 
@@ -514,7 +591,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-    // === 1. 初始化圖表 ===
+    // === 1. 初始化圖表 (修改為金色光環) ===
     try {
         const res = await fetch('/api/fund-settings');
         const data = await res.json();
@@ -526,14 +603,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('current-text').textContent = `$${current.toLocaleString()}`;
         document.getElementById('percent-text').textContent = `${percent}%`;
         
-        // CSS Conic Gradient 動畫
         const chart = document.getElementById('fund-chart');
         let p = 0;
         const interval = setInterval(() => {
             if(p >= percent) clearInterval(interval);
-            chart.style.background = `conic-gradient(#C48945 0% ${p}%, #ddd ${p}% 100%)`;
+            chart.style.background = `conic-gradient(
+                #ffd700 0%, 
+                #bf953f ${p}%, 
+                rgba(255,255,255,0.1) ${p}% 100%
+            )`;
             p++;
-        }, 20); // 動畫速度
+        }, 20);
     } catch(e) {}
 
     // === 2. 載入芳名錄 ===
@@ -541,41 +621,68 @@ document.addEventListener('DOMContentLoaded', async () => {
     function loadMarquee() {
         fetch('/api/donations/public').then(r=>r.json()).then(data => {
             const list = document.getElementById('honor-list');
-            if(!data.length) { list.innerHTML='<div style="text-align:center;">尚無紀錄</div>'; return; }
+            if(!data.length) { list.innerHTML='<div style="text-align:center; color:#ffd700; padding-top:20px;">尚無紀錄</div>'; return; }
             
-            // 為了讓跑馬燈無縫，內容要重複兩次
             const html = data.map(d => `<div class="donor-item"><span>${d.name}</span><span>${d.items}</span></div>`).join('');
             list.innerHTML = html + html; 
             
-            // 動態調整動畫速度，根據內容多寡
-            const totalHeight = list.scrollHeight;
-            list.style.animationDuration = `${Math.max(10, data.length * 2)}s`;
+            const content = list.innerHTML;
+            list.innerHTML = `<div style="animation: scrollUp ${Math.max(10, data.length * 3)}s linear infinite">${content}</div>`;
         }).catch(err => console.log('Honor list error', err));
     }
 
-    // === 3. 輸入優化 (Input Mask) ===
+// === 3. 輸入優化 (Input Mask) - V3 完美修正版 ===
     const dateInput = document.querySelector('input[data-mask="date"]');
     const phoneInput = document.querySelector('input[data-mask="phone"]');
 
-    if (dateInput) {
-        dateInput.addEventListener('input', (e) => {
-            let v = e.target.value.replace(/\D/g, ''); // 只留數字
-            if (v.length > 8) v = v.slice(0, 8);
-            if (v.length > 4) v = v.slice(0, 4) + '/' + v.slice(4);
-            if (v.length > 7) v = v.slice(0, 7) + '/' + v.slice(7);
-            e.target.value = v;
+    function setupMask(input, formatLogic) {
+        if (!input) return;
+        
+        // 核心處理函式
+        const processInput = (isComposing) => {
+            // [防跳針 1] 如果正在選字 (isComposing=true)，絕對不要修改值，避免 0 變 00
+            if (isComposing) return;
+
+            const originalValue = input.value;
+            let v = originalValue.replace(/\D/g, ''); // 取出純數字
+
+            // 執行格式化
+            const formattedValue = formatLogic(v);
+
+            // [防跳針 2] 只有當「算出來的格式」跟「現在的值」不一樣時，才更新
+            // 這能避免游標亂跳，也能解決刪除時卡住的問題
+            if (originalValue !== formattedValue) {
+                input.value = formattedValue;
+            }
+        };
+
+        // 監聽輸入事件
+        input.addEventListener('input', (e) => {
+            processInput(e.isComposing); 
+        });
+        
+        // [關鍵修正] 監聽「選字結束」事件
+        // 手機輸入法打完數字後，會觸發這個事件，這時我們強制補上斜線
+        input.addEventListener('compositionend', () => {
+            processInput(false); // 強制宣告「選字已結束」，請立即格式化
         });
     }
 
-    if (phoneInput) {
-        phoneInput.addEventListener('input', (e) => {
-            let v = e.target.value.replace(/\D/g, ''); // 只留數字
-            if (v.length > 10) v = v.slice(0, 10);
-            if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
-            if (v.length > 8) v = v.slice(0, 8) + '-' + v.slice(8);
-            e.target.value = v;
-        });
-    }
+    // 日期格式化邏輯 (YYYY/MM/DD)
+    setupMask(dateInput, (v) => {
+        if (v.length > 8) v = v.slice(0, 8);
+        if (v.length > 4) v = v.slice(0, 4) + '/' + v.slice(4);
+        if (v.length > 7) v = v.slice(0, 7) + '/' + v.slice(7);
+        return v;
+    });
+
+    // 電話格式化邏輯 (09xx-xxx-xxx)
+    setupMask(phoneInput, (v) => {
+        if (v.length > 10) v = v.slice(0, 10);
+        if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
+        if (v.length > 8) v = v.slice(0, 8) + '-' + v.slice(8);
+        return v;
+    });
 
     // === 4. 捐款邏輯 ===
     const items = {
@@ -588,7 +695,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         items[key].qty = Math.max(0, items[key].qty + change);
         document.getElementById(`qty-${key}`).innerText = items[key].qty;
         
-        // 視覺選取效果
         const card = document.querySelector(`.donate-card[onclick*="${key}"]`);
         if(items[key].qty > 0) card.classList.add('selected');
         else card.classList.remove('selected');
@@ -606,7 +712,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('total-amount').innerText = total.toLocaleString();
     }
 
-    // === 5. 表單流程 ===
+    // === 5. 表單流程 (JS 維持不變，因為 CSS 修好了) ===
     const formModal = document.getElementById('fund-form-modal');
     const confirmModal = document.getElementById('confirm-modal');
     const successModal = document.getElementById('success-modal');
@@ -622,7 +728,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-        // 收集資料並顯示確認 Modal
         document.getElementById('conf-name').innerText = form.name.value;
         document.getElementById('conf-birth').innerText = form.lunarBirthday.value;
         document.getElementById('conf-phone').innerText = form.phone.value;
@@ -642,14 +747,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const btn = document.getElementById('final-submit-btn');
         btn.disabled = true; btn.innerText = '處理中...';
 
-        // 整理商品資料給後端 API
         const orderItems = [];
         for(let key in items) {
             if(items[key].qty > 0) orderItems.push({
                 name: `[建廟] ${items[key].name}`,
                 price: items[key].price,
                 qty: items[key].qty,
-                id: key // 簡單 ID
+                id: key
             });
         }
 
@@ -669,7 +773,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : ''
                 },
                 body: JSON.stringify(payload)
             });
@@ -679,10 +783,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 confirmModal.style.display = 'none';
                 successModal.style.display = 'flex';
             } else {
-                alert('送出失敗');
-                btn.disabled = false;
+                alert('送出失敗: ' + (result.message || '未知錯誤'));
+                btn.disabled = false; btn.innerText = '確認送出';
             }
-        } catch(e) { alert('連線錯誤'); btn.disabled = false; }
+        } catch(e) { alert('連線錯誤'); btn.disabled = false; btn.innerText = '確認送出'; }
     };
 });
 </script>
