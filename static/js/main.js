@@ -169,3 +169,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+document.addEventListener('DOMContentLoaded', () => {
+    const menuBtn = document.querySelector('.nav-toggle'); // 您的漢堡按鈕
+    const closeBtn = document.querySelector('.overlay-close-btn'); // 關閉按鈕
+    const overlay = document.querySelector('.mobile-nav-overlay');
+    const body = document.body;
+
+    function toggleMenu(show) {
+        if (show) {
+            overlay.classList.add('is-visible');
+            body.classList.add('menu-open'); // [關鍵] 鎖定背景滾動
+        } else {
+            overlay.classList.remove('is-visible');
+            body.classList.remove('menu-open'); // [關鍵] 解除鎖定
+        }
+    }
+
+    // 點擊漢堡按鈕
+    if (menuBtn) {
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 防止冒泡
+            toggleMenu(true);
+        });
+    }
+
+    // 點擊關閉按鈕
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMenu(false);
+        });
+    }
+
+    // 點擊選單連結後自動關閉 (提升體驗)
+    const navLinks = document.querySelectorAll('.overlay-nav-links a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            toggleMenu(false); // 點選後自動收起選單
+        });
+    });
+});
