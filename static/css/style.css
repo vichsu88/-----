@@ -741,40 +741,54 @@ body::before {
         max-width: 900px; /* 您可以依據設計需求調整最大寬度 */
     }
 }
-/* === 手機版 Overlay 選單樣式 === */
+/* === 手機版 Overlay 選單 (優化版) === */
 .mobile-nav-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 100%; /* 使用 100dvh (動態視窗高度) 避免手機瀏覽器網址列遮擋問題 */
+    height: 100dvh; 
     
-    /* 複雜背景設定 */
-    background-color: lightgray; /* 備用顏色 */
-    background-image: linear-gradient(180deg, #FFF 0%, #8E532C 75.48%), url('../images/common/BG-cloud.png');
-    background-repeat: no-repeat;
-    background-position: center, center;
-    background-size: contain, cover;
+    /* [美觀升級] 背景策略：光暈漸層 + 雜訊紋理 (營造高級紙質感) */
+    background-color: #FDF6E9;
+    background-image: 
+        /* 1. 淡淡的雜訊紋理 (可找一張透明的 noise png 或用 css 生成) */
+        url('../images/common/noise-texture.png'), 
+        /* 2. 您的神聖光暈 */
+        radial-gradient(circle at top right, rgba(253, 246, 233, 0.95) 0%, rgba(243, 240, 236, 0.98) 60%, rgba(230, 186, 103, 0.95) 150%);
+    
+    background-repeat: repeat, no-repeat;
+    background-blend-mode: overlay; /* 讓紋理與漸層融合 */
 
     z-index: 9999;
-    padding: 60px 40px;
-    padding-bottom: 25px; 
+    padding: 80px 40px 40px 40px; /* 上方留多一點給關閉按鈕 */
     box-sizing: border-box;
 
-    /* 預設狀態為隱藏 (移出畫面右側) */
-    transform: translateX(100%);
-    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); /* 滑入滑出動畫 */
-
-    /* 使用 Flexbox 進行內部佈局 */
+    /* [效能關鍵] 使用 3D Transform 啟動 GPU 加速 */
+    transform: translate3d(100%, 0, 0); 
+    transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1); /* 調整貝茲曲線，讓滑入有一種「煞車」的高級感 */
+    
+    /* 彈性佈局維持不變 */
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* 將內容推向頂部與底部 */
+    justify-content: space-between;
     align-items: center;
+    
+    /* [效能] 告訴瀏覽器這個元素會變化，請提前準備 */
+    will-change: transform;
 }
 
-/* 當選單被觸發時，新增這個 class 讓它滑入畫面 */
+/* 開啟狀態 */
 .mobile-nav-overlay.is-visible {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
+}
+
+/* [新增] 當選單開啟時，Body 禁止滾動的 Class */
+body.menu-open {
+    overflow: hidden;
+    height: 100vh;
+    touch-action: none; /* 禁止觸控滾動 */
 }
 
 /* 關閉按鈕 */
