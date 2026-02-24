@@ -670,9 +670,18 @@ def api_logout():
 @app.route('/api/feedback', methods=['POST'])
 def add_feedback():
     if db is None: return jsonify({"error": "DB Error"}), 500
+    
+    # 1. 阻擋未登入的請求 (安全防護)
+    line_id = session.get('user_line_id')
+    if not line_id:
+        return jsonify({"error": "請先使用 LINE 登入"}), 401
+        
     data = request.get_json()
     if not data.get('agreed'): return jsonify({"error": "必須勾選同意條款"}), 400
+    
+    # 2. 儲存回饋資料 (新增了 lineId 欄位，把文章跟人綁定)
     new_feedback = {
+        "lineId": line_id,
         "realName": data.get('realName'), "nickname": data.get('nickname'),
         "category": data.get('category', []), "content": data.get('content'),
         "lunarBirthday": data.get('lunarBirthday', ''), "birthTime": data.get('birthTime') or '吉時',
@@ -682,8 +691,20 @@ def add_feedback():
         "status": "pending", "isMarked": False
     }
     db.feedback.insert_one(new_feedback)
+    
+    # 3. ★ 關鍵步驟：順便更新使用者的 LINE 會員檔案！
+    # 如果是他初次填寫，這裡就會把他的真實姓名、電話、地址永久記在 users 集合裡
+    db.users.update_one(
+        {"lineId": line_id},
+        {"$set": {
+            "realName": data.get('realName'),
+            "phone": data.get('phone'),
+            "address": data.get('address'),
+            "email": data.get('email')
+        }}
+    )
+    
     return jsonify({"success": True, "message": "回饋已送出"})
-
 @app.route('/api/feedback/pending', methods=['GET']) 
 @app.route('/api/feedback/status/pending', methods=['GET'])
 @login_required

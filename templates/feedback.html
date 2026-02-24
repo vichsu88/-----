@@ -191,89 +191,103 @@
     </a>
 
     <div id="feedback-list-container">
-    </div>
+        </div>
 </main>
 
 <div id="feedback-form-modal" class="modal-overlay">
     <div class="modal-content">
         <button class="modal-close-btn">&times;</button>
-        <form id="feedback-form">
-            <h2 class="section-title" style="margin-top:0">我要回饋</h2>
-            <p class="feedback-note">
-                <strong>一份善緣，一份心意</strong><br>
-                每一份感動、每一次在生活中受到的護佑，都是元帥慈悲的珍貴見證。<br>
-                請完整填寫以下資訊（所有欄位皆為必填），下一步將進行資料確認。
+        
+        <div id="login-section" style="text-align: center; padding: 60px 20px; background: #fffcf5; border-radius: 12px; margin: 20px 0;">
+            <h3 style="color: #C48945; margin-bottom: 15px;">請先綁定 LINE 繼續操作</h3>
+            <p style="color: #666; margin-bottom: 30px; line-height: 1.6;">
+                首次登入後，系統將為您建立專屬會員紀錄。<br>
+                未來參與祈福或請購商品，將自動帶入寄送資訊，無需重複填寫。
             </p>
-            
-            <div class="form-fieldset">
-                <label>真實姓名：<input type="text" name="realName" required placeholder="請填寫真實姓名"></label>
-                <label>暱稱 (公開顯示)：<input type="text" name="nickname" required placeholder="例如：陳信徒"></label>
+            <a href="/api/line/login?next=/feedback" style="background-color: #06C755; color: white; padding: 12px 30px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(6,199,85,0.3);">
+                <img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE" style="width: 24px; margin-right: 10px; filter: brightness(0) invert(1);">
+                使用 LINE 登入
+            </a>
+        </div>
+
+        <div id="feedback-form-section" style="display: none;">
+            <form id="feedback-form">
+                <h2 class="section-title" style="margin-top:0">我要回饋</h2>
+                <p class="feedback-note">
+                    <strong>一份善緣，一份心意</strong><br>
+                    每一份感動、每一次在生活中受到的護佑，都是元帥慈悲的珍貴見證。<br>
+                    請完整填寫以下資訊（所有欄位皆為必填），下一步將進行資料確認。
+                </p>
                 
-                <div class="single-choice">
-                    <p style="margin-bottom:5px; font-weight:bold;">類別（擇一）：</p>
-                    <label><input type="radio" name="category" value="運途" required> 運途</label>
-                    <label><input type="radio" name="category" value="事業"> 事業</label>
-                    <label><input type="radio" name="category" value="財運"> 財運</label>
-                    <label><input type="radio" name="category" value="身體"> 身體</label>
-                    <label><input type="radio" name="category" value="姻緣"> 姻緣</label>
-                    <label><input type="radio" name="category" value="收驚"> 收驚</label>
-                    <label><input type="radio" name="category" value="其他"> 其他</label>
+                <div class="form-fieldset">
+                    <label>真實姓名：<input type="text" name="realName" required placeholder="請填寫真實姓名"></label>
+                    <label>暱稱 (公開顯示)：<input type="text" name="nickname" required placeholder="例如：陳信徒"></label>
+                    
+                    <div class="single-choice">
+                        <p style="margin-bottom:5px; font-weight:bold;">類別（擇一）：</p>
+                        <label><input type="radio" name="category" value="運途" required> 運途</label>
+                        <label><input type="radio" name="category" value="事業"> 事業</label>
+                        <label><input type="radio" name="category" value="財運"> 財運</label>
+                        <label><input type="radio" name="category" value="身體"> 身體</label>
+                        <label><input type="radio" name="category" value="姻緣"> 姻緣</label>
+                        <label><input type="radio" name="category" value="收驚"> 收驚</label>
+                        <label><input type="radio" name="category" value="其他"> 其他</label>
+                    </div>
+
+                    <label>回饋內容（至少 100 字）：
+                        <textarea name="content" rows="6" minlength="100" required placeholder="請分享您的故事..."></textarea>
+                    </label>
+
+                    <div class="form-group">
+                        <label for="lunarBirthday">農曆生日 (請直接輸入數字) <span style="color:red;font-size:12px;">*必填</span></label>
+                        <input type="text" id="lunarBirthday" name="lunarBirthday" placeholder="例如：750815 或 19950815" maxlength="10" required>
+                        <small style="color:#888;">系統將自動轉換為日期格式 (YYYY/MM/DD)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="birthTime">出生時辰 <span style="color:red;font-size:12px;">*必填</span></label>
+                        <select id="birthTime" name="birthTime" required>
+                            <option value="" disabled selected>請選擇時辰</option>
+                            <option value="吉時">吉時</option>
+                            <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
+                            <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
+                            <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
+                            <option value="卯時 (05:00-07:00)">卯時 (05:00-07:00)</option>
+                            <option value="辰時 (07:00-09:00)">辰時 (07:00-09:00)</option>
+                            <option value="巳時 (09:00-11:00)">巳時 (09:00-11:00)</option>
+                            <option value="午時 (11:00-13:00)">午時 (11:00-13:00)</option>
+                            <option value="未時 (13:00-15:00)">未時 (13:00-15:00)</option>
+                            <option value="申時 (15:00-17:00)">申時 (15:00-17:00)</option>
+                            <option value="酉時 (17:00-19:00)">酉時 (17:00-19:00)</option>
+                            <option value="戌時 (19:00-21:00)">戌時 (19:00-21:00)</option>
+                            <option value="亥時 (21:00-23:00)">亥時 (21:00-23:00)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>電子信箱 (Email) <span style="color:red;font-size:12px;">*必填</span></label>
+                        <input type="email" name="email" required placeholder="example@gmail.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>聯絡電話 (自動格式化) <span style="color:red;font-size:12px;">*必填</span></label>
+                        <input type="tel" name="phone" id="phone-input" required placeholder="09XX-XXX-XXX" maxlength="12">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>寄件地址 <span style="color:red;font-size:12px;">*必填</span></label>
+                        <input type="text" name="address" required placeholder="請填寫完整收件地址">
+                    </div>
+
+                    <div class="form-group">
+                        <label>匯款帳號後五碼 <span style="color:red;font-size:12px;">*必填</span></label>
+                        <input type="text" name="last5" required maxlength="5" pattern="\d{5}" placeholder="請填寫 5 碼數字" title="請輸入5位數字">
+                    </div>
                 </div>
 
-                <label>回饋內容（至少 100 字）：
-                    <textarea name="content" rows="6" minlength="100" required placeholder="請分享您的故事..."></textarea>
-                </label>
-
-                <div class="form-group">
-                    <label for="lunarBirthday">農曆生日 (請直接輸入數字) <span style="color:red;font-size:12px;">*必填</span></label>
-                    <input type="text" id="lunarBirthday" name="lunarBirthday" 
-                           placeholder="例如：750815 或 19950815" maxlength="10" required>
-                    <small style="color:#888;">系統將自動轉換為日期格式 (YYYY/MM/DD)</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="birthTime">出生時辰 <span style="color:red;font-size:12px;">*必填</span></label>
-                    <select id="birthTime" name="birthTime" required>
-                        <option value="" disabled selected>請選擇時辰</option>
-                        <option value="吉時">吉時</option>
-                        <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
-                        <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
-                        <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
-                        <option value="卯時 (05:00-07:00)">卯時 (05:00-07:00)</option>
-                        <option value="辰時 (07:00-09:00)">辰時 (07:00-09:00)</option>
-                        <option value="巳時 (09:00-11:00)">巳時 (09:00-11:00)</option>
-                        <option value="午時 (11:00-13:00)">午時 (11:00-13:00)</option>
-                        <option value="未時 (13:00-15:00)">未時 (13:00-15:00)</option>
-                        <option value="申時 (15:00-17:00)">申時 (15:00-17:00)</option>
-                        <option value="酉時 (17:00-19:00)">酉時 (17:00-19:00)</option>
-                        <option value="戌時 (19:00-21:00)">戌時 (19:00-21:00)</option>
-                        <option value="亥時 (21:00-23:00)">亥時 (21:00-23:00)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>電子信箱 (Email) <span style="color:red;font-size:12px;">*必填</span></label>
-                    <input type="email" name="email" required placeholder="example@gmail.com">
-                </div>
-
-                <div class="form-group">
-                    <label>聯絡電話 (自動格式化) <span style="color:red;font-size:12px;">*必填</span></label>
-                    <input type="tel" name="phone" id="phone-input" required placeholder="09XX-XXX-XXX" maxlength="12">
-                </div>
-                
-                <div class="form-group">
-                    <label>寄件地址 <span style="color:red;font-size:12px;">*必填</span></label>
-                    <input type="text" name="address" required placeholder="請填寫完整收件地址">
-                </div>
-
-                <div class="form-group">
-                    <label>匯款帳號後五碼 <span style="color:red;font-size:12px;">*必填</span></label>
-                    <input type="text" name="last5" required maxlength="5" pattern="\d{5}" placeholder="請填寫 5 碼數字" title="請輸入5位數字">
-                </div>
-            </div>
-
-            <button type="button" id="go-to-review-btn" class="btn-primary" disabled>下一步：確認資料</button>
-        </form>
+                <button type="button" id="go-to-review-btn" class="btn-primary" disabled>下一步：確認資料</button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -318,243 +332,265 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-  
-  // DOM Elements
-  const feedbackListContainer = document.getElementById('feedback-list-container');
-  const showFormBtn = document.getElementById('show-feedback-form-btn');
-  
-  // Modals
-  const formModal = document.getElementById('feedback-form-modal');
-  const reviewModal = document.getElementById('review-modal');
-  
-  // Buttons
-  const goToReviewBtn = document.getElementById('go-to-review-btn');
-  const backToEditBtn = document.getElementById('back-to-edit-btn');
-  const confirmSubmitBtn = document.getElementById('confirm-submit-btn');
-  
-  // Form Inputs
-  const feedbackForm = document.getElementById('feedback-form');
-  const agreeCheckbox = document.getElementById('review-agreed');
-  const phoneInput = document.getElementById('phone-input');
-  const birthdayInput = document.getElementById('lunarBirthday');
+    const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    // --- DOM Elements ---
+    const feedbackListContainer = document.getElementById('feedback-list-container');
+    const showFormBtn = document.getElementById('show-feedback-form-btn');
+    
+    // Modals & Sections
+    const formModal = document.getElementById('feedback-form-modal');
+    const reviewModal = document.getElementById('review-modal');
+    const loginSection = document.getElementById('login-section');
+    const feedbackFormSection = document.getElementById('feedback-form-section');
+    
+    // Buttons
+    const goToReviewBtn = document.getElementById('go-to-review-btn');
+    const backToEditBtn = document.getElementById('back-to-edit-btn');
+    const confirmSubmitBtn = document.getElementById('confirm-submit-btn');
+    
+    // Form Inputs
+    const feedbackForm = document.getElementById('feedback-form');
+    const agreeCheckbox = document.getElementById('review-agreed');
+    const phoneInput = document.getElementById('phone-input');
+    const birthdayInput = document.getElementById('lunarBirthday');
 
-  // --- 1. 自動載入回饋列表 ---
-  async function fetchAndRenderFeedback() {
-    try {
-      const res = await fetch('/api/feedback/approved', { credentials:'include' });
-      if (!res.ok) throw new Error('讀取回饋資料失敗');
-      const data = await res.json();
-      
-      feedbackListContainer.innerHTML = '';
-      if (data.length === 0) {
-        feedbackListContainer.innerHTML = '<p style="text-align:center;">目前沒有已刊登的信徒回饋。</p>';
-        return;
-      }
-      
-      data.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'feedback-card';
-        const nickname = item.nickname || '匿名';
-        const category = Array.isArray(item.category) ? item.category.join(', ') : '';
-        const header = document.createElement('h3');
-        header.className = 'feedback-card__header';
-        header.innerHTML = `<span class="nickname">${nickname}</span> / ${category}`;
-        const content = document.createElement('p');
-        content.className = 'feedback-card__content';
-        content.textContent = item.content;
-        content.innerHTML = content.innerHTML.replace(/\n/g, '<br>');
-        card.appendChild(header);
-        card.appendChild(content);
-        feedbackListContainer.appendChild(card);
-      });
-    } catch (err) {
-      console.error(err);
-      feedbackListContainer.innerHTML = '<p style="text-align:center;">讀取資料時發生錯誤，請稍後再試。</p>';
+    // --- 0. 檢查登入狀態與自動帶入資料 ---
+    fetch('/api/user/me')
+        .then(res => res.json())
+        .then(data => {
+            if (data.logged_in) {
+                // 1. 切換畫面：隱藏登入按鈕，顯示回饋表單
+                loginSection.style.display = 'none';
+                feedbackFormSection.style.display = 'block';
+
+                // 2. 自動帶入已知的會員資料
+                const user = data.user;
+                if (user.realName) feedbackForm.realName.value = user.realName;
+                if (user.phone) feedbackForm.phone.value = user.phone;
+                if (user.address) feedbackForm.address.value = user.address;
+                if (user.email) feedbackForm.email.value = user.email;
+                
+                // 如果沒有填過暱稱，就先用 LINE 的名字墊檔
+                if (!feedbackForm.nickname.value && user.displayName) {
+                    feedbackForm.nickname.value = user.displayName;
+                }
+                
+                // 帶入完畢後觸發一次驗證，讓下一步按鈕提早解鎖
+                checkFormValidity();
+            }
+        })
+        .catch(err => console.error('無法取得會員資料', err));
+
+    // --- 1. 自動載入回饋列表 ---
+    async function fetchAndRenderFeedback() {
+        try {
+            const res = await fetch('/api/feedback/approved', { credentials:'include' });
+            if (!res.ok) throw new Error('讀取回饋資料失敗');
+            const data = await res.json();
+            
+            feedbackListContainer.innerHTML = '';
+            if (data.length === 0) {
+                feedbackListContainer.innerHTML = '<p style="text-align:center;">目前沒有已刊登的信徒回饋。</p>';
+                return;
+            }
+            
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'feedback-card';
+                const nickname = item.nickname || '匿名';
+                const category = Array.isArray(item.category) ? item.category.join(', ') : '';
+                const header = document.createElement('h3');
+                header.className = 'feedback-card__header';
+                header.innerHTML = `<span class="nickname">${nickname}</span> / ${category}`;
+                const content = document.createElement('p');
+                content.className = 'feedback-card__content';
+                content.textContent = item.content;
+                content.innerHTML = content.innerHTML.replace(/\n/g, '<br>');
+                card.appendChild(header);
+                card.appendChild(content);
+                feedbackListContainer.appendChild(card);
+            });
+        } catch (err) {
+            console.error(err);
+            feedbackListContainer.innerHTML = '<p style="text-align:center;">讀取資料時發生錯誤，請稍後再試。</p>';
+        }
     }
-  }
 
-  // --- 2. 欄位格式化 (比照 donation.html) ---
-  function setupFormatters() {
-      // 電話：09XX-XXX-XXX
-      phoneInput.addEventListener('input', (e) => {
-          let v = e.target.value.replace(/\D/g, ''); // 只留數字
-          if (v.length > 10) v = v.slice(0, 10);
-          if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
-          else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
-          e.target.value = v;
-          checkFormValidity();
-      });
+    // --- 2. 欄位格式化 ---
+    function setupFormatters() {
+        // 電話：09XX-XXX-XXX
+        phoneInput.addEventListener('input', (e) => {
+            let v = e.target.value.replace(/\D/g, ''); 
+            if (v.length > 10) v = v.slice(0, 10);
+            if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
+            else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
+            e.target.value = v;
+            checkFormValidity();
+        });
 
-      // 農曆生日：輸入純數字 -> Blur 自動加斜線
-      birthdayInput.addEventListener('input', (e) => {
-          e.target.value = e.target.value.replace(/\D/g, '');
-          checkFormValidity();
-      });
-      birthdayInput.addEventListener('blur', (e) => {
-          let v = e.target.value;
-          // 支援 6碼 (YYMMDD), 7碼 (YYYMMDD), 8碼 (YYYYMMDD)
-          if(v.length === 6) {
-              e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
-          } else if (v.length === 7) {
-              e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
-          } else if (v.length === 8) {
-              e.target.value = v.replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3');
-          }
-          checkFormValidity();
-      });
-      
-      // 匯款後五碼限制
-      const last5Input = feedbackForm.last5;
-      last5Input.addEventListener('input', (e) => {
-          e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
-          checkFormValidity();
-      });
-  }
-  setupFormatters();
-
-  // --- 3. 檢查表單完整性 (所有欄位必填) ---
-  function checkFormValidity() {
-    const isRealName = feedbackForm.realName.value.trim().length > 0;
-    const isNickname = feedbackForm.nickname.value.trim().length > 0;
-    const isCategory = !!feedbackForm.category.value;
-    const isContentOk = feedbackForm.content.value.trim().length >= 100;
-    const isAddress = feedbackForm.address.value.trim().length > 0;
-    const isBirthTime = feedbackForm.birthTime.value !== "";
-    
-    // 新增欄位驗證
-    const isEmail = feedbackForm.email.checkValidity() && feedbackForm.email.value.trim().length > 0;
-    const isLast5 = /^\d{5}$/.test(feedbackForm.last5.value);
-
-    // 電話驗證 (比照 donation.html)
-    const isPhone = /^09\d{2}-\d{3}-\d{3}$/.test(feedbackForm.phone.value);
-    
-    // 日期驗證 (允許 YYYY/MM/DD 或 YYY/MM/DD)
-    const isDateOk = /^\d{2,4}\/\d{2}\/\d{2}$/.test(birthdayInput.value);
-
-    // 只有全部通過，按鈕才啟用
-    const allValid = isRealName && isNickname && isCategory && isContentOk && isPhone && isAddress && isBirthTime && isDateOk && isEmail && isLast5;
-    goToReviewBtn.disabled = !allValid;
-  }
-
-  feedbackForm.addEventListener('input', checkFormValidity);
-  feedbackForm.addEventListener('change', checkFormValidity);
-
-  // --- 4. 點擊「下一步：確認資料」 ---
-  goToReviewBtn.addEventListener('click', () => {
-    document.getElementById('review-realName').textContent = feedbackForm.realName.value;
-    document.getElementById('review-nickname').textContent = feedbackForm.nickname.value;
-    document.getElementById('review-category').textContent = feedbackForm.category.value;
-    document.getElementById('review-lunarBirthday').textContent = feedbackForm.lunarBirthday.value;
-    document.getElementById('review-birthTime').textContent = feedbackForm.birthTime.value;
-    document.getElementById('review-email').textContent = feedbackForm.email.value;
-    document.getElementById('review-phone').textContent = feedbackForm.phone.value;
-    document.getElementById('review-address').textContent = feedbackForm.address.value;
-    document.getElementById('review-last5').textContent = feedbackForm.last5.value;
-    document.getElementById('review-content').textContent = feedbackForm.content.value;
-    
-    agreeCheckbox.checked = false;
-    confirmSubmitBtn.disabled = true;
-
-    formModal.classList.remove('is-visible');
-    reviewModal.classList.add('is-visible');
-  });
-
-  // --- 5. 點擊「返回修改」 ---
-  backToEditBtn.addEventListener('click', () => {
-    reviewModal.classList.remove('is-visible');
-    formModal.classList.add('is-visible');
-  });
-
-  // --- 6. 同意條款連動送出按鈕 ---
-  agreeCheckbox.addEventListener('change', () => {
-    confirmSubmitBtn.disabled = !agreeCheckbox.checked;
-  });
-
-  // --- 7. 最終送出 (Call API) ---
-  confirmSubmitBtn.addEventListener('click', async () => {
-    confirmSubmitBtn.disabled = true;
-    confirmSubmitBtn.textContent = '送出中...';
-
-    const payload = {
-      realName: feedbackForm.realName.value.trim(),
-      nickname: feedbackForm.nickname.value.trim(),
-      category: [feedbackForm.category.value],
-      content: feedbackForm.content.value.trim(),
-      lunarBirthday: feedbackForm.lunarBirthday.value.trim(),
-      birthTime: feedbackForm.birthTime.value,
-      email: feedbackForm.email.value.trim(),
-      phone: feedbackForm.phone.value.trim(),
-      address: feedbackForm.address.value.trim(),
-      last5: feedbackForm.last5.value.trim(),
-      agreed: true 
-    };
-
-    try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCsrfToken()
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!res.ok) {
-          let errorMessage;
-          try {
-              const errorData = await res.json();
-              errorMessage = errorData.error || '送出失敗';
-          } catch {
-              errorMessage = await res.text() || '發生未知錯誤';
-          }
-          throw new Error(errorMessage);
-      }
-
-      alert('送出成功！待審核後將刊登。');
-      reviewModal.classList.remove('is-visible');
-      feedbackForm.reset(); 
-      goToReviewBtn.disabled = true; 
-      
-      showFormBtn.style.zIndex = '900';
-      showFormBtn.style.opacity = '1';
-
-    } catch (err) {
-      alert(err.message);
-    } finally {
-        confirmSubmitBtn.textContent = '確認送出';
+        // 農曆生日：自動加斜線
+        birthdayInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+            checkFormValidity();
+        });
+        birthdayInput.addEventListener('blur', (e) => {
+            let v = e.target.value;
+            if(v.length === 6) {
+                e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
+            } else if (v.length === 7) {
+                e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
+            } else if (v.length === 8) {
+                e.target.value = v.replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3');
+            }
+            checkFormValidity();
+        });
+        
+        // 匯款後五碼限制
+        feedbackForm.last5.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+            checkFormValidity();
+        });
     }
-  });
+    setupFormatters();
 
-  // --- 8. UI 控制 ---
-  showFormBtn.addEventListener('click', e => {
-    e.preventDefault();
-    formModal.classList.add('is-visible');
-    showFormBtn.style.zIndex = '-1'; 
-    showFormBtn.style.opacity = '0';
-  });
+    // --- 3. 檢查表單完整性 (所有欄位必填) ---
+    function checkFormValidity() {
+        const isRealName = feedbackForm.realName.value.trim().length > 0;
+        const isNickname = feedbackForm.nickname.value.trim().length > 0;
+        const isCategory = !!feedbackForm.category.value;
+        const isContentOk = feedbackForm.content.value.trim().length >= 100;
+        const isAddress = feedbackForm.address.value.trim().length > 0;
+        const isBirthTime = feedbackForm.birthTime.value !== "";
+        
+        const isEmail = feedbackForm.email.checkValidity() && feedbackForm.email.value.trim().length > 0;
+        const isLast5 = /^\d{5}$/.test(feedbackForm.last5.value);
+        const isPhone = /^09\d{2}-\d{3}-\d{3}$/.test(feedbackForm.phone.value);
+        const isDateOk = /^\d{2,4}\/\d{2}\/\d{2}$/.test(birthdayInput.value);
 
-  document.querySelectorAll('.modal-close-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      formModal.classList.remove('is-visible');
-      reviewModal.classList.remove('is-visible');
-      showFormBtn.style.zIndex = '900';
-      showFormBtn.style.opacity = '1';
+        const allValid = isRealName && isNickname && isCategory && isContentOk && isPhone && isAddress && isBirthTime && isDateOk && isEmail && isLast5;
+        goToReviewBtn.disabled = !allValid;
+    }
+
+    feedbackForm.addEventListener('input', checkFormValidity);
+    feedbackForm.addEventListener('change', checkFormValidity);
+
+    // --- 4. 點擊「下一步：確認資料」 ---
+    goToReviewBtn.addEventListener('click', () => {
+        document.getElementById('review-realName').textContent = feedbackForm.realName.value;
+        document.getElementById('review-nickname').textContent = feedbackForm.nickname.value;
+        document.getElementById('review-category').textContent = feedbackForm.category.value;
+        document.getElementById('review-lunarBirthday').textContent = feedbackForm.lunarBirthday.value;
+        document.getElementById('review-birthTime').textContent = feedbackForm.birthTime.value;
+        document.getElementById('review-email').textContent = feedbackForm.email.value;
+        document.getElementById('review-phone').textContent = feedbackForm.phone.value;
+        document.getElementById('review-address').textContent = feedbackForm.address.value;
+        document.getElementById('review-last5').textContent = feedbackForm.last5.value;
+        document.getElementById('review-content').textContent = feedbackForm.content.value;
+        
+        agreeCheckbox.checked = false;
+        confirmSubmitBtn.disabled = true;
+
+        formModal.classList.remove('is-visible');
+        reviewModal.classList.add('is-visible');
     });
-  });
-  
-  [formModal, reviewModal].forEach(modal => {
-      modal.addEventListener('click', e => {
-          if (e.target === modal) {
-              modal.classList.remove('is-visible');
-              showFormBtn.style.zIndex = '900';
-              showFormBtn.style.opacity = '1';
-          }
-      });
-  });
 
-  fetchAndRenderFeedback();
+    // --- 5. 點擊「返回修改」 ---
+    backToEditBtn.addEventListener('click', () => {
+        reviewModal.classList.remove('is-visible');
+        formModal.classList.add('is-visible');
+    });
+
+    // --- 6. 同意條款連動送出按鈕 ---
+    agreeCheckbox.addEventListener('change', () => {
+        confirmSubmitBtn.disabled = !agreeCheckbox.checked;
+    });
+
+    // --- 7. 最終送出 (Call API) ---
+    confirmSubmitBtn.addEventListener('click', async () => {
+        confirmSubmitBtn.disabled = true;
+        confirmSubmitBtn.textContent = '送出中...';
+
+        const payload = {
+            realName: feedbackForm.realName.value.trim(),
+            nickname: feedbackForm.nickname.value.trim(),
+            category: [feedbackForm.category.value],
+            content: feedbackForm.content.value.trim(),
+            lunarBirthday: feedbackForm.lunarBirthday.value.trim(),
+            birthTime: feedbackForm.birthTime.value,
+            email: feedbackForm.email.value.trim(),
+            phone: feedbackForm.phone.value.trim(),
+            address: feedbackForm.address.value.trim(),
+            last5: feedbackForm.last5.value.trim(),
+            agreed: true 
+        };
+
+        try {
+            const res = await fetch('/api/feedback', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!res.ok) {
+                let errorMessage;
+                try {
+                    const errorData = await res.json();
+                    errorMessage = errorData.error || '送出失敗';
+                } catch {
+                    errorMessage = await res.text() || '發生未知錯誤';
+                }
+                throw new Error(errorMessage);
+            }
+
+            alert('送出成功！待審核後將刊登。');
+            reviewModal.classList.remove('is-visible');
+            feedbackForm.reset(); 
+            goToReviewBtn.disabled = true; 
+            
+            showFormBtn.style.zIndex = '900';
+            showFormBtn.style.opacity = '1';
+
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            confirmSubmitBtn.textContent = '確認送出';
+        }
+    });
+
+    // --- 8. UI 控制 ---
+    showFormBtn.addEventListener('click', e => {
+        e.preventDefault();
+        formModal.classList.add('is-visible');
+        showFormBtn.style.zIndex = '-1'; 
+        showFormBtn.style.opacity = '0';
+    });
+
+    document.querySelectorAll('.modal-close-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            formModal.classList.remove('is-visible');
+            reviewModal.classList.remove('is-visible');
+            showFormBtn.style.zIndex = '900';
+            showFormBtn.style.opacity = '1';
+        });
+    });
+    
+    [formModal, reviewModal].forEach(modal => {
+        modal.addEventListener('click', e => {
+            if (e.target === modal) {
+                modal.classList.remove('is-visible');
+                showFormBtn.style.zIndex = '900';
+                showFormBtn.style.opacity = '1';
+            }
+        });
+    });
+
+    // 初始載入文章列表
+    fetchAndRenderFeedback();
 });
 </script>
 {% endblock %}
