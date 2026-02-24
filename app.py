@@ -1,4 +1,7 @@
 import os
+import requests
+import secrets
+import urllib.parse
 import re
 import random
 import json
@@ -39,6 +42,10 @@ app.permanent_session_lifetime = timedelta(hours=8)
 # === 郵件設定 (改用 SendGrid API) ===
 # 請在 Render 環境變數設定 SENDGRID_API_KEY
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+# === LINE 登入設定 ===
+LINE_CHANNEL_ID = os.environ.get('LINE_CHANNEL_ID')
+LINE_CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET')
+LINE_CALLBACK_URL = os.environ.get('LINE_CALLBACK_URL')
 # MAIL_USERNAME 作為 "寄件人信箱" (必須與 SendGrid 驗證的 Sender Identity 一致)
 MAIL_SENDER = os.environ.get('MAIL_USERNAME') 
 
@@ -88,7 +95,7 @@ except Exception as e:
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session:
+        if 'admin_logged_in' not in session:
             if request.path.startswith('/api/'):
                 return jsonify({"error": "未授權，請先登入"}), 403
             return redirect(url_for('admin_page'))
@@ -528,7 +535,111 @@ def incense_page(): return redirect(url_for('shop_page'))
 def skincare_page(): return redirect(url_for('shop_page'))
 @app.route('/products/yuan-shuai-niang')
 def yuan_user_page(): return redirect(url_for('shop_page'))
+# =========================================
+# LINE 登入與會員 API
+# =========================================
+@app.route('/api/line/login')
+def line_login():
+    """將使用者導向 LINE 的授權登入頁面"""
+    if not LINE_CHANNEL_ID:
+        return "伺服器尚未設定 LINE_CHANNEL_ID", 500
+        
+    # 產生一個隨機字串防護 CSRF 攻擊，並存入 session
+    state = secrets.token_hex(16)
+    session['line_state'] = state
+    
+    # 記錄信徒原本在哪個頁面點擊登入的 (例如 ?next=/feedback)
+    next_url = request.args.get('next', '/')
+    session['line_next_url'] = next_url
 
+    # 組裝 LINE 授權網址
+    url = (
+        "https://access.line.me/oauth2/v2.1/authorize?"
+        "response_type=code&"
+        f"client_id={LINE_CHANNEL_ID}&"
+        f"redirect_uri={urllib.parse.quote(LINE_CALLBACK_URL)}&"
+        f"state={state}&"
+        "scope=profile%20openid"
+    )
+    return redirect(url)
+
+@app.route('/api/line/callback')
+def line_callback():
+    """LINE 授權完畢後，回傳資料到這個網址"""
+    code = request.args.get('code')
+    state = request.args.get('state')
+    session_state = session.get('line_state')
+
+    # 1. 檢查 state 是否正確 (防偽造跨站請求)
+    if state != session_state:
+        return "登入狀態驗證失敗，請重新操作", 400
+
+    # 2. 用 code 向 LINE 換取 Access Token
+    token_url = "https://api.line.me/oauth2/v2.1/token"
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    data = {
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': LINE_CALLBACK_URL,
+        'client_id': LINE_CHANNEL_ID,
+        'client_secret': LINE_CHANNEL_SECRET
+    }
+    
+    token_res = requests.post(token_url, headers=headers, data=data)
+    if token_res.status_code != 200:
+        return f"獲取 Token 失敗: {token_res.text}", 400
+        
+    access_token = token_res.json().get('access_token')
+
+    # 3. 用 Access Token 獲取使用者的 LINE Profile
+    profile_url = "https://api.line.me/v2/profile"
+    profile_headers = {'Authorization': f'Bearer {access_token}'}
+    profile_res = requests.get(profile_url, headers=profile_headers)
+    
+    if profile_res.status_code != 200:
+        return "獲取使用者資料失敗", 400
+        
+    profile = profile_res.json()
+    line_id = profile.get('userId')
+    display_name = profile.get('displayName')
+    picture_url = profile.get('pictureUrl', '')
+
+    # 4. 存入 MongoDB 的 users 集合 (如果沒有這個人就新增，有就更新)
+    if db is not None:
+        db.users.update_one(
+            {'lineId': line_id},
+            {'$set': {
+                'lineId': line_id,
+                'displayName': display_name,
+                'pictureUrl': picture_url,
+                'lastLoginAt': datetime.utcnow()
+            },
+            '$setOnInsert': {'createdAt': datetime.utcnow()}},
+            upsert=True
+        )
+
+    # 5. 在 Session 發放「一般會員登入證」
+    session['user_line_id'] = line_id
+    session['user_display_name'] = display_name
+    session.permanent = True # 保持登入狀態
+
+    # 6. 導回他們原本所在的頁面 (例如 /feedback)
+    next_url = session.pop('line_next_url', '/')
+    return redirect(next_url)
+
+@app.route('/api/user/me', methods=['GET'])
+def get_current_user():
+    """前端用來檢查目前是否有登入，並取得基本資料"""
+    line_id = session.get('user_line_id')
+    if not line_id:
+        return jsonify({"logged_in": False})
+        
+    if db is not None:
+        user = db.users.find_one({'lineId': line_id}, {'_id': 0})
+        if user:
+            return jsonify({"logged_in": True, "user": user})
+            
+    return jsonify({"logged_in": False})
 # =========================================
 # 5. 後台頁面路由 & API
 # =========================================
@@ -545,14 +656,14 @@ def session_check():
 def api_login():
     password = request.json.get('password')
     if ADMIN_PASSWORD_HASH and check_password_hash(ADMIN_PASSWORD_HASH, password):
-        session['logged_in'] = True
+        session['admin_logged_in'] = True
         session.permanent = True
         return jsonify({"success": True, "message": "登入成功"})
     return jsonify({"success": False, "message": "密碼錯誤"}), 401
 
 @app.route('/api/logout', methods=['POST'])
 def api_logout():
-    session.pop('logged_in', None)
+    session.pop('admin_logged_in', None)
     return jsonify({"success": True})
 
 # --- Feedback API ---
@@ -1181,6 +1292,7 @@ def debug_connection():
     except Exception as e:
         status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
     return jsonify(status)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
