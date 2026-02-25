@@ -530,39 +530,44 @@ document.addEventListener('DOMContentLoaded', () => {
     const fbEditModal = document.getElementById('feedback-edit-modal');
     const fbEditForm = document.getElementById('feedback-edit-form');
 
-    async function fetchFeedback() {
+async function fetchFeedback() {
         if(!fbPendingList) return;
         
-        // 分別讀取三種狀態
         const pending = await apiFetch('/api/feedback/status/pending');
-        const approved = await apiFetch('/api/feedback/status/approved'); // 待寄送
-        const sent = await apiFetch('/api/feedback/status/sent');         // 已寄送
+        const approved = await apiFetch('/api/feedback/status/approved'); 
+        const sent = await apiFetch('/api/feedback/status/sent');         
 
-        // 1. 新回饋
-        fbPendingList.innerHTML = pending.length ? pending.map(i => `
+        // 1. 新回饋 (審核中)
+        fbPendingList.innerHTML = pending.length ? pending.map(i => {
+            const badge = i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : '';
+            return `
             <div class="feedback-card" style="border-left:5px solid #dc3545;">
-                <div style="font-weight:bold;">${i.nickname} (${i.realName})</div>
+                <div style="font-weight:bold; margin-bottom:8px;">${i.nickname} (${i.realName}) ${badge}</div>
                 <div class="pre-wrap" style="max-height:80px; overflow:hidden;">${i.content}</div>
-                <div style="text-align:right; margin-top:5px;">
+                <div style="text-align:right; margin-top:10px;">
                     <button class="btn btn--grey" onclick='editFb(${JSON.stringify(i).replace(/'/g, "&apos;")})'>編輯</button>
                     <button class="btn btn--green" onclick="approveFb('${i._id}')">✅ 核准 (寄信)</button>
                     <button class="btn btn--red" onclick="delFb('${i._id}')">🗑️ 刪除</button>
                 </div>
-            </div>`).join('') : '<p>無</p>';
+            </div>`;
+        }).join('') : '<p>無</p>';
 
-        // 2. 已核准 / 待寄送 (顯示回饋編號)
-        fbApprovedList.innerHTML = approved.length ? approved.map(i => `
+        // 2. 已核准 (待寄送)
+        fbApprovedList.innerHTML = approved.length ? approved.map(i => {
+            const badge = i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : '';
+            return `
             <div class="feedback-card" style="border-left:5px solid #28a745;">
-                <div style="display:flex; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                     <b>編號: ${i.feedbackId || '無'}</b> <small>${i.approvedAt || ''}</small>
                 </div>
-                <div>${i.nickname} / ${i.address}</div>
-                <div style="text-align:right; margin-top:5px;">
+                <div style="margin-bottom:8px;">${i.nickname} / ${i.address} ${badge}</div>
+                <div style="text-align:right;">
                     <button class="btn btn--blue" onclick="shipGift('${i._id}')">🎁 寄送禮物</button>
                 </div>
-            </div>`).join('') : '<p>無</p>';
+            </div>`;
+        }).join('') : '<p>無</p>';
             
-        // 3. 已寄送 (修改為只顯示 暱稱、編號，點擊看詳情)
+        // 3. 已寄送 (點擊看詳情)
         fbSentList.innerHTML = sent.length ? sent.map(i => `
             <div class="feedback-card" 
                  style="border-left:5px solid #007bff; background:#f0f0f0; cursor:pointer; transition:0.2s;" 
@@ -580,8 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     寄出日: ${i.sentAt || '未知'} (點擊查看詳情)
                 </div>
             </div>`).join('') : '<p>無</p>';
-        }
-    
+    }    
     // 核准回饋 (自動寄信)
     window.approveFb = async (id) => { 
         if(confirm('確認核准？(將寄信通知信徒已刊登)')) {

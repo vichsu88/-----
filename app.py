@@ -724,56 +724,57 @@ def api_logout():
     return jsonify({"success": True})
 
 # --- Feedback API ---
+
+def enrich_feedback_for_admin(cursor):
+    """【後台專用輔助函式】自動將回饋與會員資料表合併，並標記是否領過神衣"""
+    results = []
+    for doc in cursor:
+        line_id = doc.get('lineId')
+        user = db.users.find_one({"lineId": line_id}) if line_id else {}
+        # 檢查該 LINE ID 過去是否有 status=sent 的紀錄
+        has_received = db.feedback.count_documents({"lineId": line_id, "status": "sent"}) > 0 if line_id else False
+
+        # 如果會員資料有填，就用會員的；如果沒有（舊資料），就用原本存在回饋裡的
+        doc['realName'] = user.get('realName') or doc.get('realName', '未填寫')
+        doc['phone'] = user.get('phone') or doc.get('phone', '未填寫')
+        doc['address'] = user.get('address') or doc.get('address', '未填寫')
+        doc['email'] = user.get('email') or doc.get('email', '')
+        doc['has_received'] = has_received
+
+        doc['_id'] = str(doc['_id'])
+        if 'createdAt' in doc: doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S')
+        if 'approvedAt' in doc: doc['approvedAt'] = doc['approvedAt'].strftime('%Y-%m-%d %H:%M')
+        if 'sentAt' in doc: doc['sentAt'] = doc['sentAt'].strftime('%Y-%m-%d %H:%M')
+        results.append(doc)
+    return results
+
 @app.route('/api/feedback', methods=['POST'])
 def add_feedback():
     if db is None: return jsonify({"error": "DB Error"}), 500
-    
-    # 1. 阻擋未登入的請求 (安全防護)
     line_id = session.get('user_line_id')
-    if not line_id:
-        return jsonify({"error": "請先使用 LINE 登入"}), 401
+    if not line_id: return jsonify({"error": "請先使用 LINE 登入"}), 401
         
     data = request.get_json()
     if not data.get('agreed'): return jsonify({"error": "必須勾選同意條款"}), 400
     
-    # 2. 儲存回饋資料 (新增了 lineId 欄位，把文章跟人綁定)
+    # 極簡化：只存回饋內容，個資一律去 users 資料表抓
     new_feedback = {
         "lineId": line_id,
-        "realName": data.get('realName'), "nickname": data.get('nickname'),
-        "category": data.get('category', []), "content": data.get('content'),
-        "lunarBirthday": data.get('lunarBirthday', ''), "birthTime": data.get('birthTime') or '吉時',
-        "address": data.get('address', ''), "phone": data.get('phone', ''),
-        "email": data.get('email', ''), 
-        "agreed": True, "createdAt": datetime.utcnow(), 
-        "status": "pending", "isMarked": False
+        "nickname": data.get('nickname'),
+        "category": data.get('category', []), 
+        "content": data.get('content'),
+        "agreed": True, 
+        "createdAt": datetime.utcnow(), 
+        "status": "pending", 
+        "isMarked": False
     }
     db.feedback.insert_one(new_feedback)
-    
-    # 3. ★ 關鍵步驟：順便更新使用者的 LINE 會員檔案！
-    # 如果是他初次填寫，這裡就會把他的真實姓名、電話、地址永久記在 users 集合裡
-    db.users.update_one(
-        {"lineId": line_id},
-        {"$set": {
-            "realName": data.get('realName'),
-            "phone": data.get('phone'),
-            "address": data.get('address'),
-            "email": data.get('email')
-        }}
-    )
-    
     return jsonify({"success": True, "message": "回饋已送出"})
-@app.route('/api/feedback/pending', methods=['GET']) 
-@app.route('/api/feedback/status/pending', methods=['GET'])
-@login_required
-def get_pending_feedback():
-    cursor = db.feedback.find({"status": "pending"}).sort("createdAt", 1)
-    return jsonify([{**doc, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S')} for doc in cursor])
 
+# 這是給 [前台] 看的，保護隱私不回傳個資
 @app.route('/api/feedback/approved', methods=['GET']) 
-@app.route('/api/feedback/status/approved', methods=['GET'])
-def get_approved_feedback():
-    # 這裡為了保護隱私，只回傳暱稱和內容
-    cursor = db.feedback.find({"status": "approved"}).sort("createdAt", -1)
+def get_public_approved_feedback():
+    cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", -1)
     results = []
     for doc in cursor:
         results.append({
@@ -781,82 +782,81 @@ def get_approved_feedback():
             'nickname': doc.get('nickname', '匿名'),  
             'category': doc.get('category', []),      
             'content': doc.get('content', ''),        
-            'createdAt': doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S') 
+            'createdAt': doc['createdAt'].strftime('%Y-%m-%d') 
         })
     return jsonify(results)
+
+# 以下是給 [後台] 管理員看的，包含合併後的完整個資與標籤
+@app.route('/api/feedback/status/pending', methods=['GET'])
+@login_required
+def get_pending_feedback():
+    cursor = db.feedback.find({"status": "pending"}).sort("createdAt", 1)
+    return jsonify(enrich_feedback_for_admin(cursor))
+
+@app.route('/api/feedback/status/approved', methods=['GET'])
+@login_required
+def get_admin_approved_feedback():
+    cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", -1)
+    return jsonify(enrich_feedback_for_admin(cursor))
 
 @app.route('/api/feedback/status/sent', methods=['GET'])
 @login_required
 def get_sent_feedback():
     cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
-    return jsonify([{**doc, '_id': str(doc['_id']), 'sentAt': doc.get('sentAt', doc['createdAt']).strftime('%Y-%m-%d %H:%M')} for doc in cursor])
+    return jsonify(enrich_feedback_for_admin(cursor))
 
 @app.route('/api/feedback/<fid>/approve', methods=['PUT'])
 @login_required
 def approve_feedback(fid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(fid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
-
     fb = db.feedback.find_one({'_id': oid})
     if not fb: return jsonify({"error": "No data"}), 404
     
     fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
+    db.feedback.update_one({'_id': oid}, {'$set': {'status': 'approved', 'feedbackId': fb_id, 'approvedAt': datetime.utcnow()}})
     
-    db.feedback.update_one({'_id': oid}, {
-        '$set': {
-            'status': 'approved', 
-            'feedbackId': fb_id,
-            'approvedAt': datetime.utcnow()
-        }
-    })
-    
-    if fb.get('email'):
-        subject = "【承天中承府】您的回饋已核准刊登"
-        body = generate_feedback_email_html(fb, 'approved')
-        send_email(fb['email'], subject, body, is_html=True)
-        
+    # 抓取會員 Email 寄信
+    user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
+    email = user.get('email') or fb.get('email')
+    if email:
+        fb_for_email = fb.copy()
+        fb_for_email['realName'] = user.get('realName', '信徒')
+        send_email(email, "【承天中承府】您的回饋已核准刊登", generate_feedback_email_html(fb_for_email, 'approved'), is_html=True)
     return jsonify({"success": True})
 
 @app.route('/api/feedback/<fid>/ship', methods=['PUT'])
 @login_required
 def ship_feedback(fid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(fid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
-
     data = request.get_json()
     tracking = data.get('trackingNumber', '')
     fb = db.feedback.find_one({'_id': oid})
-    if not fb: return jsonify({"error": "No data"}), 404
     
-    db.feedback.update_one({'_id': oid}, {
-        '$set': {
-            'status': 'sent', 
-            'trackingNumber': tracking,
-            'sentAt': datetime.utcnow()
-        }
-    })
+    db.feedback.update_one({'_id': oid}, {'$set': {'status': 'sent', 'trackingNumber': tracking, 'sentAt': datetime.utcnow()}})
     
-    if fb.get('email'):
-        subject = "【承天中承府】結緣品寄出通知"
-        body = generate_feedback_email_html(fb, 'sent', tracking)
-        send_email(fb['email'], subject, body, is_html=True)
-        
+    user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
+    email = user.get('email') or fb.get('email')
+    if email:
+        fb_for_email = fb.copy()
+        fb_for_email['realName'] = user.get('realName', '信徒')
+        send_email(email, "【承天中承府】結緣品寄出通知", generate_feedback_email_html(fb_for_email, 'sent', tracking), is_html=True)
     return jsonify({"success": True})
 
 @app.route('/api/feedback/<fid>', methods=['DELETE'])
 @login_required
 def delete_feedback(fid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(fid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
-
     fb = db.feedback.find_one({'_id': oid})
-    if fb and fb.get('email'):
-        subject = "【承天中承府】感謝您的投稿與分享"
-        body = generate_feedback_email_html(fb, 'rejected')
-        send_email(fb['email'], subject, body, is_html=True)
+    
+    user = db.users.find_one({"lineId": fb.get('lineId')}) if fb and fb.get('lineId') else {}
+    email = user.get('email') or (fb.get('email') if fb else None)
+    if email:
+        fb_for_email = fb.copy()
+        fb_for_email['realName'] = user.get('realName', '信徒')
+        send_email(email, "【承天中承府】感謝您的投稿與分享", generate_feedback_email_html(fb_for_email, 'rejected'), is_html=True)
         
     db.feedback.delete_one({'_id': oid})
     return jsonify({"success": True})
@@ -864,57 +864,42 @@ def delete_feedback(fid):
 @app.route('/api/feedback/<fid>', methods=['PUT'])
 @login_required
 def update_feedback(fid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid = get_object_id(fid)
     if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
-
     data = request.get_json()
-    fields = {k: data.get(k) for k in ['realName', 'nickname', 'category', 'content', 'lunarBirthday', 'birthTime', 'address', 'phone']}
-    db.feedback.update_one({'_id': oid}, {'$set': fields})
+    db.feedback.update_one({'_id': oid}, {'$set': {'nickname': data.get('nickname'), 'category': data.get('category'), 'content': data.get('content')}})
     return jsonify({"success": True})
-
-@app.route('/api/feedback/download-unmarked', methods=['POST'])
-@login_required
-def download_unmarked_feedback():
-    return jsonify({"error": "Deprecated"}), 410
 
 @app.route('/api/feedback/export-sent-txt', methods=['POST'])
 @login_required
 def export_sent_feedback_txt():
     cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
-    if db.feedback.count_documents({"status": "sent"}) == 0:
-        return jsonify({"error": "無已寄送資料"}), 404
+    enriched = enrich_feedback_for_admin(cursor)
+    if not enriched: return jsonify({"error": "無已寄送資料"}), 404
     
     si = io.StringIO()
     si.write(f"已寄送名單匯出\n匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
     si.write("=" * 50 + "\n")
-    
-    for doc in cursor:
-        name = doc.get('realName', '無姓名')
-        phone = doc.get('phone', '無電話')
-        address = doc.get('address', '無地址')
-        si.write(f"{name}\t{phone}\t{address}\n")
-    
+    for doc in enriched:
+        si.write(f"{doc['realName']}\t{doc['phone']}\t{doc['address']}\n")
     return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": "attachment;filename=sent_feedback_list.txt"})
 
 @app.route('/api/feedback/export-txt', methods=['POST'])
 @login_required
 def export_feedback_txt():
     cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", 1)
-    if db.feedback.count_documents({"status": "approved"}) == 0:
-        return jsonify({"error": "無資料"}), 404
+    enriched = enrich_feedback_for_admin(cursor)
+    if not enriched: return jsonify({"error": "無資料"}), 404
     
     si = io.StringIO()
     si.write(f"匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n")
-    for doc in cursor:
+    for doc in enriched:
         si.write(f"【編號】{doc.get('feedbackId', '無')}\n")
         si.write(f"姓名：{doc['realName']}\n")
         si.write(f"電話：{doc['phone']}\n")
         si.write(f"地址：{doc['address']}\n")
         si.write("-" * 30 + "\n")
-    
     return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": "attachment;filename=feedback_list.txt"})
-
 # --- Settings API ---
 @app.route('/api/settings/bank', methods=['GET', 'POST'])
 @login_required
