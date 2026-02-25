@@ -100,6 +100,22 @@
     .btn-add-cloth { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 5px;}
     .btn-submit { background: #C48945; color: white; border: none; padding: 12px; width: 100%; border-radius: 25px; font-size: 18px; font-weight: bold; cursor: pointer; }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* --- 打包訂單卡片樣式 --- */
+    .order-card {
+        background: #fff; border: 1px dashed #C48945; border-radius: 8px;
+        margin-bottom: 15px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+    .order-card-header {
+        background: #fdf6e9; padding: 8px 15px; font-weight: bold; color: #C48945;
+        border-bottom: 1px dashed #eee; font-size: 14px;
+    }
+    .order-card-body {
+        padding: 12px 15px; display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .cloth-pill {
+        display: inline-block; background: #f4f4f4; border: 1px solid #ddd; color: #333;
+        padding: 4px 10px; border-radius: 15px; font-size: 13px;
+    }
 </style>
 
 <main class="ship-wrapper">
@@ -266,20 +282,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                boardContainer.innerHTML = data.map(day => {
-                    const selfHtml = day.self.length ? day.self.map(c => `
-                        <div class="cloth-item">
-                            <span>${c.name} (${c.birthYear})</span>
-                            <span class="cloth-id">${c.clothId}</span>
-                        </div>
-                    `).join('') : '<p style="color:#888; font-size:14px; text-align:center;">無</p>';
+boardContainer.innerHTML = data.map(day => {
+                    // 自取列表 (改為以「訂單打包」為單位渲染)
+                    const selfHtml = day.self.length ? day.self.map((order, index) => {
+                        const clothesList = order.clothes.map(c => 
+                            `<span class="cloth-pill"><b>${c.clothId}</b> ${c.name} (${c.birthYear})</span>`
+                        ).join('');
+                        return `
+                        <div class="order-card">
+                            <div class="order-card-header">🛍️ 自取打包 #${index + 1} <span style="font-size:12px; font-weight:normal; color:#666;">(共 ${order.clothes.length} 件)</span></div>
+                            <div class="order-card-body">${clothesList}</div>
+                        </div>`;
+                    }).join('') : '<p style="color:#888; font-size:14px; text-align:center;">無</p>';
                     
-                    const deliveryHtml = day.delivery.length ? day.delivery.map(c => `
-                        <div class="cloth-item">
-                            <span>${c.name} (${c.birthYear})</span>
-                            <span class="cloth-id">${c.clothId}</span>
-                        </div>
-                    `).join('') : '<p style="color:#888; font-size:14px; text-align:center;">無</p>';
+                    // 黑貓列表 (改為以「包裹」為單位渲染)
+                    const deliveryHtml = day.delivery.length ? day.delivery.map((order, index) => {
+                        const clothesList = order.clothes.map(c => 
+                            `<span class="cloth-pill"><b>${c.clothId}</b> ${c.name} (${c.birthYear})</span>`
+                        ).join('');
+                        return `
+                        <div class="order-card">
+                            <div class="order-card-header">📦 黑貓包裹 #${index + 1} <span style="font-size:12px; font-weight:normal; color:#666;">(共 ${order.clothes.length} 件)</span></div>
+                            <div class="order-card-body">${clothesList}</div>
+                        </div>`;
+                    }).join('') : '<p style="color:#888; font-size:14px; text-align:center;">無</p>';
 
                     return `
                     <div class="date-board">

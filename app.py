@@ -749,7 +749,7 @@ def get_public_pickups():
     
     cursor = db.pickups.find({"pickupDate": {"$gte": threshold_date}}).sort("pickupDate", 1)
     
-    # 依照日期將資料分組
+# 依照日期將資料分組
     results = {}
     for doc in cursor:
         date_str = doc['pickupDate']
@@ -758,11 +758,19 @@ def get_public_pickups():
         if date_str not in results:
             results[date_str] = {'self': [], 'delivery': []}
             
+        # ★ 修改這裡：把同一單的衣服包在一起，而不是打散
+        masked_clothes = []
         for c in doc.get('clothes', []):
-            results[date_str][p_type].append({
+            masked_clothes.append({
                 "clothId": c.get('clothId', ''),
-                "name": mask_name(c.get('name', '')), # ★ 在這裡執行姓名遮蔽
+                "name": mask_name(c.get('name', '')), # 執行姓名遮蔽
                 "birthYear": c.get('birthYear', '')
+            })
+            
+        # 將整組衣服作為「一包」塞進看板陣列中
+        if masked_clothes:
+            results[date_str][p_type].append({
+                "clothes": masked_clothes
             })
             
     # 轉成陣列格式方便前端卡片渲染
