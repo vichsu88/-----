@@ -168,13 +168,13 @@
         </div>
 
         <div class="profile-card">
-            <h3 style="margin-bottom: 20px;">👕 我的收驚預約</h3>
+            <h3 style="margin-bottom: 20px;">👕 取回收驚衣服預約</h3>
             <div id="pickup-list">
                 <p style="text-align: center; color: #888;">載入中...</p>
             </div>
         </div>
         <div class="profile-card">
-            <h3 style="margin-bottom: 20px;">🛍️ 我的請購紀錄</h3>
+            <h3 style="margin-bottom: 20px;">🛍️ 我的購買紀錄</h3>
             <div id="order-list">
                 <p style="text-align: center; color: #888;">載入中...</p>
             </div>
@@ -225,6 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 並行載入兩邊的紀錄
                 loadFeedbackHistory();
                 loadPickupHistory();
+                loadOrderHistory();
             } else {
                 document.getElementById('user-greeting').style.display = 'none';
                 loginSection.style.display = 'block';
@@ -320,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // 黑貓的額外紅字提醒
                 const deliveryNote = item.pickupType === 'delivery' 
-                    ? `<div style="color: #dc3545; font-size: 13px; margin-top: 5px;">※ 請記得自行聯繫黑貓宅急便 (412-8888) 於此日期後前來本府收件。</div>` 
+                    ? `<div style="color: #dc3545; font-size: 13px; margin-top: 5px;">※ 請記得自行聯繫黑貓宅急便於此日期後前來本府收件。</div>` 
                     : '';
 
                 // 渲染衣服清單 (顯示完整姓名)
