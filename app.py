@@ -1161,7 +1161,12 @@ def create_order():
     if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
     
-    # ★ 自動判斷是否為護持訂單 (若商品名稱包含 [建廟])
+    # ★ 新增：強制檢查登入狀態並綁定 lineId
+    line_id = session.get('user_line_id')
+    if not line_id:
+        return jsonify({"error": "請先使用 LINE 登入"}), 401
+        
+    # 自動判斷是否為護持訂單 (若商品名稱包含 [建廟])
     order_type = data.get('orderType', 'shop')
     if any('[建廟]' in item['name'] for item in data['items']):
         order_type = 'donation'
@@ -1174,10 +1179,15 @@ def create_order():
         "lunarBirthday": data.get('lunarBirthday', '') # 護持單才有
     }
     
+    now = datetime.utcnow()
+    deadline = now + timedelta(hours=2) # ★ N+2 極速催款死線
+    
     order = {
         "orderId": order_id, "orderType": order_type, "customer": customer_info,
         "items": data['items'], "total": data['total'], "status": "pending",
-        "createdAt": datetime.utcnow(), "updatedAt": datetime.utcnow()
+        "lineId": line_id,           # ★ 綁定使用者
+        "paymentDeadline": deadline, # ★ 紀錄死線
+        "createdAt": now, "updatedAt": now
     }
     db.orders.insert_one(order)
     
@@ -1191,6 +1201,34 @@ def create_order():
         
     send_email(customer_info['email'], subject, html, is_html=True)
     return jsonify({"success": True, "orderId": order_id})
+@app.route('/api/user/orders', methods=['GET'])
+def get_user_orders():
+    """給信徒「個人專區」看的商城訂單紀錄"""
+    line_id = session.get('user_line_id')
+    if not line_id or db is None:
+        return jsonify([])
+        
+    # 只抓取商品訂單，不含建廟捐款
+    cursor = db.orders.find({"lineId": line_id, "orderType": "shop"}).sort("createdAt", -1)
+    results = []
+    for doc in cursor:
+        # 轉換為台灣時間字串
+        tw_created = doc['createdAt'] + timedelta(hours=8)
+        # 若是舊訂單沒有 paymentDeadline，相容處理為創建時間+2小時
+        tw_deadline = doc.get('paymentDeadline', doc['createdAt'] + timedelta(hours=2)) + timedelta(hours=8)
+        
+        results.append({
+            "_id": str(doc['_id']),
+            "orderId": doc['orderId'],
+            "items": doc.get('items', []),
+            "total": doc.get('total', 0),
+            "status": doc.get('status', 'pending'),
+            "trackingNumber": doc.get('trackingNumber', ''),
+            "createdAt": tw_created.strftime('%Y-%m-%d %H:%M'),
+            "paymentDeadline": tw_deadline.strftime('%Y-%m-%d %H:%M'),
+            "deadline_iso": tw_deadline.isoformat() # 用於前端 JS 比較是否過期
+        })
+    return jsonify(results)
 
 @app.route('/api/orders', methods=['GET'])
 @login_required

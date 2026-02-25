@@ -173,7 +173,12 @@
                 <p style="text-align: center; color: #888;">載入中...</p>
             </div>
         </div>
-        
+        <div class="profile-card">
+            <h3 style="margin-bottom: 20px;">🛍️ 我的請購紀錄</h3>
+            <div id="order-list">
+                <p style="text-align: center; color: #888;">載入中...</p>
+            </div>
+        </div>
     </div>
 </main>
 
@@ -341,7 +346,60 @@ document.addEventListener('DOMContentLoaded', () => {
             pickupList.innerHTML = '<p style="color: red; text-align: center;">預約紀錄載入失敗</p>';
         }
     }
+    // 5. 載入商城訂單紀錄 (全新)
+    async function loadOrderHistory() {
+        try {
+            const res = await fetch('/api/user/orders');
+            const data = await res.json();
+            
+            if(data.length === 0) {
+                document.getElementById('order-list').innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">您目前沒有請購紀錄。<br><a href="/shop" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往賣場</a></p>';
+                return;
+            }
 
+            const now = new Date();
+
+            document.getElementById('order-list').innerHTML = data.map(order => {
+                let statusHtml = '';
+                let borderColor = '#ccc';
+
+                if (order.status === 'pending') {
+                    const deadline = new Date(order.deadline_iso);
+                    if (now > deadline) {
+                        borderColor = '#dc3545'; // 紅色逾期
+                        statusHtml = `<div class="history-item-status" style="background:#f8d7da; color:#721c24; border-left:4px solid #dc3545;">🔴 <b>已逾期/取消：</b>超過繳費期限，訂單已失效。</div>`;
+                    } else {
+                        borderColor = '#ffc107'; // 黃色待繳費
+                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold; font-size:16px;">${order.paymentDeadline}</span> 前完成匯款，逾期將自動取消。</div>`;
+                    }
+                } else if (order.status === 'paid') {
+                    borderColor = '#28a745'; // 綠色已付款
+                    statusHtml = `<div class="history-item-status status-approved">🟢 <b>處理中：</b>廟方已確認收款，正在為您準備商品。</div>`;
+                } else if (order.status === 'shipped') {
+                    borderColor = '#007bff'; // 藍色已出貨
+                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已出貨：</b>商品已寄出！<br><span style="color:#333; margin-top:5px; display:inline-block;">📦 物流單號：<b>${order.trackingNumber || '無'}</b></span></div>`;
+                }
+
+                const itemsHtml = order.items.map(i => `<li style="margin-bottom:3px;">${i.name} (${i.variant}) x ${i.qty}</li>`).join('');
+
+                return `
+                <div class="history-item" style="border-left: 4px solid ${borderColor};">
+                    <div class="history-item-header">
+                        <span style="font-weight:bold; color:#333;">單號：${order.orderId}</span>
+                        <span>下單：${order.createdAt}</span>
+                    </div>
+                    <div class="history-item-content">
+                        <ul style="margin:0; padding-left:20px; font-size:14px; color:#555;">${itemsHtml}</ul>
+                        <div style="margin-top:10px; font-weight:bold; color:#C48945; font-size:16px;">總金額：NT$ ${order.total}</div>
+                    </div>
+                    ${statusHtml}
+                </div>`;
+            }).join('');
+
+        } catch(err) {
+            document.getElementById('order-list').innerHTML = '<p style="color: red; text-align: center;">訂單載入失敗</p>';
+        }
+    }
     // 欄位格式化邏輯
     profileForm.phone.addEventListener('input', (e) => {
         let v = e.target.value.replace(/\D/g, ''); 
