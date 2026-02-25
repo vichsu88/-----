@@ -1,265 +1,112 @@
 {% extends "base.html" %}
 
-{% block title %}承天中承府 - 寄回衣物登記{% endblock %}
+{% block title %}承天中承府 - 收驚衣服預約與進度{% endblock %}
 
 {% block content %}
 <style>
     .ship-wrapper {
         padding: 40px 20px;
-        max-width: 1000px; /* 稍微加寬以容納流程圖 */
+        max-width: 1000px; /* 寬度足以容納流程圖 */
         margin: 0 auto;
         position: relative;
+        font-family: 'Noto Sans TC', sans-serif;
     }
+    .page-header { text-align: center; margin-bottom: 30px; }
 
-    /* === 流程圖區塊 (Process Flow) === */
-    .process-section {
-        margin-bottom: 50px;
-        text-align: center;
-    }
-    
+    /* === 流程圖區塊 (Process Flow 原汁原味保留) === */
+    .process-section { margin-bottom: 40px; text-align: center; }
     .process-title {
-        font-size: 2rem;
-        color: #C48945;
-        font-weight: bold;
-        margin-bottom: 30px;
-        font-family: 'LXGW WenKai TC', serif; /* 統一標題字體 */
+        font-size: 2rem; color: #C48945; font-weight: bold; margin-bottom: 30px;
+        font-family: 'LXGW WenKai TC', serif;
     }
-
-    .process-container {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-        position: relative;
-    }
-
-    /* 步驟卡片 */
+    .process-container { display: flex; justify-content: space-between; gap: 20px; position: relative; }
     .step-card {
-        flex: 1;
-        background: #fff;
-        border: 2px solid #E6BA67;
-        border-radius: 15px;
-        padding: 20px 15px;
-        position: relative;
-        box-shadow: 0 5px 15px rgba(196, 137, 69, 0.1);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        transition: transform 0.3s;
+        flex: 1; background: #fff; border: 2px solid #E6BA67; border-radius: 15px;
+        padding: 20px 15px; position: relative; box-shadow: 0 5px 15px rgba(196, 137, 69, 0.1);
+        display: flex; flex-direction: column; align-items: center; transition: transform 0.3s;
     }
-
-    .step-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(196, 137, 69, 0.2);
-    }
-
-    /* 步驟編號圓圈 */
+    .step-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(196, 137, 69, 0.2); }
     .step-number {
-        background: #C48945;
-        color: #fff;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        font-size: 1.2rem;
-        font-weight: bold;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 15px;
-        box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        background: #C48945; color: #fff; width: 40px; height: 40px; border-radius: 50%;
+        font-size: 1.2rem; font-weight: bold; display: flex; justify-content: center;
+        align-items: center; margin-bottom: 15px; box-shadow: 0 3px 6px rgba(0,0,0,0.2);
     }
-
-    .step-title {
-        font-size: 1.1rem;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 10px;
-    }
-
-    .step-desc {
-        font-size: 0.9rem;
-        color: #666;
-        line-height: 1.5;
-        text-align: left;
-        width: 100%;
-    }
-    
-    .step-desc ul {
-        padding-left: 20px;
-        margin: 5px 0;
-    }
-
-    .step-desc li {
-        margin-bottom: 4px;
-    }
-
-    /* 手機版 RWD */
+    .step-title { font-size: 1.1rem; font-weight: bold; color: #333; margin-bottom: 10px; }
+    .step-desc { font-size: 0.9rem; color: #666; line-height: 1.5; text-align: left; width: 100%; }
+    .step-desc ul { padding-left: 20px; margin: 5px 0; }
+    .step-desc li { margin-bottom: 4px; }
     @media (max-width: 768px) {
-        .process-container {
-            flex-direction: column;
-        }
-        .step-card {
-            flex-direction: row; /* 手機版改為橫向排列 */
-            align-items: flex-start;
-            text-align: left;
-            padding: 15px;
-        }
-        .step-number {
-            margin-right: 15px;
-            margin-bottom: 0;
-            flex-shrink: 0; /* 防止圓圈被壓縮 */
-        }
-        .step-content-wrapper {
-            flex: 1;
-        }
-    }
-    
-    /* === 留言板區塊 (Board) === */
-    .board-section { margin-bottom: 40px; }
-    .board-title {
-        text-align: center; font-size: 24px; color: #C48945; margin-bottom: 20px; font-weight: bold;
-    }
-    .board-list { display: flex; flex-direction: column; gap: 25px; } /* 增加間距 */
-    
-    /* 日期分組容器 */
-    .date-group {
-        border: 2px solid #E6BA67;
-        border-radius: 12px;
-        overflow: hidden;
-        background: #fff;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    
-    /* 日期標題 (Header) */
-    .date-header {
-        background: #E6BA67;
-        color: #fff;
-        padding: 12px 20px;
-        font-size: 18px;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    /* 該日期的所有卡片容器 */
-    .date-content {
-        padding: 15px;
-        background: #fff;
+        .process-container { flex-direction: column; }
+        .step-card { flex-direction: row; align-items: flex-start; text-align: left; padding: 15px; }
+        .step-number { margin-right: 15px; margin-bottom: 0; flex-shrink: 0; }
+        .step-content-wrapper { flex: 1; }
     }
 
-    /* 單筆申請卡片 */
-    .submission-card {
-        padding: 15px;
-        border-bottom: 1px dashed #ddd;
+    /* === 預約大按鈕 === */
+    .reserve-action-area { text-align: center; margin-bottom: 50px; }
+    .btn-large-reserve {
+        display: inline-block; background: #C48945; color: white; border: none; border-radius: 50px;
+        padding: 15px 40px; font-size: 20px; font-weight: bold; cursor: pointer;
+        box-shadow: 0 5px 15px rgba(196, 137, 69, 0.4); transition: transform 0.2s;
     }
-    .submission-card:last-child { border-bottom: none; }
-    
-    .card-user-info {
-        font-size: 16px;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 8px;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-    }
-    .tag-line { background: #eee; color: #555; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: normal;}
-    .card-clothes-list {
-        margin-left: 10px;
-    }
-    .cloth-item {
-        display: inline-block;
-        background: #f9f9f9;
-        border: 1px solid #eee;
-        padding: 4px 8px;
-        margin: 0 5px 5px 0;
-        border-radius: 4px;
-        font-size: 14px;
-        color: #555;
-    }
+    .btn-large-reserve:hover { transform: scale(1.05); }
 
-    /* === 下方教學區塊 === */
-    .instruction-box {
-        background: #fff; border: 2px solid #ddd; border-radius: 15px; padding: 25px; margin-top: 40px;
+    /* === 全新：現場準備進度看板 === */
+    .board-section-title {
+        color: #333; border-bottom: 2px solid #E6BA67; padding-bottom: 10px; margin-bottom: 25px;
+        display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: bold;
     }
-    .instruction-title { color: #555; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
-    .black-cat-btn {
-        background: #333; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none;
-        font-size: 14px; display: inline-block; margin-top: 15px;
+    .date-board {
+        background: #fffcf5; border: 2px solid #E6BA67; border-radius: 15px;
+        padding: 25px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    .black-cat-btn:hover { background: #555; transform: translateY(-2px); }
+    .date-board-title { color: #C48945; font-size: 24px; margin-top: 0; margin-bottom: 20px; border-bottom: 1px dashed #E6BA67; padding-bottom: 10px;}
+    .board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width: 768px) { .board-grid { grid-template-columns: 1fr; } }
+    .pickup-col { background: rgba(255,255,255,0.7); border-radius: 10px; padding: 15px; }
+    .pickup-col h4 { margin-top: 0; display: flex; align-items: center; gap: 8px; color: #4b2c1c; }
+    .cloth-item { 
+        padding: 10px; border-bottom: 1px solid #eee; font-size: 16px; color: #333; 
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .cloth-item:last-child { border-bottom: none; }
+    .cloth-id { background: #E6BA67; color: white; padding: 2px 8px; border-radius: 6px; font-size: 14px; font-weight: bold;}
 
-    /* === 懸浮按鈕 === */
-    .feedback-floating-btn {
-        position: fixed; top: 50%; right: 0; transform: translateY(-50%); z-index: 900; cursor: pointer;
-        transition: transform 0.2s, opacity 0.3s; width: 210px;
-    }
-    .feedback-floating-btn img { width: 100%; height: auto; display: block; }
-    .feedback-floating-btn:hover { transform: translateY(-50%) scale(1.05); }
-    @media (max-width: 768px) {
-        .feedback-floating-btn { width: 130px;
-            top: auto;
-            bottom: 85px; /* 改為 85px，避開下方的 TOP 按鈕 */
-            transform: none;
-            right: 10px; }
-        .feedback-floating-btn:hover { transform: scale(1.05); }
-    }
-
-    /* === Modal 樣式 === */
-    .modal-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;
-        backdrop-filter: blur(3px);
-    }
-    .modal-overlay.is-visible { display: flex; }
-    .modal-content {
-        background: #fff; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px;
-        position: relative; border: 3px solid #E6BA67; max-height: 90vh; overflow-y: auto;
-    }
-    .modal-close-btn {
-        position: absolute; top: 15px; right: 15px; background: #C48945; color: #fff;
-        border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px;
-    }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
-    .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-    
-    .clothing-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-    .clothing-row input { flex: 1; }
-    
-    .remove-btn {
-        background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px;
-        line-height: 30px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .add-btn {
-        background: #28a745; color: white; border: none; border-radius: 5px; padding: 8px 15px;
-        font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; margin-top: 5px;
-    }
-    .captcha-row { display: flex; gap: 10px; align-items: center; }
-    .captcha-q { background: #eee; padding: 10px; border-radius: 6px; font-weight: bold; min-width: 80px; text-align: center; }
-    .btn--brown { background: #C48945; color: #fff; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; }
-    
-    /* 修正後的按鈕樣式 */
+    /* === 教學區塊 (原汁原味保留) === */
+    .instruction-box { background: #fff; border: 2px solid #ddd; border-radius: 15px; padding: 25px; margin-top: 40px; }
     .btn-action {
-        display: inline-block; 
-        padding: 15px 50px; 
-        font-size: 1.3rem; 
-        font-weight: bold;
-        background: #C48945; /* 直接使用色碼 */
-        color: white; 
-        text-decoration: none; 
-        border-radius: 50px;
-        box-shadow: 0 5px 15px rgba(196, 137, 69, 0.4); 
-        transition: 0.3s;
-        cursor: pointer;
+        display: inline-block; padding: 15px 50px; font-size: 1.3rem; font-weight: bold;
+        background: #C48945; color: white; text-decoration: none; border-radius: 50px;
+        box-shadow: 0 5px 15px rgba(196, 137, 69, 0.4); transition: 0.3s; cursor: pointer;
     }
-    .btn-action:hover {
-        transform: scale(1.05);
-    }
+    .btn-action:hover { transform: scale(1.05); }
+
+    /* === Modal 與 表單樣式 === */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+    .modal-overlay.is-visible { display: flex; }
+    .modal-content { background: #F3F0EC; padding: 30px; border-radius: 15px; position: relative; max-height: 90vh; overflow-y: auto; width: 90%; max-width: 600px; border: 3px solid #E6BA67; }
+    .modal-close-btn { position: absolute; top: 15px; right: 15px; background: #C48945; border: none; border-radius: 50%; width: 35px; height: 35px; color: white; font-size: 20px; cursor: pointer; }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+    .form-group input[type="date"], .form-group input[type="text"], .form-group input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+    .radio-group { display: flex; gap: 20px; }
+    .radio-group label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px;}
+    
+    .clothes-container { background: #fff; border: 1px dashed #C48945; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .cloth-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .cloth-row input { flex: 1; }
+    .btn-remove-cloth { background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 10px; }
+    .btn-add-cloth { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 5px;}
+    .btn-submit { background: #C48945; color: white; border: none; padding: 12px; width: 100%; border-radius: 25px; font-size: 18px; font-weight: bold; cursor: pointer; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 
 <main class="ship-wrapper">
+    <div class="page-header">
+        <h2 class="section-title">收驚衣服寄回與自取</h2>
+    </div>
+
     <section class="process-section">
         <h2 class="process-title">衣物寄回服務流程</h2>
         <div class="process-container">
@@ -275,7 +122,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="step-card">
                 <div class="step-number">2</div>
                 <div class="step-content-wrapper">
@@ -283,12 +129,11 @@
                     <div class="step-desc">
                         <ul>
                             <li>點擊下方按鈕，填寫「預約單」。</li>
-                            <li>系統將計算<strong>可取件日期</strong>。</li>
+                            <li>系統將為您鎖定<strong>可取件日期</strong>。</li>
                         </ul>
                     </div>
                 </div>
             </div>
-
             <div class="step-card">
                 <div class="step-number">3</div>
                 <div class="step-content-wrapper">
@@ -297,19 +142,18 @@
                         <ul>
                             <li>自行聯繫黑貓宅急便。</li>
                             <li>選<strong>「到府收件」、「運費到付」</strong>。</li>
-                            <li><strong>取件時間：</strong>務必設定在系統給的日期之後。</li>
+                            <li><strong>取件時間：</strong>務必設定為您在系統預約的日期。</li>
                         </ul>
                     </div>
                 </div>
             </div>
-
             <div class="step-card">
                 <div class="step-number">4</div>
                 <div class="step-content-wrapper">
                     <div class="step-title">等待收貨</div>
                     <div class="step-desc">
                         <ul>
-                            <li><strong>流程：</strong>司機至廟收貨 &rarr; 配送 &rarr; 您在家收貨並付款。</li>
+                            <li><strong>流程：</strong>司機至廟收貨&rarr; 配送&rarr; 您在家收貨並付款。</li>
                             <li><strong>圓滿：</strong>流程結束，闔家平安。</li>
                         </ul>
                     </div>
@@ -318,271 +162,255 @@
         </div>
     </section>
 
-    <div id="open-ship-form-btn" class="feedback-floating-btn">
-        <img src="{{ url_for('static', filename='images/pages/feedback/ship.png') }}" alt="我要登記">
+    <div class="reserve-action-area">
+        <button id="open-reserve-btn" class="btn-large-reserve">👕 我要預約取件</button>
+        <p style="color: #666; margin-top: 15px;">※ 收到可取件通知後，請填寫預約單，讓門市人員為您提早準備。</p>
     </div>
 
-    <div class="board-section">
-        <h2 class="board-title">📅 近期收件清單 (自動更新)</h2>
-        <p style="text-align:center; color:#888; font-size:14px; margin-bottom:20px;">僅顯示 昨日 ~ 未來 5 天 內的登記資料</p>
-        <div id="board-list" class="board-list"><p style="text-align:center;">載入中...</p></div>
+    <h3 class="board-section-title">📋 現場準備進度看板</h3>
+    <div id="public-board-container">
+        <p style="text-align: center; color: #888;">載入中...</p>
     </div>
 
     <div class="instruction-box">
-            <h3 style="color:#C48945;">下一步: 黑貓宅急便 App 預約教學</h3>
-            <ol>
-                <li>下載並開啟「黑貓宅急便 App」。</li>
-                <li>選擇「常溫宅急便」 &gt; 件數選「1」。</li>
-                <li>寄件方式選「到府 (黑貓到府印單寄包裹)」。</li>
-                <li>付費方式選「<strong>到付宅急便</strong>」。</li>
-                <li><strong>寄件人資訊 (八八菸酒)</strong>：
-                    <ul>
-                        <li>姓名：八八菸酒</li>
-                        <li>地址：600嘉義市東區新生路337號</li>
-                    </ul>
-                </li>
-                <li><strong>收件人資訊 (您的資料)</strong>：
-                    <ul>
-                        <li>姓名：您的名字 + 收驚編號</li>
-                        <li>地址：您的收件地址</li>
-                    </ul>
-                </li>
-                <li>內容：填寫「衣服總件數」 (如：3)。</li>
-                <li><strong>寄件日</strong>：請依照上方系統顯示的日期填寫。</li>
-            </ol>
-            <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
-                <p style="font-weight:bold; color:#333;">已填寫寄件申請，拿到收件日期了嗎</p>
-                <a href="https://www.t-cat.com.tw/consign/icatapp.aspx" id="open-ship-form-btn-2" class="btn-action">
-                    Step2:黑貓APP
-                </a>
-            </div>
+        <h3 style="color:#C48945; margin-top:0;">下一步: 黑貓宅急便 App 預約教學</h3>
+        <ol style="line-height: 1.8; color: #555;">
+            <li>下載並開啟「黑貓宅急便 App」。</li>
+            <li>選擇「常溫宅急便」 &gt; 件數選「1」。</li>
+            <li>寄件方式選「到府 (黑貓到府印單寄包裹)」。</li>
+            <li>付費方式選「<strong>到付宅急便</strong>」。</li>
+            <li><strong>寄件人資訊 (八八菸酒)</strong>：
+                <ul>
+                    <li>姓名：八八菸酒</li>
+                    <li>地址：600嘉義市東區新生路337號</li>
+                </ul>
+            </li>
+            <li><strong>收件人資訊 (您的資料)</strong>：
+                <ul>
+                    <li>姓名：您的名字 + 收驚編號</li>
+                    <li>地址：您的收件地址</li>
+                </ul>
+            </li>
+            <li>內容：填寫「衣服總件數」 (如：3)。</li>
+            <li><strong>寄件日</strong>：請依照上方系統鎖定的預約日期填寫。</li>
+        </ol>
+        <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
+            <p style="font-weight:bold; color:#333;">已填寫寄件申請，拿到預約日期了嗎？</p>
+            <a href="https://www.t-cat.com.tw/consign/icatapp.aspx" target="_blank" class="btn-action">
+                Step2: 開啟黑貓 APP
+            </a>
+        </div>
     </div>
 </main>
 
-<div id="ship-modal" class="modal-overlay">
+<div id="reserve-modal" class="modal-overlay">
     <div class="modal-content">
         <button class="modal-close-btn">&times;</button>
-        <h3 style="margin-top:0; color:#C48945; text-align:center;">登記寄回衣物</h3>
-        <p style="color:#666; font-size:14px; text-align:center; margin-bottom:20px;">請依照欄位順序填寫，衣物可點擊 + 新增多筆。</p>
         
-        <form id="ship-form">
+        <div id="login-prompt" style="display:none; text-align:center; padding: 30px 10px;">
+            <h3 style="color: #C48945;">請先綁定 LINE 繼續操作</h3>
+            <p style="color:#666; margin-bottom:20px;">登入後即可快速預約，並於個人專區查看進度。</p>
+            <a href="/api/line/login?next=/shipclothes" style="background: #06C755; color: white; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: bold;">使用 LINE 登入</a>
+        </div>
+
+        <form id="reserve-form" style="display:none;">
+            <h2 style="color: #C48945; text-align: center; margin-top: 0; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">填寫預約單</h2>
+            
             <div class="form-group">
-                <label>1. 所屬 Line 群組</label>
-                <select id="lineGroup" class="form-control" required>
-                    <option value="" disabled selected>請選擇群組</option>
-                    <option value="群組一">群組一</option>
-                    <option value="群組二">群組二</option>
-                    <option value="群組三">群組三</option>
-                    <option value="群組四">群組四</option>
-                </select>
+                <label>📍 取件方式</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="pickupType" value="self" checked> 🏃 現場自取</label>
+                    <label><input type="radio" name="pickupType" value="delivery"> 🚚 黑貓寄件</label>
+                </div>
             </div>
 
             <div class="form-group">
-                <label>2. Line 名稱 (群組內暱稱)</label>
-                <input type="text" id="lineName" class="form-control" placeholder="例如：快樂小明" required>
+                <label>📅 預約日期 <span id="date-hint" style="color:#dc3545; font-size: 13px; font-weight:normal;">(最快可預約後天)</span></label>
+                <input type="date" id="pickupDate" name="pickupDate" required>
             </div>
 
-            <div class="form-group">
-                <label>3. 寄件人真實姓名 (隱碼顯示)</label>
-                <input type="text" id="senderName" class="form-control" placeholder="請填寫全名" required>
-            </div>
-
-            <div class="form-group">
-                <label>4. 衣服明細 (編號/姓名/年分)</label>
-                <div id="clothes-container">
-                    <div class="clothing-row">
-                        <input type="text" class="form-control clothing-id" placeholder="編號 (例如 122413)" required>
-                        <input type="text" class="form-control clothing-owner" placeholder="本名" required>
-                        <input type="text" id="birthYear" class="form-control" placeholder="民國年份" required>
+            <label style="font-weight: bold; color: #333; display:block; margin-bottom: 8px;">👕 衣服清單 (可新增多件)</label>
+            <div id="clothes-list">
+                <div class="clothes-container">
+                    <div class="cloth-row">
+                        <input type="text" name="clothId[]" placeholder="衣服編號(必填)" required>
+                        <input type="text" name="clothName[]" placeholder="姓名(必填)" required>
+                        <input type="number" name="clothBirth[]" placeholder="農曆年份(例:84)" required style="width: 120px;">
                     </div>
                 </div>
-                <button type="button" class="add-btn" id="add-clothing-btn">＋ 新增下一件</button>
             </div>
-
-            <div class="form-group">
-                <label>驗證碼 </label>
-                <div class="captcha-row">
-                    <div id="captcha-question" class="captcha-q">...</div>
-                    <input type="text" id="captcha-input" class="form-control" placeholder="答案" required style="flex:1;">
-                </div>
-            </div>
-
-            <p id="preview-date" style="text-align:center; color:#C48945; font-weight:bold; margin-bottom:15px;"></p>
-            <button type="submit" class="btn--brown">送出登記</button>
+            
+            <button type="button" id="btn-add" class="btn-add-cloth">➕ 新增一件衣服</button>
+            <button type="submit" id="btn-submit" class="btn-submit">確認預約</button>
         </form>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('ship-modal');
-    const openBtn = document.getElementById('open-ship-form-btn');     // 懸浮按鈕
-    const openBtn2 = document.getElementById('open-ship-form-btn-2'); // 下方按鈕
-    const closeBtn = document.querySelector('.modal-close-btn');
-    const form = document.getElementById('ship-form');
-    const boardList = document.getElementById('board-list');
-    const datePreview = document.getElementById('preview-date');
-    const captchaQ = document.getElementById('captcha-question');
-    const clothesContainer = document.getElementById('clothes-container');
-    const addClothingBtn = document.getElementById('add-clothing-btn');
-
-    // 定義開啟彈窗的函式 (共用)
-    const openModalFunc = async (e) => {
-        if(e) e.preventDefault();
-        modal.classList.add('is-visible');
-        // 開啟時隱藏懸浮按鈕，避免遮擋
-        if(openBtn) {
-            openBtn.style.opacity = 0;
-            openBtn.style.zIndex = -1;
-        }
-        await fetchCaptcha();
-        await fetchDatePreview();
-    };
-
-    // 綁定事件到兩個按鈕
-    if(openBtn) openBtn.onclick = openModalFunc;
+    const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     
-    // 注意：原本 openBtn2 是連去黑貓官網的連結，如果您希望它也是打開登記表單，請保留下方這行；
-    // 如果您希望它是去黑貓，請將這行註解掉，或是確認您的業務邏輯。
-    // 目前根據代碼邏輯，這裡還是讓它打開登記表單比較合理 (因為文字是寫 Step2)
-    // 但原連結是 t-cat.com.tw，這裡我先幫您改成打開表單，因為這樣才能 "拿到收件日期"
-    if(openBtn2) {
-        openBtn2.removeAttribute('href'); // 移除跳轉
-        openBtn2.style.cursor = 'pointer';
-        openBtn2.onclick = openModalFunc;
-        openBtn2.textContent = "立即填寫預約單"; // 修改按鈕文字更直覺
-    }
-
-    function closeModal() { 
-        modal.classList.remove('is-visible'); 
-        // 關閉時恢復懸浮按鈕
-        if(openBtn) {
-            openBtn.style.opacity = 1; 
-            openBtn.style.zIndex = 900; 
-        }
-    }
-    closeBtn.onclick = closeModal;
-    modal.onclick = (e) => { if(e.target===modal) closeModal(); };
-
-    // 新增衣服欄位
-    addClothingBtn.onclick = () => {
-        const div = document.createElement('div');
-        div.className = 'clothing-row';
-        div.innerHTML = `
-            <input type="text" class="form-control clothing-id" placeholder="編號" required>
-            <input type="text" class="form-control clothing-owner" placeholder="主人姓名" required>
-            <button type="button" class="remove-btn">×</button>
-        `;
-        clothesContainer.appendChild(div);
-        div.querySelector('.remove-btn').onclick = () => div.remove();
-    };
-
-    async function fetchCaptcha() {
-        try {
-            const res = await fetch('/api/captcha');
-            const data = await res.json();
-            captchaQ.textContent = data.question;
-            document.getElementById('captcha-input').value = '';
-        } catch(e){}
-    }
-    async function fetchDatePreview() {
-        try {
-            const res = await fetch('/api/shipclothes/calc-date');
-            const data = await res.json();
-            datePreview.textContent = `預計黑貓可收件日：${data.pickupDate}`;
-        } catch(e){}
-    }
-
-    form.onsubmit = async (e) => {
-        e.preventDefault();
-        const idInputs = document.querySelectorAll('.clothing-id');
-        const ownerInputs = document.querySelectorAll('.clothing-owner');
-        const clothes = [];
-        for(let i=0; i<idInputs.length; i++) {
-            const id = idInputs[i].value.trim();
-            const owner = ownerInputs[i].value.trim();
-            if(id && owner) clothes.push({ id, owner });
-        }
-        if(!clothes.length) { alert('請填寫衣服'); return; }
-
-        const payload = {
-            lineGroup: document.getElementById('lineGroup').value,
-            lineName: document.getElementById('lineName').value.trim(),
-            name: document.getElementById('senderName').value.trim(),
-            birthYear: document.getElementById('birthYear').value.trim(),
-            clothes: clothes,
-            captcha: document.getElementById('captcha-input').value.trim()
-        };
-
-        try {
-            const res = await fetch('/api/shipclothes', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')},
-                body: JSON.stringify(payload)
-            });
-            const result = await res.json();
-            if(result.success) {
-                alert(`登記成功！\n請務必預約黑貓於此日期後收件：${result.pickupDate}`);
-                form.reset();
-                clothesContainer.innerHTML = `<div class="clothing-row"><input type="text" class="form-control clothing-id" placeholder="編號 (例如 A001)" required><input type="text" class="form-control clothing-owner" placeholder="主人姓名 (本名)" required><input type="text" id="birthYear" class="form-control" placeholder="民國年份" required></div>`;
-                closeModal();
-                fetchBoardData();
-            } else {
-                alert(result.message);
-                if(result.message.includes('驗證碼')) fetchCaptcha();
-            }
-        } catch(e) { alert('連線錯誤'); }
-    };
-
-    // 載入清單 (依照日期分組顯示)
-    async function fetchBoardData() {
-        try {
-            const res = await fetch('/api/shipclothes/list');
-            const data = await res.json();
-            if(data.length === 0) { boardList.innerHTML = '<p style="text-align:center;color:#999;">目前無資料</p>'; return; }
-
-            // 1. 資料分組
-            const grouped = {};
-            data.forEach(item => {
-                if(!grouped[item.pickupDate]) grouped[item.pickupDate] = [];
-                grouped[item.pickupDate].push(item);
-            });
-
-            // 2. 渲染 HTML
-            let html = '';
-            for (const [date, items] of Object.entries(grouped)) {
-                const itemsHtml = items.map(item => {
-                    const clothesHtml = item.clothes.map(c => 
-                        `<span class="cloth-item"><b>${c.id}</b> <small>(${c.owner})</small></span>`
-                    ).join('');
-                    
-                    return `
-                    <div class="submission-card">
-                        <div class="card-user-info">
-                            ${item.name} <span style="font-weight:normal; font-size:14px; color:#666;">(${item.birthYear}年次)</span>
-                            <span class="tag-line">${item.lineName}</span>
-                            <span class="tag-line">@${item.lineGroup}</span>
+    const boardContainer = document.getElementById('public-board-container');
+    const openBtn = document.getElementById('open-reserve-btn');
+    const modal = document.getElementById('reserve-modal');
+    const loginPrompt = document.getElementById('login-prompt');
+    const form = document.getElementById('reserve-form');
+    
+    // --- 1. 載入看板資料 ---
+    function loadPublicBoard() {
+        fetch('/api/pickup/public')
+            .then(res => res.json())
+            .then(data => {
+                if (data.length === 0) {
+                    boardContainer.innerHTML = '<p style="text-align:center; padding: 20px;">目前尚無準備中的預約資料。</p>';
+                    return;
+                }
+                
+                boardContainer.innerHTML = data.map(day => {
+                    const selfHtml = day.self.length ? day.self.map(c => `
+                        <div class="cloth-item">
+                            <span>${c.name} (${c.birthYear})</span>
+                            <span class="cloth-id">${c.clothId}</span>
                         </div>
-                        <div class="card-clothes-list">
-                            ${clothesHtml}
+                    `).join('') : '<p style="color:#888; font-size:14px; text-align:center;">無</p>';
+                    
+                    const deliveryHtml = day.delivery.length ? day.delivery.map(c => `
+                        <div class="cloth-item">
+                            <span>${c.name} (${c.birthYear})</span>
+                            <span class="cloth-id">${c.clothId}</span>
+                        </div>
+                    `).join('') : '<p style="color:#888; font-size:14px; text-align:center;">無</p>';
+
+                    return `
+                    <div class="date-board">
+                        <h3 class="date-board-title">📅 ${day.date}</h3>
+                        <div class="board-grid">
+                            <div class="pickup-col">
+                                <h4>🏃 現場自取區</h4>
+                                ${selfHtml}
+                            </div>
+                            <div class="pickup-col">
+                                <h4>🚚 黑貓寄件區</h4>
+                                ${deliveryHtml}
+                            </div>
                         </div>
                     </div>`;
                 }).join('');
-
-                html += `
-                <div class="date-group">
-                    <div class="date-header">📅 預計收件日：${date}</div>
-                    <div class="date-content">
-                        ${itemsHtml}
-                    </div>
-                </div>`;
-            }
-            boardList.innerHTML = html;
-
-        } catch(e) { boardList.innerHTML = '<p>載入失敗</p>'; }
+            });
     }
+    loadPublicBoard();
 
-    fetchBoardData();
+    // --- 2. 日期邏輯設定 (D+2 ~ D+14) ---
+    const dateInput = document.getElementById('pickupDate');
+    const typeRadios = document.querySelectorAll('input[name="pickupType"]');
+    const dateHint = document.getElementById('date-hint');
+
+    const today = new Date();
+    const d2 = new Date(today); d2.setDate(today.getDate() + 2);
+    const d14 = new Date(today); d14.setDate(today.getDate() + 14);
+
+    const formatDate = (d) => {
+        const tzOffset = d.getTimezoneOffset() * 60000;
+        return (new Date(d - tzOffset)).toISOString().split('T')[0];
+    };
+
+    const minDateStr = formatDate(d2);
+    const maxDateStr = formatDate(d14);
+
+    function updateDateLimits() {
+        const selectedType = document.querySelector('input[name="pickupType"]:checked').value;
+        if (selectedType === 'delivery') {
+            dateInput.min = minDateStr;
+            dateInput.max = minDateStr;
+            dateInput.value = minDateStr;
+            dateInput.readOnly = true; 
+            dateHint.textContent = "(黑貓寄件僅限指定後天準備)";
+        } else {
+            dateInput.min = minDateStr;
+            dateInput.max = maxDateStr;
+            dateInput.value = minDateStr;
+            dateInput.readOnly = false;
+            dateHint.textContent = "(可預約 2~14 天內)";
+        }
+    }
+    typeRadios.forEach(r => r.addEventListener('change', updateDateLimits));
+
+    // --- 3. 動態新增衣服欄位 ---
+    const clothesList = document.getElementById('clothes-list');
+    document.getElementById('btn-add').addEventListener('click', () => {
+        const div = document.createElement('div');
+        div.className = 'clothes-container';
+        div.innerHTML = `
+            <div class="cloth-row">
+                <input type="text" name="clothId[]" placeholder="衣服編號(必填)" required>
+                <input type="text" name="clothName[]" placeholder="姓名(必填)" required>
+                <input type="number" name="clothBirth[]" placeholder="農曆年份(例:84)" required style="width: 120px;">
+                <button type="button" class="btn-remove-cloth">❌</button>
+            </div>
+        `;
+        clothesList.appendChild(div);
+        div.querySelector('.btn-remove-cloth').addEventListener('click', () => clothesList.removeChild(div));
+    });
+
+    // --- 4. Modal 控制與身分檢查 ---
+    openBtn.addEventListener('click', () => {
+        modal.classList.add('is-visible');
+        fetch('/api/user/me')
+            .then(res => res.json())
+            .then(data => {
+                if (data.logged_in) {
+                    loginPrompt.style.display = 'none';
+                    form.style.display = 'block';
+                    updateDateLimits();
+                } else {
+                    loginPrompt.style.display = 'block';
+                    form.style.display = 'none';
+                }
+            });
+    });
+
+    document.querySelector('.modal-close-btn').addEventListener('click', () => modal.classList.remove('is-visible'));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('is-visible'); });
+
+    // --- 5. 送出表單 ---
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('btn-submit');
+        submitBtn.disabled = true; submitBtn.textContent = '處理中...';
+
+        const ids = document.querySelectorAll('input[name="clothId[]"]');
+        const names = document.querySelectorAll('input[name="clothName[]"]');
+        const births = document.querySelectorAll('input[name="clothBirth[]"]');
+        
+        const clothesData = [];
+        for(let i=0; i<ids.length; i++) {
+            clothesData.push({ clothId: ids[i].value.trim(), name: names[i].value.trim(), birthYear: births[i].value.trim() });
+        }
+
+        const payload = {
+            pickupType: document.querySelector('input[name="pickupType"]:checked').value,
+            pickupDate: document.getElementById('pickupDate').value,
+            clothes: clothesData
+        };
+
+        try {
+            const res = await fetch('/api/pickup/reserve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('預約失敗');
+            
+            alert('預約成功！您可以在「個人專區」查看預約紀錄。');
+            modal.classList.remove('is-visible');
+            form.reset();
+            loadPublicBoard();
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            submitBtn.disabled = false; submitBtn.textContent = '確認預約';
+        }
+    });
 });
 </script>
 {% endblock %}

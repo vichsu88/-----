@@ -59,7 +59,7 @@
     }
     .btn-save:hover { opacity: 0.8; }
     
-    /* 歷史紀錄卡片 */
+    /* 歷史紀錄卡片 (共用) */
     .history-item {
         background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 15px;
     }
@@ -70,6 +70,12 @@
     .status-pending { background: #fff8e1; color: #856404; border-left: 4px solid #ffc107; }
     .status-approved { background: #e2e3e5; color: #383d41; border-left: 4px solid #6c757d; }
     .status-sent { background: #cce5ff; color: #004085; border-left: 4px solid #007bff; }
+
+    /* 收驚預約專屬樣式 */
+    .cloth-pill {
+        display: inline-block; background: #fdf6e9; border: 1px solid #E6BA67; color: #C48945;
+        padding: 4px 10px; border-radius: 15px; font-size: 13px; margin: 0 5px 5px 0; font-weight: bold;
+    }
 </style>
 
 <main class="profile-page-wrapper">
@@ -160,6 +166,13 @@
                 <p style="text-align: center; color: #888;">載入中...</p>
             </div>
         </div>
+
+        <div class="profile-card">
+            <h3 style="margin-bottom: 20px;">👕 我的收驚預約</h3>
+            <div id="pickup-list">
+                <p style="text-align: center; color: #888;">載入中...</p>
+            </div>
+        </div>
         
     </div>
 </main>
@@ -172,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileContent = document.getElementById('profile-content');
     const profileForm = document.getElementById('profile-form');
     const historyList = document.getElementById('history-list');
+    const pickupList = document.getElementById('pickup-list');
     
     // 1. 載入會員資料
     fetch('/api/user/me')
@@ -203,15 +217,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('gift-note').style.display = 'block';
                 }
 
-                // 載入回饋紀錄
+                // 並行載入兩邊的紀錄
                 loadFeedbackHistory();
+                loadPickupHistory();
             } else {
                 document.getElementById('user-greeting').style.display = 'none';
                 loginSection.style.display = 'block';
             }
         });
 
-    // 2. 儲存修改
+    // 2. 儲存修改基本資料
     profileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('save-btn');
@@ -247,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 3. 載入回饋紀錄清單
+    // 3. 載入回饋紀錄清單 (原有)
     async function loadFeedbackHistory() {
         try {
             const res = await fetch('/api/user/feedbacks');
@@ -267,29 +282,67 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (item.status === 'sent') {
                     statusHtml = `<div class="history-item-status status-sent">🔵 <b>已寄出：</b>結緣品已寄出！感謝您的法布施。<br><span style="color:#333; margin-top:5px; display:inline-block;">📦 物流單號：<b>${item.trackingNumber || '無'}</b></span></div>`;
                 }
-
                 const cat = Array.isArray(item.category) ? item.category.join(', ') : item.category;
-
                 return `
                 <div class="history-item">
                     <div class="history-item-header">
                         <span>🏷️ 分類：${cat}</span>
                         <span>📅 ${item.createdAt}</span>
                     </div>
-                    <div class="history-item-content">
-                        "${item.content_preview}"
-                    </div>
+                    <div class="history-item-content">"${item.content_preview}"</div>
                     ${statusHtml}
-                </div>
-                `;
+                </div>`;
             }).join('');
-
         } catch(err) {
             historyList.innerHTML = '<p style="color: red; text-align: center;">紀錄載入失敗</p>';
         }
     }
 
-    // 欄位格式化 (同 feedback 邏輯)
+    // 4. 載入收驚預約清單 (全新)
+    async function loadPickupHistory() {
+        try {
+            const res = await fetch('/api/user/pickups');
+            const data = await res.json();
+            
+            if(data.length === 0) {
+                pickupList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">您目前沒有預約紀錄。<br><a href="/shipclothes" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往預約</a></p>';
+                return;
+            }
+
+            pickupList.innerHTML = data.map(item => {
+                const typeText = item.pickupType === 'self' ? '🏃 現場自取' : '🚚 黑貓寄件';
+                const typeColor = item.pickupType === 'self' ? '#28a745' : '#007bff';
+                
+                // 黑貓的額外紅字提醒
+                const deliveryNote = item.pickupType === 'delivery' 
+                    ? `<div style="color: #dc3545; font-size: 13px; margin-top: 5px;">※ 請記得自行聯繫黑貓宅急便 (412-8888) 於此日期後前來本府收件。</div>` 
+                    : '';
+
+                // 渲染衣服清單 (顯示完整姓名)
+                const clothesHtml = item.clothes.map(c => 
+                    `<span class="cloth-pill">${c.clothId} ${c.name} (${c.birthYear})</span>`
+                ).join('');
+
+                return `
+                <div class="history-item" style="border-left: 4px solid ${typeColor};">
+                    <div class="history-item-header" style="margin-bottom: 5px;">
+                        <span style="font-weight: bold; color: ${typeColor}; font-size: 15px;">${typeText}</span>
+                        <span>填單時間：${item.createdAt}</span>
+                    </div>
+                    <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px;">
+                        預約日期：${item.pickupDate}
+                    </div>
+                    <div style="margin-bottom: 5px;">${clothesHtml}</div>
+                    ${deliveryNote}
+                </div>`;
+            }).join('');
+
+        } catch(err) {
+            pickupList.innerHTML = '<p style="color: red; text-align: center;">預約紀錄載入失敗</p>';
+        }
+    }
+
+    // 欄位格式化邏輯
     profileForm.phone.addEventListener('input', (e) => {
         let v = e.target.value.replace(/\D/g, ''); 
         if (v.length > 10) v = v.slice(0, 10);

@@ -698,6 +698,103 @@ def get_user_feedbacks():
         return jsonify(results)
     return jsonify([]), 500
 # =========================================
+# 收驚衣服預約取件 API (看板與個人專區)
+# =========================================
+
+def mask_name(name):
+    """將姓名第二字遮蔽為 O，例如：許秉承 -> 許O承，王大 -> 王O"""
+    if not name: return ""
+    if len(name) == 1: return name
+    if len(name) == 2: return name[0] + "O"
+    return name[0] + "O" + name[2:]
+
+@app.route('/api/pickup/reserve', methods=['POST'])
+def create_pickup_reservation():
+    """信徒送出預約單"""
+    line_id = session.get('user_line_id')
+    if not line_id:
+        return jsonify({"error": "請先使用 LINE 登入"}), 401
+        
+    data = request.get_json()
+    pickup_type = data.get('pickupType') # 'self' 或 'delivery'
+    pickup_date = data.get('pickupDate')
+    clothes = data.get('clothes', [])
+    
+    if not pickup_type or not pickup_date or not clothes:
+        return jsonify({"error": "資料不完整"}), 400
+        
+    new_reservation = {
+        "lineId": line_id,
+        "pickupType": pickup_type,
+        "pickupDate": pickup_date,
+        "clothes": clothes,
+        "createdAt": datetime.utcnow()
+    }
+    
+    if db is not None:
+        db.pickups.insert_one(new_reservation)
+        return jsonify({"success": True, "message": "預約成功"})
+    return jsonify({"error": "資料庫連線失敗"}), 500
+
+@app.route('/api/pickup/public', methods=['GET'])
+def get_public_pickups():
+    """給門市人員與大眾看的電子佈告欄 (自動過濾與遮蔽)"""
+    if db is None: return jsonify([])
+    
+    # 邏輯：計算台灣時間昨天的日期。
+    # 這樣假設今天是 2/27，系統就只會抓 2/26 (包含) 以後的資料。
+    # 2/25 的預約就會永遠從這份名單上消失！
+    taiwan_now = datetime.utcnow() + timedelta(hours=8)
+    threshold_date = (taiwan_now - timedelta(days=1)).strftime('%Y-%m-%d')
+    
+    cursor = db.pickups.find({"pickupDate": {"$gte": threshold_date}}).sort("pickupDate", 1)
+    
+    # 依照日期將資料分組
+    results = {}
+    for doc in cursor:
+        date_str = doc['pickupDate']
+        p_type = doc['pickupType'] 
+        
+        if date_str not in results:
+            results[date_str] = {'self': [], 'delivery': []}
+            
+        for c in doc.get('clothes', []):
+            results[date_str][p_type].append({
+                "clothId": c.get('clothId', ''),
+                "name": mask_name(c.get('name', '')), # ★ 在這裡執行姓名遮蔽
+                "birthYear": c.get('birthYear', '')
+            })
+            
+    # 轉成陣列格式方便前端卡片渲染
+    formatted_results = []
+    for d in sorted(results.keys()):
+        formatted_results.append({
+            "date": d,
+            "self": results[d]['self'],
+            "delivery": results[d]['delivery']
+        })
+        
+    return jsonify(formatted_results)
+
+@app.route('/api/user/pickups', methods=['GET'])
+def get_user_pickups():
+    """給信徒「個人專區」看的自己專屬預約紀錄 (不遮蔽姓名)"""
+    line_id = session.get('user_line_id')
+    if not line_id or db is None:
+        return jsonify([])
+        
+    cursor = db.pickups.find({"lineId": line_id}).sort("pickupDate", -1)
+    results = []
+    for doc in cursor:
+        results.append({
+            "_id": str(doc['_id']),
+            "pickupType": doc.get('pickupType'),
+            "pickupDate": doc.get('pickupDate'),
+            "clothes": doc.get('clothes', []),
+            "createdAt": doc['createdAt'].strftime('%Y-%m-%d %H:%M')
+        })
+    return jsonify(results)
+# =========================================
 # 5. 後台頁面路由 & API
 # =========================================
 @app.route('/admin')
