@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}承天中承府 - 個人專區{% endblock %}
+
+{% block content %}
+<style>
+    .profile-page-wrapper {
+        padding: 40px 20px;
+        max-width: 800px;
+        margin: 0 auto;
+        font-family: 'Noto Sans TC', sans-serif;
+    }
+    .profile-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    /* 共用卡片樣式：#fffcf5 配金邊 */
+    .profile-card {
+        background: #fffcf5;
+        border: 2px solid #E6BA67;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .profile-card h3 {
+        color: #C48945;
+        margin-top: 0;
+        border-bottom: 1px dashed #E6BA67;
+        padding-bottom: 10px;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* 狀態標籤 */
+    .gift-status {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    .gift-status.received { background: #d4edda; color: #155724; }
+    .gift-status.not-received { background: #ffeeba; color: #856404; }
+    .gift-note { font-size: 13px; color: #dc3545; margin-top: 5px; display: none; }
+
+    /* 表單樣式 */
+    .profile-form .form-group { margin-bottom: 15px; }
+    .profile-form label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 15px; }
+    .profile-form input, .profile-form select {
+        width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px;
+    }
+    .btn-save {
+        background: #C48945; color: white; border: none; padding: 10px 25px; border-radius: 25px;
+        font-size: 16px; font-weight: bold; cursor: pointer; float: right; transition: 0.2s;
+    }
+    .btn-save:hover { opacity: 0.8; }
+    
+    /* 歷史紀錄卡片 */
+    .history-item {
+        background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 15px;
+    }
+    .history-item-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #888; }
+    .history-item-content { color: #333; font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
+    .history-item-status { padding: 10px; border-radius: 6px; font-size: 14px; line-height: 1.5; font-weight: 500;}
+    
+    .status-pending { background: #fff8e1; color: #856404; border-left: 4px solid #ffc107; }
+    .status-approved { background: #e2e3e5; color: #383d41; border-left: 4px solid #6c757d; }
+    .status-sent { background: #cce5ff; color: #004085; border-left: 4px solid #007bff; }
+</style>
+
+<main class="profile-page-wrapper">
+    <div class="profile-header">
+        <h2 class="section-title" style="margin-bottom: 5px;">個人專區</h2>
+        <p style="color: #666; margin-top: 0;" id="user-greeting">讀取中...</p>
+    </div>
+
+    <div id="login-section" style="text-align: center; padding: 40px; background: #fffcf5; border: 2px solid #E6BA67; border-radius: 15px; display: none;">
+        <h3 style="color: #C48945;">請先登入以查看個人資料</h3>
+        <p style="color: #666; margin-bottom: 20px;">綁定 LINE 帳號，輕鬆管理您的資料與歷史紀錄。</p>
+        <a href="/api/line/login?next=/profile" style="background-color: #06C755; color: white; padding: 10px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; display: inline-block;">使用 LINE 登入</a>
+    </div>
+
+    <div id="profile-content" style="display: none;">
+        
+        <div class="profile-card">
+            <h3>
+                <span>📝 我的基本資料</span>
+                <div>
+                    <span id="gift-status-badge" class="gift-status not-received">🎁 小神衣：未領取</span>
+                </div>
+            </h3>
+            <p id="gift-note" class="gift-note">※ 您已領取過小神衣結緣品。未來的回饋文章我們將以「法布施」形式與大眾分享，不再重複寄送，感恩您的發心！</p>
+            
+            <form id="profile-form" class="profile-form">
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                        <label>真實姓名</label>
+                        <input type="text" name="realName" required>
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                        <label>暱稱 (公開顯示)</label>
+                        <input type="text" name="nickname" required>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                        <label>聯絡電話</label>
+                        <input type="tel" name="phone" required placeholder="09XX-XXX-XXX">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                        <label>電子信箱</label>
+                        <input type="email" name="email" required>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                        <label>農曆生日 (數字)</label>
+                        <input type="text" name="lunarBirthday" placeholder="例如：750815">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                        <label>出生時辰</label>
+                        <select name="birthTime">
+                            <option value="吉時">吉時</option>
+                            <option value="子時 (23:00-01:00)">子時 (23:00-01:00)</option>
+                            <option value="丑時 (01:00-03:00)">丑時 (01:00-03:00)</option>
+                            <option value="寅時 (03:00-05:00)">寅時 (03:00-05:00)</option>
+                            <option value="卯時 (05:00-07:00)">卯時 (05:00-07:00)</option>
+                            <option value="辰時 (07:00-09:00)">辰時 (07:00-09:00)</option>
+                            <option value="巳時 (09:00-11:00)">巳時 (09:00-11:00)</option>
+                            <option value="午時 (11:00-13:00)">午時 (11:00-13:00)</option>
+                            <option value="未時 (13:00-15:00)">未時 (13:00-15:00)</option>
+                            <option value="申時 (15:00-17:00)">申時 (15:00-17:00)</option>
+                            <option value="酉時 (17:00-19:00)">酉時 (17:00-19:00)</option>
+                            <option value="戌時 (19:00-21:00)">戌時 (19:00-21:00)</option>
+                            <option value="亥時 (21:00-23:00)">亥時 (21:00-23:00)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>寄件地址</label>
+                    <input type="text" name="address" required>
+                </div>
+
+                <div style="overflow: hidden; margin-top: 10px;">
+                    <button type="submit" class="btn-save" id="save-btn">儲存修改</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="profile-card">
+            <h3 style="margin-bottom: 20px;">📖 我的回饋紀錄</h3>
+            <div id="history-list">
+                <p style="text-align: center; color: #888;">載入中...</p>
+            </div>
+        </div>
+        
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    const loginSection = document.getElementById('login-section');
+    const profileContent = document.getElementById('profile-content');
+    const profileForm = document.getElementById('profile-form');
+    const historyList = document.getElementById('history-list');
+    
+    // 1. 載入會員資料
+    fetch('/api/user/me')
+        .then(res => res.json())
+        .then(data => {
+            if (data.logged_in) {
+                loginSection.style.display = 'none';
+                profileContent.style.display = 'block';
+                
+                const u = data.user;
+                document.getElementById('user-greeting').textContent = `歡迎回來，${u.displayName || u.realName}！`;
+                
+                // 填入表單
+                if(u.realName) profileForm.realName.value = u.realName;
+                if(u.nickname) profileForm.nickname.value = u.nickname;
+                else profileForm.nickname.value = u.displayName || '';
+                
+                if(u.phone) profileForm.phone.value = u.phone;
+                if(u.email) profileForm.email.value = u.email;
+                if(u.address) profileForm.address.value = u.address;
+                if(u.lunarBirthday) profileForm.lunarBirthday.value = u.lunarBirthday;
+                if(u.birthTime) profileForm.birthTime.value = u.birthTime;
+
+                // 處理小神衣狀態
+                const badge = document.getElementById('gift-status-badge');
+                if(u.has_received_gift) {
+                    badge.textContent = '🎁 小神衣：已領取';
+                    badge.className = 'gift-status received';
+                    document.getElementById('gift-note').style.display = 'block';
+                }
+
+                // 載入回饋紀錄
+                loadFeedbackHistory();
+            } else {
+                document.getElementById('user-greeting').style.display = 'none';
+                loginSection.style.display = 'block';
+            }
+        });
+
+    // 2. 儲存修改
+    profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('save-btn');
+        btn.textContent = '儲存中...';
+        btn.disabled = true;
+
+        const payload = {
+            realName: profileForm.realName.value.trim(),
+            nickname: profileForm.nickname.value.trim(),
+            phone: profileForm.phone.value.trim(),
+            email: profileForm.email.value.trim(),
+            address: profileForm.address.value.trim(),
+            lunarBirthday: profileForm.lunarBirthday.value.trim(),
+            birthTime: profileForm.birthTime.value
+        };
+
+        try {
+            const res = await fetch('/api/user/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify(payload)
+            });
+            if(res.ok) {
+                alert('資料已成功更新！');
+            } else {
+                alert('更新失敗，請稍後再試。');
+            }
+        } catch(err) {
+            console.error(err);
+        } finally {
+            btn.textContent = '儲存修改';
+            btn.disabled = false;
+        }
+    });
+
+    // 3. 載入回饋紀錄清單
+    async function loadFeedbackHistory() {
+        try {
+            const res = await fetch('/api/user/feedbacks');
+            const data = await res.json();
+            
+            if(data.length === 0) {
+                historyList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">您目前還沒有撰寫過回饋故事，<br><a href="/feedback" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往分享</a></p>';
+                return;
+            }
+
+            historyList.innerHTML = data.map(item => {
+                let statusHtml = '';
+                if(item.status === 'pending') {
+                    statusHtml = `<div class="history-item-status status-pending">🟡 <b>審核中：</b>感謝您的分享，廟方正在用心閱讀中。</div>`;
+                } else if (item.status === 'approved') {
+                    statusHtml = `<div class="history-item-status status-approved">🟢 <b>已刊登：</b>文章已刊登！元帥娘正在為您的小神衣開符加持中，開符完成後寄出請耐心等候。</div>`;
+                } else if (item.status === 'sent') {
+                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已寄出：</b>結緣品已寄出！感謝您的法布施。<br><span style="color:#333; margin-top:5px; display:inline-block;">📦 物流單號：<b>${item.trackingNumber || '無'}</b></span></div>`;
+                }
+
+                const cat = Array.isArray(item.category) ? item.category.join(', ') : item.category;
+
+                return `
+                <div class="history-item">
+                    <div class="history-item-header">
+                        <span>🏷️ 分類：${cat}</span>
+                        <span>📅 ${item.createdAt}</span>
+                    </div>
+                    <div class="history-item-content">
+                        "${item.content_preview}"
+                    </div>
+                    ${statusHtml}
+                </div>
+                `;
+            }).join('');
+
+        } catch(err) {
+            historyList.innerHTML = '<p style="color: red; text-align: center;">紀錄載入失敗</p>';
+        }
+    }
+
+    // 欄位格式化 (同 feedback 邏輯)
+    profileForm.phone.addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, ''); 
+        if (v.length > 10) v = v.slice(0, 10);
+        if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
+        else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
+        e.target.value = v;
+    });
+    profileForm.lunarBirthday.addEventListener('blur', (e) => {
+        let v = e.target.value.replace(/\D/g, '');
+        if(v.length === 6) e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
+        else if (v.length === 7) e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
+        else if (v.length === 8) e.target.value = v.replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3');
+    });
+});
+</script>
+{% endblock %}

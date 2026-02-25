@@ -453,7 +453,9 @@ def inject_links():
 # =========================================
 # 4. 前台頁面路由 (修正：加入 SSR 資料預載)
 # =========================================
-
+@app.route('/profile')
+def profile_page(): 
+    return render_template('profile.html')
 @app.route('/')
 def home():
     # SEO 優化：伺服器端渲染 (SSR) 最新消息
@@ -637,9 +639,64 @@ def get_current_user():
     if db is not None:
         user = db.users.find_one({'lineId': line_id}, {'_id': 0})
         if user:
+            # 檢查是否領過小神衣 (只要有一筆回饋狀態是 sent 就代表領過了)
+            has_received = db.feedback.count_documents({"lineId": line_id, "status": "sent"}) > 0
+            user['has_received_gift'] = has_received
             return jsonify({"logged_in": True, "user": user})
             
     return jsonify({"logged_in": False})
+@app.route('/api/user/profile', methods=['PUT'])
+def update_user_profile():
+    """讓信徒在個人專區修改自己的基本資料"""
+    line_id = session.get('user_line_id')
+    if not line_id:
+        return jsonify({"error": "請先使用 LINE 登入"}), 401
+        
+    data = request.get_json()
+    if db is not None:
+        db.users.update_one(
+            {"lineId": line_id},
+            {"$set": {
+                "realName": data.get('realName'),
+                "nickname": data.get('nickname'),
+                "phone": data.get('phone'),
+                "address": data.get('address'),
+                "email": data.get('email'),
+                "lunarBirthday": data.get('lunarBirthday'),
+                "birthTime": data.get('birthTime')
+            }}
+        )
+        return jsonify({"success": True, "message": "資料已更新"})
+    return jsonify({"error": "資料庫連線失敗"}), 500
+
+@app.route('/api/user/feedbacks', methods=['GET'])
+def get_user_feedbacks():
+    """撈出該登入信徒過去所有的回饋紀錄"""
+    line_id = session.get('user_line_id')
+    if not line_id:
+        return jsonify({"error": "請先使用 LINE 登入"}), 401
+        
+    if db is not None:
+        # 依時間新到舊排序
+        cursor = db.feedback.find({"lineId": line_id}).sort("createdAt", -1)
+        results = []
+        for doc in cursor:
+            # 截取前 50 個字作為預覽
+            content_preview = doc.get('content', '')
+            if len(content_preview) > 50:
+                content_preview = content_preview[:50] + '...'
+                
+            results.append({
+                "_id": str(doc['_id']),
+                "category": doc.get('category', []),
+                "content_preview": content_preview,
+                "status": doc.get('status', 'pending'),
+                "createdAt": doc['createdAt'].strftime('%Y-%m-%d') if 'createdAt' in doc else '',
+                "trackingNumber": doc.get('trackingNumber', ''),
+                "feedbackId": doc.get('feedbackId', '')
+            })
+        return jsonify(results)
+    return jsonify([]), 500
 # =========================================
 # 5. 後台頁面路由 & API
 # =========================================
