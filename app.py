@@ -648,7 +648,7 @@ def admin_page(): return render_template('admin.html')
 
 @app.route('/api/session_check', methods=['GET'])
 def session_check():
-    return jsonify({"logged_in": session.get('logged_in', False)})
+    return jsonify({"logged_in": session.get('admin_logged_in', False)})
 
 @csrf.exempt
 @app.route('/api/login', methods=['POST'])
