@@ -20,11 +20,6 @@ body {
     box-sizing: border-box;
 }
 
-/* @font-face {
-    font-family: 'KouzanBrushFontOTF';
-    src: url('../fonts/subset-KouzanBrushFontOTF.woff2') format('woff2');
-} */
-
 body {
     margin: 0;
     font-family: 'Noto Sans TC', sans-serif; 
@@ -130,7 +125,7 @@ body::before {
     border-radius: 10px;   /* 加上圓角，視覺上跟導覽列更統一 (可選) */
     /* --- 修改結束 --- */
 
-    /*  */
+    /* */
     background-image: url('../images/pages/index/banner_PC.png');
     background-size: cover; /* 讓圖片永遠填滿容器，多餘部分會被裁切 */
     background-position: center; /* 不論如何裁切，都以圖片中心為焦點 */
@@ -483,7 +478,7 @@ body::before {
     width: 95%;
     margin: 0 auto;
 }
-/* 你可以把這段加到 css.txt 中，例如放在 .declaration-box 樣式後面 */
+
 .action-buttons {
     margin-top: 40px;
     text-align: center; /* 也可以順便加上置中 */
@@ -533,7 +528,7 @@ body::before {
 
 /* === 頁尾 Footer === */
 .main-footer {
-    padding: 4rem 0 2rem 0; /* [cite: 69] */
+    padding: 4rem 0 2rem 0; /* */
     margin-top: 5px;
     border-top: 4px solid #E6BA67; /* 這是您設計中已有的上方線條  */
     border-bottom: 4px solid #E6BA67; /* 這是新增的下方線條 */
@@ -628,7 +623,7 @@ body::before {
 /* Footer 手機版響應式 */
 @media (max-width: 991px) {
     .main-footer {
-        padding: 2rem 1rem 1rem 1rem; /* [cite: 83] */
+        padding: 2rem 1rem 1rem 1rem; /* */
     }
     .footer-content {
         flex-direction: column;
@@ -1536,7 +1531,7 @@ body.menu-open {
 
 .overlay-nav-links a {
     text-decoration: none;
-    font-family: 'KouzanBrushFontOTF', sans-serif;
+    font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
     font-size: 32px;
     color: #4b2c1c; /* 深咖啡色，對比米色背景 */
     position: relative;
