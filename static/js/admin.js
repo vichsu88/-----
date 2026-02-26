@@ -541,21 +541,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const fbEditModal = document.getElementById('feedback-edit-modal');
     const fbEditForm = document.getElementById('feedback-edit-form');
 
-    async function fetchFeedback() {
+async function fetchFeedback() {
         if(!fbPendingList) return;
         
         const pending = await apiFetch('/api/feedback/status/pending');
         const approved = await apiFetch('/api/feedback/status/approved'); 
         const sent = await apiFetch('/api/feedback/status/sent');         
 
-        // 1. 新回饋 (審核中)
+        // 1. 待審核：只顯示暱稱與「完整回饋內容」
         fbPendingList.innerHTML = pending.length ? pending.map(i => {
             const badge = i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : '';
             return `
             <div class="feedback-card" style="border-left:5px solid #dc3545;">
-                <div style="font-weight:bold; margin-bottom:8px;">${i.nickname} (${i.realName}) ${badge}</div>
-                <div class="pre-wrap" style="max-height:80px; overflow:hidden;">${i.content}</div>
-                <div style="text-align:right; margin-top:10px;">
+                <div style="font-weight:bold; margin-bottom:12px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                    👤 暱稱：${i.nickname} ${badge}
+                </div>
+                <div style="background:#f9f9f9; padding:12px; border-radius:5px; margin-bottom:15px;">
+                    <div class="pre-wrap" style="color:#444;">${i.content}</div>
+                </div>
+                <div style="text-align:right;">
                     <button class="btn btn--grey" onclick='editFb(${JSON.stringify(i).replace(/'/g, "&apos;")})'>編輯</button>
                     <button class="btn btn--green" onclick="approveFb('${i._id}')">✅ 核准 (寄信)</button>
                     <button class="btn btn--red" onclick="delFb('${i._id}')">🗑️ 刪除</button>
@@ -563,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
         }).join('') : '<p>無</p>';
 
-        // 2. 已刊登 (待寄送) - ★ 這裡改為卡片化＋展開設計，並顯示農曆生日
+        // 2. 已刊登 / 待寄送：專注於寄件個資，內容收進按鈕裡
         fbApprovedList.innerHTML = approved.length ? approved.map(i => {
             const badge = i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : '';
             const lunarBday = i.lunarBirthday || '未提供';
@@ -574,27 +578,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     <strong>編號: ${i.feedbackId || '無'}</strong>
                     <span style="color:#888; font-size:13px;">${i.approvedAt || ''}</span>
                 </div>
-                <div style="margin-bottom: 10px;">
-                    <strong>${i.realName} (農曆生日: ${lunarBday})</strong> ${badge}<br>
+                
+                <div style="margin-bottom: 15px; line-height: 1.8;">
+                    <strong>${i.realName}</strong> (農曆生日: ${lunarBday}) ${badge}<br>
                     <span style="color:#666; font-size:14px;">📍 ${i.address}</span>
                 </div>
-                
-                <div class="feedback-content-box pre-wrap" id="content-${i._id}">${i.content}</div>
-                <button class="show-more-btn" onclick="toggleContent('${i._id}', this)">顯示完整內容</button>
 
-                <div style="margin-top: 15px; text-align: right;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px;">
+                    <button class="btn btn--grey" onclick='viewFbDetail(${JSON.stringify(i).replace(/'/g, "&apos;")})'>📖 查看回饋內容</button>
                     <button class="btn btn--blue" onclick="shipGift('${i._id}')">🎁 填寫物流並寄出</button>
                 </div>
             </div>`;
         }).join('') : '<p>無</p>';
             
-        // 3. 已寄送 (點擊看詳情)
+        // 3. 已寄送 (點擊看詳情) - 注意這裡 onclick 改呼叫 viewFbDetail
         fbSentList.innerHTML = sent.length ? sent.map(i => `
             <div class="feedback-card" 
                  style="border-left:5px solid #007bff; background:#f0f0f0; cursor:pointer; transition:0.2s;" 
                  onmouseover="this.style.background='#e2e6ea'" 
                  onmouseout="this.style.background='#f0f0f0'"
-                 onclick='viewSentFbDetail(${JSON.stringify(i).replace(/'/g, "&apos;")})'>
+                 onclick='viewFbDetail(${JSON.stringify(i).replace(/'/g, "&apos;")})'>
                 
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="font-size:16px; font-weight:bold; color:#333;">${i.nickname}</span>
@@ -606,8 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     寄出日: ${i.sentAt || '未知'} (點擊查看詳情)
                 </div>
             </div>`).join('') : '<p>無</p>';
-    }    
-
+    }
     // 核准回饋 (自動寄信)
     window.approveFb = async (id) => { 
         if(confirm('確認核准？(將寄信通知信徒已刊登)')) {
@@ -802,32 +804,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- 新增功能：查看已寄送詳情 (Modal) ---
-    window.viewSentFbDetail = (item) => {
+// --- 共用功能：查看回饋詳細內容 (Modal) ---
+    window.viewFbDetail = (item) => {
         const modal = document.getElementById('feedback-detail-modal');
         const body = document.getElementById('feedback-detail-body');
+        
+        // 判斷是「已寄送」還是「待寄送」，顯示對應的時間與物流
+        let statusHtml = '';
+        if (item.status === 'sent') {
+            statusHtml = `
+                <p><strong>寄出時間：</strong> ${item.sentAt || '未知'}</p>
+                <p><strong>物流單號：</strong> ${item.trackingNumber || '無'}</p>
+            `;
+        } else {
+            statusHtml = `<p><strong>核准時間：</strong> ${item.approvedAt || '未知'}</p>`;
+        }
         
         body.innerHTML = `
             <div style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px;">
                 <p><strong>編號：</strong> ${item.feedbackId || '無'}</p>
-                <p><strong>寄出時間：</strong> ${item.sentAt || '未知'}</p>
-                <p><strong>物流單號：</strong> ${item.trackingNumber || '無'}</p>
+                ${statusHtml}
             </div>
             
             <p><strong>真實姓名：</strong> ${item.realName}</p>
             <p><strong>暱稱：</strong> ${item.nickname}</p>
+            <p><strong>農曆生日：</strong> ${item.lunarBirthday || '未提供'}</p>
             <p><strong>電話：</strong> ${item.phone}</p>
             <p><strong>地址：</strong> ${item.address}</p>
             <p><strong>分類：</strong> ${Array.isArray(item.category) ? item.category.join(', ') : item.category}</p>
             
-            <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #ddd; margin-top:10px;">
-                <strong>回饋內容：</strong><br>
-                <div class="pre-wrap">${item.content}</div>
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #ddd; margin-top:15px;">
+                <strong style="color:#C48945;">回饋內容：</strong><br>
+                <div class="pre-wrap" style="margin-top:10px;">${item.content}</div>
             </div>
         `;
         
         modal.classList.add('is-visible');
-    };
-    // 啟動檢查
+    };    // 啟動檢查
     checkSession();
 });
