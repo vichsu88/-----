@@ -64,7 +64,50 @@
             .admin-main { padding: 60px 15px 15px 15px; width: 100%; }
         }
         #sidebar-toggle { display: none; }
-    </style>
+        /* 卡片內容縮排與顯示更多功能 */
+        .feedback-content-box {
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* 預設只顯示 3 行 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: #555;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .feedback-content-box.expanded {
+            -webkit-line-clamp: unset; /* 展開時解除行數限制 */
+        }
+        .show-more-btn {
+            color: #C48945;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        /* 讓原本的列表變成卡片佈局 (針對 JS 產生的結構) */
+        .admin-list-item {
+            background: #fff;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .admin-list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+            </style>
 </head>
 <body>
     <div id="login-wrapper">

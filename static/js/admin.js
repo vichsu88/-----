@@ -109,6 +109,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if(e.target===m || e.target.classList.contains('modal-close-btn')) m.classList.remove('is-visible'); 
     });
 
+    // ★ 新增：回饋卡片顯示完整的切換按鈕功能
+    window.toggleContent = function(id, btn) {
+        const box = document.getElementById(`content-${id}`);
+        box.classList.toggle('expanded');
+        if (box.classList.contains('expanded')) {
+            btn.textContent = '收起內容';
+        } else {
+            btn.textContent = '顯示完整內容';
+        }
+    };
+
     /* =========================================
        3. 商品管理 (改為 Cloudinary 上傳)
        ========================================= */
@@ -460,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderShopOrder(o, type) {
-        let btns = `<button class="btn btn--grey" onclick='viewOrderDetails(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🔍 查看詳情</button>`; // ★ 新增查看詳情按鈕
+        let btns = `<button class="btn btn--grey" onclick='viewOrderDetails(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🔍 查看詳情</button>`; 
         
         if(type === 'pending') {
             btns += `<button class="btn btn--green" onclick="confirmOrder('${o._id}', '${o.orderId}')">✅ 確認收款</button>
@@ -530,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fbEditModal = document.getElementById('feedback-edit-modal');
     const fbEditForm = document.getElementById('feedback-edit-form');
 
-async function fetchFeedback() {
+    async function fetchFeedback() {
         if(!fbPendingList) return;
         
         const pending = await apiFetch('/api/feedback/status/pending');
@@ -552,17 +563,27 @@ async function fetchFeedback() {
             </div>`;
         }).join('') : '<p>無</p>';
 
-        // 2. 已核准 (待寄送)
+        // 2. 已刊登 (待寄送) - ★ 這裡改為卡片化＋展開設計，並顯示農曆生日
         fbApprovedList.innerHTML = approved.length ? approved.map(i => {
             const badge = i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : '';
+            const lunarBday = i.lunarBirthday || '未提供';
+
             return `
             <div class="feedback-card" style="border-left:5px solid #28a745;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                    <b>編號: ${i.feedbackId || '無'}</b> <small>${i.approvedAt || ''}</small>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                    <strong>編號: ${i.feedbackId || '無'}</strong>
+                    <span style="color:#888; font-size:13px;">${i.approvedAt || ''}</span>
                 </div>
-                <div style="margin-bottom:8px;">${i.nickname} / ${i.address} ${badge}</div>
-                <div style="text-align:right;">
-                    <button class="btn btn--blue" onclick="shipGift('${i._id}')">🎁 寄送禮物</button>
+                <div style="margin-bottom: 10px;">
+                    <strong>${i.realName} (農曆生日: ${lunarBday})</strong> ${badge}<br>
+                    <span style="color:#666; font-size:14px;">📍 ${i.address}</span>
+                </div>
+                
+                <div class="feedback-content-box pre-wrap" id="content-${i._id}">${i.content}</div>
+                <button class="show-more-btn" onclick="toggleContent('${i._id}', this)">顯示完整內容</button>
+
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn--blue" onclick="shipGift('${i._id}')">🎁 填寫物流並寄出</button>
                 </div>
             </div>`;
         }).join('') : '<p>無</p>';
@@ -586,6 +607,7 @@ async function fetchFeedback() {
                 </div>
             </div>`).join('') : '<p>無</p>';
     }    
+
     // 核准回饋 (自動寄信)
     window.approveFb = async (id) => { 
         if(confirm('確認核准？(將寄信通知信徒已刊登)')) {

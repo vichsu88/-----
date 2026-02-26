@@ -829,7 +829,6 @@ def api_logout():
     return jsonify({"success": True})
 
 # --- Feedback API ---
-
 def enrich_feedback_for_admin(cursor):
     """【後台專用輔助函式】自動將回饋與會員資料表合併，並標記是否領過神衣"""
     results = []
@@ -844,6 +843,10 @@ def enrich_feedback_for_admin(cursor):
         doc['phone'] = user.get('phone') or doc.get('phone', '未填寫')
         doc['address'] = user.get('address') or doc.get('address', '未填寫')
         doc['email'] = user.get('email') or doc.get('email', '')
+        
+        # 👇 新增這行：把農曆生日抓出來
+        doc['lunarBirthday'] = user.get('lunarBirthday') or '未提供'
+        
         doc['has_received'] = has_received
 
         doc['_id'] = str(doc['_id'])
@@ -852,7 +855,6 @@ def enrich_feedback_for_admin(cursor):
         if 'sentAt' in doc: doc['sentAt'] = doc['sentAt'].strftime('%Y-%m-%d %H:%M')
         results.append(doc)
     return results
-
 @app.route('/api/feedback', methods=['POST'])
 def add_feedback():
     if db is None: return jsonify({"error": "DB Error"}), 500
