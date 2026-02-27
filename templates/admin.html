@@ -118,6 +118,13 @@
                 grid-template-columns: 1fr; /* 螢幕小於 992px 時自動變成上下單欄 */
             }
         }
+        .sub-tab-btn {
+        flex: 1; padding: 15px; border: none; background: none; 
+        font-size: 16px; cursor: pointer; color: #666; font-weight: bold;
+        border-bottom: 4px solid transparent; transition: 0.3s;
+    }
+    .sub-tab-btn.active { color: #C48945; border-bottom-color: #C48945; background: rgba(196, 137, 69, 0.05); }
+    .sub-tab-btn:hover { background: rgba(0,0,0,0.02); }
             </style>
 </head>
 <body>
@@ -164,7 +171,7 @@
                     <div id="products-list">載入中...</div>
                 </div>
 
-                <div id="tab-donations" class="tab-content">
+<div id="tab-donations" class="tab-content">
                     <div style="display:flex; margin-bottom:20px; border-bottom:2px solid #ddd;">
                         <button class="sub-tab-btn active" onclick="switchDonationTab('incense')">🕯️ 捐香 (日常)</button>
                         <button class="sub-tab-btn" onclick="switchDonationTab('fund')">🏗️ 建廟 (基金)</button>
@@ -173,6 +180,7 @@
                     <div id="subtab-incense">
                         <div class="donation-toolbar">
                             <div class="date-picker-group">
+                                <label style="margin:0;">篩選：</label>
                                 <select id="incense-report-filter" style="margin:0; width:120px;" onchange="fetchDonations('donation')">
                                     <option value="0">未稟告</option>
                                     <option value="1">已稟告</option>
@@ -193,7 +201,6 @@
                         <div id="fund-list"></div>
                     </div>
                 </div>
-
                 <style>
                     /* 子分頁按鈕樣式 */
                     .sub-tab-btn {
@@ -213,7 +220,9 @@
                     <div id="orders-list"></div>
                 </div>
 
-                <div id="tab-feedback" class="tab-content">
+<div id="tab-feedback" class="tab-content">
+                    <div id="fb-stats-bar" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;"></div>
+
                     <div class="feedback-grid">
                         <div>
                             <h3 style="background:#dc3545; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">1. 待審核 (寄信通知)</h3>
@@ -228,11 +237,12 @@
                         </div>
                     </div>
                     <div style="margin-top:30px;">
-                            <h3 style="background:#007bff; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">3. 已寄送 (歷史紀錄)</h3>
-                            <div style="text-align:right; margin-bottom:10px;">
-                                <button class="btn btn--blue" onclick="exportSentFeedbackTxt()">匯出名單</button>
+                        <h3 style="background:#007bff; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">3. 已寄送 (歷史紀錄)</h3>
+                        <div style="text-align:right; margin-bottom:10px;">
+                            <button class="btn btn--blue" onclick="exportSentFeedbackTxt()">匯出名單</button>
+                        </div>
+                        <div id="fb-sent-list"></div>
                     </div>
-                    <div id="fb-sent-list"></div>
                 </div>
                 </div>
                 

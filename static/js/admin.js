@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return contentType && contentType.includes('json') ? response.json() : response.text();
         } catch (error) { 
             console.error(error); 
-            // 若是 JSON 格式的錯誤訊息，嘗試解析並顯示
             try {
                 const errObj = JSON.parse(error.message);
                 alert(errObj.message || '發生錯誤');
@@ -84,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 根據分頁載入資料
                 const tab = btn.dataset.tab;
                 if(tab === 'tab-products') fetchProducts();
-                if(tab === 'tab-donations') fetchDonations();
+                if(tab === 'tab-donations') fetchDonations('donation'); // 預設載入捐香
                 if(tab === 'tab-orders') fetchOrders();
                 if(tab === 'tab-feedback') fetchFeedback(); // 統一函式
                 if(tab === 'tab-fund') { fetchFundSettings(); fetchAndRenderAnnouncements(); }
@@ -109,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(e.target===m || e.target.classList.contains('modal-close-btn')) m.classList.remove('is-visible'); 
     });
 
-    // ★ 新增：回饋卡片顯示完整的切換按鈕功能
+    // 卡片顯示完整的切換按鈕功能
     window.toggleContent = function(id, btn) {
         const box = document.getElementById(`content-${id}`);
         box.classList.toggle('expanded');
@@ -121,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       3. 商品管理 (改為 Cloudinary 上傳)
+       3. 商品管理 (Cloudinary 上傳)
        ========================================= */
     const productsList = document.getElementById('products-list');
     const prodModal = document.getElementById('product-modal');
@@ -131,16 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const imgPreview = document.getElementById('preview-image');
     const imgHidden = prodForm ? prodForm.querySelector('[name="image"]') : null;
 
-    // ★ Cloudinary 設定 (請務必換成您自己的)
-    const CLOUD_NAME = 'dsvj25pma';     // 例如 'dxxxxxxxx'
-    const UPLOAD_PRESET = 'temple_upload'; // 例如 'temple_upload' (需設為 Unsigned)
+    const CLOUD_NAME = 'dsvj25pma';     
+    const UPLOAD_PRESET = 'temple_upload'; 
 
-    // 圖片預覽與上傳邏輯
     if(imgInput) imgInput.onchange = async (e) => {
         const file = e.target.files[0];
         if(!file) return;
 
-        // 1. 先顯示本機預覽 (讓使用者感覺很快)
         const localReader = new FileReader();
         localReader.onload = (ev) => {
             imgPreview.src = ev.target.result;
@@ -148,16 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         localReader.readAsDataURL(file);
 
-        // 2. 準備上傳到 Cloudinary
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', UPLOAD_PRESET);
 
-        // 取得 submit 按鈕以便鎖定，避免上傳未完成就送出
         const submitBtn = document.querySelector('#product-form button[type="submit"]');
         
         try {
-            // 鎖定按鈕
             if(submitBtn) { 
                 submitBtn.dataset.originalText = submitBtn.textContent;
                 submitBtn.textContent = '圖片上傳中...'; 
@@ -165,7 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitBtn.style.opacity = '0.7';
             }
 
-            // 發送請求
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
                 method: 'POST',
                 body: formData
@@ -173,18 +165,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if(data.secure_url) {
-                // ★ 關鍵：把 Cloudinary 回傳的網址，填入隱藏欄位
                 imgHidden.value = data.secure_url; 
                 console.log('圖片上傳成功:', data.secure_url);
             } else {
                 console.error('Cloudinary Error:', data);
-                alert('圖片上傳失敗，請檢查 Cloudinary 設定 (Cloud Name 或 Preset)');
+                alert('圖片上傳失敗');
             }
         } catch (err) {
             console.error('Upload Error:', err);
-            alert('圖片上傳發生錯誤，請檢查網路');
+            alert('圖片上傳發生錯誤');
         } finally {
-            // 恢復按鈕
             if(submitBtn) { 
                 submitBtn.textContent = submitBtn.dataset.originalText || '儲存商品'; 
                 submitBtn.disabled = false; 
@@ -217,8 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
         variantsContainer.innerHTML=''; 
         imgPreview.style.display='none'; 
         imgHidden.value='';
-        // === [新增] 嘗試自動填入一個預設的跳號排序 (非必須，但很方便) ===
-        // 這裡簡單設為 10，您也可以手動輸入
         prodForm.seriesSort.value = 10;
         if(p) {
             document.getElementById('product-modal-title').textContent = '編輯商品';
@@ -228,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
             prodForm.description.value = p.description;
             prodForm.isActive.checked = p.isActive;
             prodForm.isDonation.checked = p.isDonation || false;
-            // === [新增] 讀取系列資料 ===
             prodForm.series.value = p.series || '';
             prodForm.seriesSort.value = p.seriesSort || 0;
             if(p.image) { 
@@ -236,7 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 imgPreview.style.display='block'; 
                 imgHidden.value = p.image; 
             }
-            
             if(p.variants && p.variants.length > 0) p.variants.forEach(v => addVariantRow(v.name, v.price));
             else addVariantRow('標準', p.price);
         } else {
@@ -247,13 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
         prodModal.classList.add('is-visible');
     }
 
-    // 分組顯示商品
     async function fetchProducts() {
         if(!productsList) return;
         try {
             const products = await apiFetch('/api/products');
-            
-            // 分組邏輯
             const groups = {};
             products.forEach(p => {
                 if(!groups[p.category]) groups[p.category] = [];
@@ -307,11 +290,9 @@ document.addEventListener('DOMContentLoaded', () => {
             category: prodForm.category.value,
             name: prodForm.name.value,
             description: prodForm.description.value,
-            image: imgHidden.value, // 這裡會是 Cloudinary 的 URL
-            // === [新增] 收集這兩個欄位 ===
+            image: imgHidden.value,
             series: prodForm.series.value.trim(),
             seriesSort: parseInt(prodForm.seriesSort.value) || 0,
-            // =========================
             isActive: prodForm.isActive.checked,
             isDonation: prodForm.isDonation.checked,
             variants: variants,
@@ -323,256 +304,188 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchProducts();
     };
 
-/* =========================================
-   4. 捐贈管理 (捐香與建廟分流)
-   ========================================= */
-
-// 切換子分頁
-window.switchDonationTab = (type) => {
-    document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    document.getElementById('subtab-incense').style.display = type === 'incense' ? 'block' : 'none';
-    document.getElementById('subtab-fund').style.display = type === 'fund' ? 'block' : 'none';
-    
-    // 載入對應資料
-    if (type === 'incense') fetchDonations('donation');
-    else fetchDonations('fund');
-};
-
-// 載入列表 (共用函式)
-async function fetchDonations(type) {
-    const container = type === 'donation' ? document.getElementById('incense-list') : document.getElementById('fund-list');
-    container.innerHTML = '<p>載入中...</p>';
-    
-    let url = `/api/donations/admin?type=${type}&status=paid`; // 預設只看已付款
-    
-    // 如果是捐香，加上稟告狀態篩選
-    if (type === 'donation') {
-        const reportStatus = document.getElementById('incense-report-filter').value;
-        if (reportStatus !== '') url += `&reported=${reportStatus}`;
-    }
-
-    try {
-        const orders = await apiFetch(url);
-        if (orders.length === 0) {
-            container.innerHTML = '<p style="padding:20px; text-align:center; color:#999;">查無資料</p>';
-            return;
-        }
-
-        if (type === 'donation') {
-            renderIncenseList(orders, container);
-        } else {
-            renderFundList(orders, container);
-        }
-    } catch(e) { container.innerHTML = '載入失敗'; }
-}
-
-// 渲染捐香列表 (包含稟告按鈕)
-function renderIncenseList(orders, container) {
-    const isUnreportedView = document.getElementById('incense-report-filter').value === '0';
-    
-    // 收集所有未稟告的 ID，方便一鍵全選 (這裡做簡單版：只顯示按鈕)
-    window.currentIncenseIds = orders.map(o => o._id);
-
-    let html = '';
-    
-    // 如果是在「未稟告」檢視模式，顯示批次按鈕
-    if (isUnreportedView && orders.length > 0) {
-        html += `
-        <div style="background:#fff3cd; padding:10px; margin-bottom:15px; border-radius:5px; border:1px solid #ffeeba; display:flex; justify-content:space-between; align-items:center;">
-            <span>⚠️ 共 <strong>${orders.length}</strong> 筆未稟告資料</span>
-            <button class="btn btn--blue" onclick="markAllReported()">✅ 將本頁標記為已稟告</button>
-        </div>`;
-    }
-
-    html += orders.map(o => `
-        <div class="feedback-card" style="border-left:5px solid ${o.is_reported ? '#28a745' : '#dc3545'};">
-            <div style="display:flex; justify-content:space-between;">
-                <strong>${o.customer.name}</strong>
-                <span style="font-size:12px; padding:2px 6px; border-radius:4px; background:${o.is_reported ? '#d4edda' : '#f8d7da'}; color:${o.is_reported ? '#155724' : '#721c24'};">
-                    ${o.is_reported ? `已稟告 (${o.reportedAt||''})` : '未稟告'}
-                </span>
-            </div>
-            <div style="color:#555; margin-top:5px;">
-                ${o.items.map(i => `${i.name} x${i.qty}`).join('、')}
-            </div>
-            <div style="font-size:12px; color:#888; margin-top:5px;">
-                單號: ${o.orderId} | 農曆: ${o.customer.lunarBirthday || '-'}
-            </div>
-        </div>
-    `).join('');
-    
-    container.innerHTML = html;
-}
-
-// 渲染建廟基金列表
-function renderFundList(orders, container) {
-    container.innerHTML = orders.map(o => `
-        <div class="feedback-card" style="border-left:5px solid #C48945;">
-            <div style="display:flex; justify-content:space-between;">
-                <strong>${o.customer.name}</strong>
-                <span style="color:#C48945; font-weight:bold;">$${o.total}</span>
-            </div>
-            <div style="color:#555; margin-top:5px;">
-                ${o.items.map(i => i.name).join('、')}
-            </div>
-            <div style="font-size:12px; color:#888; margin-top:5px;">
-                ${o.createdAt} | ${o.customer.address}
-            </div>
-        </div>
-    `).join('');
-}
-
-// === 功能：列印紅紙 (Simple Red Paper Print) ===
-window.printRedPaper = async () => {
-    // 1. 抓取目前未稟告的資料
-    const orders = await apiFetch('/api/donations/admin?type=donation&status=paid&reported=0');
-    if (orders.length === 0) return alert('目前沒有未稟告的資料可列印');
-
-    // 2. 開啟列印視窗
-    const printWindow = window.open('', '_blank');
-    let itemsHtml = '';
-    
-    orders.forEach(o => {
-        const itemStr = o.items.map(i => `${i.name} ${i.qty}份`).join('、');
-        // 紅紙格式：橫式條列，字體加粗黑字
-        itemsHtml += `
-            <div class="row">
-                <span class="name">${o.customer.name}</span>
-                <span class="items">${itemStr}</span>
-            </div>
-        `;
-    });
-
-    printWindow.document.write(`
-        <html>
-        <head>
-            <title>稟告紅紙清單</title>
-            <style>
-                body { font-family: "KaiTi", "Microsoft JhengHei", serif; padding: 20px; background: white; }
-                .list-container { width: 100%; max-width: 800px; margin: 0 auto; }
-                .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 30px; }
-                .row { 
-                    display: flex; border-bottom: 1px dashed #000; padding: 15px 0; 
-                    font-size: 20px; line-height: 1.5; color: #000; font-weight: bold;
-                }
-                .name { width: 150px; flex-shrink: 0; }
-                .items { flex: 1; }
-                @media print {
-                    @page { margin: 0; }
-                    body { -webkit-print-color-adjust: exact; background-color: #ffcccc; /* 模擬紅紙底色，實際請用紅紙列印 */ }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="list-container">
-                <div class="header">承天中承府 捐香稟告清單 (${new Date().toLocaleDateString()})</div>
-                ${itemsHtml}
-            </div>
-            <script>window.print();<\/script>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-};
-
-// === 功能：批次標記已稟告 ===
-window.markAllReported = async () => {
-    if (!window.currentIncenseIds || window.currentIncenseIds.length === 0) return;
-    if (!confirm(`確定將這 ${window.currentIncenseIds.length} 筆資料標記為「已稟告」嗎？`)) return;
-
-    try {
-        await apiFetch('/api/donations/mark-reported', {
-            method: 'POST',
-            body: JSON.stringify({ ids: window.currentIncenseIds })
-        });
-        alert('更新成功！');
-        fetchDonations('donation'); // 重新載入
-    } catch(e) { alert('更新失敗'); }
-};
-
-// === 功能：信徒回饋 - 統計與抽獎券列印 ===
-// 在 fetchFeedback() 開頭加入統計邏輯
-async function fetchFeedback() {
-    // ... (原有代碼) ...
-    // 統計數據
-    const totalPending = pending.length;
-    const totalApproved = approved.length;
-    const totalSent = sent.length;
-    
-    // 插入統計 UI (假設你在 admin.html tab-feedback 最上方加了一個 id="fb-stats")
-    // 這裡我們動態插入到 feedback-grid 之前
-    const grid = document.querySelector('.feedback-grid');
-    let statsDiv = document.getElementById('fb-stats-bar');
-    if (!statsDiv) {
-        statsDiv = document.createElement('div');
-        statsDiv.id = 'fb-stats-bar';
-        statsDiv.style.marginBottom = '20px';
-        statsDiv.style.display = 'flex';
-        statsDiv.style.gap = '15px';
-        statsDiv.style.alignItems = 'center';
-        grid.parentNode.insertBefore(statsDiv, grid);
-    }
-    
-    statsDiv.innerHTML = `
-        <span style="background:#6c757d; color:white; padding:5px 10px; border-radius:15px;">總則數: ${totalPending + totalApproved + totalSent}</span>
-        <button class="btn btn--brown" onclick="printRaffleTickets()">🎟️ 列印抽獎券</button>
-    `;
-    // ... (後續代碼不變)
-}
-
-// 實作抽獎券列印
-window.printRaffleTickets = async () => {
-    const approved = await apiFetch('/api/feedback/status/approved'); // 撈取可參加抽獎的名單
-    const sent = await apiFetch('/api/feedback/status/sent');
-    const allCandidates = [...approved, ...sent]; // 已核准 + 已寄出的都可以抽 (看你的規則)
-
-    if (allCandidates.length === 0) return alert('無名單可列印');
-
-    const printWindow = window.open('', '_blank');
-    
-    let cardsHtml = allCandidates.map((fb, index) => `
-        <div class="ticket">
-            <div class="num">No. ${String(index + 1).padStart(3, '0')}</div>
-            <div class="name">${fb.realName}</div>
-            <div class="id">${fb.feedbackId || ''}</div>
-        </div>
-    `).join('');
-
-    printWindow.document.write(`
-        <html>
-        <head>
-            <title>抽獎券列印</title>
-            <style>
-                body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; }
-                .grid { 
-                    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
-                }
-                .ticket {
-                    border: 2px dashed #333; padding: 15px; text-align: center;
-                    height: 80px; display: flex; flex-direction: column; justify-content: center;
-                    page-break-inside: avoid;
-                }
-                .num { font-size: 20px; font-weight: bold; color: #C48945; }
-                .name { font-size: 18px; margin: 5px 0; }
-                .id { font-size: 12px; color: #888; }
-                @media print {
-                    .ticket { border-color: #999; }
-                }
-            </style>
-        </head>
-        <body>
-            <h2 style="text-align:center;">信徒回饋抽獎券 (${allCandidates.length}張)</h2>
-            <div class="grid">${cardsHtml}</div>
-            <script>window.print();<\/script>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-};
     /* =========================================
-       5. 一般訂單管理 (100% 滿版 + 刪除寄信)
+       4. 捐贈管理 (捐香與建廟分流)
+       ========================================= */
+
+    // 切換子分頁
+    window.switchDonationTab = (type) => {
+        document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+        if(event) event.target.classList.add('active');
+        
+        const incenseDiv = document.getElementById('subtab-incense');
+        const fundDiv = document.getElementById('subtab-fund');
+        
+        if(incenseDiv && fundDiv) {
+            incenseDiv.style.display = type === 'incense' ? 'block' : 'none';
+            fundDiv.style.display = type === 'fund' ? 'block' : 'none';
+        }
+        
+        // 載入對應資料
+        if (type === 'incense') fetchDonations('donation');
+        else fetchDonations('fund');
+    };
+
+    // 載入列表 (共用函式)
+    window.fetchDonations = async (type) => {
+        // 如果沒有傳入 type，預設判斷目前哪個分頁是開的
+        if(!type) {
+            const isFundVisible = document.getElementById('subtab-fund').style.display === 'block';
+            type = isFundVisible ? 'fund' : 'donation';
+        }
+
+        const container = type === 'donation' ? document.getElementById('incense-list') : document.getElementById('fund-list');
+        if(!container) return;
+        container.innerHTML = '<p>載入中...</p>';
+        
+        let url = `/api/donations/admin?type=${type}&status=paid`; // 預設只看已付款
+        
+        // 如果是捐香，加上稟告狀態篩選
+        if (type === 'donation') {
+            const filterEl = document.getElementById('incense-report-filter');
+            const reportStatus = filterEl ? filterEl.value : '';
+            if (reportStatus !== '') url += `&reported=${reportStatus}`;
+        }
+
+        try {
+            const orders = await apiFetch(url);
+            if (orders.length === 0) {
+                container.innerHTML = '<p style="padding:20px; text-align:center; color:#999;">查無資料</p>';
+                return;
+            }
+
+            if (type === 'donation') {
+                renderIncenseList(orders, container);
+            } else {
+                renderFundList(orders, container);
+            }
+        } catch(e) { container.innerHTML = '載入失敗'; }
+    };
+
+    // 渲染捐香列表 (包含稟告按鈕)
+    function renderIncenseList(orders, container) {
+        const filterEl = document.getElementById('incense-report-filter');
+        const isUnreportedView = filterEl && filterEl.value === '0';
+        
+        // 收集所有未稟告的 ID
+        window.currentIncenseIds = orders.filter(o => !o.is_reported).map(o => o._id);
+
+        let html = '';
+        
+        // 如果是在「未稟告」檢視模式，顯示批次按鈕
+        if (isUnreportedView && orders.length > 0) {
+            html += `
+            <div style="background:#fff3cd; padding:10px; margin-bottom:15px; border-radius:5px; border:1px solid #ffeeba; display:flex; justify-content:space-between; align-items:center;">
+                <span>⚠️ 共 <strong>${orders.length}</strong> 筆未稟告資料</span>
+                <button class="btn btn--blue" onclick="markAllReported()">✅ 將本頁標記為已稟告</button>
+            </div>`;
+        }
+
+        html += orders.map(o => `
+            <div class="feedback-card" style="border-left:5px solid ${o.is_reported ? '#28a745' : '#dc3545'};">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>${o.customer.name}</strong>
+                    <span style="font-size:12px; padding:2px 6px; border-radius:4px; background:${o.is_reported ? '#d4edda' : '#f8d7da'}; color:${o.is_reported ? '#155724' : '#721c24'};">
+                        ${o.is_reported ? `已稟告 (${o.reportedAt||''})` : '未稟告'}
+                    </span>
+                </div>
+                <div style="color:#555; margin-top:5px;">
+                    ${o.items.map(i => `${i.name} x${i.qty}`).join('、')}
+                </div>
+                <div style="font-size:12px; color:#888; margin-top:5px;">
+                    單號: ${o.orderId} | 農曆: ${o.customer.lunarBirthday || '-'}
+                </div>
+            </div>
+        `).join('');
+        
+        container.innerHTML = html;
+    }
+
+    // 渲染建廟基金列表
+    function renderFundList(orders, container) {
+        container.innerHTML = orders.map(o => `
+            <div class="feedback-card" style="border-left:5px solid #C48945;">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>${o.customer.name}</strong>
+                    <span style="color:#C48945; font-weight:bold;">$${o.total}</span>
+                </div>
+                <div style="color:#555; margin-top:5px;">
+                    ${o.items.map(i => i.name).join('、')}
+                </div>
+                <div style="font-size:12px; color:#888; margin-top:5px;">
+                    ${o.createdAt} | ${o.customer.address}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // === 功能：列印紅紙 (Simple Red Paper Print) ===
+    window.printRedPaper = async () => {
+        const orders = await apiFetch('/api/donations/admin?type=donation&status=paid&reported=0');
+        if (orders.length === 0) return alert('目前沒有未稟告的資料可列印');
+
+        const printWindow = window.open('', '_blank');
+        let itemsHtml = '';
+        
+        orders.forEach(o => {
+            const itemStr = o.items.map(i => `${i.name} ${i.qty}份`).join('、');
+            itemsHtml += `
+                <div class="row">
+                    <span class="name">${o.customer.name}</span>
+                    <span class="items">${itemStr}</span>
+                </div>
+            `;
+        });
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>稟告紅紙清單</title>
+                <style>
+                    body { font-family: "KaiTi", "Microsoft JhengHei", serif; padding: 20px; background: white; }
+                    .list-container { width: 100%; max-width: 800px; margin: 0 auto; }
+                    .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 30px; }
+                    .row { 
+                        display: flex; border-bottom: 1px dashed #000; padding: 15px 0; 
+                        font-size: 20px; line-height: 1.5; color: #000; font-weight: bold;
+                    }
+                    .name { width: 150px; flex-shrink: 0; }
+                    .items { flex: 1; }
+                    @media print {
+                        @page { margin: 0; }
+                        body { -webkit-print-color-adjust: exact; background-color: #ffcccc; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="list-container">
+                    <div class="header">承天中承府 捐香稟告清單 (${new Date().toLocaleDateString()})</div>
+                    ${itemsHtml}
+                </div>
+                <script>window.print();<\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+
+    // === 功能：批次標記已稟告 ===
+    window.markAllReported = async () => {
+        if (!window.currentIncenseIds || window.currentIncenseIds.length === 0) return;
+        if (!confirm(`確定將這 ${window.currentIncenseIds.length} 筆資料標記為「已稟告」嗎？`)) return;
+
+        try {
+            await apiFetch('/api/donations/mark-reported', {
+                method: 'POST',
+                body: JSON.stringify({ ids: window.currentIncenseIds })
+            });
+            alert('更新成功！');
+            fetchDonations('donation'); 
+        } catch(e) { alert('更新失敗'); }
+    };
+
+    /* =========================================
+       5. 一般訂單管理
        ========================================= */
     const ordersList = document.getElementById('orders-list');
     
@@ -605,14 +518,12 @@ window.printRaffleTickets = async () => {
 
     function renderShopOrder(o, type) {
         let btns = `<button class="btn btn--grey" onclick='viewOrderDetails(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🔍 查看詳情</button>`; 
-        
         if(type === 'pending') {
             btns += `<button class="btn btn--green" onclick="confirmOrder('${o._id}', '${o.orderId}')">✅ 確認收款</button>
                      <button class="btn btn--red" onclick="delOrder('${o._id}', 'shop')">刪除</button>`;
         } else if(type === 'toship') {
             btns += `<button class="btn btn--blue" onclick="shipOrder('${o._id}')">🚚 出貨</button>`;
         }
-        
         return `
         <div class="feedback-card" style="border-left:5px solid ${type==='pending'?'#dc3545':(type==='toship'?'#28a745':'#007bff')};">
             <div style="display:flex; justify-content:space-between;"><b>${o.orderId}</b> <small>${o.createdAt}</small></div>
@@ -622,7 +533,6 @@ window.printRaffleTickets = async () => {
         </div>`;
     }
 
-    // ★ 訂單詳情彈窗
     window.viewOrderDetails = (o) => {
         const modalBody = document.getElementById('order-detail-body');
         modalBody.innerHTML = `
@@ -645,8 +555,6 @@ window.printRaffleTickets = async () => {
     }
 
     window.confirmOrder = async (id, orderId) => { if(confirm(`確認收款訂單編號：${orderId}，將回信待出貨？`)) { await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'}); fetchOrders(); } };
-    
-    // ★ 訂單出貨 (物流單號)
     window.shipOrder = async (id) => {
         const trackNum = prompt("請輸入物流單號 (寄送出貨通知信)：");
         if(trackNum !== null) { 
@@ -654,19 +562,18 @@ window.printRaffleTickets = async () => {
             alert("已出貨並通知！"); fetchOrders();
         }
     };
-
     window.cleanupShipped = async () => { if(confirm('刪除14天前舊單？')) { await apiFetch('/api/orders/cleanup-shipped', {method:'DELETE'}); fetchOrders(); } };
-
-    // ★ 通用刪除訂單 (會寄送取消信)
     window.delOrder = async (id, type) => { 
         if(confirm('確定刪除？系統將自動寄送「取消通知信」給客戶。')) { 
             await apiFetch(`/api/orders/${id}`, {method:'DELETE'}); 
-            if(type === 'donation') fetchDonations(); else fetchOrders();
+            if(type === 'donation') fetchDonations('donation'); 
+            else if(type === 'fund') fetchDonations('fund');
+            else fetchOrders();
         } 
     };
 
     /* =========================================
-       6. 信徒回饋 (三階段流程 + 自動編號)
+       6. 信徒回饋 (三階段流程 + 統計與抽獎)
        ========================================= */
     const fbPendingList = document.getElementById('fb-pending-list');
     const fbApprovedList = document.getElementById('fb-approved-list');
@@ -674,14 +581,26 @@ window.printRaffleTickets = async () => {
     const fbEditModal = document.getElementById('feedback-edit-modal');
     const fbEditForm = document.getElementById('feedback-edit-form');
 
-async function fetchFeedback() {
+    async function fetchFeedback() {
         if(!fbPendingList) return;
         
         const pending = await apiFetch('/api/feedback/status/pending');
         const approved = await apiFetch('/api/feedback/status/approved'); 
         const sent = await apiFetch('/api/feedback/status/sent');         
 
-        // 1. 待審核：只顯示暱稱與「完整回饋內容」
+        // === 新增：統計數據與抽獎按鈕 ===
+        const totalCount = pending.length + approved.length + sent.length;
+        const statsDiv = document.getElementById('fb-stats-bar');
+        if(statsDiv) {
+            statsDiv.innerHTML = `
+                <span style="background:#6c757d; color:white; padding:8px 15px; border-radius:20px; font-weight:bold;">
+                    總回饋數: ${totalCount} 筆
+                </span>
+                <button class="btn btn--brown" onclick="printRaffleTickets()">🎟️ 列印抽獎券 (已審核+已寄送)</button>
+            `;
+        }
+
+        // 1. 待審核
         fbPendingList.innerHTML = pending.length ? pending.map(i => {
             const badge = i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : '';
             return `
@@ -700,23 +619,20 @@ async function fetchFeedback() {
             </div>`;
         }).join('') : '<p>無</p>';
 
-        // 2. 已刊登 / 待寄送：專注於寄件個資，內容收進按鈕裡
+        // 2. 已刊登
         fbApprovedList.innerHTML = approved.length ? approved.map(i => {
             const badge = i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : '';
             const lunarBday = i.lunarBirthday || '未提供';
-
             return `
             <div class="feedback-card" style="border-left:5px solid #28a745;">
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
                     <strong>編號: ${i.feedbackId || '無'}</strong>
                     <span style="color:#888; font-size:13px;">${i.approvedAt || ''}</span>
                 </div>
-                
                 <div style="margin-bottom: 15px; line-height: 1.8;">
                     <strong>${i.realName}</strong> (農曆生日: ${lunarBday}) ${badge}<br>
                     <span style="color:#666; font-size:14px;">📍 ${i.address}</span>
                 </div>
-
                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px;">
                     <button class="btn btn--grey" onclick='viewFbDetail(${JSON.stringify(i).replace(/'/g, "&apos;")})'>📖 查看回饋內容</button>
                     <button class="btn btn--blue" onclick="shipGift('${i._id}')">🎁 填寫物流並寄出</button>
@@ -724,14 +640,13 @@ async function fetchFeedback() {
             </div>`;
         }).join('') : '<p>無</p>';
             
-        // 3. 已寄送 (點擊看詳情) - 注意這裡 onclick 改呼叫 viewFbDetail
+        // 3. 已寄送
         fbSentList.innerHTML = sent.length ? sent.map(i => `
             <div class="feedback-card" 
                  style="border-left:5px solid #007bff; background:#f0f0f0; cursor:pointer; transition:0.2s;" 
                  onmouseover="this.style.background='#e2e6ea'" 
                  onmouseout="this.style.background='#f0f0f0'"
                  onclick='viewFbDetail(${JSON.stringify(i).replace(/'/g, "&apos;")})'>
-                
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="font-size:16px; font-weight:bold; color:#333;">${i.nickname}</span>
                     <span style="background:#dbeafe; color:#007bff; padding:2px 8px; border-radius:12px; font-size:12px;">
@@ -743,7 +658,8 @@ async function fetchFeedback() {
                 </div>
             </div>`).join('') : '<p>無</p>';
     }
-    // 核准回饋 (自動寄信)
+
+    // 核准回饋
     window.approveFb = async (id) => { 
         if(confirm('確認核准？(將寄信通知信徒已刊登)')) {
             await apiFetch(`/api/feedback/${id}/approve`, {method:'PUT'});
@@ -751,7 +667,7 @@ async function fetchFeedback() {
         }
     };
 
-    // 寄送禮物 (輸入物流單號 -> 寄信 -> 移至已寄送)
+    // 寄送禮物
     window.shipGift = async (id) => {
         const track = prompt('請輸入小神衣物流單號：');
         if(track) {
@@ -761,7 +677,7 @@ async function fetchFeedback() {
         }
     };
     
-    // 刪除回饋 (寄信)
+    // 刪除回饋
     window.delFb = async (id) => { 
         if(confirm('確認刪除？(將寄信通知信徒未獲刊登)')) {
             await apiFetch(`/api/feedback/${id}`, {method:'DELETE'});
@@ -769,7 +685,7 @@ async function fetchFeedback() {
         }
     };
     
-    // 匯出未寄送名單 (TXT)
+    // 匯出名單
     window.exportFeedbackTxt = async () => {
         try {
             const res = await fetch('/api/feedback/export-txt', {method:'POST', headers:{'X-CSRFToken':getCsrfToken()}});
@@ -777,6 +693,22 @@ async function fetchFeedback() {
             const blob = await res.blob();
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='回饋寄送名單.txt'; a.click();
         } catch(e) { alert('匯出失敗'); }
+    };
+
+    window.exportSentFeedbackTxt = async () => {
+        try {
+            const res = await fetch('/api/feedback/export-sent-txt', {method:'POST', headers:{'X-CSRFToken':getCsrfToken()}});
+            if(res.status === 404) return alert('目前無已寄送資料');
+            if(!res.ok) throw new Error('匯出失敗');
+            const blob = await res.blob();
+            const a = document.createElement('a'); 
+            a.href = URL.createObjectURL(blob); 
+            a.download = `已寄送名單_${new Date().toISOString().slice(0,10)}.txt`; 
+            a.click();
+        } catch(e) { 
+            console.error(e);
+            alert('匯出失敗'); 
+        }
     };
 
     // 編輯回饋 Modal
@@ -798,19 +730,90 @@ async function fetchFeedback() {
         fbEditModal.classList.remove('is-visible'); fetchFeedback();
     };
 
+    // 查看詳情
+    window.viewFbDetail = (item) => {
+        const modal = document.getElementById('feedback-detail-modal');
+        const body = document.getElementById('feedback-detail-body');
+        let statusHtml = item.status === 'sent' 
+            ? `<p><strong>寄出時間：</strong> ${item.sentAt || '未知'}</p><p><strong>物流單號：</strong> ${item.trackingNumber || '無'}</p>`
+            : `<p><strong>核准時間：</strong> ${item.approvedAt || '未知'}</p>`;
+        
+        body.innerHTML = `
+            <div style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px;">
+                <p><strong>編號：</strong> ${item.feedbackId || '無'}</p>
+                ${statusHtml}
+            </div>
+            <p><strong>真實姓名：</strong> ${item.realName}</p>
+            <p><strong>暱稱：</strong> ${item.nickname}</p>
+            <p><strong>農曆生日：</strong> ${item.lunarBirthday || '未提供'}</p>
+            <p><strong>電話：</strong> ${item.phone}</p>
+            <p><strong>地址：</strong> ${item.address}</p>
+            <p><strong>分類：</strong> ${Array.isArray(item.category) ? item.category.join(', ') : item.category}</p>
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #ddd; margin-top:15px;">
+                <strong style="color:#C48945;">回饋內容：</strong><br>
+                <div class="pre-wrap" style="margin-top:10px;">${item.content}</div>
+            </div>
+        `;
+        modal.classList.add('is-visible');
+    };
+
+    // 抽獎券列印功能 (含已審核與已寄送)
+    window.printRaffleTickets = async () => {
+        const approved = await apiFetch('/api/feedback/status/approved'); 
+        const sent = await apiFetch('/api/feedback/status/sent');
+        const allCandidates = [...approved, ...sent]; 
+
+        if (allCandidates.length === 0) return alert('目前沒有符合資格的名單');
+
+        const printWindow = window.open('', '_blank');
+        let cardsHtml = allCandidates.map((fb, index) => `
+            <div class="ticket">
+                <div class="num">No. ${String(index + 1).padStart(3, '0')}</div>
+                <div class="name">${fb.realName}</div>
+                <div class="id">${fb.feedbackId || '無編號'}</div>
+                <div class="phone">${fb.phone.slice(-3) ? '***'+fb.phone.slice(-3) : ''}</div>
+            </div>
+        `).join('');
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>信徒回饋抽獎券</title>
+                <style>
+                    body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; }
+                    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+                    .ticket {
+                        border: 2px dashed #333; padding: 10px; text-align: center;
+                        height: 90px; display: flex; flex-direction: column; justify-content: center;
+                        page-break-inside: avoid;
+                    }
+                    .num { font-size: 18px; font-weight: bold; color: #C48945; margin-bottom:5px;}
+                    .name { font-size: 16px; font-weight:bold; }
+                    .id { font-size: 12px; color: #888; margin-top:2px;}
+                    @media print { .ticket { border-color: #999; } }
+                </style>
+            </head>
+            <body>
+                <h2 style="text-align:center;">信徒回饋抽獎券 (共 ${allCandidates.length} 張)</h2>
+                <div class="grid">${cardsHtml}</div>
+                <script>window.print();<\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+
     /* =========================================
-       7. 系統參數與連結 (Links & Settings)
+       7. 系統參數與連結
        ========================================= */
     const linksList = document.getElementById('links-list');
     const bankForm = document.getElementById('bank-form');
 
     async function fetchLinks() {
-        // 載入外部連結
         const links = await apiFetch('/api/links');
         linksList.innerHTML = links.map(l => `<div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;"><b>${l.name}</b> <input value="${l.url}" readonly style="flex:1; padding:8px; border:1px solid #ddd; background:#f9f9f9;"> <button class="btn btn--brown" onclick="updLink('${l._id}', '${l.url}')">修改</button></div>`).join('');
     }
     
-    // 載入匯款資訊
     async function fetchBankInfo() {
         try {
             const data = await apiFetch('/api/settings/bank');
@@ -838,7 +841,7 @@ async function fetchFeedback() {
     };
 
     /* =========================================
-       8. 基金與公告 (原樣保留)
+       8. 基金與公告
        ========================================= */
     const fundForm = document.getElementById('fund-form');
     const annModal = document.getElementById('announcement-modal');
@@ -853,17 +856,16 @@ async function fetchFeedback() {
         }
     }
     if(fundForm) fundForm.onsubmit = async (e) => {
-    e.preventDefault();
-    await apiFetch('/api/fund-settings', {
-        method:'POST', 
-        body:JSON.stringify({
-            goal_amount: document.getElementById('fund-goal').value
-        })
-    });
-    alert('更新成功！目前的線上募款金額已同步刷新。');
-    // 更新完後重新撈取最新數據，讓畫面保持最新
-    fetchFundSettings();
-};
+        e.preventDefault();
+        await apiFetch('/api/fund-settings', {
+            method:'POST', 
+            body:JSON.stringify({
+                goal_amount: document.getElementById('fund-goal').value
+            })
+        });
+        alert('更新成功！目前的線上募款金額已同步刷新。');
+        fetchFundSettings();
+    };
 
     async function fetchAndRenderAnnouncements() {
         const data = await apiFetch('/api/announcements');
@@ -891,7 +893,7 @@ async function fetchFeedback() {
         annModal.classList.remove('is-visible'); fetchAndRenderAnnouncements();
     };
 
-    // FAQ (原樣保留)
+    // FAQ
     const faqList = document.getElementById('faq-list');
     const faqModal = document.getElementById('faq-modal');
     const faqForm = document.getElementById('faq-form');
@@ -922,64 +924,7 @@ async function fetchFeedback() {
         await apiFetch(id ? `/api/faq/${id}` : '/api/faq', { method: id ? 'PUT' : 'POST', body: JSON.stringify({ question: faqForm.question.value, answer: faqForm.answer.value, category: faqForm.other_category.value, isPinned: faqForm.isPinned.checked }) });
         faqModal.classList.remove('is-visible'); fetchAndRenderFaqs();
     };
-    // --- 新增功能：匯出已寄送名單 ---
-    window.exportSentFeedbackTxt = async () => {
-        try {
-            const res = await fetch('/api/feedback/export-sent-txt', {
-                method: 'POST', 
-                headers: {'X-CSRFToken': getCsrfToken()}
-            });
-            
-            if(res.status === 404) return alert('目前無已寄送資料');
-            if(!res.ok) throw new Error('匯出失敗');
 
-            const blob = await res.blob();
-            const a = document.createElement('a'); 
-            a.href = URL.createObjectURL(blob); 
-            a.download = `已寄送名單_${new Date().toISOString().slice(0,10)}.txt`; 
-            a.click();
-        } catch(e) { 
-            console.error(e);
-            alert('匯出失敗'); 
-        }
-    };
-
-// --- 共用功能：查看回饋詳細內容 (Modal) ---
-    window.viewFbDetail = (item) => {
-        const modal = document.getElementById('feedback-detail-modal');
-        const body = document.getElementById('feedback-detail-body');
-        
-        // 判斷是「已寄送」還是「待寄送」，顯示對應的時間與物流
-        let statusHtml = '';
-        if (item.status === 'sent') {
-            statusHtml = `
-                <p><strong>寄出時間：</strong> ${item.sentAt || '未知'}</p>
-                <p><strong>物流單號：</strong> ${item.trackingNumber || '無'}</p>
-            `;
-        } else {
-            statusHtml = `<p><strong>核准時間：</strong> ${item.approvedAt || '未知'}</p>`;
-        }
-        
-        body.innerHTML = `
-            <div style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px;">
-                <p><strong>編號：</strong> ${item.feedbackId || '無'}</p>
-                ${statusHtml}
-            </div>
-            
-            <p><strong>真實姓名：</strong> ${item.realName}</p>
-            <p><strong>暱稱：</strong> ${item.nickname}</p>
-            <p><strong>農曆生日：</strong> ${item.lunarBirthday || '未提供'}</p>
-            <p><strong>電話：</strong> ${item.phone}</p>
-            <p><strong>地址：</strong> ${item.address}</p>
-            <p><strong>分類：</strong> ${Array.isArray(item.category) ? item.category.join(', ') : item.category}</p>
-            
-            <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #ddd; margin-top:15px;">
-                <strong style="color:#C48945;">回饋內容：</strong><br>
-                <div class="pre-wrap" style="margin-top:10px;">${item.content}</div>
-            </div>
-        `;
-        
-        modal.classList.add('is-visible');
-    };    // 啟動檢查
+    // 啟動檢查
     checkSession();
 });
