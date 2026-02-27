@@ -165,17 +165,45 @@
                 </div>
 
                 <div id="tab-donations" class="tab-content">
-                    <div class="donation-toolbar">
-                        <div class="date-picker-group">
-                            <label style="margin:0;">區間：</label>
-                            <input type="date" id="don-start" style="margin:0; width:140px;">
-                            <span>~</span>
-                            <input type="date" id="don-end" style="margin:0; width:140px;">
-                        </div>
-                        <button class="btn btn--grey" onclick="fetchDonations()">🔍 篩選</button>
+                    <div style="display:flex; margin-bottom:20px; border-bottom:2px solid #ddd;">
+                        <button class="sub-tab-btn active" onclick="switchDonationTab('incense')">🕯️ 捐香 (日常)</button>
+                        <button class="sub-tab-btn" onclick="switchDonationTab('fund')">🏗️ 建廟 (基金)</button>
                     </div>
-                    <div id="donations-list"></div>
+
+                    <div id="subtab-incense">
+                        <div class="donation-toolbar">
+                            <div class="date-picker-group">
+                                <select id="incense-report-filter" style="margin:0; width:120px;" onchange="fetchDonations('donation')">
+                                    <option value="0">未稟告</option>
+                                    <option value="1">已稟告</option>
+                                    <option value="">全部</option>
+                                </select>
+                            </div>
+                            <div style="flex:1; text-align:right;">
+                                <button class="btn btn--red" onclick="printRedPaper()">🖨️ 列印紅紙清單</button>
+                            </div>
+                        </div>
+                        <div id="incense-list"></div>
+                    </div>
+
+                    <div id="subtab-fund" style="display:none;">
+                        <div class="donation-toolbar">
+                            <button class="btn btn--green" onclick="exportFundList()">📋 匯出建廟徵信清單</button>
+                        </div>
+                        <div id="fund-list"></div>
+                    </div>
                 </div>
+
+                <style>
+                    /* 子分頁按鈕樣式 */
+                    .sub-tab-btn {
+                        flex: 1; padding: 15px; border: none; background: none; 
+                        font-size: 16px; cursor: pointer; color: #666; font-weight: bold;
+                        border-bottom: 4px solid transparent; transition: 0.3s;
+                    }
+                    .sub-tab-btn.active { color: #C48945; border-bottom-color: #C48945; background: rgba(196, 137, 69, 0.05); }
+                    .sub-tab-btn:hover { background: rgba(0,0,0,0.02); }
+                </style>
 
                 <div id="tab-orders" class="tab-content">
                     <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">

@@ -323,121 +323,254 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchProducts();
     };
 
-    /* =========================================
-       4. 捐贈管理 (狀態分流 + TXT 匯出 + 刪除寄信)
-       ========================================= */
-    const donationsList = document.getElementById('donations-list');
+/* =========================================
+   4. 捐贈管理 (捐香與建廟分流)
+   ========================================= */
+
+// 切換子分頁
+window.switchDonationTab = (type) => {
+    document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
     
-    window.fetchDonations = async () => {
-        if(!donationsList) return;
-        const start = document.getElementById('don-start').value;
-        const end = document.getElementById('don-end').value;
-        let url = '/api/donations/admin';
-        if(start && end) url += `?start=${start}&end=${end}`;
-        
-        donationsList.innerHTML = '<p>載入中...</p>';
-        try {
-            const orders = await apiFetch(url);
-            
-            // 狀態分流
-            const pending = orders.filter(o => o.status === 'pending');
-            const paid = orders.filter(o => o.status === 'paid');
+    document.getElementById('subtab-incense').style.display = type === 'incense' ? 'block' : 'none';
+    document.getElementById('subtab-fund').style.display = type === 'fund' ? 'block' : 'none';
+    
+    // 載入對應資料
+    if (type === 'incense') fetchDonations('donation');
+    else fetchDonations('fund');
+};
 
-            // 渲染畫面
-            donationsList.innerHTML = `
-                <div style="margin-bottom:40px;">
-                    <h3 style="background:#dc3545; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">
-                        1. 未付款 / 待核對 (${pending.length})
-                    </h3>
-                    <div style="text-align:right; margin-bottom:10px;">
-                        <button class="btn btn--red" onclick="cleanupUnpaid()">🗑️ 清除逾期未付 (76hr)</button>
-                    </div>
-                    ${pending.length ? pending.map(o => renderDonationCard(o, false)).join('') : '<p style="color:#999; padding:10px;">無待核對項目</p>'}
-                </div>
+// 載入列表 (共用函式)
+async function fetchDonations(type) {
+    const container = type === 'donation' ? document.getElementById('incense-list') : document.getElementById('fund-list');
+    container.innerHTML = '<p>載入中...</p>';
+    
+    let url = `/api/donations/admin?type=${type}&status=paid`; // 預設只看已付款
+    
+    // 如果是捐香，加上稟告狀態篩選
+    if (type === 'donation') {
+        const reportStatus = document.getElementById('incense-report-filter').value;
+        if (reportStatus !== '') url += `&reported=${reportStatus}`;
+    }
 
-                <div>
-                    <h3 style="background:#28a745; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">
-                        2. 已付款 / 待稟報 (${paid.length})
-                    </h3>
-                    <div style="text-align:right; margin-bottom:10px;">
-                        <button class="btn btn--green" onclick="exportDonationsReport('txt')">📄 匯出名單 (TXT)</button>
-                    </div>
-                    ${paid.length ? paid.map(o => renderDonationCard(o, true)).join('') : '<p style="color:#999; padding:10px;">無已付款項目</p>'}
-                </div>
-            `;
-        } catch(e) { donationsList.innerHTML = '載入失敗'; }
-    };
+    try {
+        const orders = await apiFetch(url);
+        if (orders.length === 0) {
+            container.innerHTML = '<p style="padding:20px; text-align:center; color:#999;">查無資料</p>';
+            return;
+        }
 
-    function renderDonationCard(o, isPaid) {
-        // ★ 核心修改：如果已付款 (isPaid=true)，不顯示刪除按鈕
-        return `
-        <div class="feedback-card" style="border-left:5px solid ${isPaid?'#28a745':'#dc3545'};">
-            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:10px;">
-                <div>
-                    <span style="font-size:12px; background:#eee; padding:2px 5px; border-radius:4px;">${o.orderId}</span>
-                    <span style="font-weight:bold; font-size:18px; margin-left:10px;">${o.customer.name}</span>
-                </div>
-                <div style="color:${isPaid?'green':'red'}; font-weight:bold;">${isPaid ? '✅ 已付款' : '⏳ 未付款'}</div>
-            </div>
-            
-            <div style="display:flex; justify-content:space-between; background:#f9f9f9; padding:10px; border-radius:5px; margin-bottom:10px;">
-                <div>
-                    <div>後五碼：<b style="color:#C48945;">${o.customer.last5}</b></div>
-                    <div>金額：<b>$${o.total}</b></div>
-                </div>
-                <div style="text-align:right; font-size:14px; color:#555;">
-                    建立：${o.createdAt}<br>
-                    農曆：${o.customer.lunarBirthday || '未填'}
-                </div>
-            </div>
-            
-            <div style="color:#555; font-size:14px;">
-                <b>項目：</b>${o.items.map(i => `${i.name} x${i.qty}`).join(', ')}<br>
-                <b>地址：</b>${o.customer.address}
-            </div>
+        if (type === 'donation') {
+            renderIncenseList(orders, container);
+        } else {
+            renderFundList(orders, container);
+        }
+    } catch(e) { container.innerHTML = '載入失敗'; }
+}
 
-            <div style="text-align:right; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-                ${!isPaid ? `<button class="btn btn--green" onclick="confirmDonation('${o._id}')">✅ 確認收款 (寄感謝狀)</button>` : ''}
-                ${isPaid ? `<button class="btn btn--blue" onclick="resendEmail('${o._id}', '${o.customer.email}')">📩 補寄感謝狀</button>` : ''}
-                ${!isPaid ? `<button class="btn btn--red" onclick="delOrder('${o._id}', 'donation')">🗑️ 刪除 (寄取消信)</button>` : ''}
-            </div>
+// 渲染捐香列表 (包含稟告按鈕)
+function renderIncenseList(orders, container) {
+    const isUnreportedView = document.getElementById('incense-report-filter').value === '0';
+    
+    // 收集所有未稟告的 ID，方便一鍵全選 (這裡做簡單版：只顯示按鈕)
+    window.currentIncenseIds = orders.map(o => o._id);
+
+    let html = '';
+    
+    // 如果是在「未稟告」檢視模式，顯示批次按鈕
+    if (isUnreportedView && orders.length > 0) {
+        html += `
+        <div style="background:#fff3cd; padding:10px; margin-bottom:15px; border-radius:5px; border:1px solid #ffeeba; display:flex; justify-content:space-between; align-items:center;">
+            <span>⚠️ 共 <strong>${orders.length}</strong> 筆未稟告資料</span>
+            <button class="btn btn--blue" onclick="markAllReported()">✅ 將本頁標記為已稟告</button>
         </div>`;
     }
 
-    window.confirmDonation = async (id) => {
-        if(confirm('確認已收到款項？(將寄出電子感謝狀並列入芳名錄)')) {
-            await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'});
-            fetchDonations();
-        }
-    };
+    html += orders.map(o => `
+        <div class="feedback-card" style="border-left:5px solid ${o.is_reported ? '#28a745' : '#dc3545'};">
+            <div style="display:flex; justify-content:space-between;">
+                <strong>${o.customer.name}</strong>
+                <span style="font-size:12px; padding:2px 6px; border-radius:4px; background:${o.is_reported ? '#d4edda' : '#f8d7da'}; color:${o.is_reported ? '#155724' : '#721c24'};">
+                    ${o.is_reported ? `已稟告 (${o.reportedAt||''})` : '未稟告'}
+                </span>
+            </div>
+            <div style="color:#555; margin-top:5px;">
+                ${o.items.map(i => `${i.name} x${i.qty}`).join('、')}
+            </div>
+            <div style="font-size:12px; color:#888; margin-top:5px;">
+                單號: ${o.orderId} | 農曆: ${o.customer.lunarBirthday || '-'}
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = html;
+}
 
-    // 補寄信功能 (共用)
-    window.resendEmail = async (id, oldEmail) => {
-        const newEmail = prompt("請確認接收 Email (若要修改請直接編輯):", oldEmail);
-        if(newEmail) {
-            try {
-                await apiFetch(`/api/orders/${id}/resend-email`, {method:'POST', body:JSON.stringify({email: newEmail})});
-                alert('已發送重寄請求');
-            } catch(e) { alert('發送失敗'); }
-        }
-    };
+// 渲染建廟基金列表
+function renderFundList(orders, container) {
+    container.innerHTML = orders.map(o => `
+        <div class="feedback-card" style="border-left:5px solid #C48945;">
+            <div style="display:flex; justify-content:space-between;">
+                <strong>${o.customer.name}</strong>
+                <span style="color:#C48945; font-weight:bold;">$${o.total}</span>
+            </div>
+            <div style="color:#555; margin-top:5px;">
+                ${o.items.map(i => i.name).join('、')}
+            </div>
+            <div style="font-size:12px; color:#888; margin-top:5px;">
+                ${o.createdAt} | ${o.customer.address}
+            </div>
+        </div>
+    `).join('');
+}
 
-    window.exportDonationsReport = async () => {
-        const start = document.getElementById('don-start').value;
-        const end = document.getElementById('don-end').value;
-        try {
-            // ★ 修改：匯出 TXT 格式 (後端會處理)
-            const res = await fetch('/api/donations/export-txt', {
-                method:'POST', headers:{'Content-Type':'application/json', 'X-CSRFToken': getCsrfToken()},
-                body: JSON.stringify({start, end})
-            });
-            const blob = await res.blob();
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `捐贈名單_${new Date().toISOString().slice(0,10)}.txt`; a.click();
-        } catch(e) { alert('匯出失敗'); }
-    };
+// === 功能：列印紅紙 (Simple Red Paper Print) ===
+window.printRedPaper = async () => {
+    // 1. 抓取目前未稟告的資料
+    const orders = await apiFetch('/api/donations/admin?type=donation&status=paid&reported=0');
+    if (orders.length === 0) return alert('目前沒有未稟告的資料可列印');
 
-    window.cleanupUnpaid = async () => { if(confirm('確定清除逾期未付款？(系統將自動發送取消通知信)')) { await apiFetch('/api/donations/cleanup-unpaid', {method:'DELETE'}); fetchDonations(); } };
+    // 2. 開啟列印視窗
+    const printWindow = window.open('', '_blank');
+    let itemsHtml = '';
+    
+    orders.forEach(o => {
+        const itemStr = o.items.map(i => `${i.name} ${i.qty}份`).join('、');
+        // 紅紙格式：橫式條列，字體加粗黑字
+        itemsHtml += `
+            <div class="row">
+                <span class="name">${o.customer.name}</span>
+                <span class="items">${itemStr}</span>
+            </div>
+        `;
+    });
 
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>稟告紅紙清單</title>
+            <style>
+                body { font-family: "KaiTi", "Microsoft JhengHei", serif; padding: 20px; background: white; }
+                .list-container { width: 100%; max-width: 800px; margin: 0 auto; }
+                .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 30px; }
+                .row { 
+                    display: flex; border-bottom: 1px dashed #000; padding: 15px 0; 
+                    font-size: 20px; line-height: 1.5; color: #000; font-weight: bold;
+                }
+                .name { width: 150px; flex-shrink: 0; }
+                .items { flex: 1; }
+                @media print {
+                    @page { margin: 0; }
+                    body { -webkit-print-color-adjust: exact; background-color: #ffcccc; /* 模擬紅紙底色，實際請用紅紙列印 */ }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="list-container">
+                <div class="header">承天中承府 捐香稟告清單 (${new Date().toLocaleDateString()})</div>
+                ${itemsHtml}
+            </div>
+            <script>window.print();<\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+};
+
+// === 功能：批次標記已稟告 ===
+window.markAllReported = async () => {
+    if (!window.currentIncenseIds || window.currentIncenseIds.length === 0) return;
+    if (!confirm(`確定將這 ${window.currentIncenseIds.length} 筆資料標記為「已稟告」嗎？`)) return;
+
+    try {
+        await apiFetch('/api/donations/mark-reported', {
+            method: 'POST',
+            body: JSON.stringify({ ids: window.currentIncenseIds })
+        });
+        alert('更新成功！');
+        fetchDonations('donation'); // 重新載入
+    } catch(e) { alert('更新失敗'); }
+};
+
+// === 功能：信徒回饋 - 統計與抽獎券列印 ===
+// 在 fetchFeedback() 開頭加入統計邏輯
+async function fetchFeedback() {
+    // ... (原有代碼) ...
+    // 統計數據
+    const totalPending = pending.length;
+    const totalApproved = approved.length;
+    const totalSent = sent.length;
+    
+    // 插入統計 UI (假設你在 admin.html tab-feedback 最上方加了一個 id="fb-stats")
+    // 這裡我們動態插入到 feedback-grid 之前
+    const grid = document.querySelector('.feedback-grid');
+    let statsDiv = document.getElementById('fb-stats-bar');
+    if (!statsDiv) {
+        statsDiv = document.createElement('div');
+        statsDiv.id = 'fb-stats-bar';
+        statsDiv.style.marginBottom = '20px';
+        statsDiv.style.display = 'flex';
+        statsDiv.style.gap = '15px';
+        statsDiv.style.alignItems = 'center';
+        grid.parentNode.insertBefore(statsDiv, grid);
+    }
+    
+    statsDiv.innerHTML = `
+        <span style="background:#6c757d; color:white; padding:5px 10px; border-radius:15px;">總則數: ${totalPending + totalApproved + totalSent}</span>
+        <button class="btn btn--brown" onclick="printRaffleTickets()">🎟️ 列印抽獎券</button>
+    `;
+    // ... (後續代碼不變)
+}
+
+// 實作抽獎券列印
+window.printRaffleTickets = async () => {
+    const approved = await apiFetch('/api/feedback/status/approved'); // 撈取可參加抽獎的名單
+    const sent = await apiFetch('/api/feedback/status/sent');
+    const allCandidates = [...approved, ...sent]; // 已核准 + 已寄出的都可以抽 (看你的規則)
+
+    if (allCandidates.length === 0) return alert('無名單可列印');
+
+    const printWindow = window.open('', '_blank');
+    
+    let cardsHtml = allCandidates.map((fb, index) => `
+        <div class="ticket">
+            <div class="num">No. ${String(index + 1).padStart(3, '0')}</div>
+            <div class="name">${fb.realName}</div>
+            <div class="id">${fb.feedbackId || ''}</div>
+        </div>
+    `).join('');
+
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>抽獎券列印</title>
+            <style>
+                body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; }
+                .grid { 
+                    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
+                }
+                .ticket {
+                    border: 2px dashed #333; padding: 15px; text-align: center;
+                    height: 80px; display: flex; flex-direction: column; justify-content: center;
+                    page-break-inside: avoid;
+                }
+                .num { font-size: 20px; font-weight: bold; color: #C48945; }
+                .name { font-size: 18px; margin: 5px 0; }
+                .id { font-size: 12px; color: #888; }
+                @media print {
+                    .ticket { border-color: #999; }
+                }
+            </style>
+        </head>
+        <body>
+            <h2 style="text-align:center;">信徒回饋抽獎券 (${allCandidates.length}張)</h2>
+            <div class="grid">${cardsHtml}</div>
+            <script>window.print();<\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+};
     /* =========================================
        5. 一般訂單管理 (100% 滿版 + 刪除寄信)
        ========================================= */

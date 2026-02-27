@@ -1088,21 +1088,38 @@ def get_public_donations():
 @app.route('/api/donations/admin', methods=['GET'])
 @login_required
 def get_admin_donations():
+    type_filter = request.args.get('type') # 'donation' 或 'fund'
+    status_filter = request.args.get('status') # 'paid', 'pending'
+    report_filter = request.args.get('reported') # '0' (未稟告), '1' (已稟告)
+    
+    query = {}
+    if type_filter: query['orderType'] = type_filter
+    else: query['orderType'] = {"$in": ["donation", "fund"]} # 預設抓這兩種
+    
+    if status_filter: query['status'] = status_filter
+    
+    # 稟告篩選 (只針對捐香有效)
+    if type_filter == 'donation' and report_filter is not None:
+        query['is_reported'] = (report_filter == '1')
+
+    # 日期篩選 (選填)
     start_str = request.args.get('start')
     end_str = request.args.get('end')
-    query = {"orderType": "donation"}
     if start_str and end_str:
         try:
             start_date = datetime.strptime(start_str, '%Y-%m-%d')
             end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
             query["createdAt"] = {"$gte": start_date, "$lt": end_date}
         except: pass
-    cursor = db.orders.find(query).sort([("status", 1), ("createdAt", -1)])
+
+    cursor = db.orders.find(query).sort([("is_reported", 1), ("createdAt", -1)])
     results = []
     for doc in cursor:
         doc['_id'] = str(doc['_id'])
-        doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M')
-        doc['paidAt'] = doc.get('paidAt').strftime('%Y-%m-%d %H:%M') if doc.get('paidAt') else ''
+        doc['createdAt'] = (doc['createdAt'] + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
+        # 顯示稟告時間
+        if doc.get('reportedAt'):
+            doc['reportedAt'] = (doc['reportedAt'] + timedelta(hours=8)).strftime('%Y-%m-%d')
         results.append(doc)
     return jsonify(results)
 
@@ -1157,52 +1174,76 @@ def cleanup_unpaid_orders():
     result = db.orders.delete_many({"status": "pending", "createdAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
-# --- Order APIs (修正為與 Donation 分流) ---
+# === 2. 修改 create_order (區分 donation 與 fund) ===
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     if db is None: return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
-    
-    # ★ 新增：強制檢查登入狀態並綁定 lineId
     line_id = session.get('user_line_id')
-    if not line_id:
-        return jsonify({"error": "請先使用 LINE 登入"}), 401
-        
-    # 自動判斷是否為護持訂單 (若商品名稱包含 [建廟])
+    if not line_id: return jsonify({"error": "請先使用 LINE 登入"}), 401
+    
+    # ★ 關鍵修改：直接信任前端傳來的 orderType ('fund', 'donation', 'shop')
     order_type = data.get('orderType', 'shop')
-    if any('[建廟]' in item['name'] for item in data['items']):
-        order_type = 'donation'
-        
-    order_id = f"{'DON' if order_type == 'donation' else 'ORD'}{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
+    
+    # 產生單號前綴
+    prefix = "ORD"
+    if order_type == 'donation': prefix = "DON" # 捐香
+    elif order_type == 'fund': prefix = "FND"   # 建廟
+    
+    order_id = f"{prefix}{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
     
     customer_info = {
         "name": data.get('name'), "phone": data.get('phone'), "email": data.get('email', ''),
         "address": data.get('address'), "last5": data.get('last5'),
-        "lunarBirthday": data.get('lunarBirthday', '') # 護持單才有
+        "lunarBirthday": data.get('lunarBirthday', '')
     }
     
     now = datetime.utcnow()
-    deadline = now + timedelta(hours=2) # ★ N+2 極速催款死線
+    deadline = now + timedelta(hours=2)
     
     order = {
         "orderId": order_id, "orderType": order_type, "customer": customer_info,
         "items": data['items'], "total": data['total'], "status": "pending",
-        "lineId": line_id,           # ★ 綁定使用者
-        "paymentDeadline": deadline, # ★ 紀錄死線
+        "lineId": line_id,
+        "paymentDeadline": deadline,
         "createdAt": now, "updatedAt": now
     }
+
+    # ★ 針對「捐香 (donation)」新增稟告狀態欄位
+    if order_type == 'donation':
+        order['is_reported'] = False  # 預設為未稟告
+
     db.orders.insert_one(order)
     
-    # 寄信通知
-    if order_type == 'donation':
-        subject = f"【承天中承府】護持登記確認 ({order_id})"
+    # (寄信邏輯保持不變，或視需要微調主旨)
+    subject = f"【承天中承府】訂單確認 ({order_id})"
+    if order_type == 'donation': subject = f"【承天中承府】捐香登記確認 ({order_id})"
+    elif order_type == 'fund': subject = f"【承天中承府】建廟護持確認 ({order_id})"
+    
+    # 這裡簡化範例，您可以沿用原本的 generate_donation_created_email
+    if order_type in ['donation', 'fund']:
         html = generate_donation_created_email(order)
     else:
-        subject = f"【承天中承府】訂單確認 ({order_id})"
-        html = generate_shop_email_html(order, 'created') # 請使用完整版
+        html = generate_shop_email_html(order, 'created')
         
     send_email(customer_info['email'], subject, html, is_html=True)
     return jsonify({"success": True, "orderId": order_id})
+# === 3. 新增 API: 批次標記捐香為「已稟告」 ===
+@app.route('/api/donations/mark-reported', methods=['POST'])
+@login_required
+def mark_donations_reported():
+    data = request.get_json()
+    ids = data.get('ids', [])
+    if not ids: return jsonify({"success": False, "message": "無選取訂單"})
+    
+    # 轉換 ID 並更新
+    object_ids = [get_object_id(i) for i in ids if get_object_id(i)]
+    if object_ids:
+        db.orders.update_many(
+            {"_id": {"$in": object_ids}},
+            {"$set": {"is_reported": True, "reportedAt": datetime.utcnow()}}
+        )
+    return jsonify({"success": True})
 @app.route('/api/user/orders', methods=['GET'])
 def get_user_orders():
     """給信徒「個人專區」看的商城訂單紀錄"""
@@ -1444,26 +1485,25 @@ def delete_faq(fid):
     db.faq.delete_one({'_id': oid})
     return jsonify({"success": True})
 
+# === 1. 修改 get_fund_settings (只計算 fund 類別) ===
 @app.route('/api/fund-settings', methods=['GET'])
 def get_fund_settings():
     settings = db.temple_fund.find_one({"type": "main_fund"}) or {"goal_amount": 10000000}
     
-    # 💡 核心魔法：使用 aggregate 自動加總所有「已付款」的「建廟」訂單金額
+    # 修改：只加總 orderType 為 'fund' 且已付款的金額
+    # (若您已在資料庫手動將舊的建廟訂單改成 fund，這樣寫最乾淨)
     pipeline = [
-        {"$match": {"status": "paid", "orderType": "donation"}},
+        {"$match": {"status": "paid", "orderType": "fund"}},
         {"$group": {"_id": None, "total_current": {"$sum": "$total"}}}
     ]
     
     if db is not None:
         result = list(db.orders.aggregate(pipeline))
-        # 如果有撈到資料就取總和，沒有的話就是 0
         calculated_current = result[0]['total_current'] if result else 0
     else:
         calculated_current = 0
         
-    # 將自動算好的金額放進回傳資料中
     settings['current_amount'] = calculated_current
-
     if '_id' in settings: settings['_id'] = str(settings['_id'])
     return jsonify(settings)
 
