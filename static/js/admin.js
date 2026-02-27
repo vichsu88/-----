@@ -720,10 +720,17 @@ async function fetchFeedback() {
         }
     }
     if(fundForm) fundForm.onsubmit = async (e) => {
-        e.preventDefault();
-        await apiFetch('/api/fund-settings', {method:'POST', body:JSON.stringify({goal_amount:document.getElementById('fund-goal').value, current_amount:document.getElementById('fund-current').value})});
-        alert('更新成功');
-    };
+    e.preventDefault();
+    await apiFetch('/api/fund-settings', {
+        method:'POST', 
+        body:JSON.stringify({
+            goal_amount: document.getElementById('fund-goal').value
+        })
+    });
+    alert('更新成功！目前的線上募款金額已同步刷新。');
+    // 更新完後重新撈取最新數據，讓畫面保持最新
+    fetchFundSettings();
+};
 
     async function fetchAndRenderAnnouncements() {
         const data = await apiFetch('/api/announcements');

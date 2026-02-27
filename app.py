@@ -1446,7 +1446,24 @@ def delete_faq(fid):
 
 @app.route('/api/fund-settings', methods=['GET'])
 def get_fund_settings():
-    settings = db.temple_fund.find_one({"type": "main_fund"}) or {"goal_amount": 10000000, "current_amount": 0}
+    settings = db.temple_fund.find_one({"type": "main_fund"}) or {"goal_amount": 10000000}
+    
+    # 💡 核心魔法：使用 aggregate 自動加總所有「已付款」的「建廟」訂單金額
+    pipeline = [
+        {"$match": {"status": "paid", "orderType": "donation"}},
+        {"$group": {"_id": None, "total_current": {"$sum": "$total"}}}
+    ]
+    
+    if db is not None:
+        result = list(db.orders.aggregate(pipeline))
+        # 如果有撈到資料就取總和，沒有的話就是 0
+        calculated_current = result[0]['total_current'] if result else 0
+    else:
+        calculated_current = 0
+        
+    # 將自動算好的金額放進回傳資料中
+    settings['current_amount'] = calculated_current
+
     if '_id' in settings: settings['_id'] = str(settings['_id'])
     return jsonify(settings)
 
@@ -1454,7 +1471,12 @@ def get_fund_settings():
 @login_required
 def update_fund_settings():
     data = request.get_json()
-    db.temple_fund.update_one({"type": "main_fund"}, {"$set": {"goal_amount": int(data.get('goal_amount', 0)), "current_amount": int(data.get('current_amount', 0))}}, upsert=True)
+    # 💡 現在只需更新目標金額 (goal_amount)，目前金額已完全自動化不須存進設定檔
+    db.temple_fund.update_one(
+        {"type": "main_fund"}, 
+        {"$set": {"goal_amount": int(data.get('goal_amount', 10000000))}}, 
+        upsert=True
+    )
     return jsonify({"success": True})
 
 @app.route('/api/links', methods=['GET'])
