@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span style="background:#6c757d; color:white; padding:8px 15px; border-radius:20px; font-weight:bold;">
                     總回饋數: ${totalCount} 筆
                 </span>
-                <button class="btn btn--brown" onclick="printRaffleTickets()">🎟️ 列印抽獎券 (已審核+已寄送)</button>
+                <button class="btn btn--brown" onclick="printRaffleTickets()">列印抽獎券</button>
             `;
         }
 
