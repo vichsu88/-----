@@ -95,7 +95,7 @@
     
     .clothes-container { background: #fff; border: 1px dashed #C48945; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
     .cloth-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-    .cloth-row input { flex: 1; }
+    .cloth-row input { flex: 1; box-sizing: border-box; }
     .btn-remove-cloth { background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 10px; }
     .btn-add-cloth { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 5px;}
     .btn-submit { background: #C48945; color: white; border: none; padding: 12px; width: 100%; border-radius: 25px; font-size: 18px; font-weight: bold; cursor: pointer; }
@@ -115,6 +115,26 @@
     .cloth-pill {
         display: inline-block; background: #f4f4f4; border: 1px solid #ddd; color: #333;
         padding: 4px 10px; border-radius: 15px; font-size: 13px;
+    }
+    /* === 手機版表單欄位適應 === */
+    @media (max-width: 768px) {
+        .cloth-row { 
+            flex-direction: column; /* 改為直向排列 */
+            align-items: stretch;
+            background: #fafafa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .cloth-row input, .cloth-row input[type="number"] { 
+            width: 100% !important; /* 強制覆蓋寫死的 120px */
+            box-sizing: border-box; /* 確保內距不會撐破寬度 */
+            flex: none; 
+            margin-bottom: 8px;
+        }
+        .btn-remove-cloth { 
+            width: 100%; 
+            padding: 12px;
+        }
     }
 </style>
 
@@ -348,17 +368,32 @@ boardContainer.innerHTML = data.map(day => {
         if (selectedType === 'delivery') {
             dateInput.min = minDateStr;
             dateInput.max = minDateStr;
-            dateInput.value = minDateStr;
+            dateInput.value = minDateStr; // 黑貓強制帶入後天
             dateInput.readOnly = true; 
+            
+            // 解決問題2：徹底阻擋手機版點擊喚出日期選單
+            dateInput.style.pointerEvents = 'none'; 
+            dateInput.style.backgroundColor = '#e9ecef'; // 加上灰底提示不可修改
+            
             dateHint.textContent = "(黑貓寄件僅限指定後天準備)";
         } else {
             dateInput.min = minDateStr;
             dateInput.max = maxDateStr;
-            dateInput.value = minDateStr;
+            
+            // 解決問題3：現場自取預設為空，鼓勵大家主動點選
+            dateInput.value = ''; 
+            
             dateInput.readOnly = false;
+            
+            // 恢復可點擊與白底
+            dateInput.style.pointerEvents = 'auto'; 
+            dateInput.style.backgroundColor = '#ffffff'; 
+            
             dateHint.textContent = "(可預約 2~14 天內)";
         }
     }
+
+    // ⭐ 補上被遺漏的這行：綁定切換按鈕事件
     typeRadios.forEach(r => r.addEventListener('change', updateDateLimits));
 
     // --- 3. 動態新增衣服欄位 ---
