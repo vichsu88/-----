@@ -299,25 +299,72 @@
         loadMarquee();
         loadProducts();
         setupFormatters();
+        
+        // ★ 新增：檢查網址是否有參數，如果是登入後跳轉回來，自動開啟表單
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'donate') {
+            startDonation();
+        }
     });
 
-    // ★ 啟動捐贈流程
-    window.startDonation = () => {
-        const area = document.getElementById('donation-process-area');
-        area.style.display = 'block';
-        // 延遲一點點讓 display:block 生效後再加 opacity，產生淡入效果
-        setTimeout(() => {
-            area.classList.add('show');
-            // 平滑捲動到選擇區
-            area.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 10);
-        
-        // 隱藏按鈕本身 (可選，若想保留按鈕可註解掉下面這行)
-        document.getElementById('cta-container').style.display = 'none';
+    // ★ 修改：啟動捐贈流程 (加入 LINE 登入檢查)
+    window.startDonation = async () => {
+        const btn = document.querySelector('.start-donate-btn');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = '讀取資料中...';
+
+        try {
+            // 1. 檢查登入狀態
+            const res = await fetch('/api/user/me');
+            const data = await res.json();
+
+            if (!data.logged_in) {
+                // 未登入：記錄當前意圖，跳轉去 LINE 登入，並帶上參數讓回來時知道要繼續
+                alert('為了記錄您的功德並寄送感謝狀，請先進行 LINE 登入。');
+                // next 參數設為 /donation?action=donate，這樣登入回來可以自動觸發
+                window.location.href = '/api/line/login?next=' + encodeURIComponent('/donation?action=donate');
+                return;
+            }
+
+            // 2. 已登入：自動帶入會員資料
+            const user = data.user || {};
+            const form = document.getElementById('donation-form');
+            
+            // 如果欄位是空的，才自動帶入 (避免覆蓋使用者剛打的字)
+            if(!form.name.value && user.realName) form.name.value = user.realName;
+            if(!form.phone.value && user.phone) form.phone.value = user.phone;
+            if(!form.email.value && user.email) form.email.value = user.email;
+            if(!form.address.value && user.address) form.address.value = user.address;
+            
+            // 農曆生日處理
+            if(!form.lunarBirthday.value && user.lunarBirthday) {
+                form.lunarBirthday.value = user.lunarBirthday;
+            }
+
+            // 3. 顯示捐贈區塊
+            const area = document.getElementById('donation-process-area');
+            area.style.display = 'block';
+            setTimeout(() => {
+                area.classList.add('show');
+                area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 10);
+            
+            // 隱藏按鈕 (選擇性)
+            document.getElementById('cta-container').style.display = 'none';
+
+        } catch (e) {
+            console.error(e);
+            alert('系統忙碌中，請稍後再試');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
     };
 
-    // 1. 載入商品
+    // 1. 載入商品 (維持不變)
     function loadProducts() {
+        // ... (原程式碼不變)
         fetch('/api/products')
             .then(res => res.json())
             .then(data => {
@@ -342,15 +389,15 @@
             });
     }
 
-    // 2. 數量變更邏輯
+    // 2. 數量變更邏輯 (維持不變)
     window.changeQty = (id, delta) => {
+        // ... (原程式碼不變)
         const p = products.find(x => x._id === id);
         if(!selectedItems[id]) selectedItems[id] = { id: p._id, name: p.name, price: p.price, qty: 0 };
         
         selectedItems[id].qty += delta;
         if(selectedItems[id].qty < 0) selectedItems[id].qty = 0;
         
-        // UI 更新
         document.getElementById(`qty-${id}`).textContent = selectedItems[id].qty;
         const card = document.getElementById(`card-${id}`);
         if(selectedItems[id].qty > 0) card.classList.add('active'); else card.classList.remove('active');
@@ -359,8 +406,9 @@
         updateSummary();
     };
 
-    // 3. 更新摘要表
+    // 3. 更新摘要表 (維持不變)
     function updateSummary() {
+        // ... (原程式碼不變)
         const tbody = document.getElementById('summary-body');
         const section = document.getElementById('summary-section');
         const items = Object.values(selectedItems);
@@ -380,19 +428,18 @@
         document.getElementById('summary-total').textContent = total;
     }
 
-    // 4. 自動格式化與驗證 (Auto-Format)
+    // 4. 自動格式化與驗證 (維持不變)
     function setupFormatters() {
-        // 電話：09XX-XXX-XXX
+        // ... (原程式碼不變)
         const phoneInput = document.getElementById('phone-input');
         phoneInput.addEventListener('input', (e) => {
-            let v = e.target.value.replace(/\D/g, ''); // 只留數字
+            let v = e.target.value.replace(/\D/g, ''); 
             if (v.length > 10) v = v.slice(0, 10);
             if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
             else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
             e.target.value = v;
         });
 
-        // 農曆生日：輸入純數字 -> 自動加斜線
         const bdayInput = document.getElementById('birthday-input');
         bdayInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/\D/g, '');
@@ -407,18 +454,17 @@
         });
     }
 
-    // 5. 送出表單
+    // 5. 送出表單 (維持不變)
     document.getElementById('donation-form').onsubmit = async (e) => {
+        // ... (原程式碼不變)
         e.preventDefault();
         const items = Object.values(selectedItems);
         if (items.length === 0) return alert('請至少選擇一個護持項目');
         
-        // 再次驗證
         const phone = document.getElementById('phone-input').value;
         if(!/^09\d{2}-\d{3}-\d{3}$/.test(phone)) return alert('電話格式錯誤，請確認為 09XX-XXX-XXX');
         
         const bday = document.getElementById('birthday-input').value;
-        // 允許 75/08/21 或 112/08/21
         if(bday && !/^\d{2,3}\/\d{2}\/\d{2}$/.test(bday)) return alert('生日格式錯誤，請輸入民國年數字 (如 750821 或 1120101)');
 
         const f = e.target;
@@ -429,7 +475,7 @@
             email: f.email.value,
             address: f.address.value,
             lunarBirthday: bday,
-            prayer: '', // ★ 已移除祈願欄位，傳送空值
+            prayer: '', 
             last5: f.last5.value,
             items: items,
             total: parseInt(document.getElementById('summary-total').textContent)
@@ -444,6 +490,14 @@
                 headers:{'Content-Type':'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content},
                 body: JSON.stringify(payload)
             });
+            
+            // ★ 新增：若 Token 過期或被登出，這邊會接到 401 錯誤
+            if (res.status === 401) {
+                alert('您的登入時效已過，請重新登入 LINE');
+                window.location.href = '/api/line/login?next=' + encodeURIComponent('/donation?action=donate');
+                return;
+            }
+
             if((await res.json()).success) {
                 document.getElementById('success-modal').style.display = 'flex';
             } else {
@@ -458,7 +512,7 @@
         }
     };
 
-    // 芳名錄
+    // 芳名錄 (維持不變)
     function loadMarquee() {
         fetch('/api/donations/public').then(r=>r.json()).then(data => {
             const list = document.getElementById('honor-list');
