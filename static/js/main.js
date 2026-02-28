@@ -3,15 +3,21 @@ document.addEventListener('DOMContentLoaded', function() {
        1. 變數定義與初始化
        ============================== */
     const newsList = document.getElementById('news-list');
-    const faqList = document.getElementById('faq-list'); // ★ 新增：FAQ 的容器
+    const faqList = document.getElementById('faq-list');
     const modal = document.getElementById('announcementModal');
     
-    // 使用 ?. 避免報錯
-    const modalDate = modal?.querySelector('.modal-date');
-    const modalTitle = modal?.querySelector('.modal-title');
-    const modalBody = modal?.querySelector('.modal-body');
-    const closeModalBtn = document.getElementById('modalCloseBtn');
+    // [修正] 移除 ?. 語法以相容舊手機，改用傳統判斷
+    let modalDate = null;
+    let modalTitle = null;
+    let modalBody = null;
     
+    if (modal) {
+        modalDate = modal.querySelector('.modal-date');
+        modalTitle = modal.querySelector('.modal-title');
+        modalBody = modal.querySelector('.modal-body');
+    }
+
+    const closeModalBtn = document.getElementById('modalCloseBtn');
     let allNewsData = []; 
 
     /* ==============================
@@ -27,19 +33,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /* ==============================
-       2. FAQ 列表載入與搜尋功能 (★ 全新修正)
+       2. FAQ 列表載入與搜尋功能
        ============================== */
     if (faqList) {
         // 2-1. 從後端抓取 FAQ 資料
         fetch('/api/faq')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.json();
+            })
             .then(faqs => {
                 if (faqs.length === 0) {
                     faqList.innerHTML = '<p style="text-align:center;">目前沒有常見問題。</p>';
                     return;
                 }
 
-                // 2-2. 渲染 HTML (後端已排好序：置頂 -> 時間)
+                // 2-2. 渲染 HTML
                 faqList.innerHTML = faqs.map(faq => `
                     <div class="faq-item-card">
                         <div class="faq-q">Q：${faq.question}</div>
@@ -47,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `).join('');
 
-                // 2-3. 綁定搜尋功能 (必須等資料長出來後才能綁定)
+                // 2-3. 綁定搜尋功能
                 setupFaqSearch();
             })
             .catch(err => {
@@ -59,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 搜尋功能邏輯封裝
     function setupFaqSearch() {
         const searchInput = document.getElementById('faqSearch');
-        const faqCards = document.querySelectorAll('.faq-item-card'); // 抓取剛剛生成的卡片
+        const faqCards = document.querySelectorAll('.faq-item-card');
         const noResultMsg = document.getElementById('no-result-msg');
 
         if (searchInput && faqCards.length > 0) {
@@ -68,8 +77,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 let hasResult = false;
 
                 faqCards.forEach(card => {
-                    const qText = card.querySelector('.faq-q')?.textContent || '';
-                    const aText = card.querySelector('.faq-a')?.textContent || '';
+                    const qElem = card.querySelector('.faq-q');
+                    const aElem = card.querySelector('.faq-a');
+                    const qText = qElem ? qElem.textContent : '';
+                    const aText = aElem ? aElem.textContent : '';
+                    
                     const fullText = (qText + aText).toLowerCase();
                     const isMatch = fullText.includes(term);
                     
@@ -88,13 +100,24 @@ document.addEventListener('DOMContentLoaded', function() {
        3. 進場動畫 (Intro Overlay)
        ============================== */
     const introOverlay = document.getElementById('intro-overlay');
-    if (introOverlay) {
-        if (sessionStorage.getItem('hasSeenIntro')) {
-            introOverlay.style.display = 'none';
-        } else {
-            setTimeout(() => {
+    // 使用 try-catch 包裹 localStorage/sessionStorage 避免隱私模式報錯
+    try {
+        if (introOverlay) {
+            if (sessionStorage.getItem('hasSeenIntro')) {
+                introOverlay.style.display = 'none';
+            } else {
+                setTimeout(() => {
+                    introOverlay.classList.add('fade-out');
+                    sessionStorage.setItem('hasSeenIntro', 'true');
+                }, 1000);
+            }
+        }
+    } catch (e) {
+        console.warn('Storage access failed (likely private mode):', e);
+        if (introOverlay) {
+             // 如果 storage 失敗，至少確保動畫會跑完並消失，不擋住畫面
+             setTimeout(() => {
                 introOverlay.classList.add('fade-out');
-                sessionStorage.setItem('hasSeenIntro', 'true');
             }, 1000);
         }
     }
@@ -104,7 +127,10 @@ document.addEventListener('DOMContentLoaded', function() {
        ============================== */
     if (newsList) {
         fetch('/api/announcements')
-            .then(response => response.json())
+            .then(res => {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.json();
+            })
             .then(data => {
                 allNewsData = data;
                 newsList.innerHTML = '';
@@ -129,7 +155,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             modalDate.textContent = newsData.date;
                             modalTitle.textContent = newsData.title;
                             
-                            // ★ 這裡也使用連結轉換
                             const contentWithLinks = parseContentForLinks(newsData.content);
                             modalBody.innerHTML = contentWithLinks.replace(/\n/g, '<br>');
                             
@@ -154,41 +179,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /* ==============================
-       5. 手機版 Overlay 選單互動
+       5. 手機版 Overlay 選單互動 (合併邏輯)
        ============================== */
-    const navToggleBtn = document.querySelector('.nav-toggle');
-    const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
-    const closeOverlayBtn = document.getElementById('overlay-close-btn');
-    const overlayLinks = document.querySelectorAll('.overlay-nav-links a');
-
-    if (navToggleBtn && mobileNavOverlay) {
-        navToggleBtn.addEventListener('click', () => mobileNavOverlay.classList.add('is-visible'));
-        if(closeOverlayBtn) closeOverlayBtn.addEventListener('click', () => mobileNavOverlay.classList.remove('is-visible'));
-        overlayLinks.forEach(link => {
-            link.addEventListener('click', () => mobileNavOverlay.classList.remove('is-visible'));
-        });
-    }
-});
-document.addEventListener('DOMContentLoaded', () => {
-    const menuBtn = document.querySelector('.nav-toggle'); // 您的漢堡按鈕
-    const closeBtn = document.querySelector('.overlay-close-btn'); // 關閉按鈕
-    const overlay = document.querySelector('.mobile-nav-overlay');
+    const menuBtn = document.querySelector('.nav-toggle'); // 漢堡按鈕
+    const closeBtn = document.getElementById('overlay-close-btn') || document.querySelector('.overlay-close-btn');
+    const overlay = document.getElementById('mobile-nav-overlay') || document.querySelector('.mobile-nav-overlay');
     const body = document.body;
+    const navLinks = document.querySelectorAll('.overlay-nav-links a');
 
     function toggleMenu(show) {
+        if (!overlay) return;
+        
         if (show) {
             overlay.classList.add('is-visible');
-            body.classList.add('menu-open'); // [關鍵] 鎖定背景滾動
+            body.classList.add('menu-open'); // 鎖定背景滾動
         } else {
             overlay.classList.remove('is-visible');
-            body.classList.remove('menu-open'); // [關鍵] 解除鎖定
+            body.classList.remove('menu-open'); // 解除鎖定
         }
     }
 
     // 點擊漢堡按鈕
     if (menuBtn) {
         menuBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // 防止冒泡
+            e.stopPropagation();
             toggleMenu(true);
         });
     }
@@ -201,11 +215,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 點擊選單連結後自動關閉 (提升體驗)
-    const navLinks = document.querySelectorAll('.overlay-nav-links a');
-    navLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            toggleMenu(false); // 點選後自動收起選單
+    // 點擊選單連結後自動關閉
+    if (navLinks.length > 0) {
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                toggleMenu(false);
+            });
         });
-    });
+    }
 });
