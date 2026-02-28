@@ -588,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const approved = await apiFetch('/api/feedback/status/approved'); 
         const sent = await apiFetch('/api/feedback/status/sent');         
 
-        // === 新增：統計數據與抽獎按鈕 ===
+// === 新增：統計數據與匯出按鈕 ===
         const totalCount = pending.length + approved.length + sent.length;
         const statsDiv = document.getElementById('fb-stats-bar');
         if(statsDiv) {
@@ -596,10 +596,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span style="background:#6c757d; color:white; padding:8px 15px; border-radius:20px; font-weight:bold;">
                     總回饋數: ${totalCount} 筆
                 </span>
-                <button class="btn btn--brown" onclick="printRaffleTickets()">列印抽獎券</button>
+                <button class="btn btn--brown" onclick="printFeedbackList()">匯出回饋</button>
             `;
         }
-
         // 1. 待審核
         fbPendingList.innerHTML = pending.length ? pending.map(i => {
             const badge = i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : '';
@@ -757,52 +756,82 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.add('is-visible');
     };
 
-    // 抽獎券列印功能 (含已審核與已寄送)
-    window.printRaffleTickets = async () => {
+// 回饋清單匯出功能 (含已審核與已寄送)
+    window.printFeedbackList = async () => {
         const approved = await apiFetch('/api/feedback/status/approved'); 
         const sent = await apiFetch('/api/feedback/status/sent');
+        // 合併已核准與已寄送的資料
         const allCandidates = [...approved, ...sent]; 
 
         if (allCandidates.length === 0) return alert('目前沒有符合資格的名單');
 
         const printWindow = window.open('', '_blank');
-        let cardsHtml = allCandidates.map((fb, index) => `
-            <div class="ticket">
-                <div class="num">No. ${String(index + 1).padStart(3, '0')}</div>
-                <div class="name">${fb.realName}</div>
-                <div class="id">${fb.feedbackId || '無編號'}</div>
-                <div class="phone">${fb.phone.slice(-3) ? '***'+fb.phone.slice(-3) : ''}</div>
+        
+        // 依照指定格式產生 HTML
+        let itemsHtml = allCandidates.map((fb, index) => `
+            <div class="feedback-item">
+                <div class="meta">編號: ${fb.feedbackId || '無'}</div>
+                <div class="nickname">${fb.nickname}</div>
+                <div class="content">${fb.content}</div>
             </div>
         `).join('');
 
         printWindow.document.write(`
             <html>
             <head>
-                <title>信徒回饋抽獎券</title>
+                <title>信徒回饋匯出</title>
                 <style>
-                    body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; }
-                    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-                    .ticket {
-                        border: 2px dashed #333; padding: 10px; text-align: center;
-                        height: 90px; display: flex; flex-direction: column; justify-content: center;
-                        page-break-inside: avoid;
+                    body { 
+                        font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; 
+                        padding: 40px; 
+                        max-width: 800px; 
+                        margin: 0 auto; 
+                        color: #333;
                     }
-                    .num { font-size: 18px; font-weight: bold; color: #C48945; margin-bottom:5px;}
-                    .name { font-size: 16px; font-weight:bold; }
-                    .id { font-size: 12px; color: #888; margin-top:2px;}
-                    @media print { .ticket { border-color: #999; } }
+                    .feedback-item { 
+                        margin-bottom: 60px; 
+                        /* 關鍵：防止內容在列印時被切斷到下一頁 */
+                        page-break-inside: avoid; 
+                        break-inside: avoid;      
+                    }
+                    .meta { 
+                        font-size: 14px; 
+                        color: #666; 
+                        margin-bottom: 5px; 
+                    }
+                    .nickname { 
+                        font-size: 20px; 
+                        font-weight: bold; 
+                        margin-bottom: 15px; 
+                        color: #000; 
+                    }
+                    .content { 
+                        font-size: 16px; 
+                        line-height: 1.8; 
+                        white-space: pre-wrap; /* 保留換行格式 */
+                        text-align: justify; 
+                    }
+                    @media print {
+                        body { padding: 0; margin: 2cm; }
+                        /* 再次確保列印時的斷頁行為 */
+                        .feedback-item { page-break-inside: avoid; }
+                    }
                 </style>
             </head>
             <body>
-                <h2 style="text-align:center;">信徒回饋抽獎券 (共 ${allCandidates.length} 張)</h2>
-                <div class="grid">${cardsHtml}</div>
-                <script>window.print();<\/script>
+                <h2 style="text-align:center; margin-bottom: 50px; border-bottom: 2px solid #333; padding-bottom: 20px;">
+                    信徒回饋匯出清單 (共 ${allCandidates.length} 筆)
+                </h2>
+                ${itemsHtml}
+                <script>
+                    // 確保圖片或樣式載入後再列印 (雖然這裡只有文字)
+                    setTimeout(() => { window.print(); }, 500);
+                <\/script>
             </body>
             </html>
         `);
         printWindow.document.close();
     };
-
     /* =========================================
        7. 系統參數與連結
        ========================================= */

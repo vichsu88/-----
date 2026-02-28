@@ -1276,9 +1276,9 @@ def get_user_orders():
 @app.route('/api/orders', methods=['GET'])
 @login_required
 def get_orders():
-    """一般訂單 API (排除 donation)"""
-    # 關鍵：排除護持單，讓商品訂單頁面乾淨
-    cursor = db.orders.find({"orderType": {"$ne": "donation"}}).sort("createdAt", -1)
+    """一般訂單 API (只抓取 shop)"""
+    # 關鍵：明確指定只抓取一般商品訂單 (shop)
+    cursor = db.orders.find({"orderType": "shop"}).sort("createdAt", -1)
     results = []
     for doc in cursor:
         doc['_id'] = str(doc['_id'])
