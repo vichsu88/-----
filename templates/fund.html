@@ -591,7 +591,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-    // === 1. 初始化圖表 (修改為金色光環) ===
+    // === 1. 初始化圖表 (維持不變) ===
     try {
         const res = await fetch('/api/fund-settings');
         const data = await res.json();
@@ -616,7 +616,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 20);
     } catch(e) {}
 
-    // === 2. 載入芳名錄 ===
+    // === 2. 載入芳名錄 (維持不變) ===
     loadMarquee();
     function loadMarquee() {
         fetch('/api/donations/public').then(r=>r.json()).then(data => {
@@ -631,44 +631,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         }).catch(err => console.log('Honor list error', err));
     }
 
-// === 3. 輸入優化 (Input Mask) - V3 完美修正版 ===
+    // === 3. 輸入優化 (Input Mask) (維持不變) ===
     const dateInput = document.querySelector('input[data-mask="date"]');
     const phoneInput = document.querySelector('input[data-mask="phone"]');
 
     function setupMask(input, formatLogic) {
         if (!input) return;
-        
-        // 核心處理函式
         const processInput = (isComposing) => {
-            // [防跳針 1] 如果正在選字 (isComposing=true)，絕對不要修改值，避免 0 變 00
             if (isComposing) return;
-
             const originalValue = input.value;
-            let v = originalValue.replace(/\D/g, ''); // 取出純數字
-
-            // 執行格式化
+            let v = originalValue.replace(/\D/g, ''); 
             const formattedValue = formatLogic(v);
-
-            // [防跳針 2] 只有當「算出來的格式」跟「現在的值」不一樣時，才更新
-            // 這能避免游標亂跳，也能解決刪除時卡住的問題
             if (originalValue !== formattedValue) {
                 input.value = formattedValue;
             }
         };
-
-        // 監聽輸入事件
-        input.addEventListener('input', (e) => {
-            processInput(e.isComposing); 
-        });
-        
-        // [關鍵修正] 監聽「選字結束」事件
-        // 手機輸入法打完數字後，會觸發這個事件，這時我們強制補上斜線
-        input.addEventListener('compositionend', () => {
-            processInput(false); // 強制宣告「選字已結束」，請立即格式化
-        });
+        input.addEventListener('input', (e) => { processInput(e.isComposing); });
+        input.addEventListener('compositionend', () => { processInput(false); });
     }
 
-    // 日期格式化邏輯 (YYYY/MM/DD)
     setupMask(dateInput, (v) => {
         if (v.length > 8) v = v.slice(0, 8);
         if (v.length > 4) v = v.slice(0, 4) + '/' + v.slice(4);
@@ -676,7 +657,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return v;
     });
 
-    // 電話格式化邏輯 (09xx-xxx-xxx)
     setupMask(phoneInput, (v) => {
         if (v.length > 10) v = v.slice(0, 10);
         if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
@@ -684,7 +664,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return v;
     });
 
-    // === 4. 捐款邏輯 ===
+    // === 4. 捐款邏輯 (維持不變) ===
     const items = {
         'suixi': { name: '隨喜助建', price: 100, qty: 0 },
         'tile': { name: '建廟瓦片', price: 600, qty: 0 },
@@ -712,17 +692,57 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('total-amount').innerText = total.toLocaleString();
     }
 
-    // === 5. 表單流程 (JS 維持不變，因為 CSS 修好了) ===
+    // === 5. 表單流程 (★ 修改重點：強制登入與自動填寫) ===
     const formModal = document.getElementById('fund-form-modal');
     const confirmModal = document.getElementById('confirm-modal');
     const successModal = document.getElementById('success-modal');
     const form = document.getElementById('donation-form');
 
-    window.openFormModal = () => {
+    // ★ 修改：將 openFormModal 改為 async，並加入登入檢查
+    window.openFormModal = async () => {
+        // 1. 先檢查有沒有選金額
         const total = parseInt(document.getElementById('total-amount').innerText.replace(/,/g,''));
         if(total === 0) return alert('請先選擇護持項目');
-        formModal.style.display = 'flex';
+
+        // UI 反饋：避免使用者以為當機
+        const btn = document.querySelector('.btn-action');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = '讀取會員資料...';
+
+        try {
+            // 2. 呼叫後端檢查登入狀態
+            const res = await fetch('/api/user/me');
+            const data = await res.json();
+
+            if (!data.logged_in) {
+                // 若未登入，跳轉至 LINE 登入
+                // 注意：這裡 next 回到 /fund 即可，使用者回來後雖然選項會重置，但再次操作就會秒開
+                alert('為了記錄您的功德並寄送感謝狀，請先進行 LINE 登入。');
+                window.location.href = '/api/line/login?next=' + encodeURIComponent('/fund');
+                return;
+            }
+
+            // 3. 若已登入，自動帶入資料 (若欄位是空的才填，避免蓋掉使用者剛打的)
+            const user = data.user || {};
+            if(!form.name.value && user.realName) form.name.value = user.realName;
+            if(!form.phone.value && user.phone) form.phone.value = user.phone;
+            if(!form.email.value && user.email) form.email.value = user.email;
+            if(!form.address.value && user.address) form.address.value = user.address;
+            if(!form.lunarBirthday.value && user.lunarBirthday) form.lunarBirthday.value = user.lunarBirthday;
+
+            // 4. 開啟 Modal
+            formModal.style.display = 'flex';
+
+        } catch(e) {
+            console.error(e);
+            alert('系統忙碌中，請稍後再試');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
     };
+
     window.closeModal = (id) => document.getElementById(id).style.display = 'none';
     window.backToEdit = () => { confirmModal.style.display = 'none'; formModal.style.display = 'flex'; };
 
@@ -778,6 +798,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 },
                 body: JSON.stringify(payload)
             });
+            
+            // ★ 修改：處理 Session 過期的狀況 (401 Unauthorized)
+            if (res.status === 401) {
+                alert('您的登入時效已過，請重新登入 LINE');
+                window.location.href = '/api/line/login?next=' + encodeURIComponent('/fund');
+                return;
+            }
+
             const result = await res.json();
             
             if(result.success) {
