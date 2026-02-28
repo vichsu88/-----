@@ -338,7 +338,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!container) return;
         container.innerHTML = '<p>載入中...</p>';
         
-        let url = `/api/donations/admin?type=${type}&status=paid`; // 預設只看已付款
+        // ★ 修改：移除 status=paid 限制，抓取所有資料
+        let url = `/api/donations/admin?type=${type}`;
         
         // 如果是捐香，加上稟告狀態篩選
         if (type === 'donation') {
@@ -349,43 +350,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const orders = await apiFetch(url);
-            if (orders.length === 0) {
-                container.innerHTML = '<p style="padding:20px; text-align:center; color:#999;">查無資料</p>';
-                return;
-            }
+            
+            // ★ 修改：自動分流 待審核 與 已付款
+            const pendingOrders = orders.filter(o => o.status === 'pending');
+            const paidOrders = orders.filter(o => o.status === 'paid');
 
             if (type === 'donation') {
-                renderIncenseList(orders, container);
+                renderIncenseList(pendingOrders, paidOrders, container);
             } else {
-                renderFundList(orders, container);
+                renderFundList(pendingOrders, paidOrders, container);
             }
-        } catch(e) { container.innerHTML = '載入失敗'; }
+        } catch(e) { container.innerHTML = '載入失敗'; console.error(e); }
+    };
+
+    // 新增：確認捐贈收款
+    window.confirmDonation = async (id, type) => {
+        if(confirm('確認收到款項？將寄發電子感謝狀。')) {
+            await apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'});
+            fetchDonations(type);
+        }
     };
 
     // 渲染捐香列表 (包含稟告按鈕)
-    function renderIncenseList(orders, container) {
+    function renderIncenseList(pending, paid, container) {
         const filterEl = document.getElementById('incense-report-filter');
         const isUnreportedView = filterEl && filterEl.value === '0';
         
-        // 收集所有未稟告的 ID
-        window.currentIncenseIds = orders.filter(o => !o.is_reported).map(o => o._id);
+        // 收集所有未稟告的 ID (只收集已付款的)
+        window.currentIncenseIds = paid.filter(o => !o.is_reported).map(o => o._id);
 
         let html = '';
+
+        // 1. 待審核區塊
+        if (pending.length > 0) {
+            html += `<h3 style="background:#dc3545; color:white; padding:10px; border-radius:5px; margin-bottom:10px;">⚠️ 待收款審核 (${pending.length})</h3>`;
+            html += pending.map(o => `
+                <div class="feedback-card" style="border-left:5px solid #dc3545; background:#fff5f5;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <strong>${o.customer.name}</strong> 
+                            <span style="color:#666; font-size:13px;">(末五碼: <b>${o.customer.last5 || '無'}</b>)</span>
+                            <div style="color:#C48945; font-weight:bold; margin-top:5px;">$ ${o.total}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <button class="btn btn--green" onclick="confirmDonation('${o._id}', 'donation')">✅ 已收款</button>
+                            <button class="btn btn--red" onclick="delOrder('${o._id}', 'donation')">🗑️ 刪除</button>
+                        </div>
+                    </div>
+                    <div style="color:#555; margin-top:5px; font-size:14px;">
+                        ${o.items.map(i => `${i.name} x${i.qty}`).join('、')}
+                    </div>
+                    <div style="font-size:12px; color:#888; margin-top:5px;">
+                        單號: ${o.orderId} | 申請時間: ${o.createdAt}
+                    </div>
+                </div>
+            `).join('');
+            html += `<hr style="margin:20px 0; border:0; border-top:1px dashed #ccc;">`;
+        }
         
-        // 如果是在「未稟告」檢視模式，顯示批次按鈕
-        if (isUnreportedView && orders.length > 0) {
+        // 2. 已付款區塊
+        if (isUnreportedView && paid.length > 0) {
             html += `
             <div style="background:#fff3cd; padding:10px; margin-bottom:15px; border-radius:5px; border:1px solid #ffeeba; display:flex; justify-content:space-between; align-items:center;">
-                <span>⚠️ 共 <strong>${orders.length}</strong> 筆未稟告資料</span>
+                <span>⚠️ 共 <strong>${paid.length}</strong> 筆未稟告資料</span>
                 <button class="btn btn--blue" onclick="markAllReported()">✅ 將本頁標記為已稟告</button>
             </div>`;
         }
 
-        html += orders.map(o => `
-            <div class="feedback-card" style="border-left:5px solid ${o.is_reported ? '#28a745' : '#dc3545'};">
+        if (paid.length === 0 && pending.length === 0) {
+            container.innerHTML = '<p style="padding:20px; text-align:center; color:#999;">查無資料</p>';
+            return;
+        }
+
+        html += paid.map(o => `
+            <div class="feedback-card" style="border-left:5px solid ${o.is_reported ? '#28a745' : '#ffc107'};">
                 <div style="display:flex; justify-content:space-between;">
                     <strong>${o.customer.name}</strong>
-                    <span style="font-size:12px; padding:2px 6px; border-radius:4px; background:${o.is_reported ? '#d4edda' : '#f8d7da'}; color:${o.is_reported ? '#155724' : '#721c24'};">
+                    <span style="font-size:12px; padding:2px 6px; border-radius:4px; background:${o.is_reported ? '#d4edda' : '#fff3cd'}; color:${o.is_reported ? '#155724' : '#856404'};">
                         ${o.is_reported ? `已稟告 (${o.reportedAt||''})` : '未稟告'}
                     </span>
                 </div>
@@ -402,21 +443,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 渲染建廟基金列表
-    function renderFundList(orders, container) {
-        container.innerHTML = orders.map(o => `
-            <div class="feedback-card" style="border-left:5px solid #C48945;">
-                <div style="display:flex; justify-content:space-between;">
-                    <strong>${o.customer.name}</strong>
-                    <span style="color:#C48945; font-weight:bold;">$${o.total}</span>
+    function renderFundList(pending, paid, container) {
+        let html = '';
+
+        // 1. 待審核區塊
+        if (pending.length > 0) {
+            html += `<h3 style="background:#dc3545; color:white; padding:10px; border-radius:5px; margin-bottom:10px;">⚠️ 待收款審核 (${pending.length})</h3>`;
+            html += pending.map(o => `
+                <div class="feedback-card" style="border-left:5px solid #dc3545; background:#fff5f5;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <strong>${o.customer.name}</strong> 
+                            <span style="color:#666; font-size:13px;">(末五碼: <b>${o.customer.last5 || '無'}</b>)</span>
+                            <div style="color:#C48945; font-weight:bold; margin-top:5px;">$ ${o.total}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <button class="btn btn--green" onclick="confirmDonation('${o._id}', 'fund')">✅ 已收款</button>
+                            <button class="btn btn--red" onclick="delOrder('${o._id}', 'fund')">🗑️ 刪除</button>
+                        </div>
+                    </div>
+                    <div style="color:#555; margin-top:5px; font-size:14px;">
+                        ${o.items.map(i => i.name).join('、')}
+                    </div>
+                    <div style="font-size:12px; color:#888; margin-top:5px;">
+                        單號: ${o.orderId} | ${o.createdAt}
+                    </div>
                 </div>
-                <div style="color:#555; margin-top:5px;">
-                    ${o.items.map(i => i.name).join('、')}
+            `).join('');
+            html += `<hr style="margin:20px 0; border:0; border-top:1px dashed #ccc;">`;
+        }
+
+        // 2. 已付款區塊
+        if (paid.length > 0) {
+            html += paid.map(o => `
+                <div class="feedback-card" style="border-left:5px solid #C48945;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>${o.customer.name}</strong>
+                        <span style="color:#C48945; font-weight:bold;">$${o.total}</span>
+                    </div>
+                    <div style="color:#555; margin-top:5px;">
+                        ${o.items.map(i => i.name).join('、')}
+                    </div>
+                    <div style="font-size:12px; color:#888; margin-top:5px;">
+                        ${o.createdAt} | ${o.customer.address}
+                    </div>
                 </div>
-                <div style="font-size:12px; color:#888; margin-top:5px;">
-                    ${o.createdAt} | ${o.customer.address}
-                </div>
-            </div>
-        `).join('');
+            `).join('');
+        } else if (pending.length === 0) {
+            html += '<p style="padding:20px; text-align:center; color:#999;">查無資料</p>';
+        }
+
+        container.innerHTML = html;
     }
 
     // === 功能：列印紅紙 (Simple Red Paper Print) ===

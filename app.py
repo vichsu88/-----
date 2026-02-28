@@ -1272,7 +1272,31 @@ def get_user_orders():
             "deadline_iso": tw_deadline.isoformat() # 用於前端 JS 比較是否過期
         })
     return jsonify(results)
-
+@app.route('/api/user/donations', methods=['GET'])
+def get_user_donations():
+    line_id = session.get('user_line_id')
+    if not line_id or db is None:
+        return jsonify([])
+        
+    cursor = db.orders.find({"lineId": line_id, "orderType": {"$in": ["donation", "fund"]}}).sort("createdAt", -1)
+    results = []
+    for doc in cursor:
+        tw_created = doc['createdAt'] + timedelta(hours=8)
+        tw_deadline = doc.get('paymentDeadline', doc['createdAt'] + timedelta(hours=2)) + timedelta(hours=8)
+        
+        results.append({
+            "_id": str(doc['_id']),
+            "orderType": doc.get('orderType', 'donation'),
+            "orderId": doc['orderId'],
+            "items": doc.get('items', []),
+            "total": doc.get('total', 0),
+            "status": doc.get('status', 'pending'),
+            "is_reported": doc.get('is_reported', False),
+            "createdAt": tw_created.strftime('%Y-%m-%d %H:%M'),
+            "paymentDeadline": tw_deadline.strftime('%Y-%m-%d %H:%M'),
+            "deadline_iso": tw_deadline.isoformat()
+        })
+    return jsonify(results)
 @app.route('/api/orders', methods=['GET'])
 @login_required
 def get_orders():
@@ -1305,7 +1329,7 @@ def confirm_order_payment(oid):
     now = datetime.utcnow()
     db.orders.update_one({'_id': oid_obj}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}})
     cust = order['customer']
-    if order.get('orderType') == 'donation':
+    if order.get('orderType') in ['donation', 'fund']:
         email_subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order['orderId']})"
         email_html = generate_donation_paid_email(cust, order['orderId'], order['items'])
         send_email(cust.get('email'), email_subject, email_html, is_html=True)

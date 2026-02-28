@@ -168,6 +168,13 @@
         </div>
 
         <div class="profile-card">
+            <h3 style="margin-bottom: 20px;">🙏 我的護持紀錄 (捐香/建廟)</h3>
+            <div id="donation-list">
+                <p style="text-align: center; color: #888;">載入中...</p>
+            </div>
+        </div>
+
+        <div class="profile-card">
             <h3 style="margin-bottom: 20px;">👕 取回收驚衣服預約</h3>
             <div id="pickup-list">
                 <p style="text-align: center; color: #888;">載入中...</p>
@@ -191,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileForm = document.getElementById('profile-form');
     const historyList = document.getElementById('history-list');
     const pickupList = document.getElementById('pickup-list');
+    const donationList = document.getElementById('donation-list'); // 宣告 donationList
     
     // 1. 載入會員資料
     fetch('/api/user/me')
@@ -222,8 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('gift-note').style.display = 'block';
                 }
 
-                // 並行載入兩邊的紀錄
+                // 並行載入紀錄
                 loadFeedbackHistory();
+                loadDonationHistory(); // 呼叫載入捐贈紀錄
                 loadPickupHistory();
                 loadOrderHistory();
             } else {
@@ -301,6 +310,68 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
         } catch(err) {
             historyList.innerHTML = '<p style="color: red; text-align: center;">紀錄載入失敗</p>';
+        }
+    }
+
+    // 6. 載入捐贈紀錄 (全新)
+    async function loadDonationHistory() {
+        try {
+            const res = await fetch('/api/user/donations');
+            const data = await res.json();
+            
+            if(data.length === 0) {
+                document.getElementById('donation-list').innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">您目前沒有護持紀錄。<br><a href="/donation" style="color: #C48945; font-weight: bold; text-decoration: none;">前往捐香</a> 或 <a href="/fund" style="color: #C48945; font-weight: bold; text-decoration: none;">護持建廟</a></p>';
+                return;
+            }
+
+            const now = new Date();
+
+            document.getElementById('donation-list').innerHTML = data.map(order => {
+                let statusHtml = '';
+                let borderColor = '#ccc';
+                let typeBadge = order.orderType === 'fund' 
+                    ? '<span style="background:#8B4513; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🏗️ 建廟</span>' 
+                    : '<span style="background:#C48945; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🕯️ 捐香</span>';
+
+                if (order.status === 'pending') {
+                    const deadline = new Date(order.deadline_iso);
+                    if (now > deadline) {
+                        borderColor = '#dc3545';
+                        statusHtml = `<div class="history-item-status" style="background:#f8d7da; color:#721c24; border-left:4px solid #dc3545;">🔴 <b>已逾期：</b>超過匯款期限，請重新登記。</div>`;
+                    } else {
+                        borderColor = '#ffc107';
+                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold;">${order.paymentDeadline}</span> 前完成匯款。</div>`;
+                    }
+                } else if (order.status === 'paid') {
+                    borderColor = '#28a745';
+                    // 如果是捐香，顯示稟告狀態
+                    let reportText = '';
+                    if (order.orderType === 'donation') {
+                        reportText = order.is_reported 
+                            ? '<br><span style="color:#155724; font-size:13px;">✅ 已稟告元帥</span>' 
+                            : '<br><span style="color:#856404; font-size:13px;">⏳ 待稟告元帥</span>';
+                    }
+                    statusHtml = `<div class="history-item-status status-approved">🟢 <b>功德圓滿：</b>感謝您的護持！電子感謝狀已寄至信箱。${reportText}</div>`;
+                }
+
+                const itemsHtml = order.items.map(i => `<li style="margin-bottom:3px;">${i.name} x ${i.qty}</li>`).join('');
+
+                return `
+                <div class="history-item" style="border-left: 4px solid ${borderColor};">
+                    <div class="history-item-header">
+                        <span style="font-weight:bold; color:#333;">${typeBadge} ${order.orderId}</span>
+                        <span>${order.createdAt}</span>
+                    </div>
+                    <div class="history-item-content">
+                        <ul style="margin:0; padding-left:20px; font-size:14px; color:#555;">${itemsHtml}</ul>
+                        <div style="margin-top:10px; font-weight:bold; color:#C48945; font-size:16px;">護持金額：NT$ ${order.total}</div>
+                    </div>
+                    ${statusHtml}
+                </div>`;
+            }).join('');
+
+        } catch(err) {
+            document.getElementById('donation-list').innerHTML = '<p style="color: red; text-align: center;">紀錄載入失敗</p>';
         }
     }
 
