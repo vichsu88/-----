@@ -218,7 +218,7 @@
             </div>
 
             <div class="profile-card">
-                <h3 style="margin-bottom: 20px;">🙏 我的護持紀錄 (捐香/建廟)</h3>
+                <h3 style="margin-bottom: 20px;">🙏 我的捐贈紀錄 (捐香/建廟)</h3>
                 <div id="donation-list">
                     <p style="text-align: center; color: #888;">載入中...</p>
                 </div>
@@ -429,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             
             if(data.length === 0) {
-                document.getElementById('donation-list').innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">您目前沒有護持紀錄。<br><a href="/donation" style="color: #C48945; font-weight: bold; text-decoration: none;">前往捐香</a> 或 <a href="/fund" style="color: #C48945; font-weight: bold; text-decoration: none;">護持建廟</a></p>';
+                document.getElementById('donation-list').innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">無捐贈紀錄。<br><a href="/donation" style="color: #C48945; font-weight: bold; text-decoration: none;">前往捐香</a> 或 <a href="/fund" style="color: #C48945; font-weight: bold; text-decoration: none;">護持建廟</a></p>';
                 return;
             }
 
@@ -490,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             
             if(data.length === 0) {
-                pickupList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">您目前沒有預約紀錄。<br><a href="/shipclothes" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往預約</a></p>';
+                pickupList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">無預約紀錄。<br><a href="/shipclothes" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往預約</a></p>';
                 return;
             }
 
@@ -560,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             
             if(data.length === 0) {
-                document.getElementById('order-list').innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">您目前沒有請購紀錄。<br><a href="/shop" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往賣場</a></p>';
+                document.getElementById('order-list').innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">無購買紀錄。<br><a href="/shop" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往賣場</a></p>';
                 return;
             }
 
