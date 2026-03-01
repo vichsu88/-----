@@ -246,8 +246,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 container.innerHTML = data.map(item => {
                     const cat = Array.isArray(item.category) ? item.category.join(', ') : item.category;
+                    const fbIdHtml = item.feedbackId ? `<div style="font-size: 13px; color: #aaa; margin-bottom: 5px; font-family: monospace; letter-spacing: 1px;">#${item.feedbackId}</div>` : '';
                     return `
                     <div class="feedback-card">
+                        ${fbIdHtml}
                         <h3 class="feedback-card__header">${item.nickname} / ${cat}</h3>
                         <p class="feedback-card__content">${item.content.replace(/\n/g, '<br>')}</p>
                     </div>`;

@@ -502,6 +502,7 @@ def feedback_page():
             for doc in cursor:
                 # 簡單過濾敏感個資，只傳遞需要的欄位
                 feedbacks_data.append({
+                    'feedbackId': doc.get('feedbackId', ''),
                     'nickname': doc.get('nickname', '匿名'),
                     'content': doc.get('content', ''),
                     'category': doc.get('category', [])
@@ -886,6 +887,7 @@ def get_public_approved_feedback():
     for doc in cursor:
         results.append({
             '_id': str(doc['_id']),
+            'feedbackId': doc.get('feedbackId', ''),
             'nickname': doc.get('nickname', '匿名'),  
             'category': doc.get('category', []),      
             'content': doc.get('content', ''),        
