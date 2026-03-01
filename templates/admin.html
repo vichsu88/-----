@@ -7,132 +7,140 @@
     <title>帥府後台管理系統</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        :root { --main-brown: #C48945; --sidebar-bg: #2c3e50; }
-        body { background-color: #f4f6f9; margin: 0; height: 100vh; overflow: hidden; display: flex; font-family: 'Microsoft JhengHei', sans-serif; }
+        :root { 
+            --main-brown: #C48945; 
+            --main-brown-hover: #a57136;
+            --sidebar-bg: #2c3e50; 
+            --bg-light: #f4f6f9;
+            --text-dark: #333;
+            --text-gray: #666;
+            --border-color: #ddd;
+            --danger: #dc3545;
+            --success: #28a745;
+            --info: #007bff;
+            --secondary: #6c757d;
+        }
         
+        /* --- Base & Reset --- */
+        body { background-color: var(--bg-light); margin: 0; height: 100vh; overflow: hidden; display: flex; font-family: 'Microsoft JhengHei', sans-serif; color: var(--text-dark); }
+        h2, h3 { margin-top: 0; }
+        
+        /* --- Utilities --- */
+        /* 修正：移除 !important 以確保 JS style.display 可以運作 */
+        .d-none { display: none; } 
+        .d-flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .justify-between { justify-content: space-between; }
+        .align-center { align-items: center; }
+        .align-end { align-items: flex-end; }
+        .flex-1 { flex: 1; }
+        .gap-10 { gap: 10px; }
+        .gap-20 { gap: 20px; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .w-100 { width: 100%; }
+        .mt-10 { margin-top: 10px; }
+        .mt-20 { margin-top: 20px; }
+        .mt-30 { margin-top: 30px; }
+        .mb-0 { margin-bottom: 0 !important; }
+        .mb-10 { margin-bottom: 10px; }
+        .mb-15 { margin-bottom: 15px; }
+        .mb-20 { margin-bottom: 20px; }
+        .p-20 { padding: 20px; }
+        
+        /* --- Layout: Login --- */
         #login-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #eee; z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        
-        /* 側邊欄與主內容佈局 */
+        .login-box { background: #fff; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; }
+
+        /* --- Layout: Admin Wrapper --- */
         #admin-wrapper { display: flex; width: 100%; height: 100%; }
-        .admin-sidebar { width: 250px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; }
+        
+        /* Sidebar */
+        .admin-sidebar { width: 250px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .sidebar-nav { flex: 1; overflow-y: auto; padding-top: 20px; }
-        .nav-item { display: block; width: 100%; padding: 15px 20px; color: #bdc3c7; background: none; border: none; text-align: left; font-size: 16px; cursor: pointer; border-left: 4px solid transparent; }
+        .nav-item { display: block; width: 100%; padding: 15px 20px; color: #bdc3c7; background: none; border: none; text-align: left; font-size: 16px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .nav-item.active { background: rgba(0,0,0,0.2); color: #fff; border-left-color: var(--main-brown); }
         
-        /* ★ 主內容區域：100% 寬度，移除 max-width */
-        .admin-main { flex: 1; overflow-y: auto; padding: 30px; background: #f4f6f9; position: relative; width: 100%; box-sizing: border-box; }
+        /* Main Content */
+        .admin-main { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg-light); position: relative; width: 100%; box-sizing: border-box; }
+        .page-title { margin-bottom: 20px; color: #333; border-bottom: 2px solid #E6BA67; padding-bottom: 10px; }
         
-        .tab-content { display: none; width: 100%; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        /* Tabs */
+        .tab-content { display: none; width: 100%; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .feedback-card { 
-            background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 15px; 
-            border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            position: relative; width: 100%; box-sizing: border-box;
-        }
         
-        .pre-wrap { white-space: pre-wrap; word-break: break-word; line-height: 1.6; color: #555; }
+        /* Sub-tabs */
+        .sub-tab-group { display: flex; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); }
+        .sub-tab-btn { flex: 1; padding: 15px; border: none; background: none; font-size: 16px; cursor: pointer; color: var(--text-gray); font-weight: bold; border-bottom: 4px solid transparent; transition: 0.3s; }
+        .sub-tab-btn.active { color: var(--main-brown); border-bottom-color: var(--main-brown); background: rgba(196, 137, 69, 0.05); }
+        .sub-tab-btn:hover { background: rgba(0,0,0,0.02); }
 
-        .btn { padding: 6px 12px; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 14px; transition: 0.2s; margin-left: 5px; }
+        /* --- Components --- */
+        /* Cards */
+        .card, .feedback-card, .admin-list-item { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
+        .admin-list-item { padding: 15px; }
+        .admin-list-item-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+
+        /* Buttons */
+        .btn { padding: 6px 12px; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 14px; transition: 0.2s; display: inline-block; text-align: center; }
         .btn:hover { opacity: 0.9; }
-        .btn--brown { background: #C48945; } 
-        .btn--red { background: #dc3545; } 
-        .btn--green { background: #28a745; }
-        .btn--grey { background: #6c757d; }
-        .btn--blue { background: #007bff; }
+        .btn--brown { background: var(--main-brown); }
+        .btn--red { background: var(--danger); }
+        .btn--green { background: var(--success); }
+        .btn--grey { background: var(--secondary); }
+        .btn--blue { background: var(--info); }
+        .btn-lg { padding: 10px 20px; font-size: 16px; }
+        .btn-block { width: 100%; }
 
+        /* Forms */
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
+        .form-row { display: flex; gap: 10px; align-items: center; }
+        .form-row input { margin-bottom: 0; }
+        .checkbox-label { display: inline-flex; align-items: center; cursor: pointer; margin-right: 20px; }
+        .checkbox-label input { width: auto; margin: 0 10px 0 0; }
+        .readonly-input { background-color: #e9ecef; cursor: not-allowed; color: #555; }
+        .help-text { font-size: 13px; color: var(--text-gray); }
+
+        /* Modals */
         .admin-modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
         .admin-modal-overlay.is-visible { display: flex; }
         .admin-modal-content { background: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal-close-btn { position: absolute; top: 15px; right: 15px; border: none; background: none; font-size: 24px; cursor: pointer; color: #999; }
-        
-        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
 
-        .variant-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-        .variant-row input { margin-bottom: 0; }
-        
+        /* Feedback Specific */
+        .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .status-header { padding: 10px; border-radius: 5px; margin: 0 0 10px 0; color: white; }
+        .status-header.pending { background: var(--danger); }
+        .status-header.approved { background: var(--success); }
+        .status-header.sent { background: var(--info); }
+        .feedback-content-box { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: #555; background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 10px 0; word-break: break-all; }
+        .feedback-content-box.expanded { -webkit-line-clamp: unset; }
+        .show-more-btn { color: var(--main-brown); background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; font-weight: bold; text-decoration: underline; }
+
+        /* Donation Toolbar */
         .donation-toolbar { display: flex; gap: 10px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .date-picker-group { display: flex; align-items: center; gap: 5px; }
 
+        /* Responsive */
+        @media (max-width: 992px) { .feedback-grid { grid-template-columns: 1fr; } }
         @media (max-width: 768px) {
-            .admin-sidebar { position: fixed; left: -250px; height: 100%; z-index: 1000; transition: 0.3s; }
+            .admin-sidebar { position: fixed; left: -250px; height: 100%; z-index: 1000; }
             .admin-sidebar.open { left: 0; }
             #sidebar-toggle { display: block !important; position: fixed; top: 10px; left: 10px; z-index: 1001; background: var(--main-brown); color: white; padding: 10px; border-radius: 5px; border: none; }
-            .admin-main { padding: 60px 15px 15px 15px; width: 100%; }
+            .admin-main { padding: 60px 15px 15px 15px; }
         }
         #sidebar-toggle { display: none; }
-        /* 卡片內容縮排與顯示更多功能 */
-        .feedback-content-box {
-            display: -webkit-box;
-            -webkit-line-clamp: 3; /* 預設只顯示 3 行 */
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            color: #555;
-            background: #f9f9f9;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .feedback-content-box.expanded {
-            -webkit-line-clamp: unset; /* 展開時解除行數限制 */
-        }
-        .show-more-btn {
-            color: #C48945;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 0;
-            font-weight: bold;
-            text-decoration: underline;
-        }
-
-        /* 讓原本的列表變成卡片佈局 (針對 JS 產生的結構) */
-        .admin-list-item {
-            background: #fff;
-            border: 1px solid #eee;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .admin-list-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-        }
-        /* 信徒回饋的響應式網格 (電腦版雙欄，手機版單欄) */
-        .feedback-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        @media (max-width: 992px) {
-            .feedback-grid {
-                grid-template-columns: 1fr; /* 螢幕小於 992px 時自動變成上下單欄 */
-            }
-        }
-        .sub-tab-btn {
-        flex: 1; padding: 15px; border: none; background: none; 
-        font-size: 16px; cursor: pointer; color: #666; font-weight: bold;
-        border-bottom: 4px solid transparent; transition: 0.3s;
-    }
-    .sub-tab-btn.active { color: #C48945; border-bottom-color: #C48945; background: rgba(196, 137, 69, 0.05); }
-    .sub-tab-btn:hover { background: rgba(0,0,0,0.02); }
-            </style>
+    </style>
 </head>
 <body>
     <div id="login-wrapper">
-        <form id="login-form" style="background:#fff; padding:40px; border-radius:8px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.1); width:300px;">
-            <h2 style="color:#C48945;">後台登入</h2>
+        <form id="login-form" class="login-box">
+            <h2 style="color:var(--main-brown);">後台登入</h2>
             <input type="password" id="admin-password" placeholder="請輸入管理員密碼" required>
-            <button type="submit" class="btn btn--brown" style="width:100%; padding:12px;">登入系統</button>
+            <button type="submit" class="btn btn--brown btn-block" style="padding:12px;">登入系統</button>
             <p id="login-error" style="color:red; margin-top:10px; font-size:14px;"></p>
         </form>
     </div>
@@ -143,8 +151,8 @@
         
         <div id="admin-wrapper">
             <aside class="admin-sidebar" id="admin-sidebar">
-                <div style="padding:20px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1);">
-                    <h3 style="margin:0;">承天中承府</h3>
+                <div class="sidebar-header">
+                    <h3 class="mb-0">承天中承府</h3>
                     <small>後台管理系統</small>
                 </div>
                 <nav class="sidebar-nav">
@@ -156,38 +164,38 @@
                     <button class="nav-item" data-tab="tab-qa">❓ 常見問答</button>
                     <button class="nav-item" data-tab="tab-links">🔗 連結與設定</button>
                 </nav>
-                <div style="padding:20px;">
-                    <button id="logout-btn" class="btn btn--red" style="width:100%;">登出</button>
+                <div class="p-20">
+                    <button id="logout-btn" class="btn btn--red btn-block">登出</button>
                 </div>
             </aside>
 
             <main class="admin-main">
-                <h2 id="page-title-display" style="margin-top:0; margin-bottom:20px; color:#333; border-bottom:2px solid #E6BA67; padding-bottom:10px;">商品管理</h2>
+                <h2 id="page-title-display" class="page-title">商品管理</h2>
 
                 <div id="tab-products" class="tab-content active">
-                    <div style="text-align:right; margin-bottom:20px;">
-                        <button id="add-product-btn" class="btn btn--brown" style="padding:10px 20px; font-size:16px;">+ 新增商品</button>
+                    <div class="text-right mb-20">
+                        <button id="add-product-btn" class="btn btn--brown btn-lg">+ 新增商品</button>
                     </div>
                     <div id="products-list">載入中...</div>
                 </div>
 
-<div id="tab-donations" class="tab-content">
-                    <div style="display:flex; margin-bottom:20px; border-bottom:2px solid #ddd;">
+                <div id="tab-donations" class="tab-content">
+                    <div class="sub-tab-group">
                         <button class="sub-tab-btn active" onclick="switchDonationTab('incense')">🕯️ 捐香 (日常)</button>
                         <button class="sub-tab-btn" onclick="switchDonationTab('fund')">🏗️ 建廟 (基金)</button>
                     </div>
 
                     <div id="subtab-incense">
                         <div class="donation-toolbar">
-                            <div class="date-picker-group">
-                                <label style="margin:0;">篩選：</label>
-                                <select id="incense-report-filter" style="margin:0; width:120px;" onchange="fetchDonations('donation')">
+                            <div class="d-flex align-center gap-10">
+                                <label class="mb-0">篩選：</label>
+                                <select id="incense-report-filter" class="mb-0" style="width:120px;" onchange="fetchDonations('donation')">
                                     <option value="0">未稟告</option>
                                     <option value="1">已稟告</option>
                                     <option value="">全部</option>
                                 </select>
                             </div>
-                            <div style="flex:1; text-align:right;">
+                            <div class="flex-1 text-right">
                                 <button class="btn btn--red" onclick="printRedPaper()">🖨️ 列印紅紙清單</button>
                             </div>
                         </div>
@@ -201,67 +209,56 @@
                         <div id="fund-list"></div>
                     </div>
                 </div>
-                <style>
-                    /* 子分頁按鈕樣式 */
-                    .sub-tab-btn {
-                        flex: 1; padding: 15px; border: none; background: none; 
-                        font-size: 16px; cursor: pointer; color: #666; font-weight: bold;
-                        border-bottom: 4px solid transparent; transition: 0.3s;
-                    }
-                    .sub-tab-btn.active { color: #C48945; border-bottom-color: #C48945; background: rgba(196, 137, 69, 0.05); }
-                    .sub-tab-btn:hover { background: rgba(0,0,0,0.02); }
-                </style>
 
                 <div id="tab-orders" class="tab-content">
-                    <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="color:#666;">※ 僅顯示一般商品訂單</span>
+                    <div class="d-flex justify-between align-center mb-20">
+                        <span class="help-text">※ 僅顯示一般商品訂單</span>
                         <button class="btn btn--grey" onclick="fetchOrders()">🔄 重新整理</button>
                     </div>
                     <div id="orders-list"></div>
                 </div>
 
-<div id="tab-feedback" class="tab-content">
-                    <div id="fb-stats-bar" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;"></div>
+                <div id="tab-feedback" class="tab-content">
+                    <div id="fb-stats-bar" class="mb-20 d-flex gap-10 align-center"></div>
 
                     <div class="feedback-grid">
                         <div>
-                            <h3 style="background:#dc3545; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">1. 待審核 (寄信通知)</h3>
+                            <h3 class="status-header pending">1. 待審核 (寄信通知)</h3>
                             <div id="fb-pending-list"></div>
                         </div>
                         <div>
-                            <h3 style="background:#28a745; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">2. 已刊登 / 待寄送</h3>
-                            <div style="text-align:right; margin-bottom:10px;">
+                            <h3 class="status-header approved">2. 已刊登 / 待寄送</h3>
+                            <div class="text-right mb-10">
                                 <button class="btn btn--green" onclick="exportFeedbackTxt()">匯出名單</button>
                             </div>
                             <div id="fb-approved-list"></div>
                         </div>
                     </div>
-                    <div style="margin-top:30px;">
-                        <h3 style="background:#007bff; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">3. 已寄送 (歷史紀錄)</h3>
-                        <div style="text-align:right; margin-bottom:10px;">
+                    <div class="mt-30">
+                        <h3 class="status-header sent">3. 已寄送 (歷史紀錄)</h3>
+                        <div class="text-right mb-10">
                             <button class="btn btn--blue" onclick="exportSentFeedbackTxt()">匯出名單</button>
                         </div>
                         <div id="fb-sent-list"></div>
                     </div>
                 </div>
-                </div>
-                
+
                 <div id="tab-fund" class="tab-content">
-                    <div class="feedback-card">
+                    <div class="card">
                         <h3>建廟基金設定</h3>
-                        <form id="fund-form" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
-                            <div style="flex:1;">
+                        <form id="fund-form" class="d-flex gap-10 align-end" style="flex-wrap:wrap;">
+                            <div class="flex-1">
                                 <label>目標金額</label>
                                 <input type="number" id="fund-goal" value="10000000">
                             </div>
-                            <div style="flex:1;">
-                                <label>目前金額 <small style="color: #dc3545; font-weight: normal;">(系統自動加總，無法手動修改)</small></label>
-                                <input type="number" id="fund-current" value="0" readonly style="background-color: #e9ecef; cursor: not-allowed; color: #555;">
+                            <div class="flex-1">
+                                <label>目前金額 <small class="text-danger" style="font-weight:normal;">(系統自動加總，無法手動修改)</small></label>
+                                <input type="number" id="fund-current" value="0" class="readonly-input" readonly>
                             </div>
-                            <button type="submit" class="btn btn--brown" style="height:42px; margin-bottom:15px;">更新設定</button>
+                            <button type="submit" class="btn btn--brown mb-15" style="height:42px;">更新設定</button>
                         </form>
                     </div>
-                    <div style="display:flex; justify-content:space-between; margin-top:30px; margin-bottom:15px;">
+                    <div class="d-flex justify-between mt-30 mb-15">
                         <h3>網站公告</h3>
                         <button id="add-announcement-btn" class="btn btn--brown">+ 新增公告</button>
                     </div>
@@ -269,26 +266,26 @@
                 </div>
 
                 <div id="tab-qa" class="tab-content">
-                    <div style="text-align:right; margin-bottom:20px;">
+                    <div class="text-right mb-20">
                         <button id="add-faq-btn" class="btn btn--brown">+ 新增問答</button>
                     </div>
                     <div id="faq-list"></div>
                 </div>
 
                 <div id="tab-links" class="tab-content">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                        <div class="feedback-card">
-                            <h3 style="margin-top:0;">🔗 外部連結設定</h3>
+                    <div class="feedback-grid">
+                        <div class="card">
+                            <h3 class="mt-0">🔗 外部連結設定</h3>
                             <div id="links-list"></div>
                         </div>
-                        <div class="feedback-card">
-                            <h3 style="margin-top:0;">🏦 匯款帳號設定</h3>
-                            <p style="color:#666; font-size:14px;">此設定將連動至所有自動寄發的信件中。</p>
+                        <div class="card">
+                            <h3 class="mt-0">🏦 匯款帳號設定</h3>
+                            <p class="help-text">此設定將連動至所有自動寄發的信件中。</p>
                             <form id="bank-form">
                                 <label>銀行代碼</label><input type="text" name="bankCode" placeholder="例如: 808">
                                 <label>銀行名稱</label><input type="text" name="bankName" placeholder="例如: 玉山銀行">
                                 <label>帳號</label><input type="text" name="account" placeholder="例如: 1234-5678-9012">
-                                <button type="submit" class="btn btn--brown" style="width:100%;">儲存匯款資訊</button>
+                                <button type="submit" class="btn btn--brown btn-block">儲存匯款資訊</button>
                             </form>
                         </div>
                     </div>
@@ -311,41 +308,41 @@
                     <option value="健康茶品">健康茶品</option>
                     <option value="其他">其他</option>
                 </select>
-                <div style="display:flex; gap:10px; background:#f0f4f8; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #ccc;">
-        <div style="flex:2;">
-            <label style="font-size:13px; color:#666;">系列名稱 (選填)</label>
-            <input type="text" name="series" placeholder="例如：招財系列" list="series-list" style="margin-bottom:0;">
-            <datalist id="series-list"></datalist>
-        </div>
-        <div style="flex:1;">
-            <label style="font-size:13px; color:#666;">系列排序 (數字)</label>
-            <input type="number" name="seriesSort" placeholder="1, 3, 5..." style="margin-bottom:0;">
-        </div>
-    </div>
-                <label>商品名稱</label>
-                <input type="text" name="name" required>
-                <label>商品描述</label>
-                <textarea name="description" rows="3"></textarea>
+                
+                <div style="background:#f0f4f8; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #ccc;" class="d-flex gap-10">
+                    <div style="flex:2;">
+                        <label class="help-text">系列名稱 (選填)</label>
+                        <input type="text" name="series" placeholder="例如：招財系列" list="series-list" class="mb-0">
+                        <datalist id="series-list"></datalist>
+                    </div>
+                    <div style="flex:1;">
+                        <label class="help-text">系列排序 (數字)</label>
+                        <input type="number" name="seriesSort" placeholder="1, 3, 5..." class="mb-0">
+                    </div>
+                </div>
+
+                <label>商品名稱</label><input type="text" name="name" required>
+                <label>商品描述</label><textarea name="description" rows="3"></textarea>
                 <label>商品圖片</label>
                 <input type="file" id="product-image-input" accept="image/*">
                 <input type="hidden" name="image">
                 <img id="preview-image" style="max-height:150px; display:none; margin-top:10px; border-radius:5px;">
                 
                 <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #eee;">
-                    <label style="color:#C48945;">規格與價格設定</label>
+                    <label style="color:var(--main-brown);">規格與價格設定</label>
                     <div id="variants-container"></div>
-                    <button type="button" id="add-variant-btn" class="btn btn--grey" style="width:100%; margin-top:10px; padding:5px;">+ 新增規格</button>
+                    <button type="button" id="add-variant-btn" class="btn btn--grey w-100 mt-10" style="padding:5px;">+ 新增規格</button>
                 </div>
 
-                <div style="margin-top:20px; display:flex; gap:20px;">
-                    <label style="display:inline-flex; align-items:center; cursor:pointer;">
-                        <input type="checkbox" name="isActive" checked style="width:auto; margin:0 10px 0 0;"> 上架中
+                <div class="mt-20 d-flex gap-20">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="isActive" checked> 上架中
                     </label>
-                    <label style="display:inline-flex; align-items:center; cursor:pointer; color:#C48945;">
-                        <input type="checkbox" name="isDonation" style="width:auto; margin:0 10px 0 0;"> 🙏 開放捐贈 (Donation)
+                    <label class="checkbox-label" style="color:var(--main-brown);">
+                        <input type="checkbox" name="isDonation"> 🙏 開放捐贈 (Donation)
                     </label>
                 </div>
-                <button type="submit" class="btn btn--brown" style="width:100%; margin-top:20px; font-size:16px; padding:12px;">儲存商品</button>
+                <button type="submit" class="btn btn--brown w-100 mt-20" style="font-size:16px; padding:12px;">儲存商品</button>
             </form>
         </div>
     </div>
@@ -363,14 +360,12 @@
             <button class="modal-close-btn">&times;</button>
             <h3 id="ann-modal-title">新增公告</h3>
             <form id="announcement-form">
-                <input type="hidden" name="announcementId"> <label>日期 (YYYY/MM/DD)</label>
-                <input type="text" name="date" required>
-                <label>標題</label>
-                <input type="text" name="title" required>
-                <label>內文</label>
-                <textarea name="content" rows="5" required></textarea>
-                <label><input type="checkbox" name="isPinned" style="width:auto;"> 置頂顯示</label>
-                <button type="submit" class="btn btn--brown" style="width:100%; margin-top:10px;">發布</button>
+                <input type="hidden" name="announcementId"> 
+                <label>日期 (YYYY/MM/DD)</label><input type="text" name="date" required>
+                <label>標題</label><input type="text" name="title" required>
+                <label>內文</label><textarea name="content" rows="5" required></textarea>
+                <label class="checkbox-label"><input type="checkbox" name="isPinned"> 置頂顯示</label>
+                <button type="submit" class="btn btn--brown w-100 mt-10">發布</button>
             </form>
         </div>
     </div>
@@ -380,13 +375,14 @@
             <button class="modal-close-btn">&times;</button>
             <h3 id="faq-modal-title">新增問答</h3>
             <form id="faq-form">
-                <input type="hidden" name="faqId"> <label>問題</label><input type="text" name="question" required>
+                <input type="hidden" name="faqId"> 
+                <label>問題</label><input type="text" name="question" required>
                 <label>回答</label><textarea name="answer" rows="5" required></textarea>
                 <label>分類</label>
-                <div id="faq-modal-category-btns" style="margin-bottom:10px;"></div>
+                <div id="faq-modal-category-btns" class="mb-10"></div>
                 <input type="text" name="other_category" placeholder="輸入新分類或選擇上方">
-                <label><input type="checkbox" name="isPinned" style="width:auto;"> 置頂</label>
-                <button type="submit" class="btn btn--brown" style="width:100%;">儲存</button>
+                <label class="checkbox-label"><input type="checkbox" name="isPinned"> 置頂</label>
+                <button type="submit" class="btn btn--brown w-100">儲存</button>
             </form>
         </div>
     </div>
@@ -403,18 +399,19 @@
                 <label>內容</label><textarea name="content" rows="5"></textarea>
                 <label>電話</label><input type="text" name="phone">
                 <label>地址</label><input type="text" name="address">
-                <button type="submit" class="btn btn--brown" style="width:100%;">儲存修改</button>
+                <button type="submit" class="btn btn--brown w-100">儲存修改</button>
             </form>
         </div>
     </div>
+
     <div id="feedback-detail-modal" class="admin-modal-overlay">
         <div class="admin-modal-content">
             <button class="modal-close-btn">&times;</button>
             <h3>回饋詳細資料</h3>
-            <div id="feedback-detail-body" style="line-height:1.8; color:#333;">
-                </div>
+            <div id="feedback-detail-body" style="line-height:1.8; color:#333;"></div>
         </div>
     </div>
+
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>
