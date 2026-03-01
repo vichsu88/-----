@@ -24,6 +24,17 @@
         margin-bottom: 30px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
+    .profile-card h3 {
+        color: #C48945;
+        margin-top: 0;
+        border-bottom: 1px dashed #E6BA67;
+        padding-bottom: 10px;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
     /* 回饋卡片專用樣式 */
     .feedback-id-tag {
         font-size: 13px; color: #aaa; margin-bottom: 5px; 
@@ -53,16 +64,6 @@
         border: none; background: none; padding: 0;
     }
     .read-more-btn:hover { text-decoration: underline; }
-    .profile-card h3 {
-        color: #C48945;
-        margin-top: 0;
-        border-bottom: 1px dashed #E6BA67;
-        padding-bottom: 10px;
-        font-size: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
 
     /* 狀態標籤 */
     .gift-status {
@@ -227,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileForm = document.getElementById('profile-form');
     const historyList = document.getElementById('history-list');
     const pickupList = document.getElementById('pickup-list');
-    const donationList = document.getElementById('donation-list'); // 宣告 donationList
+    const donationList = document.getElementById('donation-list');
     
     // 1. 載入會員資料
     fetch('/api/user/me')
@@ -261,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 並行載入紀錄
                 loadFeedbackHistory();
-                loadDonationHistory(); // 呼叫載入捐贈紀錄
+                loadDonationHistory(); 
                 loadPickupHistory();
                 loadOrderHistory();
             } else {
@@ -306,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-// 3. 載入回饋紀錄清單 (修改版：含編號與展開全文)
+    // 3. 載入回饋紀錄清單 (含編號與展開全文)
     async function loadFeedbackHistory() {
         try {
             const res = await fetch('/api/user/feedbacks');
@@ -332,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 處理編號顯示 (如果有)
                 const fbIdHtml = item.feedbackId ? `<div class="feedback-id-tag">#${item.feedbackId}</div>` : '';
                 
-                // 判斷內容是否需要「閱讀全文」按鈕 (這裡簡單判斷字數，或直接都顯示按鈕由 CSS 控制)
                 // 為了讓長文可以展開，我們給每個項目唯一的 ID
                 const contentId = `fb-content-${index}`;
                 const btnId = `fb-btn-${index}`;
@@ -357,31 +357,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
             }).join('');
             
-            // 檢查哪些文字其實很短，不需要顯示「閱讀全文」按鈕 (可選優化)
-            // 這裡先全部顯示，點擊後會切換
-            
         } catch(err) {
             console.error(err);
             historyList.innerHTML = '<p style="color: red; text-align: center;">紀錄載入失敗</p>';
         }
     }
-
-    // ★ 新增：切換展開/收起的函式 (請放在 script 區塊內，loadFeedbackHistory 下方)
+    
+    // 切換展開/收起的函式 (掛載到 window)
     window.toggleFeedback = function(contentId, btnId) {
         const contentDiv = document.getElementById(contentId);
         const btn = document.getElementById(btnId);
         
         if (contentDiv.classList.contains('expanded')) {
-            // 收起
             contentDiv.classList.remove('expanded');
             btn.textContent = '閱讀全文 🔽';
         } else {
-            // 展開
             contentDiv.classList.add('expanded');
             btn.textContent = '收起內容 🔼';
         }
     };
-    // 6. 載入捐贈紀錄 (原有)
+
+    // 4. 載入捐贈紀錄
     async function loadDonationHistory() {
         try {
             const res = await fetch('/api/user/donations');
@@ -412,7 +408,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else if (order.status === 'paid') {
                     borderColor = '#28a745';
-                    // 如果是捐香，顯示稟告狀態
                     let reportText = '';
                     if (order.orderType === 'donation') {
                         reportText = order.is_reported 
@@ -443,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 4. 載入收驚預約清單 (★ 修改處：加入取消按鈕邏輯)
+    // 5. 載入收驚預約清單 (含刪除功能)
     async function loadPickupHistory() {
         try {
             const res = await fetch('/api/user/pickups');
@@ -458,17 +453,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const typeText = item.pickupType === 'self' ? '🏃 現場自取' : '🚚 黑貓寄件';
                 const typeColor = item.pickupType === 'self' ? '#28a745' : '#007bff';
                 
-                // 黑貓的額外紅字提醒
                 const deliveryNote = item.pickupType === 'delivery' 
                     ? `<div style="color: #dc3545; font-size: 13px; margin-top: 5px;">※ 請記得自行聯繫黑貓宅急便於此日期後前來本府收件。</div>` 
                     : '';
 
-                // 渲染衣服清單
                 const clothesHtml = item.clothes.map(c => 
                     `<span class="cloth-pill">${c.clothId} ${c.name} (${c.birthYear})</span>`
                 ).join('');
 
-                // ★ 判斷是否顯示刪除按鈕
                 let deleteBtn = '';
                 if (item.isDeletable) {
                     deleteBtn = `<button onclick="cancelPickup('${item._id}')" style="background:#dc3545; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px; margin-left:10px;">取消預約</button>`;
@@ -496,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // ★ 新增：刪除預約的函式 (綁定到 window 以便 onclick 呼叫)
+    // 刪除預約的函式 (掛載到 window)
     window.cancelPickup = function(id) {
         if (!confirm('確定要取消這筆預約嗎？\n(注意：取消後若需取件請重新預約)')) return;
 
@@ -516,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => alert('連線錯誤'));
     };
 
-    // 5. 載入商城訂單紀錄 (原有)
+    // 6. 載入商城訂單紀錄
     async function loadOrderHistory() {
         try {
             const res = await fetch('/api/user/orders');
@@ -536,17 +528,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (order.status === 'pending') {
                     const deadline = new Date(order.deadline_iso);
                     if (now > deadline) {
-                        borderColor = '#dc3545'; // 紅色逾期
+                        borderColor = '#dc3545';
                         statusHtml = `<div class="history-item-status" style="background:#f8d7da; color:#721c24; border-left:4px solid #dc3545;">🔴 <b>已逾期/取消：</b>超過繳費期限，訂單已失效。</div>`;
                     } else {
-                        borderColor = '#ffc107'; // 黃色待繳費
+                        borderColor = '#ffc107';
                         statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold; font-size:16px;">${order.paymentDeadline}</span> 前完成匯款，逾期將自動取消。</div>`;
                     }
                 } else if (order.status === 'paid') {
-                    borderColor = '#28a745'; // 綠色已付款
+                    borderColor = '#28a745';
                     statusHtml = `<div class="history-item-status status-approved">🟢 <b>處理中：</b>廟方已確認收款，正在為您準備商品。</div>`;
                 } else if (order.status === 'shipped') {
-                    borderColor = '#007bff'; // 藍色已出貨
+                    borderColor = '#007bff';
                     statusHtml = `<div class="history-item-status status-sent">🔵 <b>已出貨：</b>商品已寄出！<br><span style="color:#333; margin-top:5px; display:inline-block;">📦 物流單號：<b>${order.trackingNumber || '無'}</b></span></div>`;
                 }
 
@@ -570,6 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('order-list').innerHTML = '<p style="color: red; text-align: center;">訂單載入失敗</p>';
         }
     }
+    
     // 欄位格式化邏輯
     profileForm.phone.addEventListener('input', (e) => {
         let v = e.target.value.replace(/\D/g, ''); 
