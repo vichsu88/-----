@@ -1,3 +1,7 @@
+{
+type: uploaded file
+fileName: vichsu88/-----/------320c086bd500e30bef3e84f7757743b8d77a714e/templates/profile.html
+fullContent:
 {% extends "base.html" %}
 
 {% block title %}承天中承府 - 個人專區{% endblock %}
@@ -106,6 +110,17 @@
         display: inline-block; background: #fdf6e9; border: 1px solid #E6BA67; color: #C48945;
         padding: 4px 10px; border-radius: 15px; font-size: 13px; margin: 0 5px 5px 0; font-weight: bold;
     }
+
+    /* 鎖定提示樣式 */
+    .lock-message-box {
+        text-align: center; 
+        padding: 30px; 
+        background: #fffcf5; 
+        border: 2px dashed #E6BA67; 
+        border-radius: 15px; 
+        margin-top: 20px; 
+        color: #8B4513;
+    }
 </style>
 
 <main class="profile-page-wrapper">
@@ -134,22 +149,22 @@
             <form id="profile-form" class="profile-form">
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <div class="form-group" style="flex: 1; min-width: 200px;">
-                        <label>真實姓名</label>
+                        <label>真實姓名 <span style="color:red">*</span></label>
                         <input type="text" name="realName" required>
                     </div>
                     <div class="form-group" style="flex: 1; min-width: 200px;">
-                        <label>暱稱 (公開顯示)</label>
+                        <label>暱稱 (公開顯示) <span style="color:red">*</span></label>
                         <input type="text" name="nickname" required>
                     </div>
                 </div>
                 
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <div class="form-group" style="flex: 1; min-width: 200px;">
-                        <label>聯絡電話</label>
+                        <label>聯絡電話 <span style="color:red">*</span></label>
                         <input type="tel" name="phone" required placeholder="09XX-XXX-XXX">
                     </div>
                     <div class="form-group" style="flex: 1; min-width: 200px;">
-                        <label>電子信箱</label>
+                        <label>電子信箱 <span style="color:red">*</span></label>
                         <input type="email" name="email" required>
                     </div>
                 </div>
@@ -180,7 +195,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>寄件地址</label>
+                    <label>寄件地址 <span style="color:red">*</span></label>
                     <input type="text" name="address" required>
                 </div>
 
@@ -190,32 +205,43 @@
             </form>
         </div>
 
-        <div class="profile-card">
-            <h3 style="margin-bottom: 20px;">📖 我的回饋紀錄</h3>
-            <div id="history-list">
-                <p style="text-align: center; color: #888;">載入中...</p>
+        <div id="profile-lock-msg" class="lock-message-box" style="display: none;">
+            <h3 style="margin-bottom: 10px;">🔒 請先完成資料設定</h3>
+            <p style="line-height: 1.6; margin: 0;">
+                為了確保寄送資訊正確，請先完整填寫並<b>「儲存」</b>上方基本資料，<br>
+                系統將自動解鎖回饋紀錄、訂單查詢與其他功能。
+            </p>
+        </div>
+
+        <div id="extended-profile-section" style="display: none;">
+            <div class="profile-card">
+                <h3 style="margin-bottom: 20px;">📖 我的回饋紀錄</h3>
+                <div id="history-list">
+                    <p style="text-align: center; color: #888;">載入中...</p>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <h3 style="margin-bottom: 20px;">🙏 我的護持紀錄 (捐香/建廟)</h3>
+                <div id="donation-list">
+                    <p style="text-align: center; color: #888;">載入中...</p>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <h3 style="margin-bottom: 20px;">👕 取回收驚衣服預約</h3>
+                <div id="pickup-list">
+                    <p style="text-align: center; color: #888;">載入中...</p>
+                </div>
+            </div>
+            <div class="profile-card">
+                <h3 style="margin-bottom: 20px;">🛍️ 我的購買紀錄</h3>
+                <div id="order-list">
+                    <p style="text-align: center; color: #888;">載入中...</p>
+                </div>
             </div>
         </div>
 
-        <div class="profile-card">
-            <h3 style="margin-bottom: 20px;">🙏 我的護持紀錄 (捐香/建廟)</h3>
-            <div id="donation-list">
-                <p style="text-align: center; color: #888;">載入中...</p>
-            </div>
-        </div>
-
-        <div class="profile-card">
-            <h3 style="margin-bottom: 20px;">👕 取回收驚衣服預約</h3>
-            <div id="pickup-list">
-                <p style="text-align: center; color: #888;">載入中...</p>
-            </div>
-        </div>
-        <div class="profile-card">
-            <h3 style="margin-bottom: 20px;">🛍️ 我的購買紀錄</h3>
-            <div id="order-list">
-                <p style="text-align: center; color: #888;">載入中...</p>
-            </div>
-        </div>
     </div>
 </main>
 
@@ -230,6 +256,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const pickupList = document.getElementById('pickup-list');
     const donationList = document.getElementById('donation-list');
     
+    const lockMsg = document.getElementById('profile-lock-msg');
+    const extendedSection = document.getElementById('extended-profile-section');
+
+    // 判斷資料是否完整的函式
+    function isProfileComplete(u) {
+        // 檢查必填欄位是否有值
+        return u.realName && u.nickname && u.phone && u.email && u.address;
+    }
+
     // 1. 載入會員資料
     fetch('/api/user/me')
         .then(res => res.json())
@@ -260,7 +295,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('gift-note').style.display = 'block';
                 }
 
-                // 並行載入紀錄
+                // ★ 檢查資料完整性來決定顯示哪個區塊
+                if (isProfileComplete(u)) {
+                    lockMsg.style.display = 'none';
+                    extendedSection.style.display = 'block';
+                } else {
+                    lockMsg.style.display = 'block';
+                    extendedSection.style.display = 'none';
+                }
+
+                // 並行載入紀錄 (即使隱藏也預先載入，避免切換時等待)
                 loadFeedbackHistory();
                 loadDonationHistory(); 
                 loadPickupHistory();
@@ -295,7 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(payload)
             });
             if(res.ok) {
-                alert('資料已成功更新！');
+                alert('資料已成功更新！功能已解鎖。');
+                // ★ 儲存成功後，立刻解鎖顯示
+                lockMsg.style.display = 'none';
+                extendedSection.style.display = 'block';
+                // 滾動到下方提示用戶
+                extendedSection.scrollIntoView({ behavior: 'smooth' });
             } else {
                 alert('更新失敗，請稍後再試。');
             }
@@ -580,3 +629,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 {% endblock %}
+}
