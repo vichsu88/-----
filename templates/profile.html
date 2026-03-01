@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 6. 載入捐贈紀錄 (全新)
+    // 6. 載入捐贈紀錄 (原有)
     async function loadDonationHistory() {
         try {
             const res = await fetch('/api/user/donations');
@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 4. 載入收驚預約清單 (全新)
+    // 4. 載入收驚預約清單 (★ 修改處：加入取消按鈕邏輯)
     async function loadPickupHistory() {
         try {
             const res = await fetch('/api/user/pickups');
@@ -395,16 +395,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? `<div style="color: #dc3545; font-size: 13px; margin-top: 5px;">※ 請記得自行聯繫黑貓宅急便於此日期後前來本府收件。</div>` 
                     : '';
 
-                // 渲染衣服清單 (顯示完整姓名)
+                // 渲染衣服清單
                 const clothesHtml = item.clothes.map(c => 
                     `<span class="cloth-pill">${c.clothId} ${c.name} (${c.birthYear})</span>`
                 ).join('');
 
+                // ★ 判斷是否顯示刪除按鈕
+                let deleteBtn = '';
+                if (item.isDeletable) {
+                    deleteBtn = `<button onclick="cancelPickup('${item._id}')" style="background:#dc3545; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px; margin-left:10px;">取消預約</button>`;
+                }
+
                 return `
                 <div class="history-item" style="border-left: 4px solid ${typeColor};">
-                    <div class="history-item-header" style="margin-bottom: 5px;">
-                        <span style="font-weight: bold; color: ${typeColor}; font-size: 15px;">${typeText}</span>
-                        <span>填單時間：${item.createdAt}</span>
+                    <div class="history-item-header" style="margin-bottom: 5px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-weight: bold; color: ${typeColor}; font-size: 15px;">${typeText}</span>
+                            <span style="margin-left:10px; font-size:13px;">填單：${item.createdAt}</span>
+                        </div>
+                        ${deleteBtn}
                     </div>
                     <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px;">
                         預約日期：${item.pickupDate}
@@ -418,7 +427,28 @@ document.addEventListener('DOMContentLoaded', () => {
             pickupList.innerHTML = '<p style="color: red; text-align: center;">預約紀錄載入失敗</p>';
         }
     }
-    // 5. 載入商城訂單紀錄 (全新)
+    
+    // ★ 新增：刪除預約的函式 (綁定到 window 以便 onclick 呼叫)
+    window.cancelPickup = function(id) {
+        if (!confirm('確定要取消這筆預約嗎？\n(注意：取消後若需取件請重新預約)')) return;
+
+        fetch(`/api/pickup/${id}`, { 
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('預約已取消');
+                location.reload(); 
+            } else {
+                alert(data.error || '取消失敗');
+            }
+        })
+        .catch(err => alert('連線錯誤'));
+    };
+
+    // 5. 載入商城訂單紀錄 (原有)
     async function loadOrderHistory() {
         try {
             const res = await fetch('/api/user/orders');

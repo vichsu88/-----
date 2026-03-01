@@ -785,6 +785,7 @@ def get_public_pickups():
         
     return jsonify(formatted_results)
 
+# === 修改原本的查詢 API，加入可否刪除的判斷 ===
 @app.route('/api/user/pickups', methods=['GET'])
 def get_user_pickups():
     """給信徒「個人專區」看的自己專屬預約紀錄 (不遮蔽姓名)"""
@@ -794,15 +795,57 @@ def get_user_pickups():
         
     cursor = db.pickups.find({"lineId": line_id}).sort("pickupDate", -1)
     results = []
+    
+    # 取得台灣今天的日期 (用於比對)
+    tw_now = datetime.utcnow() + timedelta(hours=8)
+    today = tw_now.replace(hour=0, minute=0, second=0, microsecond=0)
+
     for doc in cursor:
+        # 判斷是否可刪除：今天 < 取件日 (例如今天 3/1 < 取件 3/2，則可刪除)
+        is_deletable = False
+        try:
+            p_date = datetime.strptime(doc.get('pickupDate'), '%Y-%m-%d')
+            if today < p_date:
+                is_deletable = True
+        except:
+            is_deletable = False
+
         results.append({
             "_id": str(doc['_id']),
             "pickupType": doc.get('pickupType'),
             "pickupDate": doc.get('pickupDate'),
             "clothes": doc.get('clothes', []),
-            "createdAt": doc['createdAt'].strftime('%Y-%m-%d %H:%M')
+            "createdAt": doc['createdAt'].strftime('%Y-%m-%d %H:%M'),
+            "isDeletable": is_deletable  # 傳給前端
         })
     return jsonify(results)
+
+# === 新增：刪除預約的 API ===
+@app.route('/api/pickup/<pid>', methods=['DELETE'])
+def delete_pickup(pid):
+    line_id = session.get('user_line_id')
+    if not line_id: return jsonify({"error": "請先登入"}), 401
+    
+    oid = get_object_id(pid)
+    if not oid: return jsonify({"error": "格式錯誤"}), 400
+
+    # 1. 確保是該使用者的預約
+    pickup = db.pickups.find_one({"_id": oid, "lineId": line_id})
+    if not pickup: return jsonify({"error": "找不到預約"}), 404
+
+    # 2. 再次檢查日期 (防止有人繞過前端直接呼叫 API)
+    try:
+        p_date = datetime.strptime(pickup.get('pickupDate'), '%Y-%m-%d')
+        tw_now = datetime.utcnow() + timedelta(hours=8)
+        today = tw_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        if today >= p_date:
+            return jsonify({"error": "已超過取消期限 (限取件日前一天)"}), 400
+    except:
+        return jsonify({"error": "日期資料異常"}), 400
+
+    db.pickups.delete_one({"_id": oid})
+    return jsonify({"success": True})
 # =========================================
 # 5. 後台頁面路由 & API
 # =========================================
