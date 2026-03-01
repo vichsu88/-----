@@ -1076,7 +1076,23 @@ def get_ship_clothes_list():
 @app.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
     if db is None: return jsonify([]), 500
-    cursor = db.orders.find({"status": "paid", "orderType": "donation"}).sort("updatedAt", -1).limit(30)
+    
+    # 1. 取得前端傳來的 type 參數
+    # 如果前端沒傳 (像 donation.html)，就預設用 'donation'
+    target_type = request.args.get('type', 'donation')
+    
+    # 2. 建立查詢條件 (只抓已付款)
+    query = {"status": "paid"}
+    
+    # 判斷要抓哪種類型
+    if target_type == 'all':
+        query["orderType"] = {"$in": ["donation", "fund"]}
+    else:
+        query["orderType"] = target_type
+        
+    # 3. 執行查詢 (依更新時間排序，取前 30 筆)
+    cursor = db.orders.find(query).sort("updatedAt", -1).limit(30)
+    
     results = []
     for doc in cursor:
         items_summary = [f"{i['name']} x{i['qty']}" for i in doc.get('items', [])]

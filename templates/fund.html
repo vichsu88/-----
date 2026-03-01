@@ -619,7 +619,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // === 2. 載入芳名錄 (維持不變) ===
     loadMarquee();
     function loadMarquee() {
-        fetch('/api/donations/public').then(r=>r.json()).then(data => {
+        fetch('/api/donations/public?type=fund')
+        .then(r=>r.json())
+        .then(data => {
             const list = document.getElementById('honor-list');
             if(!data.length) { list.innerHTML='<div style="text-align:center; color:#ffd700; padding-top:20px;">尚無紀錄</div>'; return; }
             
