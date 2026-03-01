@@ -689,7 +689,9 @@ def get_user_feedbacks():
                 
             results.append({
                 "_id": str(doc['_id']),
+                "feedbackId": doc.get('feedbackId', ''), 
                 "category": doc.get('category', []),
+                "content": doc.get('content', ''),
                 "content_preview": content_preview,
                 "status": doc.get('status', 'pending'),
                 "createdAt": doc['createdAt'].strftime('%Y-%m-%d') if 'createdAt' in doc else '',

@@ -24,6 +24,35 @@
         margin-bottom: 30px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
+    /* 回饋卡片專用樣式 */
+    .feedback-id-tag {
+        font-size: 13px; color: #aaa; margin-bottom: 5px; 
+        font-family: monospace; letter-spacing: 1px;
+    }
+    .feedback-content-box {
+        color: #333; font-size: 15px; line-height: 1.6; margin-bottom: 10px;
+        position: relative;
+    }
+    /* 預設摺疊狀態：只顯示 3 行 */
+    .feedback-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: pre-wrap; /* 保留換行 */
+    }
+    /* 展開狀態 */
+    .feedback-text.expanded {
+        -webkit-line-clamp: unset;
+    }
+    /* 閱讀全文按鈕 */
+    .read-more-btn {
+        color: #C48945; font-size: 14px; font-weight: bold; 
+        cursor: pointer; margin-top: 5px; display: inline-block;
+        border: none; background: none; padding: 0;
+    }
+    .read-more-btn:hover { text-decoration: underline; }
     .profile-card h3 {
         color: #C48945;
         margin-top: 0;
@@ -277,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 3. 載入回饋紀錄清單 (原有)
+// 3. 載入回饋紀錄清單 (修改版：含編號與展開全文)
     async function loadFeedbackHistory() {
         try {
             const res = await fetch('/api/user/feedbacks');
@@ -288,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            historyList.innerHTML = data.map(item => {
+            historyList.innerHTML = data.map((item, index) => {
                 let statusHtml = '';
                 if(item.status === 'pending') {
                     statusHtml = `<div class="history-item-status status-pending">🟡 <b>審核中：</b>感謝您的分享，廟方正在用心閱讀中。</div>`;
@@ -297,22 +326,61 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (item.status === 'sent') {
                     statusHtml = `<div class="history-item-status status-sent">🔵 <b>已寄出：</b>結緣品已寄出！感謝您的法布施。<br><span style="color:#333; margin-top:5px; display:inline-block;">📦 物流單號：<b>${item.trackingNumber || '無'}</b></span></div>`;
                 }
+                
                 const cat = Array.isArray(item.category) ? item.category.join(', ') : item.category;
+                
+                // 處理編號顯示 (如果有)
+                const fbIdHtml = item.feedbackId ? `<div class="feedback-id-tag">#${item.feedbackId}</div>` : '';
+                
+                // 判斷內容是否需要「閱讀全文」按鈕 (這裡簡單判斷字數，或直接都顯示按鈕由 CSS 控制)
+                // 為了讓長文可以展開，我們給每個項目唯一的 ID
+                const contentId = `fb-content-${index}`;
+                const btnId = `fb-btn-${index}`;
+                
+                // 內容處理：保留換行
+                const safeContent = item.content || item.content_preview || '';
+
                 return `
                 <div class="history-item">
+                    ${fbIdHtml}
                     <div class="history-item-header">
                         <span>🏷️ 分類：${cat}</span>
                         <span>📅 ${item.createdAt}</span>
                     </div>
-                    <div class="history-item-content">"${item.content_preview}"</div>
+                    
+                    <div class="feedback-content-box">
+                        <div id="${contentId}" class="feedback-text">${safeContent}</div>
+                        <button id="${btnId}" class="read-more-btn" onclick="toggleFeedback('${contentId}', '${btnId}')">閱讀全文 🔽</button>
+                    </div>
+
                     ${statusHtml}
                 </div>`;
             }).join('');
+            
+            // 檢查哪些文字其實很短，不需要顯示「閱讀全文」按鈕 (可選優化)
+            // 這裡先全部顯示，點擊後會切換
+            
         } catch(err) {
+            console.error(err);
             historyList.innerHTML = '<p style="color: red; text-align: center;">紀錄載入失敗</p>';
         }
     }
 
+    // ★ 新增：切換展開/收起的函式 (請放在 script 區塊內，loadFeedbackHistory 下方)
+    window.toggleFeedback = function(contentId, btnId) {
+        const contentDiv = document.getElementById(contentId);
+        const btn = document.getElementById(btnId);
+        
+        if (contentDiv.classList.contains('expanded')) {
+            // 收起
+            contentDiv.classList.remove('expanded');
+            btn.textContent = '閱讀全文 🔽';
+        } else {
+            // 展開
+            contentDiv.classList.add('expanded');
+            btn.textContent = '收起內容 🔼';
+        }
+    };
     // 6. 載入捐贈紀錄 (原有)
     async function loadDonationHistory() {
         try {

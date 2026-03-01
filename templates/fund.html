@@ -196,7 +196,7 @@
         border-top: 1px solid rgba(191, 149, 63, 0.3);
     }
     
-    /* 聖旨芳名錄 */
+    /* 聖旨芳名錄 (修正樣式) */
     .honor-roll-section {
         max-width: 900px;
         margin: 0 auto 60px auto;
@@ -209,7 +209,6 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         position: relative;
     }
-    /* 修正：聖旨捲軸頭（手機隱藏） */
     .honor-roll-section::before, .honor-roll-section::after {
         content: ''; position: absolute; width: 30px; height: 104%;
         background: linear-gradient(90deg, #5e0000, #b38728, #5e0000);
@@ -225,10 +224,27 @@
         padding-bottom: 15px;
     }
     .marquee-container { height: 180px; overflow: hidden; position: relative; mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent); }
+    
+    /* ★ 修正後的芳名錄項目樣式 ★ */
     .donor-item {
-        display: flex; justify-content: space-between; padding: 12px 10px;
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-start; /* 靠上對齊，支援多行 */
+        padding: 12px 10px;
         border-bottom: 1px dotted rgba(255,215,0,0.2);
-        color: #ffebcd; font-size: 1.15rem;
+        color: #ffebcd; 
+        font-size: 1.15rem;
+    }
+    .donor-name {
+        flex-shrink: 0; /* 防止名字被壓縮 */
+        min-width: 80px;
+        margin-right: 15px;
+        font-weight: bold;
+    }
+    .donor-items {
+        text-align: right;
+        line-height: 1.5; /* 增加行距，讓多行項目更易讀 */
+        word-break: break-word;
     }
 
     /* 流程圖 */
@@ -301,18 +317,18 @@
         animation: sheen 3s infinite;
     }
 
-    /* === 重要修正：Modal 樣式 (預設隱藏) === */
+    /* Modal 樣式 */
     .modal-overlay {
-        display: none; /* [修正點] 預設必須是 none，否則會直接擋住畫面 */
+        display: none; 
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.85); /* 深色遮罩 */
+        background: rgba(0,0,0,0.85); 
         backdrop-filter: blur(8px);
         z-index: 2000;
         justify-content: center;
         align-items: center;
     }
     .modal-content {
-        background: #fdfbf7; /* 表單保持淺色底，方便閱讀 */
+        background: #fdfbf7; 
         color: #333;
         width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
         border: 4px solid var(--royal-gold-main);
@@ -328,7 +344,6 @@
         font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 20px; 
         border-left: 4px solid #8B0000; 
     }
-    /* 表單欄位與其他樣式 (繼承舊設定但微調) */
     .form-row { display: flex; gap: 15px; flex-wrap: wrap; }
     .form-group { flex: 1; min-width: 200px; margin-bottom: 15px; text-align: left; }
     .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #333; }
@@ -591,7 +606,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-    // === 1. 初始化圖表 (維持不變) ===
+    // === 1. 初始化圖表 ===
     try {
         const res = await fetch('/api/fund-settings');
         const data = await res.json();
@@ -616,24 +631,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 20);
     } catch(e) {}
 
-    // === 2. 載入芳名錄 (維持不變) ===
+    // === 2. 載入芳名錄 (★ 修改處：換行與樣式) ===
     loadMarquee();
     function loadMarquee() {
-        fetch('/api/donations/public?type=fund')
-        .then(r=>r.json())
-        .then(data => {
+        // 請求建廟基金 (type=fund) 的資料
+        fetch('/api/donations/public?type=fund').then(r=>r.json()).then(data => {
             const list = document.getElementById('honor-list');
             if(!data.length) { list.innerHTML='<div style="text-align:center; color:#ffd700; padding-top:20px;">尚無紀錄</div>'; return; }
             
-            const html = data.map(d => `<div class="donor-item"><span>${d.name}</span><span>${d.items}</span></div>`).join('');
+            // ★ 修改：將項目中的逗號替換為換行，並使用新的 CSS class 佈局
+            const html = data.map(d => {
+                const itemsHtml = d.items.replace(/, /g, '<br>');
+                return `<div class="donor-item">
+                            <span class="donor-name">${d.name}</span>
+                            <span class="donor-items">${itemsHtml}</span>
+                        </div>`;
+            }).join('');
+
             list.innerHTML = html + html; 
             
             const content = list.innerHTML;
-            list.innerHTML = `<div style="animation: scrollUp ${Math.max(10, data.length * 3)}s linear infinite">${content}</div>`;
+            // ★ 修改：動畫速度調慢 (x5)，因為內容變長了
+            list.innerHTML = `<div style="animation: scrollUp ${Math.max(10, data.length * 5)}s linear infinite">${content}</div>`;
         }).catch(err => console.log('Honor list error', err));
     }
 
-    // === 3. 輸入優化 (Input Mask) (維持不變) ===
+    // === 3. 輸入優化 (Input Mask) ===
     const dateInput = document.querySelector('input[data-mask="date"]');
     const phoneInput = document.querySelector('input[data-mask="phone"]');
 
@@ -666,7 +689,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return v;
     });
 
-    // === 4. 捐款邏輯 (維持不變) ===
+    // === 4. 捐款邏輯 ===
     const items = {
         'suixi': { name: '隨喜助建', price: 100, qty: 0 },
         'tile': { name: '建廟瓦片', price: 600, qty: 0 },
@@ -694,38 +717,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('total-amount').innerText = total.toLocaleString();
     }
 
-    // === 5. 表單流程 (★ 修改重點：強制登入與自動填寫) ===
+    // === 5. 表單流程 ===
     const formModal = document.getElementById('fund-form-modal');
     const confirmModal = document.getElementById('confirm-modal');
     const successModal = document.getElementById('success-modal');
     const form = document.getElementById('donation-form');
 
-    // ★ 修改：將 openFormModal 改為 async，並加入登入檢查
     window.openFormModal = async () => {
-        // 1. 先檢查有沒有選金額
         const total = parseInt(document.getElementById('total-amount').innerText.replace(/,/g,''));
         if(total === 0) return alert('請先選擇護持項目');
 
-        // UI 反饋：避免使用者以為當機
         const btn = document.querySelector('.btn-action');
         const originalText = btn.innerText;
         btn.disabled = true;
         btn.innerText = '讀取會員資料...';
 
         try {
-            // 2. 呼叫後端檢查登入狀態
             const res = await fetch('/api/user/me');
             const data = await res.json();
 
             if (!data.logged_in) {
-                // 若未登入，跳轉至 LINE 登入
-                // 注意：這裡 next 回到 /fund 即可，使用者回來後雖然選項會重置，但再次操作就會秒開
                 alert('為了記錄您的功德並寄送感謝狀，請先進行 LINE 登入。');
                 window.location.href = '/api/line/login?next=' + encodeURIComponent('/fund');
                 return;
             }
 
-            // 3. 若已登入，自動帶入資料 (若欄位是空的才填，避免蓋掉使用者剛打的)
             const user = data.user || {};
             if(!form.name.value && user.realName) form.name.value = user.realName;
             if(!form.phone.value && user.phone) form.phone.value = user.phone;
@@ -733,7 +749,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(!form.address.value && user.address) form.address.value = user.address;
             if(!form.lunarBirthday.value && user.lunarBirthday) form.lunarBirthday.value = user.lunarBirthday;
 
-            // 4. 開啟 Modal
             formModal.style.display = 'flex';
 
         } catch(e) {
@@ -801,7 +816,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 body: JSON.stringify(payload)
             });
             
-            // ★ 修改：處理 Session 過期的狀況 (401 Unauthorized)
             if (res.status === 401) {
                 alert('您的登入時效已過，請重新登入 LINE');
                 window.location.href = '/api/line/login?next=' + encodeURIComponent('/fund');
