@@ -116,7 +116,7 @@
 
     <div id="login-section" style="text-align: center; padding: 40px; background: #fffcf5; border: 2px solid #E6BA67; border-radius: 15px; display: none;">
         <h3 style="color: #C48945;">請先登入以查看個人資料</h3>
-        <p style="color: #666; margin-bottom: 20px;">綁定 LINE 帳號，輕鬆管理您的資料與歷史紀錄。</p>
+        <p style="color: #666; margin-bottom: 20px;">綁定 LINE 帳號，輕鬆管理資料與歷史紀錄。</p>
         <a href="/api/line/login?next=/profile" style="background-color: #06C755; color: white; padding: 10px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; display: inline-block;">使用 LINE 登入</a>
     </div>
 
@@ -126,10 +126,10 @@
             <h3>
                 <span>📝 我的基本資料</span>
                 <div>
-                    <span id="gift-status-badge" class="gift-status not-received">🎁 小神衣：未領取</span>
+                    <span id="gift-status-badge" class="gift-status not-received">🧥小神衣：未領取</span>
                 </div>
             </h3>
-            <p id="gift-note" class="gift-note">※ 您已領取過小神衣結緣品。未來的回饋文章我們將以「法布施」形式與大眾分享，不再重複寄送，感恩您的發心！</p>
+            <p id="gift-note" class="gift-note">※ 您已領取過小神衣結緣品。未來的回饋文章我們將與大眾分享，不再重複寄送小神衣，感恩您的發心！</p>
             
             <form id="profile-form" class="profile-form">
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (item.status === 'approved') {
                     statusHtml = `<div class="history-item-status status-approved">🟢 <b>已刊登：</b>文章已刊登！元帥娘正在為您的小神衣開符加持中，開符完成後寄出請耐心等候。</div>`;
                 } else if (item.status === 'sent') {
-                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已寄出：</b>結緣品已寄出！感謝您的法布施。<br><span style="color:#333; margin-top:5px; display:inline-block;">📦 物流單號：<b>${item.trackingNumber || '無'}</b></span></div>`;
+                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已寄出：</b>結緣品已寄出！。<br><span style="color:#333; margin-top:5px; display:inline-block;">📦 物流單號：<b>${item.trackingNumber || '無'}</b></span></div>`;
                 }
                 
                 const cat = Array.isArray(item.category) ? item.category.join(', ') : item.category;
@@ -344,8 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="history-item">
                     ${fbIdHtml}
                     <div class="history-item-header">
-                        <span>🏷️ 分類：${cat}</span>
-                        <span>📅 ${item.createdAt}</span>
+                        <span>🏷️ ${cat}</span>
+                        <span> ${item.createdAt}</span>
                     </div>
                     
                     <div class="feedback-content-box">
@@ -370,10 +370,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (contentDiv.classList.contains('expanded')) {
             contentDiv.classList.remove('expanded');
-            btn.textContent = '閱讀全文 🔽';
+            btn.textContent = '閱讀全文';
         } else {
             contentDiv.classList.add('expanded');
-            btn.textContent = '收起內容 🔼';
+            btn.textContent = '收起內容';
         }
     };
 
@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 5. 載入收驚預約清單 (含刪除功能)
+    // 5. 載入收驚預約清單
     async function loadPickupHistory() {
         try {
             const res = await fetch('/api/user/pickups');
