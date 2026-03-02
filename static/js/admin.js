@@ -604,7 +604,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return `
         <div class="feedback-card" style="border-left:5px solid ${type==='pending'?'#dc3545':(type==='toship'?'#28a745':'#007bff')};">
             <div style="display:flex; justify-content:space-between;"><b>${o.orderId}</b> <small>${o.createdAt}</small></div>
-            <div>${o.customer.name} / ${o.customer.phone} / $${o.total}</div>
+            <div>
+                ${o.customer.shippingMethod === '711' ? '<span style="color:#28a745; font-weight:bold;">[7-11]</span>' : ''}
+                ${o.customer.name} / ${o.customer.phone} / $${o.total}
+            </div>
             <div style="color:#666;">${o.items.map(i => `${i.name} x${i.qty}`).join(', ')}</div>
             <div style="text-align:right; margin-top:10px;">${btns}</div>
         </div>`;
@@ -619,7 +622,13 @@ document.addEventListener('DOMContentLoaded', () => {
             <h4>客戶資料</h4>
             <p><b>姓名:</b> ${o.customer.name}</p>
             <p><b>電話:</b> ${o.customer.phone}</p>
-            <p><b>地址:</b> ${o.customer.address}</p>
+            ${(() => {
+                if (o.customer.shippingMethod === '711') {
+                    return `<p><b>取貨:</b> <span style="background:#28a745; color:#fff; padding:2px 5px; border-radius:3px;">7-11</span> ${o.customer.storeInfo || '未抓到門市資料'}</p>`;
+                } else {
+                    return `<p><b>地址:</b> ${o.customer.address}</p>`;
+                }
+            })()}            
             <p><b>Email:</b> ${o.customer.email}</p>
             <p><b>匯款後五碼:</b> ${o.customer.last5}</p>
             <hr>
