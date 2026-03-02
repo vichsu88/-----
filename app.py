@@ -291,6 +291,21 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
 
     bank_html = get_bank_info()
     
+    # 判斷配送方式來決定顯示地址還是門市
+    shipping_method = cust.get('shippingMethod', 'home')
+    if shipping_method == '711':
+        delivery_info_html = f"<strong>7-11 取貨門市：</strong>{cust.get('storeInfo', '未提供')}"
+        shipping_label = "運費 (7-11 店到店)"
+        shipping_fee_display = "60"
+    else:
+        delivery_info_html = f"<strong>收件地址：</strong>{cust.get('address', '未提供')}"
+        shipping_label = "運費 (宅配)"
+        shipping_fee_display = "120"
+        
+    # 如果資料庫裡有存實際運費，就用實際的 (相容舊資料)
+    if 'shippingFee' in cust:
+        shipping_fee_display = str(cust['shippingFee'])
+
     if status_type == 'created':
         title = "訂單確認通知"
         color = "#C48945"
@@ -305,6 +320,9 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
             {bank_html}
             <div style="margin-top:8px; font-size:13px; color:#d9534f;">※ 若未於 2 小時內付款，系統將取消此筆訂單。</div>
         </div><br>
+        <strong>【配送資訊】</strong><br>
+        {delivery_info_html}<br>
+        聯絡電話：{cust.get('phone')}<br><br>
         <strong>【防詐騙提醒】</strong><br>
         <span style="color:#666; font-size:14px;">所有匯款請依照官方網頁公告之匯款帳號，若有疑慮請向官方 LINE 查證。</span>
         """
@@ -327,7 +345,8 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
             <strong>📦 物流單號：{tracking_num}</strong><br>
             <span style="font-size:13px; color:#666;">請依照上方單號，自行至物流網站查詢配送進度。</span>
         </div><br>
-        <strong>出貨日期：{date_str}</strong><br><br>
+        <strong>出貨日期：{date_str}</strong><br>
+        {delivery_info_html}<br><br>
         <span style="color:#666;">商品收到若有問題，請點擊下方按鈕詢問官方 LINE。</span>
         """
         show_price = False
@@ -338,8 +357,19 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
         price_td = f'<td style="padding:10px; text-align:right;">${item["price"] * item["qty"]}</td>' if show_price else ''
         items_rows += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}{spec}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td>{price_td}</tr>'
     
+    # 這裡的 total_row 要加入運費顯示
     price_th = '<th style="padding:10px; text-align:right;">金額</th>' if show_price else ''
-    total_row = f'<tfoot><tr><td colspan="2" style="padding:15px 10px; text-align:right; font-weight:bold; color:#333;">總計 (含運)</td><td style="padding:15px 10px; text-align:right; font-weight:bold; color:#C48945; font-size:18px;">NT$ {order["total"]}</td></tr></tfoot>' if show_price else ''
+    total_row = f'''
+    <tfoot>
+        <tr>
+            <td colspan="2" style="padding:10px 10px; text-align:right; color:#666;">{shipping_label}</td>
+            <td style="padding:10px 10px; text-align:right; color:#666;">+ {shipping_fee_display}</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="padding:15px 10px; text-align:right; font-weight:bold; color:#333;">總計</td>
+            <td style="padding:15px 10px; text-align:right; font-weight:bold; color:#C48945; font-size:18px;">NT$ {order["total"]}</td>
+        </tr>
+    </tfoot>''' if show_price else ''
 
     return f"""
     <div style="font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color:#fff;">
@@ -1263,7 +1293,6 @@ def cleanup_unpaid_orders():
     result = db.orders.delete_many({"status": "pending", "createdAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
-# === 2. 修改 create_order (區分 donation 與 fund) ===
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     if db is None: return jsonify({"error": "DB Error"}), 500
@@ -1271,20 +1300,26 @@ def create_order():
     line_id = session.get('user_line_id')
     if not line_id: return jsonify({"error": "請先使用 LINE 登入"}), 401
     
-    # ★ 關鍵修改：直接信任前端傳來的 orderType ('fund', 'donation', 'shop')
     order_type = data.get('orderType', 'shop')
     
-    # 產生單號前綴
     prefix = "ORD"
-    if order_type == 'donation': prefix = "DON" # 捐香
-    elif order_type == 'fund': prefix = "FND"   # 建廟
+    if order_type == 'donation': prefix = "DON"
+    elif order_type == 'fund': prefix = "FND"
     
     order_id = f"{prefix}{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
     
+    # 接收新欄位
     customer_info = {
-        "name": data.get('name'), "phone": data.get('phone'), "email": data.get('email', ''),
-        "address": data.get('address'), "last5": data.get('last5'),
-        "lunarBirthday": data.get('lunarBirthday', '')
+        "name": data.get('name'), 
+        "phone": data.get('phone'), 
+        "email": data.get('email', ''),
+        "address": data.get('address'), 
+        "last5": data.get('last5'),
+        "lunarBirthday": data.get('lunarBirthday', ''),
+        # 新增配送資訊
+        "shippingMethod": data.get('shippingMethod', 'home'), # home 或 711
+        "storeInfo": data.get('storeInfo', ''),               # 7-11 門市資訊
+        "shippingFee": data.get('shippingFee', 120)           # 記錄當時的運費
     }
     
     now = datetime.utcnow()
@@ -1298,18 +1333,15 @@ def create_order():
         "createdAt": now, "updatedAt": now
     }
 
-    # ★ 針對「捐香 (donation)」新增稟告狀態欄位
     if order_type == 'donation':
-        order['is_reported'] = False  # 預設為未稟告
+        order['is_reported'] = False
 
     db.orders.insert_one(order)
     
-    # (寄信邏輯保持不變，或視需要微調主旨)
     subject = f"【承天中承府】訂單確認 ({order_id})"
     if order_type == 'donation': subject = f"【承天中承府】捐香登記確認 ({order_id})"
     elif order_type == 'fund': subject = f"【承天中承府】建廟護持確認 ({order_id})"
     
-    # 這裡簡化範例，您可以沿用原本的 generate_donation_created_email
     if order_type in ['donation', 'fund']:
         html = generate_donation_created_email(order)
     else:

@@ -33,7 +33,6 @@
     .series-header:first-child { margin-top: 0; }
     
     .btn-official { background: linear-gradient(45deg, #C48945, #FFD700); color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
-    .btn-711 { background: #009c6f; color: #fff; }
 
     /* === 購物主區塊 === */
     #shopping-section { display: none; padding: 40px 10px; background: #F8F5F2; min-height: 100vh; }
@@ -119,6 +118,18 @@
     .price-summary { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
     .price-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 15px; color: #555; }
     
+    /* 配送方式樣式 */
+    .shipping-option {
+        display: flex; gap: 15px; margin-top: 5px;
+    }
+    .shipping-label {
+        cursor: pointer; display: flex; align-items: center; gap: 5px;
+        padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; flex: 1;
+        transition: 0.2s;
+    }
+    .shipping-label:hover { background: #fdfdfd; border-color: #C48945; }
+    input[type="radio"]:checked + span { font-weight: bold; color: #C48945; }
+    
     @media (max-width: 768px) {
         .products-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
         .p-img { height: 160px; }
@@ -139,12 +150,8 @@
         <h1 style="font-family:'KouzanBrushFontOTF', serif; font-size:3.5rem; margin-bottom:20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">進入帥府賣場</h1>
         
         <button class="landing-btn btn-official" onclick="enterShop(this)">
-            官方賣場
+            進入賣場選購
         </button> 
-        
-        <a href="https://myship.7-11.com.tw/general/detail/GM2505178228918?fbclid=PAZXh0bgNhZW0CMTEAAafUH4btGUY5FZ9vGxggH7mZD_YwrkghO7Z04Q6QLsBiwAEUQAjOFkbR6J3VhA_aem_6XG2tFieTMdoAVlFXG4o7g" target="_blank" class="landing-btn btn-711">
-            前往 7-11 賣貨便
-        </a>
     </div>
 </div>
 
@@ -161,7 +168,7 @@
     <div class="shop-instructions">
         <div class="instruction-header">
             <h2>帥府商店訂購流程</h2>
-            <div class="shipping-badge">🚚 全館統一運費：NT$ 120</div>
+            <div class="shipping-badge" id="shipping-banner">🚚 提供 宅配 / 7-11 店到店</div>
         </div>
         
         <ol class="process-steps">
@@ -171,7 +178,7 @@
             </li>
             <li class="step-item">
                 <div class="step-icon-box" title="填寫資料">📝</div>
-                <div class="step-text"><span class="step-title">Step 2：填寫資料</span><span class="step-desc">系統會自動帶入您的會員資料。</span></div>
+                <div class="step-text"><span class="step-title">Step 2：填寫資料</span><span class="step-desc">選擇 宅配 或 7-11 店到店，並填寫對應資料。</span></div>
             </li>
             <li class="step-item">
                 <div class="step-icon-box" style="border-color: #d32f2f;" title="完成匯款">
@@ -217,10 +224,10 @@
                 <span>商品小計:</span> <span id="cart-subtotal">0</span>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:14px; color:#666; margin-bottom:10px;">
-                <span>運費 (宅配):</span> <span>+120</span>
+                <span>運費:</span> <span id="cart-shipping-fee">請於結帳時選擇</span>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:20px; font-weight:bold; color:#C48945;">
-                <span>總計:</span> <span>NT$ <span id="cart-total">0</span></span>
+                <span>預估總計:</span> <span>NT$ <span id="cart-total-preview">0</span></span>
             </div>
             <button class="btn-submit" onclick="toCheckout()">前往結帳</button>
         </div>
@@ -230,7 +237,9 @@
 <div class="checkout-modal" id="checkout-modal">
     <div class="checkout-box">
         <h3 style="text-align:center; color:#C48945; margin-top:0;">訂單確認</h3>
+        
         <div id="checkout-summary" style="background:#f9f9f9; padding:10px; margin-bottom:15px; border-radius:5px;"></div>
+        
         <form id="order-form">
             <p style="color:red; font-size:13px; font-weight:bold; text-align:center; background:#ffeeba; padding:8px; border-radius:4px;">
                 🚨 提醒：送出後請務必於 2 小時內匯款，以免系統自動取消。
@@ -248,9 +257,35 @@
                 <label>電子信箱 (Email) <span style="color:red">*</span></label>
                 <input type="email" name="email" class="form-control" placeholder="接收訂單確認信使用" required>
             </div>
-            <div class="form-group">
+
+            <div class="form-group" style="background:#f0f8ff; padding:10px; border-radius:6px; border:1px solid #cce5ff;">
+                <label style="color:#004085; font-weight:bold;">📦 選擇配送方式</label>
+                <div class="shipping-option">
+                    <label class="shipping-label">
+                        <input type="radio" name="shippingType" value="home" checked onchange="updateShipping('home')">
+                        <span>宅配 ($120)</span>
+                    </label>
+                    <label class="shipping-label">
+                        <input type="radio" name="shippingType" value="711" onchange="updateShipping('711')">
+                        <span>7-11 店到店 ($60)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" id="addr-group">
                 <label>收件地址</label>
-                <input type="text" name="address" class="form-control" placeholder="請填寫完整地址" required>
+                <input type="text" name="address" class="form-control" placeholder="請填寫完整地址">
+            </div>
+
+            <div class="form-group" id="store-group" style="display:none;">
+                <label style="display:flex; justify-content:space-between; align-items:center;">
+                    7-11 門市資訊 
+                    <a href="https://emap.pcsc.com.tw/mobilemap/Id/Default.aspx" target="_blank" style="font-size:13px; color:#007bff; text-decoration:underline; font-weight:bold;">
+                        🔍 點此查詢店號
+                    </a>
+                </label>
+                <input type="text" name="storeInfo" class="form-control" placeholder="請填寫：店號 + 門市名稱 (例: 123456 統一門市)">
+                <div style="font-size:12px; color:#666; margin-top:5px;">請務必填寫正確，以免無法取貨。</div>
             </div>
             
             <div class="form-group" style="background:#fff3cd; padding:10px; border-radius:8px; border:1px dashed #E6BA67; margin-top:15px;">
@@ -281,8 +316,8 @@
 <script>
     let products = [];
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    let currentUserData = null; // 儲存登入會員資料
-    const SHIPPING_FEE = 120; 
+    let currentUserData = null; 
+    let currentShippingFee = 120; // 預設宅配運費
 
     // === 進場攔截邏輯 ===
     async function enterShop(btnElement) {
@@ -300,7 +335,6 @@
                 document.getElementById('shopping-section').style.display = 'block';
                 fetchProducts();
             } else {
-                // 沒登入就擋在門外
                 document.getElementById('login-modal').style.display = 'flex';
             }
         } catch (e) {
@@ -422,27 +456,71 @@
                     <div class="cart-qty-ctrl"><button class="c-q-btn" onclick="changeCartQty(${i}, -1)">-</button><span style="font-weight:bold; min-width:20px; text-align:center;">${c.qty}</span><button class="c-q-btn" onclick="changeCartQty(${i}, 1)">+</button></div>
                 </div>`;
         });
-        const total = cart.length > 0 ? subtotal + SHIPPING_FEE : 0;
-        document.getElementById('cart-subtotal').textContent = subtotal; document.getElementById('cart-total').textContent = total;
+        
+        // 購物車預覽只顯示小計，不顯示運費（因為還沒選）
+        document.getElementById('cart-subtotal').textContent = subtotal; 
+        document.getElementById('cart-total-preview').textContent = subtotal + 120; // 預設 +120
+        
         if(cart.length === 0) div.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">購物車空空的喔</p>';
+        return subtotal;
     }
 
     window.changeCartQty = (idx, delta) => { cart[idx].qty += delta; if(cart[idx].qty <= 0) cart.splice(idx, 1); updateCart(); };
     window.toggleCart = (show) => { const el = document.getElementById('cart-overlay'); if(show) el.classList.add('open'); else el.classList.remove('open'); };
 
-    // === 結帳時自動帶入資料 ===
+    // === 新增：動態運費切換邏輯 ===
+    window.updateShipping = (type) => {
+        const addrGroup = document.getElementById('addr-group');
+        const storeGroup = document.getElementById('store-group');
+        const addrInput = addrGroup.querySelector('input');
+        const storeInput = storeGroup.querySelector('input');
+
+        if (type === 'home') {
+            currentShippingFee = 120;
+            addrGroup.style.display = 'block';
+            storeGroup.style.display = 'none';
+            addrInput.required = true;
+            storeInput.required = false;
+        } else {
+            currentShippingFee = 60;
+            addrGroup.style.display = 'none';
+            storeGroup.style.display = 'block';
+            addrInput.required = false;
+            storeInput.required = true;
+        }
+        
+        // 重新渲染結帳金額
+        renderCheckoutSummary();
+    };
+
+    function renderCheckoutSummary() {
+        if(!cart.length) return;
+        const subtotal = cart.reduce((a,c) => a + c.price*c.qty, 0);
+        const total = subtotal + currentShippingFee;
+        
+        const summaryHtml = cart.map(c => `<div class="price-row"><span>${c.name} (${c.variant}) x${c.qty}</span><span>$${c.price*c.qty}</span></div>`).join('');
+        
+        document.getElementById('checkout-summary').innerHTML = `
+            ${summaryHtml}
+            <div class="price-row" style="margin-top:10px; border-top:1px dashed #ddd; padding-top:5px;">
+                <span>運費 (${currentShippingFee === 60 ? '7-11' : '宅配'})</span>
+                <span>$${currentShippingFee}</span>
+            </div>
+            <div class="price-row total" style="font-weight:bold; color:#C48945; font-size:1.2rem;">
+                <span>總計</span>
+                <span id="final-total" data-val="${total}">NT$ ${total}</span>
+            </div>
+        `;
+    }
+
     window.toCheckout = () => {
         if(!cart.length) return alert('您的購物車是空的，無法結帳！');
         toggleCart(false);
         
-        // 渲染結帳明細
-        const summaryHtml = cart.map(c => `<div class="price-row"><span>${c.name} (${c.variant}) x${c.qty}</span><span>$${c.price*c.qty}</span></div>`).join('');
-        const total = parseInt(document.getElementById('cart-total').textContent);
-        document.getElementById('checkout-summary').innerHTML = `
-            ${summaryHtml}
-            <div class="price-row" style="margin-top:10px; border-top:1px dashed #ddd; padding-top:5px;"><span>運費</span><span>$${SHIPPING_FEE}</span></div>
-            <div class="price-row total"><span>總計</span><span>NT$ ${total}</span></div>
-        `;
+        // 初始化表單狀態 (預設宅配)
+        const radios = document.getElementsByName('shippingType');
+        radios[0].checked = true;
+        updateShipping('home');
 
         // 將會員資料自動填入表單
         if (currentUserData) {
@@ -472,9 +550,18 @@
         const f = e.target;
         if(!/^09\d{2}-\d{3}-\d{3}$/.test(f.phone.value)) return alert('電話格式錯誤 (請輸入 09XX-XXX-XXX)');
         
-        const totalAmount = parseInt(document.getElementById('cart-total').textContent);
+        // 取得配送資訊
+        const shippingType = f.querySelector('input[name="shippingType"]:checked').value;
+        const totalAmount = parseInt(document.getElementById('final-total').dataset.val);
+        const storeInfoVal = f.storeInfo.value;
+        const addressVal = f.address.value;
+
         const payload = {
-            name: f.name.value, phone: f.phone.value, email: f.email.value, address: f.address.value, last5: f.last5.value,
+            name: f.name.value, phone: f.phone.value, email: f.email.value, 
+            address: addressVal, storeInfo: storeInfoVal, // 傳送地址或門市資訊
+            shippingMethod: shippingType, // 傳送配送方式
+            shippingFee: currentShippingFee, // 傳送運費
+            last5: f.last5.value,
             items: cart, total: totalAmount
         };
         
