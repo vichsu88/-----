@@ -4,27 +4,7 @@
 
 {% block content %}
 <style>
-    /* === 廣告登陸頁 === */
-    .shop-landing {
-        min-height: 100vh;
-        background: url('{{ url_for("static", filename="images/common/bg.jpg") }}') no-repeat center center/cover;
-        position: relative; display: flex; justify-content: center; align-items: center;
-        flex-direction: column; gap: 20px;
-    }
-    .shop-landing::before { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); }
-    .landing-content { position: relative; z-index: 2; text-align: center; color: #fff; width: 100%; display: flex; flex-direction: column; align-items: center; }
-    
-    /* === 統一按鈕樣式設定 === */
-    .landing-btn {
-        display: flex; justify-content: center; align-items: center; gap: 10px;
-        width: 300px; height: 60px; border-radius: 50px;
-        font-size: 20px; font-weight: bold; text-decoration: none; cursor: pointer;
-        border: 2px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 15px;
-    }
-    .landing-btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
-
-    /* 系列標題樣式 */
+    /* === 系列標題樣式 === */
     .series-header {
         grid-column: 1 / -1; margin-top: 30px; margin-bottom: 10px; padding-bottom: 5px;
         border-bottom: 2px solid #E6BA67; color: #8B4513; font-size: 1.4rem; font-weight: bold;
@@ -32,8 +12,6 @@
     }
     .series-header:first-child { margin-top: 0; }
     
-    .btn-official { background: linear-gradient(45deg, #C48945, #FFD700); color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
-
     /* === 購物主區塊 === */
     #shopping-section { display: none; padding: 40px 10px; background: #F8F5F2; min-height: 100vh; }
 
@@ -141,19 +119,8 @@
         .add-box { flex-direction: column; gap: 5px; }
         .qty-in { width: 100%; padding: 5px; }
         .add-btn { padding: 6px; font-size: 14px; }
-        .landing-btn { width: 85%; font-size: 18px; }
     }
 </style>
-
-<div class="shop-landing" id="landing">
-    <div class="landing-content">
-        <h1 style="font-family:'KouzanBrushFontOTF', serif; font-size:3.5rem; margin-bottom:20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">進入帥府賣場</h1>
-        
-        <button class="landing-btn btn-official" onclick="enterShop(this)">
-            進入賣場選購
-        </button> 
-    </div>
-</div>
 
 <div class="modal-overlay" id="login-modal" style="display:none; z-index:9999; justify-content:center; align-items:center;">
     <div style="background:#fffcf5; padding:40px 20px; border-radius:15px; border:2px solid #E6BA67; text-align:center; width:90%; max-width:400px; position:relative;">
@@ -280,12 +247,12 @@
             <div class="form-group" id="store-group" style="display:none;">
                 <label style="display:flex; justify-content:space-between; align-items:center;">
                     7-11 門市資訊 
-                    <a href="https://emap.pcsc.com.tw/mobilemap/Id/Default.aspx" target="_blank" style="font-size:13px; color:#007bff; text-decoration:underline; font-weight:bold;">
+                    <a href="https://emap.pcsc.com.tw/emap.aspx" target="_blank" style="font-size:13px; color:#007bff; text-decoration:underline; font-weight:bold;">
                         🔍 點此查詢店號
                     </a>
                 </label>
-                <input type="text" name="storeInfo" class="form-control" placeholder="請填寫：店號 + 門市名稱 (例: 123456 統一門市)">
-                <div style="font-size:12px; color:#666; margin-top:5px;">請務必填寫正確，以免無法取貨。</div>
+                <input type="text" name="storeInfo" class="form-control" placeholder="例: 123456 統一門市 (請填寫6碼店號)">
+                <div style="font-size:12px; color:#666; margin-top:5px;">請務必填寫 <span style="color:#d9534f; font-weight:bold;">6 碼店號</span>，以免無法取貨。</div>
             </div>
             
             <div class="form-group" style="background:#fff3cd; padding:10px; border-radius:8px; border:1px dashed #E6BA67; margin-top:15px;">
@@ -319,30 +286,24 @@
     let currentUserData = null; 
     let currentShippingFee = 120; // 預設宅配運費
 
-    // === 進場攔截邏輯 ===
-    async function enterShop(btnElement) {
-        const originalText = btnElement.innerText;
-        btnElement.innerText = '讀取驗證中...';
-        btnElement.style.pointerEvents = 'none';
-
+    // === 自動檢查登入狀態 ===
+    async function checkLoginStatus() {
         try {
             const res = await fetch('/api/user/me');
             const data = await res.json();
             
             if (data.logged_in) {
+                // 已登入：顯示賣場內容
                 currentUserData = data.user;
-                document.getElementById('landing').style.display = 'none';
                 document.getElementById('shopping-section').style.display = 'block';
                 fetchProducts();
             } else {
+                // 未登入：開啟登入 Modal
                 document.getElementById('login-modal').style.display = 'flex';
             }
         } catch (e) {
             console.error(e);
             alert('系統連線異常，請稍後再試。');
-        } finally {
-            btnElement.innerText = originalText;
-            btnElement.style.pointerEvents = 'auto';
         }
     }
 
@@ -457,9 +418,8 @@
                 </div>`;
         });
         
-        // 購物車預覽只顯示小計，不顯示運費（因為還沒選）
         document.getElementById('cart-subtotal').textContent = subtotal; 
-        document.getElementById('cart-total-preview').textContent = subtotal + 120; // 預設 +120
+        document.getElementById('cart-total-preview').textContent = subtotal + 120;
         
         if(cart.length === 0) div.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">購物車空空的喔</p>';
         return subtotal;
@@ -468,7 +428,7 @@
     window.changeCartQty = (idx, delta) => { cart[idx].qty += delta; if(cart[idx].qty <= 0) cart.splice(idx, 1); updateCart(); };
     window.toggleCart = (show) => { const el = document.getElementById('cart-overlay'); if(show) el.classList.add('open'); else el.classList.remove('open'); };
 
-    // === 新增：動態運費切換邏輯 ===
+    // === 動態運費切換邏輯 ===
     window.updateShipping = (type) => {
         const addrGroup = document.getElementById('addr-group');
         const storeGroup = document.getElementById('store-group');
@@ -489,7 +449,6 @@
             storeInput.required = true;
         }
         
-        // 重新渲染結帳金額
         renderCheckoutSummary();
     };
 
@@ -517,12 +476,10 @@
         if(!cart.length) return alert('您的購物車是空的，無法結帳！');
         toggleCart(false);
         
-        // 初始化表單狀態 (預設宅配)
         const radios = document.getElementsByName('shippingType');
         radios[0].checked = true;
         updateShipping('home');
 
-        // 將會員資料自動填入表單
         if (currentUserData) {
             const f = document.getElementById('order-form');
             if(currentUserData.realName) f.name.value = currentUserData.realName;
@@ -555,6 +512,17 @@
         const totalAmount = parseInt(document.getElementById('final-total').dataset.val);
         const storeInfoVal = f.storeInfo.value;
         const addressVal = f.address.value;
+
+        // 新增：7-11 店號檢查邏輯
+        if (shippingType === '711') {
+            if (!storeInfoVal || storeInfoVal.length < 6) {
+                return alert('請填寫正確的 7-11 店號與名稱 (至少包含6碼店號)');
+            }
+            // 嘗試檢查是否含有6位數字
+            if (!/\d{6}/.test(storeInfoVal)) {
+                 if(!confirm('系統偵測您未填寫「6碼店號」，這可能導致無法寄送。\n\n請確認是否繼續送出？')) return;
+            }
+        }
 
         const payload = {
             name: f.name.value, phone: f.phone.value, email: f.email.value, 
@@ -590,6 +558,9 @@
             btn.disabled = false; btn.textContent = "確認送出訂單";
         }
     };
+
+    // 頁面載入後自動執行檢查
+    checkLoginStatus();
     updateCart();
 </script>
 {% endblock %}
