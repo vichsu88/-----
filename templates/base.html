@@ -20,7 +20,7 @@
     <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
     <meta property="og:description" content="{% block og_description %}{{ self.meta_description() }}{% endblock %}">
     <meta property="og:url" content="{{ request.url }}">
-    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/pages/index/banner.png', _external=True) }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/pages/index/banner.jpg', _external=True) }}{% endblock %}">
     <meta property="og:image:alt" content="承天中承府主視覺">
 
     {# --- 3. Twitter Cards --- #}
@@ -46,7 +46,7 @@
         "@context": "https://schema.org",
         "@type": "PlaceOfWorship",
         "name": "承天中承府",
-        "image": [ "{{ url_for('static', filename='images/pages/index/banner.png', _external=True) }}" ],
+        "image": [ "{{ url_for('static', filename='images/pages/index/banner.jpg', _external=True) }}" ],
         "description": "承天中承府主祀煙島中壇元帥，位於嘉義市東區，提供免費收驚、問事、補財庫等濟世服務。",
         "address": {
             "@type": "PostalAddress",
