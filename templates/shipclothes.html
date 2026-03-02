@@ -461,7 +461,12 @@ boardContainer.innerHTML = data.map(day => {
                 body: JSON.stringify(payload)
             });
             if (!res.ok) throw new Error('預約失敗');
-            
+            const result = await res.json(); 
+
+            if (!res.ok) {
+                // 如果後端回傳錯誤 (例如重複預約)，直接拋出該訊息
+                throw new Error(result.error || '預約失敗');
+            }
             alert('預約成功！您可以在「個人專區」查看預約紀錄。');
             modal.classList.remove('is-visible');
             form.reset();

@@ -725,7 +725,33 @@ def create_pickup_reservation():
     
     if not pickup_type or not pickup_date or not clothes:
         return jsonify({"error": "資料不完整"}), 400
+    # ==========================================
+    # ★ 新增檢查邏輯：防止衣服編號重複預約
+    # ==========================================
+    if db is not None:
+        # 1. 取出這次請求中所有的衣服編號
+        incoming_ids = [c.get('clothId', '').strip() for c in clothes if c.get('clothId')]
         
+        # 2. 到資料庫檢查，這些編號是否已經存在於任何預約單中
+        # 查詢條件：clothes 陣列裡的 clothId 欄位，包含在 incoming_ids 之中
+        duplicate_order = db.pickups.find_one({
+            "clothes.clothId": {"$in": incoming_ids}
+        })
+        
+        # 3. 如果找到了重複的單子
+        if duplicate_order:
+            # 找出具體是哪一件重複，方便提示使用者
+            found_id = ""
+            for item in duplicate_order.get('clothes', []):
+                if item.get('clothId') in incoming_ids:
+                    found_id = item.get('clothId')
+                    break
+            
+            error_msg = f"衣服編號【{found_id}】已經預約過了！請先至「個人專區」刪除舊的預約，才能重新安排。"
+            return jsonify({"error": error_msg}), 400
+    # ==========================================
+    # ★ 檢查結束
+    # ==========================================
     new_reservation = {
         "lineId": line_id,
         "pickupType": pickup_type,
