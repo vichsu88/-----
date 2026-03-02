@@ -460,21 +460,27 @@ boardContainer.innerHTML = data.map(day => {
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                 body: JSON.stringify(payload)
             });
-            if (!res.ok) throw new Error('預約失敗');
+
+            // ★ 重要修改：先解析 JSON，這樣才能拿到後端的錯誤訊息
             const result = await res.json(); 
 
+            // ★ 檢查狀態：如果不是 200 OK，就拋出後端的 result.error
             if (!res.ok) {
-                // 如果後端回傳錯誤 (例如重複預約)，直接拋出該訊息
                 throw new Error(result.error || '預約失敗');
             }
+
+            // 成功後的邏輯
             alert('預約成功！您可以在「個人專區」查看預約紀錄。');
             modal.classList.remove('is-visible');
             form.reset();
             loadPublicBoard();
+
         } catch (err) {
+            // 這裡就會顯示後端傳來的詳細中文錯誤訊息
             alert(err.message);
         } finally {
-            submitBtn.disabled = false; submitBtn.textContent = '確認預約';
+            submitBtn.disabled = false; 
+            submitBtn.textContent = '確認預約';
         }
     });
 });
