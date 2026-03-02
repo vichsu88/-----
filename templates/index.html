@@ -220,11 +220,16 @@
     </div>
 
     <section class="hero-section" aria-label="承天中承府主視覺">
-        <img src="{{ url_for('static', filename='images/pages/index/banner_PC.jpg') }}" 
-             alt="承天中承府眾神-中壇元帥與眾神尊" 
+    <picture>
+        <source media="(max-width: 768px)" srcset="{{ url_for('static', filename='images/pages/index/banner_mobile.jpg') }}">
+        
+        <img src="{{ url_for('static', filename='images/pages/index/banner_desktop.jpg') }}" 
+             alt="承天中承府眾神-中壇煙島元帥與眾神尊" 
+             class="responsive-banner"
              fetchpriority="high" 
              loading="eager">
-    </section>
+    </picture>
+</section>
 
     <section class="news-section reveal">
         <div class="news-card">

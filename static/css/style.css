@@ -114,44 +114,45 @@ body::before {
     text-align: center;
 }
 
-/* === 全新 Banner 樣式 (V2) === */
+/* === 全新 Banner 樣式 (V3 - 雙圖切換清晰版) === */
 .hero-section {
-    margin-top: -2 !important;
-    /* 設定手機上的 Banner 高度 */
-    height: 300px; 
+    /* 移除原本的固定高度，改由圖片比例決定，或設定最大高度限制 */
     width: 95%;      
     max-width: 1200px;   
     margin: 0 auto;
-    border-radius: 10px;   /* 加上圓角，視覺上跟導覽列更統一 (可選) */
-    /* --- 修改結束 --- */
-
-    /* */
-    background-image: url('../images/pages/index/banner_PC.jpg');
-    background-size: cover; /* 讓圖片永遠填滿容器，多餘部分會被裁切 */
-    background-position: center; /* 不論如何裁切，都以圖片中心為焦點 */
-    background-repeat: no-repeat; /* 確保圖片不重複 */
-    position: relative;    /* 讓圖片依附這個框框 */
-    overflow: hidden;      /* 確保跑出框框的圖片被藏起來 */
-    background-color: transparent; 
-}
-.hero-section img {
-    width: 100% !important;  /* 寬度填滿框框 */
-    height: 100% !important; /* 高度強制填滿框框 (不能用 auto) */
+    border-radius: 10px;
+    overflow: hidden; /* 圓角內的圖片若超出去要切掉 */
+    position: relative;
     
-    /* 這一行就是魔法：保持比例填滿，多餘的自動裁切 */
-    object-fit: cover;       
-    
-    /* 確保重點在正中間 */
-    object-position: center center; 
+    /* 移除背景圖片設定，因為我們改用 HTML picture 標籤 */
+    background: transparent; 
 }
 
-/* 當螢幕寬度大於 1024px (例如電腦) 時，使用圖片的原始高度 */
+/* 設定圖片的行為 */
+.hero-section img.responsive-banner {
+    display: block; /* 消除圖片底部的預設白邊 */
+    width: 100%;    /* 寬度永遠填滿容器 */
+    height: auto;   /* 高度自動，保持圖片原始比例，不變形 */
+    
+    /* 如果您希望不管圖片多高，都要固定在一個高度範圍內 (例如手機固定300高)，
+       才需要加上下面這兩行，否則建議拿掉，讓圖片自然呈現 */
+    /* height: 400px; */ 
+    /* object-fit: cover; */
+}
+
+/* 電腦版微調 */
 @media (min-width: 1024px) {
     .hero-section {
-        height: 600px;
+        /* 電腦版可以限制一下最大高度，避免圖太大佔據整個螢幕 */
+        max-height: 650px; 
+    }
+    
+    .hero-section img.responsive-banner {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* 如果有限制高度，這行確保圖片填滿不變形 */
     }
 }
-
 .section-title {
     font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
     font-size: clamp(28px, 5vw, 40px);
