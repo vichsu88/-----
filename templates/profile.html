@@ -444,13 +444,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (order.status === 'pending') {
                     const deadline = new Date(order.deadline_iso);
-                    if (now > deadline) {
-                        borderColor = '#dc3545';
-                        statusHtml = `<div class="history-item-status" style="background:#f8d7da; color:#721c24; border-left:4px solid #dc3545;">🔴 <b>已逾期：</b>超過匯款期限，請重新登記。</div>`;
-                    } else {
-                        borderColor = '#ffc107';
-                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold;">${order.paymentDeadline}</span> 前完成匯款。</div>`;
-                    }
+                if (now > deadline) {
+                    // 超過 2 小時，但後端還沒刪除 (代表處於 2~76 小時的緩衝期)
+                    // 改用橘色 (Orange) 顯示，安撫信徒
+                    borderColor = '#fd7e14'; 
+                    statusHtml = `
+                        <div class="history-item-status" style="background:#fff3cd; color:#856404; border-left:4px solid #fd7e14;">
+                            🟠 <b>請盡速匯款</b><br>
+                            <span style="font-size:13px; color:#666;">若您已完成匯款，請無須擔心，人工對帳約需一個工作天，確認入帳後將更新狀態。</span>
+                        </div>`;
+                } else {
+                    // 2 小時內 (正常顯示)
+                    borderColor = '#ffc107';
+                    statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold;">${order.paymentDeadline}</span> 前完成匯款。</div>`;
+                }
                 } else if (order.status === 'paid') {
                     borderColor = '#28a745';
                     let reportText = '';
@@ -572,13 +579,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (order.status === 'pending') {
                     const deadline = new Date(order.deadline_iso);
-                    if (now > deadline) {
-                        borderColor = '#dc3545';
-                        statusHtml = `<div class="history-item-status" style="background:#f8d7da; color:#721c24; border-left:4px solid #dc3545;">🔴 <b>已逾期/取消：</b>超過繳費期限，訂單已失效。</div>`;
-                    } else {
-                        borderColor = '#ffc107';
-                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold; font-size:16px;">${order.paymentDeadline}</span> 前完成匯款，逾期將自動取消。</div>`;
-                    }
+if (now > deadline) {
+    // 超過 2 小時 (緩衝期)
+    borderColor = '#fd7e14'; // 橘色邊框
+    statusHtml = `
+                        <div class="history-item-status" style="background:#fff3cd; color:#856404; border-left:4px solid #fd7e14;">
+                            🟠 <b>請盡速匯款：您的訂單目前由人工進行款項核對。</b><br>
+                            <span style="font-size:13px; color:#666;">若您已匯款，請放心等待，對帳完成後將盡速為您出貨</span>
+                        </div>`;
+                } else {
+                    // 2 小時內
+                    borderColor = '#ffc107';
+                    statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold; font-size:16px;">${order.paymentDeadline}</span> 前完成匯款，逾期將自動取消。</div>`;
+                }
                 } else if (order.status === 'paid') {
                     borderColor = '#28a745';
                     statusHtml = `<div class="history-item-status status-approved">🟢 <b>處理中：</b>廟方已確認收款，正在為您準備商品。</div>`;
