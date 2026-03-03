@@ -929,26 +929,43 @@ document.addEventListener('DOMContentLoaded', () => {
         linksList.innerHTML = links.map(l => `<div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;"><b>${l.name}</b> <input value="${l.url}" readonly style="flex:1; padding:8px; border:1px solid #ddd; background:#f9f9f9;"> <button class="btn btn--brown" onclick="updLink('${l._id}', '${l.url}')">修改</button></div>`).join('');
     }
     
-    async function fetchBankInfo() {
-        try {
-            const data = await apiFetch('/api/settings/bank');
-            if(bankForm) {
-                bankForm.bankCode.value = data.bankCode || '808';
-                bankForm.bankName.value = data.bankName || '玉山銀行';
-                bankForm.account.value = data.account || '';
-            }
-        } catch(e) { console.error('Bank info load fail'); }
-    }
+    // 1. 修改 fetchBankInfo
+async function fetchBankInfo() {
+    try {
+        const data = await apiFetch('/api/settings/bank');
+        if(bankForm) {
+            // 填入 Shop 資料
+            bankForm.shop_bankCode.value = data.shop.bankCode || '';
+            bankForm.shop_bankName.value = data.shop.bankName || '';
+            bankForm.shop_account.value = data.shop.account || '';
+            
+            // 填入 Fund 資料
+            bankForm.fund_bankCode.value = data.fund.bankCode || '';
+            bankForm.fund_bankName.value = data.fund.bankName || '';
+            bankForm.fund_account.value = data.fund.account || '';
+        }
+    } catch(e) { console.error('Bank info load fail'); }
+}
 
-    if(bankForm) bankForm.onsubmit = async (e) => {
-        e.preventDefault();
-        await apiFetch('/api/settings/bank', {method:'POST', body:JSON.stringify({
-            bankCode: bankForm.bankCode.value,
-            bankName: bankForm.bankName.value,
-            account: bankForm.account.value
-        })});
-        alert('匯款資訊已更新');
+// 2. 修改表單送出事件
+if(bankForm) bankForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const payload = {
+        shop: {
+            bankCode: bankForm.shop_bankCode.value,
+            bankName: bankForm.shop_bankName.value,
+            account: bankForm.shop_account.value
+        },
+        fund: {
+            bankCode: bankForm.fund_bankCode.value,
+            bankName: bankForm.fund_bankName.value,
+            account: bankForm.fund_account.value
+        }
     };
+    
+    await apiFetch('/api/settings/bank', {method:'POST', body:JSON.stringify(payload)});
+    alert('匯款資訊已更新 (已區分 一般/建廟)');
+};
 
     window.updLink = async (id, old) => {
         const url = prompt('新網址', old);

@@ -279,15 +279,28 @@
                             <div id="links-list"></div>
                         </div>
                         <div class="card">
-                            <h3 class="mt-0">🏦 匯款帳號設定</h3>
-                            <p class="help-text">此設定將連動至所有自動寄發的信件中。</p>
-                            <form id="bank-form">
-                                <label>銀行代碼</label><input type="text" name="bankCode" placeholder="例如: 808">
-                                <label>銀行名稱</label><input type="text" name="bankName" placeholder="例如: 玉山銀行">
-                                <label>帳號</label><input type="text" name="account" placeholder="例如: 1234-5678-9012">
-                                <button type="submit" class="btn btn--brown btn-block">儲存匯款資訊</button>
-                            </form>
-                        </div>
+    <h3 class="mt-0">🏦 匯款帳號設定</h3>
+    <p class="help-text">設定不同用途的收款帳號，系統將自動帶入對應信件中。</p>
+    
+    <form id="bank-form">
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            <div style="flex:1; background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
+                <h4 style="margin-top:0; color:var(--main-brown);">🛍️ 一般購物 / 🕯️ 捐香</h4>
+                <label>銀行代碼</label><input type="text" name="shop_bankCode" placeholder="808">
+                <label>銀行名稱</label><input type="text" name="shop_bankName" placeholder="玉山銀行">
+                <label>帳號</label><input type="text" name="shop_account" placeholder="帳號...">
+            </div>
+
+            <div style="flex:1; background:#fff5f5; padding:15px; border-radius:8px; border:1px solid #ffcccc;">
+                <h4 style="margin-top:0; color:#dc3545;">🏗️ 建廟基金 (原有帳號)</h4>
+                <label>銀行代碼</label><input type="text" name="fund_bankCode" placeholder="103">
+                <label>銀行名稱</label><input type="text" name="fund_bankName" placeholder="新光銀行">
+                <label>帳號</label><input type="text" name="fund_account" placeholder="帳號...">
+            </div>
+        </div>
+        <button type="submit" class="btn btn--brown btn-block mt-20">儲存所有匯款設定</button>
+    </form>
+</div>
                     </div>
                 </div>
             </main>

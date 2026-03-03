@@ -205,13 +205,28 @@ def send_email(to_email, subject, body, is_html=False):
 
 # === Email 樣板產生器 ===
 
-def get_bank_info():
-    """從資料庫讀取匯款資訊，若無則使用預設"""
+def get_bank_info(usage='shop'):
+    """
+    從資料庫讀取匯款資訊
+    usage: 'fund' (建廟) 或 'shop' (一般/捐香)
+    """
     if db is None: return "請聯繫廟方確認匯款資訊"
-    settings = db.settings.find_one({"type": "bank_info"}) or {}
-    code = settings.get('bankCode', '808')
-    name = settings.get('bankName', '玉山銀行')
-    account = settings.get('account', '1234-5678-9012')
+    
+    # 決定要抓哪一組設定 (fund 用原本的 bank_info，shop 用新的 bank_info_shop)
+    setting_key = "bank_info" if usage == 'fund' else "bank_info_shop"
+    
+    # 預設值 (避免空值報錯)
+    defaults = {
+        'fund': {'code': '103', 'name': '新光銀行', 'account': '0666-50-971133-3'},
+        'shop': {'code': '808', 'name': '玉山銀行', 'account': '尚未設定'}
+    }
+    
+    settings = db.settings.find_one({"type": setting_key}) or {}
+    
+    code = settings.get('bankCode', defaults[usage]['code'])
+    name = settings.get('bankName', defaults[usage]['name'])
+    account = settings.get('account', defaults[usage]['account'])
+    
     return f"""
     銀行代碼：<strong>{code} ({name})</strong><br>
     銀行帳號：<strong>{account}</strong>
@@ -289,7 +304,8 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
     else:
         created_at_str = date_str
 
-    bank_html = get_bank_info()
+    # 強制使用 shop 帳號
+    bank_html = get_bank_info('shop')
     
     # 判斷配送方式來決定顯示地址還是門市
     shipping_method = cust.get('shippingMethod', 'home')
@@ -400,7 +416,11 @@ def generate_donation_created_email(order):
     items = order['items']
     tw_now = datetime.utcnow() + timedelta(hours=8)
     created_at_str = tw_now.strftime('%Y/%m/%d %H:%M')
-    bank_html = get_bank_info()
+    # ★ 修改這裡：判斷是 'fund' 還是 'donation'
+    order_type = order.get('orderType', 'donation')
+    # 如果是 fund 用原帳號，如果是 donation 用 shop 帳號
+    bank_type = 'fund' if order_type == 'fund' else 'shop'
+    bank_html = get_bank_info(bank_type)
     
     items_rows = ""
     for item in items:
@@ -1110,25 +1130,47 @@ def export_feedback_txt():
         si.write(f"地址：{doc['address']}\n")
         si.write("-" * 30 + "\n")
     return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": "attachment;filename=feedback_list.txt"})
-# --- Settings API ---
+
 @app.route('/api/settings/bank', methods=['GET', 'POST'])
 @login_required
 def handle_bank_settings():
     if request.method == 'GET':
-        settings = db.settings.find_one({"type": "bank_info"}) or {}
-        settings['_id'] = str(settings.get('_id', ''))
-        return jsonify(settings)
+        # 一次回傳兩組設定
+        fund_set = db.settings.find_one({"type": "bank_info"}) or {}
+        shop_set = db.settings.find_one({"type": "bank_info_shop"}) or {}
+        
+        return jsonify({
+            "fund": {
+                "bankCode": fund_set.get('bankCode', ''),
+                "bankName": fund_set.get('bankName', ''),
+                "account": fund_set.get('account', '')
+            },
+            "shop": {
+                "bankCode": shop_set.get('bankCode', ''),
+                "bankName": shop_set.get('bankName', ''),
+                "account": shop_set.get('account', '')
+            }
+        })
     else:
+        # 接收並儲存兩組設定
         data = request.get_json()
-        db.settings.update_one(
-            {"type": "bank_info"},
-            {"$set": {
-                "bankCode": data.get('bankCode'),
-                "bankName": data.get('bankName'),
-                "account": data.get('account')
-            }},
-            upsert=True
-        )
+        
+        # 儲存建廟基金 (Fund) - 維持原本的 key
+        if 'fund' in data:
+            db.settings.update_one(
+                {"type": "bank_info"},
+                {"$set": data['fund']},
+                upsert=True
+            )
+            
+        # 儲存一般/捐香 (Shop) - 使用新的 key
+        if 'shop' in data:
+            db.settings.update_one(
+                {"type": "bank_info_shop"},
+                {"$set": data['shop']},
+                upsert=True
+            )
+            
         return jsonify({"success": True})
 
 # --- 其他 API ---
