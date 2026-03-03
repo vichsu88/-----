@@ -1172,7 +1172,34 @@ def handle_bank_settings():
             )
             
         return jsonify({"success": True})
-
+# =========================================
+# 新增：公開的匯款資訊查詢 API (給前台頁面用)
+# =========================================
+@app.route('/api/public/bank-info', methods=['GET'])
+def get_public_bank_info():
+    # 取得參數 type，預設為 'shop' (一般/捐香)
+    usage = request.args.get('type', 'shop') 
+    
+    # 決定要抓哪一組設定
+    # fund -> 抓原本的 bank_info
+    # shop/donation -> 抓新的 bank_info_shop
+    setting_key = "bank_info" if usage == 'fund' else "bank_info_shop"
+    
+    # 預設值 (避免資料庫沒設定時前台壞掉)
+    defaults = {
+        'fund': {'code': '103', 'name': '新光銀行', 'account': '0666-50-971133-3'},
+        'shop': {'code': '808', 'name': '玉山銀行', 'account': '尚未設定'}
+    }
+    
+    settings = {}
+    if db is not None:
+        settings = db.settings.find_one({"type": setting_key}) or {}
+        
+    return jsonify({
+        "bankCode": settings.get('bankCode', defaults[usage]['code']),
+        "bankName": settings.get('bankName', defaults[usage]['name']),
+        "account": settings.get('account', defaults[usage]['account'])
+    })
 # --- 其他 API ---
 @app.route('/api/shipclothes/calc-date', methods=['GET'])
 def get_pickup_date_preview():

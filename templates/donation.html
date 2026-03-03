@@ -291,8 +291,15 @@
     <div class="modal-box">
         <h2 style="color:var(--c-primary);">功德無量 🙏</h2>
         <p>您的捐贈訂單已送出。</p>
-        <p>請於 2 小時內完成匯款，<br>我們核對後將會寄出電子感謝狀。</p>
-        <a href="{{ url_for('home') }}" class="btn-submit" style="display:inline-block; width:auto; margin-top:20px; padding:10px 30px;">回首頁</a>
+        
+        <div style="background:#f0ebe5; padding:20px; border-radius:10px; margin:20px 0; text-align:left; border:1px solid #ddd;">
+            <p style="margin:5px 0; color:#555;"><strong>銀行代碼：</strong><span id="bank-code">載入中...</span> <span id="bank-name"></span></p>
+            <p style="margin:5px 0; color:#555;"><strong>匯款帳號：</strong></p>
+            <p id="bank-account" style="margin:5px 0; color:#C48945; font-weight:bold; font-size:1.4rem; letter-spacing:1px;">載入中...</p>
+        </div>
+
+        <p style="color:#d9534f; font-size:0.9rem;">請於 <strong>2 小時內</strong> 完成匯款，<br>我們核對後將會寄出電子感謝狀。</p>
+        <a href="{{ url_for('home') }}" class="btn-submit" style="display:inline-block; width:auto; margin-top:10px; padding:10px 30px;">回首頁</a>
     </div>
 </div>
 
@@ -304,6 +311,7 @@
         loadMarquee();
         loadProducts();
         setupFormatters();
+        fetchBankInfo();
         
         // 檢查網址是否有參數，如果是登入後跳轉回來，自動開啟表單
         const urlParams = new URLSearchParams(window.location.search);
@@ -332,7 +340,7 @@
             // 已登入：自動帶入會員資料
             const user = data.user || {};
             const form = document.getElementById('donation-form');
-            const setVal = (input, val) => { if (!input.value && val) input.value = val; };
+            const setVal = (input, val) => { if (input && !input.value && val) input.value = val; };
 
             setVal(form.name, user.realName);
             setVal(form.phone, user.phone);
@@ -343,7 +351,6 @@
             // 顯示捐贈區塊
             const area = document.getElementById('donation-process-area');
             area.classList.remove('d-none');
-            // 讓瀏覽器有時間渲染 d-none 移除後的狀態，再加 show 觸發 transition
             requestAnimationFrame(() => {
                 area.classList.add('show');
                 area.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -438,22 +445,25 @@
             });
         };
 
-        // Phone formatter
         const phoneInput = document.getElementById('phone-input');
-        phoneInput.addEventListener('input', (e) => {
-            let v = e.target.value.replace(/\D/g, '').slice(0, 10);
-            if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
-            else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
-            e.target.value = v;
-        });
+        if(phoneInput) {
+            phoneInput.addEventListener('input', (e) => {
+                let v = e.target.value.replace(/\D/g, '').slice(0, 10);
+                if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
+                else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
+                e.target.value = v;
+            });
+        }
 
-        // Birthday input restrictions
-        document.getElementById('birthday-input').addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, ''));
-        document.getElementById('birthday-input').addEventListener('blur', e => {
-            let v = e.target.value;
-            if(v.length === 6) e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
-            else if (v.length === 7) e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
-        });
+        const bInput = document.getElementById('birthday-input');
+        if(bInput) {
+            bInput.addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, ''));
+            bInput.addEventListener('blur', e => {
+                let v = e.target.value;
+                if(v.length === 6) e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
+                else if (v.length === 7) e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
+            });
+        }
     }
 
     // 送出表單
@@ -466,6 +476,9 @@
         if(!/^09\d{2}-\d{3}-\d{3}$/.test(f.phone.value)) return alert('電話格式錯誤，請確認為 09XX-XXX-XXX');
         if(f.lunarBirthday.value && !/^\d{2,3}\/\d{2}\/\d{2}$/.test(f.lunarBirthday.value)) return alert('生日格式錯誤，請輸入民國年數字 (如 750821 或 1120101)');
 
+        // ★ 優化：重新計算總金額，不依賴畫面上的數字，確保正確性
+        const calculatedTotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
         const payload = {
             orderType: 'donation',
             name: f.name.value,
@@ -476,7 +489,7 @@
             prayer: '', 
             last5: f.last5.value,
             items: items,
-            total: parseInt(document.getElementById('summary-total').textContent)
+            total: calculatedTotal
         };
 
         const btn = f.querySelector('button[type="submit"]');
@@ -518,6 +531,22 @@
             const html = data.map(d => `<div class="donor-item"><span>${d.name}</span><span>${d.items}</span></div>`).join('');
             list.innerHTML = html + html; 
         }).catch(e => console.error(e));
+    }
+
+    // 讀取匯款帳號
+    function fetchBankInfo() {
+        fetch('/api/public/bank-info?type=shop')
+            .then(res => res.json())
+            .then(data => {
+                const elCode = document.getElementById('bank-code');
+                const elName = document.getElementById('bank-name');
+                const elAccount = document.getElementById('bank-account');
+                
+                if(elCode) elCode.textContent = data.bankCode;
+                if(elName) elName.textContent = data.bankName;
+                if(elAccount) elAccount.textContent = data.account;
+            })
+            .catch(err => console.error('無法載入匯款資訊', err));
     }
 </script>
 {% endblock %}
