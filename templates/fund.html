@@ -223,28 +223,52 @@
         border-bottom: 1px dashed rgba(255, 215, 0, 0.4);
         padding-bottom: 15px;
     }
-    .marquee-container { height: 180px; overflow: hidden; position: relative; mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent); }
+
+    /* === 無縫捲動核心 CSS === */
+    .marquee-container { 
+        height: 300px; /* 增加高度，展示更多內容 */
+        overflow: hidden; 
+        position: relative; 
+        /* 遮罩：上下邊緣漸層透明，中間清晰 */
+        mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+        -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+    }
     
-    /* ★ 修正後的芳名錄項目樣式 ★ */
+    .marquee-scroll-wrapper {
+        /* 這是負責跑動的容器 */
+        width: 100%;
+    }
+
+    /* 無縫捲動動畫：只捲動 50% 的高度，搭配重複的內容，產生無限循環錯覺 */
+    @keyframes seamlessScroll {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-50%); }
+    }
+    
     .donor-item {
         display: flex; 
         justify-content: space-between; 
         align-items: flex-start; /* 靠上對齊，支援多行 */
-        padding: 12px 10px;
+        padding: 15px 20px;
         border-bottom: 1px dotted rgba(255,215,0,0.2);
         color: #ffebcd; 
         font-size: 1.15rem;
     }
+    .donor-item:nth-child(even) {
+        background-color: rgba(0,0,0,0.1);
+    }
     .donor-name {
         flex-shrink: 0; /* 防止名字被壓縮 */
-        min-width: 80px;
+        min-width: 90px;
         margin-right: 15px;
         font-weight: bold;
+        color: var(--royal-gold-light);
     }
     .donor-items {
         text-align: right;
         line-height: 1.5; /* 增加行距，讓多行項目更易讀 */
         word-break: break-word;
+        color: #ddd;
     }
 
     /* 流程圖 */
@@ -355,7 +379,6 @@
     @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
     @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(191, 149, 63, 0); } 100% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0); } }
     @keyframes sheen { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
-    @keyframes scrollUp { 0% { transform: translateY(100%); } 100% { transform: translateY(-100%); } }
 
     @media (max-width: 768px) {
         .section-title-fund { font-size: 2.2rem; }
@@ -448,9 +471,11 @@
             
             <div class="honor-roll-section">
                 <div class="honor-title">捐贈芳名錄</div>
-                <div class="marquee-container">
-                    <div class="marquee-content" id="honor-list">
-                        <div style="padding:10px; text-align:center;">載入中...</div>
+                <div class="marquee-container" id="marquee-container">
+                    <div class="marquee-scroll-wrapper" id="honor-list">
+                        <div style="padding:40px; text-align:center; color:#ccc;">
+                            正在從資料庫讀取善信名單...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -631,29 +656,59 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 20);
     } catch(e) {}
 
-    // === 2. 載入芳名錄 (★ 修改處：換行與樣式) ===
+    // === 2. 載入芳名錄 (★ 優化版：無縫無限捲動) ===
     loadMarquee();
     function loadMarquee() {
+        const listWrapper = document.getElementById('honor-list');
+        
         // 請求建廟基金 (type=fund) 的資料
-        fetch('/api/donations/public?type=fund').then(r=>r.json()).then(data => {
-            const list = document.getElementById('honor-list');
-            if(!data.length) { list.innerHTML='<div style="text-align:center; color:#ffd700; padding-top:20px;">尚無紀錄</div>'; return; }
-            
-            // ★ 修改：將項目中的逗號替換為換行，並使用新的 CSS class 佈局
-            const html = data.map(d => {
-                const itemsHtml = d.items.replace(/, /g, '<br>');
-                return `<div class="donor-item">
-                            <span class="donor-name">${d.name}</span>
-                            <span class="donor-items">${itemsHtml}</span>
-                        </div>`;
-            }).join('');
+        fetch('/api/donations/public?type=fund')
+            .then(r => r.json())
+            .then(data => {
+                if(!data.length) { 
+                    listWrapper.innerHTML = '<div style="text-align:center; color:#ffd700; padding-top:40px; font-size:1.2rem;">🙏 期待您成為第一位護持者</div>'; 
+                    return; 
+                }
+                
+                // 【邏輯優化】如果資料太少，就自己重複幾次，確保畫面不會空空的
+                let displayData = data;
+                if (data.length < 5) {
+                    // 若少於5筆，就重複資料直到超過 5 筆以上 (或至少重複個 3 次)
+                    while (displayData.length < 5) {
+                        displayData = displayData.concat(data);
+                    }
+                }
 
-            list.innerHTML = html + html; 
-            
-            const content = list.innerHTML;
-            // ★ 修改：動畫速度調慢 (x5)，因為內容變長了
-            list.innerHTML = `<div style="animation: scrollUp ${Math.max(10, data.length * 5)}s linear infinite">${content}</div>`;
-        }).catch(err => console.log('Honor list error', err));
+                // 生成單組 HTML
+                const generateHTML = (sourceData) => sourceData.map(d => {
+                    const itemsHtml = d.items.replace(/, /g, '<br>');
+                    return `<div class="donor-item">
+                                <span class="donor-name">${d.name}</span>
+                                <span class="donor-items">${itemsHtml}</span>
+                            </div>`;
+                }).join('');
+
+                const singleSetHtml = generateHTML(displayData);
+
+                // 【關鍵】無縫捲動原理：內容 = A + A
+                // CSS 動畫會從 0% 跑到 -50% (剛好跑完第一個 A)，然後瞬間回到 0%
+                listWrapper.innerHTML = singleSetHtml + singleSetHtml; 
+
+                // 根據資料量決定捲動速度 (每筆資料給予 3 秒的展示時間)
+                // 基礎速度 20s，資料越多越慢
+                const duration = Math.max(20, displayData.length * 3);
+                
+                listWrapper.style.animation = `seamlessScroll ${duration}s linear infinite`;
+                
+                // 滑鼠移上去時暫停，方便閱讀
+                listWrapper.onmouseenter = () => listWrapper.style.animationPlayState = 'paused';
+                listWrapper.onmouseleave = () => listWrapper.style.animationPlayState = 'running';
+
+            })
+            .catch(err => {
+                console.log('Honor list error', err);
+                listWrapper.innerHTML = '<div style="text-align:center; color:red; padding-top:20px;">載入失敗，請稍後再試</div>';
+            });
     }
 
     // === 3. 輸入優化 (Input Mask) ===
