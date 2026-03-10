@@ -1378,7 +1378,28 @@ def create_order():
     if not line_id: return jsonify({"error": "請先使用 LINE 登入"}), 401
     
     order_type = data.get('orderType', 'shop')
-    
+    # ==========================================
+    # ★ 新增：針對建廟基金 (fund) 的數量限制與名額檢查
+    # ==========================================
+    if order_type == 'fund':
+        for item in data.get('items', []):
+            item_name = item.get('name')
+            item_qty = int(item.get('qty', 0))
+            
+            # 1. 職位型項目強制數量只能是 1
+            if item_name in ['副主委', '委員', '顧問'] and item_qty != 1:
+                return jsonify({"error": f"【{item_name}】每次結帳限購 1 名，數量不可更改。"}), 400
+            
+            # 2. 副主委名額查核 (結帳瞬間再次即時計算)
+            if item_name == '副主委':
+                used_count = db.orders.count_documents({
+                    "orderType": "fund",
+                    "status": {"$in": ["paid", "pending"]},
+                    "items.name": "副主委"
+                })
+                if used_count >= 7:
+                    return jsonify({"error": "非常抱歉，【副主委】7名額已全數被預約完畢！"}), 400
+    # ==========================================
     prefix = "ORD"
     if order_type == 'donation': prefix = "DON"
     elif order_type == 'fund': prefix = "FND"
@@ -1707,23 +1728,31 @@ def delete_faq(fid):
     db.faq.delete_one({'_id': oid})
     return jsonify({"success": True})
 
-# === 1. 修改 get_fund_settings (只計算 fund 類別) ===
 @app.route('/api/fund-settings', methods=['GET'])
 def get_fund_settings():
     settings = db.temple_fund.find_one({"type": "main_fund"}) or {"goal_amount": 10000000}
     
-    # 修改：只加總 orderType 為 'fund' 且已付款的金額
-    # (若您已在資料庫手動將舊的建廟訂單改成 fund，這樣寫最乾淨)
     pipeline = [
         {"$match": {"status": "paid", "orderType": "fund"}},
         {"$group": {"_id": None, "total_current": {"$sum": "$total"}}}
     ]
     
     if db is not None:
+        # 1. 計算目前的捐款總額 (只算已付款)
         result = list(db.orders.aggregate(pipeline))
         calculated_current = result[0]['total_current'] if result else 0
+        
+        # 2. 【新增】即時計算「副主委」已被佔用的名額 (包含 paid 已付款 + pending 未付款)
+        vice_chair_used = db.orders.count_documents({
+            "orderType": "fund",
+            "status": {"$in": ["paid", "pending"]},
+            "items.name": "副主委"
+        })
+        # 剩餘名額 = 7 減去已被佔用的，且最低不會小於 0
+        settings['vice_chair_remain'] = max(0, 7 - vice_chair_used)
     else:
         calculated_current = 0
+        settings['vice_chair_remain'] = 7
         
     settings['current_amount'] = calculated_current
     if '_id' in settings: settings['_id'] = str(settings['_id'])

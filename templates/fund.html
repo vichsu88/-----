@@ -379,7 +379,27 @@
     @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
     @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(191, 149, 63, 0); } 100% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0); } }
     @keyframes sheen { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
-
+    /* === 新增：限量標籤與售完樣式 === */
+    .limit-tag {
+        background: var(--royal-gold-main);
+        color: #000;
+        font-size: 0.85rem;
+        font-weight: bold;
+        padding: 4px 12px;
+        border-radius: 20px;
+        display: inline-block;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    .donate-card.sold-out {
+        opacity: 0.6;
+        pointer-events: none; /* 鎖定無法點擊 */
+        filter: grayscale(80%);
+    }
+    .donate-card.sold-out .limit-tag {
+        background: #8B0000;
+        color: #fff;
+    }
     @media (max-width: 768px) {
         .section-title-fund { font-size: 2.2rem; }
         .chart-container { width: 240px; height: 240px; }
@@ -517,6 +537,36 @@
             </ol>
 
             <div class="donation-options">
+                <div class="donate-card" id="card-vice_chair" onclick="selectItem('vice_chair')">
+                    <div class="limit-tag" id="vc-tag">剩餘 <span id="vc-remain">7</span> 名</div>
+                    <h3>副主委</h3>
+                    <div class="price">NT$ 36,000</div>
+                    <div class="qty-control">
+                        <button class="qty-btn" onclick="updateQty('vice_chair', -1); event.stopPropagation();">-</button>
+                        <span class="qty-display" id="qty-vice_chair">0</span>
+                        <button class="qty-btn" onclick="updateQty('vice_chair', 1); event.stopPropagation();">+</button>
+                    </div>
+                </div>
+
+                <div class="donate-card" onclick="selectItem('committee')">
+                    <h3>委員</h3>
+                    <div class="price">NT$ 25,000</div>
+                    <div class="qty-control">
+                        <button class="qty-btn" onclick="updateQty('committee', -1); event.stopPropagation();">-</button>
+                        <span class="qty-display" id="qty-committee">0</span>
+                        <button class="qty-btn" onclick="updateQty('committee', 1); event.stopPropagation();">+</button>
+                    </div>
+                </div>
+
+                <div class="donate-card" onclick="selectItem('consultant')">
+                    <h3>顧問</h3>
+                    <div class="price">NT$ 15,000</div>
+                    <div class="qty-control">
+                        <button class="qty-btn" onclick="updateQty('consultant', -1); event.stopPropagation();">-</button>
+                        <span class="qty-display" id="qty-consultant">0</span>
+                        <button class="qty-btn" onclick="updateQty('consultant', 1); event.stopPropagation();">+</button>
+                    </div>
+                </div>
                 <div class="donate-card" onclick="selectItem('suixi', 100)">
                     <h3>隨喜助建</h3>
                     <div class="price">NT$ 100</div>
@@ -633,7 +683,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-    // === 1. 初始化圖表 ===
+// === 1. 初始化圖表與名額 ===
     try {
         const res = await fetch('/api/fund-settings');
         const data = await res.json();
@@ -645,6 +695,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('current-text').textContent = `$${current.toLocaleString()}`;
         document.getElementById('percent-text').textContent = `${percent}%`;
         
+        // 【新增】：處理副主委剩餘名額
+        window.viceChairRemain = data.vice_chair_remain !== undefined ? data.vice_chair_remain : 7;
+        const vcRemainElem = document.getElementById('vc-remain');
+        const vcCard = document.getElementById('card-vice_chair');
+        const vcTag = document.getElementById('vc-tag');
+        
+        if (vcRemainElem) vcRemainElem.textContent = window.viceChairRemain;
+        
+        // 如果名額沒了，套用售完樣式鎖住按鈕
+        if (window.viceChairRemain <= 0 && vcCard) {
+            vcCard.classList.add('sold-out');
+            vcTag.textContent = '名額已滿';
+        }
+        // 【新增結束】
+
         const chart = document.getElementById('fund-chart');
         let p = 0;
         const interval = setInterval(() => {
@@ -657,7 +722,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             p++;
         }, 20);
     } catch(e) {}
-
     // === 2. 載入芳名錄 (★ 優化版：無縫無限捲動) ===
     loadMarquee();
     function loadMarquee() {
@@ -746,15 +810,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         return v;
     });
 
-    // === 4. 捐款邏輯 ===
+// === 4. 捐款邏輯 ===
     const items = {
         'suixi': { name: '隨喜助建', price: 100, qty: 0 },
         'tile': { name: '建廟瓦片', price: 600, qty: 0 },
-        'pillar': { name: '龍柱認捐', price: 10000, qty: 0 }
+        'pillar': { name: '龍柱認捐', price: 10000, qty: 0 },
+        // 【新增】
+        'vice_chair': { name: '副主委', price: 36000, qty: 0 },
+        'committee': { name: '委員', price: 25000, qty: 0 },
+        'consultant': { name: '顧問', price: 15000, qty: 0 }
     };
 
     window.updateQty = (key, change) => {
-        items[key].qty = Math.max(0, items[key].qty + change);
+        const isPosition = ['vice_chair', 'committee', 'consultant'].includes(key);
+        
+        // 如果是副主委且已經售完，雙重防呆阻擋
+        if (key === 'vice_chair' && window.viceChairRemain <= 0 && change > 0) return;
+
+        let newQty = items[key].qty + change;
+        if (newQty < 0) newQty = 0;
+        
+        // 【新增】：職位型項目強制最高只能是 1
+        if (isPosition && newQty > 1) {
+            newQty = 1;
+            alert(`【${items[key].name}】每次結帳限購 1 名喔！`);
+        }
+
+        items[key].qty = newQty;
         document.getElementById(`qty-${key}`).innerText = items[key].qty;
         
         const card = document.querySelector(`.donate-card[onclick*="${key}"]`);
@@ -843,12 +925,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const orderItems = [];
         for(let key in items) {
-            if(items[key].qty > 0) orderItems.push({
-                name: `[建廟] ${items[key].name}`,
-                price: items[key].price,
-                qty: items[key].qty,
-                id: key
-            });
+            if(items[key].qty > 0) {
+                // 【關鍵修改】：後端靠精確比對「副主委」三個字來算名額
+                // 所以這三個職位我們「不加」 [建廟] 兩個字！
+                const isPosition = ['副主委', '委員', '顧問'].includes(items[key].name);
+                const finalName = isPosition ? items[key].name : `[建廟] ${items[key].name}`;
+                
+                orderItems.push({
+                    name: finalName,
+                    price: items[key].price,
+                    qty: items[key].qty,
+                    id: key
+                });
+            }
         }
 
         const payload = {
