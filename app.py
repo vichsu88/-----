@@ -775,20 +775,26 @@ def create_pickup_reservation():
     
     if not pickup_type or not pickup_date or not clothes:
         return jsonify({"error": "資料不完整"}), 400
+
     # ==========================================
-    # ★ 新增檢查邏輯：防止衣服編號重複預約
+    # ★ 修改檢查邏輯：防止衣服編號在「未來」重複預約
     # ==========================================
     if db is not None:
         # 1. 取出這次請求中所有的衣服編號
         incoming_ids = [c.get('clothId', '').strip() for c in clothes if c.get('clothId')]
         
-        # 2. 到資料庫檢查，這些編號是否已經存在於任何預約單中
-        # 查詢條件：clothes 陣列裡的 clothId 欄位，包含在 incoming_ids 之中
+        # 2. 取得台灣今天的日期字串
+        tw_now = datetime.utcnow() + timedelta(hours=8)
+        today_str = tw_now.strftime('%Y-%m-%d')
+        
+        # 3. 到資料庫檢查，這些編號是否已經存在於「尚未過期」的預約單中
+        # 條件 "pickupDate": {"$gte": today_str} 代表只檢查今天或未來的單子
         duplicate_order = db.pickups.find_one({
-            "clothes.clothId": {"$in": incoming_ids}
+            "clothes.clothId": {"$in": incoming_ids},
+            "pickupDate": {"$gte": today_str}
         })
         
-        # 3. 如果找到了重複的單子
+        # 4. 如果找到了重複的未來單子
         if duplicate_order:
             # 找出具體是哪一件重複，方便提示使用者
             found_id = ""
@@ -797,11 +803,12 @@ def create_pickup_reservation():
                     found_id = item.get('clothId')
                     break
             
-            error_msg = f"衣服編號【{found_id}】已經預約過了！請先至「個人專區」刪除舊的預約，才能重新安排。"
+            error_msg = f"衣服編號【{found_id}】目前的預約尚未過期！如需重新安排，請先至「個人專區」刪除舊紀錄。"
             return jsonify({"error": error_msg}), 400
     # ==========================================
     # ★ 檢查結束
     # ==========================================
+    
     new_reservation = {
         "lineId": line_id,
         "pickupType": pickup_type,
@@ -813,6 +820,7 @@ def create_pickup_reservation():
     if db is not None:
         db.pickups.insert_one(new_reservation)
         return jsonify({"success": True, "message": "預約成功"})
+        
     return jsonify({"error": "資料庫連線失敗"}), 500
 
 @app.route('/api/pickup/public', methods=['GET'])
