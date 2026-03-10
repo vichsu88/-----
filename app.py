@@ -9,17 +9,16 @@ import threading
 import urllib.request
 import urllib.error
 import io
-import csv
 from email.mime.text import MIMEText
 from email.header import Header
 from functools import wraps
 from datetime import datetime, timedelta
-from flask import Flask, jsonify, render_template, request, session, redirect, url_for, Response, make_response
+from flask import Flask, jsonify, render_template, request, session, redirect, url_for, Response
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect
 from pymongo import MongoClient
 from bson import ObjectId
-from bson.errors import InvalidId  # [資安修正] 引入錯誤型別
+from bson.errors import InvalidId
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
 from flask_limiter import Limiter
@@ -39,15 +38,14 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.permanent_session_lifetime = timedelta(hours=8)
 
-# === 郵件設定 (改用 SendGrid API) ===
-# 請在 Render 環境變數設定 SENDGRID_API_KEY
+# === 郵件設定 (SendGrid API) ===
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+MAIL_SENDER = os.environ.get('MAIL_USERNAME')
+
 # === LINE 登入設定 ===
 LINE_CHANNEL_ID = os.environ.get('LINE_CHANNEL_ID')
 LINE_CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET')
 LINE_CALLBACK_URL = os.environ.get('LINE_CALLBACK_URL')
-# MAIL_USERNAME 作為 "寄件人信箱" (必須與 SendGrid 驗證的 Sender Identity 一致)
-MAIL_SENDER = os.environ.get('MAIL_USERNAME') 
 
 # 流量限制
 limiter = Limiter(
@@ -59,17 +57,13 @@ limiter = Limiter(
 
 # CSRF & CORS
 csrf = CSRFProtect(app)
-# 設定允許的來源列表 (白名單)
 allowed_origins = [
     "http://localhost:5000",
     "http://127.0.0.1:5000",
     "http://140.119.143.95:5000",
     "https://yandao.onrender.com",
 ]
-
-CORS(app, 
-     resources={r"/api/*": {"origins": allowed_origins}}, 
-     supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
 
 # 管理員密碼
 ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH')
@@ -114,40 +108,28 @@ def calculate_business_d2(start_date):
 
 def mask_name(real_name):
     """姓名隱碼處理 (第二字變O)"""
-    if not real_name: return ""
+    if not real_name: 
+        return ""
     if len(real_name) >= 2:
         return real_name[0] + "O" + real_name[2:]
     return real_name
 
 def get_object_id(fid):
-    """
-    [資安修正] 安全地轉換 ObjectId
-    若格式錯誤，回傳 None，避免 500 Server Error
-    """
+    """安全地轉換 ObjectId，若格式錯誤回傳 None"""
     try:
         return ObjectId(fid)
     except (InvalidId, TypeError):
         return None
 
 # === 新版寄信功能 (SendGrid API + 雙階段背景執行) ===
-
 def send_email_task(to_email, subject, body, is_html=False):
-    """
-    【背景任務】加強 Debug 版
-    """
-    print(f"--- 準備寄信給: {to_email} ---") # Debug: 確認有進入函式
-
-    if not SENDGRID_API_KEY:
-        print("❌ 錯誤: 環境變數 SENDGRID_API_KEY 未設定")
-        return
-    if not MAIL_SENDER:
-        print("❌ 錯誤: 環境變數 MAIL_USERNAME 未設定 (這應該是您的寄件者 Email)")
+    """【背景任務】呼叫 SendGrid API 發信"""
+    print(f"--- 準備寄信給: {to_email} ---")
+    if not SENDGRID_API_KEY or not MAIL_SENDER:
+        print("❌ 錯誤: SENDGRID_API_KEY 或 MAIL_USERNAME 未設定")
         return
 
-    # SendGrid API 網址
     url = "https://api.sendgrid.com/v3/mail/send"
-
-    # 建構 JSON 資料
     payload = {
         "personalizations": [{"to": [{"email": to_email}]}],
         "from": {"email": MAIL_SENDER},
@@ -157,7 +139,6 @@ def send_email_task(to_email, subject, body, is_html=False):
             "value": body
         }]
     }
-
     headers = {
         "Authorization": f"Bearer {SENDGRID_API_KEY}",
         "Content-Type": "application/json"
@@ -170,33 +151,22 @@ def send_email_task(to_email, subject, body, is_html=False):
             headers=headers, 
             method='POST'
         )
-        
         with urllib.request.urlopen(req) as response:
             print(f"✅ SendGrid 寄信成功! Status: {response.status}")
-
     except urllib.error.HTTPError as e:
-        # 讀取詳細錯誤訊息
+        error_body = "無法讀取內容"
         try:
             error_body = e.read().decode('utf-8')
         except:
-            error_body = "無法讀取內容"
-        print(f"❌ SendGrid API 回傳錯誤 ({e.code}):")
-        print(f"   錯誤內容: {error_body}")
-        print(f"   檢查重點: 1. API Key 是否正確? 2. MAIL_USERNAME ({MAIL_SENDER}) 是否已在 SendGrid 驗證過?")
-        
+            pass
+        print(f"❌ SendGrid API 錯誤 ({e.code}): {error_body}")
     except Exception as e:
         print(f"❌ 寄信發生未知例外錯誤: {str(e)}")
 
 def send_email(to_email, subject, body, is_html=False):
-    """
-    【主程式呼叫點】
-    老闆只負責發號施令，建立一個新執行緒 (Thread) 去寄信，
-    然後立刻返回，確保訂單流程不卡頓。
-    """
+    """【主程式呼叫點】建立背景執行緒寄信"""
     if not to_email:
         return
-        
-    # 啟動背景執行緒 (Fire-and-forget)
     thread = threading.Thread(
         target=send_email_task, 
         args=(to_email, subject, body, is_html)
@@ -204,25 +174,17 @@ def send_email(to_email, subject, body, is_html=False):
     thread.start()
 
 # === Email 樣板產生器 ===
-
 def get_bank_info(usage='shop'):
-    """
-    從資料庫讀取匯款資訊
-    usage: 'fund' (建廟) 或 'shop' (一般/捐香)
-    """
-    if db is None: return "請聯繫廟方確認匯款資訊"
+    """從資料庫讀取匯款資訊"""
+    if db is None: 
+        return "請聯繫廟方確認匯款資訊"
     
-    # 決定要抓哪一組設定 (fund 用原本的 bank_info，shop 用新的 bank_info_shop)
     setting_key = "bank_info" if usage == 'fund' else "bank_info_shop"
-    
-    # 預設值 (避免空值報錯)
     defaults = {
         'fund': {'code': '103', 'name': '新光銀行', 'account': '0666-50-971133-3'},
         'shop': {'code': '808', 'name': '玉山銀行', 'account': '尚未設定'}
     }
-    
     settings = db.settings.find_one({"type": setting_key}) or {}
-    
     code = settings.get('bankCode', defaults[usage]['code'])
     name = settings.get('bankName', defaults[usage]['name'])
     account = settings.get('account', defaults[usage]['account'])
@@ -232,7 +194,6 @@ def get_bank_info(usage='shop'):
     銀行帳號：<strong>{account}</strong>
     """
 
-# --- 回饋信件樣板 ---
 def generate_feedback_email_html(feedback, status_type, tracking_num=None):
     """產生信徒回饋相關的 Email HTML"""
     name = feedback.get('realName', '信徒')
@@ -304,10 +265,8 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
     else:
         created_at_str = date_str
 
-    # 強制使用 shop 帳號
     bank_html = get_bank_info('shop')
     
-    # 判斷配送方式來決定顯示地址還是門市
     shipping_method = cust.get('shippingMethod', 'home')
     if shipping_method == '711':
         delivery_info_html = f"<strong>7-11 取貨門市：</strong>{cust.get('storeInfo', '未提供')}"
@@ -318,7 +277,6 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
         shipping_label = "運費 (宅配)"
         shipping_fee_display = "120"
         
-    # 如果資料庫裡有存實際運費，就用實際的 (相容舊資料)
     if 'shippingFee' in cust:
         shipping_fee_display = str(cust['shippingFee'])
 
@@ -331,7 +289,7 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
         <strong>【付款資訊】</strong><br>
         請於 <strong>2 小時內</strong> 完成匯款，以保留您的訂單資格。<br>
         <span style="color:#C48945; font-size:18px; font-weight:bold;">訂單總金額：NT$ {order['total']}</span><br>
-        您的匯款後五碼：<strong>{cust['last5']}</strong><br><br>
+        您的匯款後五碼：<strong>{cust.get('last5', '尚未提供')}</strong><br><br>
         <div style="background:#fffcf5; padding:15px; border-left:4px solid #C48945; margin:15px 0; color:#555;">
             {bank_html}
             <div style="margin-top:8px; font-size:13px; color:#d9534f;">※ 若未於 2 小時內付款，系統將取消此筆訂單。</div>
@@ -373,7 +331,6 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
         price_td = f'<td style="padding:10px; text-align:right;">${item["price"] * item["qty"]}</td>' if show_price else ''
         items_rows += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}{spec}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td>{price_td}</tr>'
     
-    # 這裡的 total_row 要加入運費顯示
     price_th = '<th style="padding:10px; text-align:right;">金額</th>' if show_price else ''
     total_row = f'''
     <tfoot>
@@ -416,11 +373,17 @@ def generate_donation_created_email(order):
     items = order['items']
     tw_now = datetime.utcnow() + timedelta(hours=8)
     created_at_str = tw_now.strftime('%Y/%m/%d %H:%M')
-    # ★ 修改這裡：判斷是 'fund' 還是 'donation'
     order_type = order.get('orderType', 'donation')
-    # 如果是 fund 用原帳號，如果是 donation 用 shop 帳號
-    bank_type = 'fund' if order_type == 'fund' else 'shop'
-    bank_html = get_bank_info(bank_type)
+    
+    if order_type == 'committee':
+        bank_html = """
+        銀行代碼：<strong>103 (臺灣新光銀行 北嘉義分行)</strong><br>
+        銀行帳號：<strong>0666-10-948888-9</strong><br>
+        戶名：<strong>芭芭菸酒水專賣店</strong>
+        """
+    else:
+        bank_type = 'fund' if order_type == 'fund' else 'shop'
+        bank_html = get_bank_info(bank_type)
     
     items_rows = ""
     for item in items:
@@ -446,7 +409,7 @@ def generate_donation_created_email(order):
             </div>
             <div style="background:#fffcf5; padding:15px; border-left:4px solid #C48945; margin:20px 0; color:#555;">
                 <strong>【匯款資訊】</strong><br>{bank_html}
-                <div style="margin-top:8px;">您的匯款後五碼：<strong>{cust['last5']}</strong></div>
+                <div style="margin-top:8px;">您的匯款後五碼：<strong>{cust.get('last5', '尚未提供')}</strong></div>
             </div>
             <div style="font-size: 14px; color: #666; margin-top: 20px; border-top: 1px dashed #ddd; padding-top: 15px;">
                 <strong>【重要提醒】</strong><ol style="margin-left: -20px; margin-top: 5px;"><li>確認善款入帳後，我們將寄發「電子感謝狀」給您。</li><li><strong>防詐騙提醒</strong>：帥府人員不會致電要求您操作 ATM 或變更轉帳設定。若有疑慮，請務必點擊下方按鈕向官方 LINE 查證。</li></ol>
@@ -493,26 +456,27 @@ def generate_donation_paid_email(cust, order_id, items):
 
 @app.context_processor
 def inject_links():
-    if db is None: return dict(links={})
+    if db is None: 
+        return dict(links={})
     try:
         links_cursor = db.links.find({})
         links_dict = {link['name']: link['url'] for link in links_cursor}
         return dict(links=links_dict)
-    except: return dict(links={})
+    except: 
+        return dict(links={})
 
 # =========================================
-# 4. 前台頁面路由 (修正：加入 SSR 資料預載)
+# 4. 前台頁面路由 (包含 SSR 資料預載)
 # =========================================
 @app.route('/profile')
 def profile_page(): 
     return render_template('profile.html')
+
 @app.route('/')
 def home():
-    # SEO 優化：伺服器端渲染 (SSR) 最新消息
     announcements_data = []
     try:
         if db is not None:
-            # 預設抓取最新的 10 筆公告，讓爬蟲可以讀取
             cursor = db.announcements.find().sort([("isPinned", -1), ("date", -1)]).limit(10)
             for doc in cursor:
                 doc['_id'] = str(doc['_id'])
@@ -522,7 +486,6 @@ def home():
     except Exception as e:
         print(f"SSR Error (Home): {e}")
     
-    # 將資料傳遞給 index.html
     return render_template('index.html', announcements=announcements_data)
 
 @app.route('/services')
@@ -540,17 +503,36 @@ def donation_page(): return render_template('donation.html')
 @app.route('/fund')
 def fund_page(): return render_template('fund.html')
 
+@app.route('/committee')
+def committee_page(): return render_template('committee.html')
+
+@app.route('/api/committee/status', methods=['GET'])
+def get_committee_status():
+    """獲取委員會各職位的即時剩餘名額"""
+    if db is None: 
+        return jsonify({})
+    def get_remain(name, max_limit):
+        used = db.orders.count_documents({
+            "orderType": "committee", 
+            "status": {"$in": ["paid", "pending"]}, 
+            "items.name": name
+        })
+        return max(0, max_limit - used)
+
+    return jsonify({
+        "hon_main": get_remain('[本府] 主委', 1),
+        "hon_vice": get_remain('[本府] 副主委', 7),
+        "bld_main": get_remain('[建廟] 籌備主委', 1),
+        "bld_vice": get_remain('[建廟] 籌備副主委', 10)
+    })
+
 @app.route('/feedback')
 def feedback_page():
-    # SEO 優化：伺服器端渲染 (SSR) 信徒回饋
-    # 讓爬蟲可以抓取到信徒分享的故事，增加長尾關鍵字曝光
     feedbacks_data = []
     try:
         if db is not None:
-            # 只抓取已核准的，並依照核准時間排序，取前 20 筆
             cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", -1).limit(20)
             for doc in cursor:
-                # 簡單過濾敏感個資，只傳遞需要的欄位
                 feedbacks_data.append({
                     'feedbackId': doc.get('feedbackId', ''),
                     'nickname': doc.get('nickname', '匿名'),
@@ -559,23 +541,19 @@ def feedback_page():
                 })
     except Exception as e:
         print(f"SSR Error (Feedback): {e}")
-
     return render_template('feedback.html', feedbacks=feedbacks_data)
 
 @app.route('/faq')
 def faq_page():
-    # SEO 優化：伺服器端渲染 (SSR) 常見問題
     faq_data = []
     try:
         if db is not None:
-            # 抓取所有 FAQ 讓搜尋引擎建立索引
             cursor = db.faq.find().sort([('isPinned', -1), ('createdAt', -1)])
             for doc in cursor:
                 doc['_id'] = str(doc['_id'])
                 faq_data.append(doc)
     except Exception as e:
         print(f"SSR Error (FAQ): {e}")
-        
     return render_template('faq.html', faqs=faq_data)
 
 @app.route('/gongtan')
@@ -588,6 +566,7 @@ def incense_page(): return redirect(url_for('shop_page'))
 def skincare_page(): return redirect(url_for('shop_page'))
 @app.route('/products/yuan-shuai-niang')
 def yuan_user_page(): return redirect(url_for('shop_page'))
+
 # =========================================
 # LINE 登入與會員 API
 # =========================================
@@ -597,15 +576,11 @@ def line_login():
     if not LINE_CHANNEL_ID:
         return "伺服器尚未設定 LINE_CHANNEL_ID", 500
         
-    # 產生一個隨機字串防護 CSRF 攻擊，並存入 session
     state = secrets.token_hex(16)
     session['line_state'] = state
-    
-    # 記錄信徒原本在哪個頁面點擊登入的 (例如 ?next=/feedback)
     next_url = request.args.get('next', '/')
     session['line_next_url'] = next_url
 
-    # 組裝 LINE 授權網址
     url = (
         "https://access.line.me/oauth2/v2.1/authorize?"
         "response_type=code&"
@@ -623,11 +598,9 @@ def line_callback():
     state = request.args.get('state')
     session_state = session.get('line_state')
 
-    # 1. 檢查 state 是否正確 (防偽造跨站請求)
     if state != session_state:
         return "登入狀態驗證失敗，請重新操作", 400
 
-    # 2. 用 code 向 LINE 換取 Access Token
     token_url = "https://api.line.me/oauth2/v2.1/token"
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     data = {
@@ -643,8 +616,6 @@ def line_callback():
         return f"獲取 Token 失敗: {token_res.text}", 400
         
     access_token = token_res.json().get('access_token')
-
-    # 3. 用 Access Token 獲取使用者的 LINE Profile
     profile_url = "https://api.line.me/v2/profile"
     profile_headers = {'Authorization': f'Bearer {access_token}'}
     profile_res = requests.get(profile_url, headers=profile_headers)
@@ -657,7 +628,6 @@ def line_callback():
     display_name = profile.get('displayName')
     picture_url = profile.get('pictureUrl', '')
 
-    # 4. 存入 MongoDB 的 users 集合 (如果沒有這個人就新增，有就更新)
     if db is not None:
         db.users.update_one(
             {'lineId': line_id},
@@ -671,12 +641,10 @@ def line_callback():
             upsert=True
         )
 
-    # 5. 在 Session 發放「一般會員登入證」
     session['user_line_id'] = line_id
     session['user_display_name'] = display_name
-    session.permanent = True # 保持登入狀態
+    session.permanent = True 
 
-    # 6. 導回他們原本所在的頁面 (例如 /feedback)
     next_url = session.pop('line_next_url', '/')
     return redirect(next_url)
 
@@ -690,12 +658,12 @@ def get_current_user():
     if db is not None:
         user = db.users.find_one({'lineId': line_id}, {'_id': 0})
         if user:
-            # 檢查是否領過小神衣 (只要有一筆回饋狀態是 sent 就代表領過了)
             has_received = db.feedback.count_documents({"lineId": line_id, "status": "sent"}) > 0
             user['has_received_gift'] = has_received
             return jsonify({"logged_in": True, "user": user})
             
     return jsonify({"logged_in": False})
+
 @app.route('/api/user/profile', methods=['PUT'])
 def update_user_profile():
     """讓信徒在個人專區修改自己的基本資料"""
@@ -728,11 +696,9 @@ def get_user_feedbacks():
         return jsonify({"error": "請先使用 LINE 登入"}), 401
         
     if db is not None:
-        # 依時間新到舊排序
         cursor = db.feedback.find({"lineId": line_id}).sort("createdAt", -1)
         results = []
         for doc in cursor:
-            # 截取前 50 個字作為預覽
             content_preview = doc.get('content', '')
             if len(content_preview) > 50:
                 content_preview = content_preview[:50] + '...'
@@ -745,22 +711,14 @@ def get_user_feedbacks():
                 "content_preview": content_preview,
                 "status": doc.get('status', 'pending'),
                 "createdAt": doc['createdAt'].strftime('%Y-%m-%d') if 'createdAt' in doc else '',
-                "trackingNumber": doc.get('trackingNumber', ''),
-                "feedbackId": doc.get('feedbackId', '')
+                "trackingNumber": doc.get('trackingNumber', '')
             })
         return jsonify(results)
     return jsonify([]), 500
+
 # =========================================
 # 收驚衣服預約取件 API (看板與個人專區)
 # =========================================
-
-def mask_name(name):
-    """將姓名第二字遮蔽為 O，例如：許秉承 -> 許O承，王大 -> 王O"""
-    if not name: return ""
-    if len(name) == 1: return name
-    if len(name) == 2: return name[0] + "O"
-    return name[0] + "O" + name[2:]
-
 @app.route('/api/pickup/reserve', methods=['POST'])
 def create_pickup_reservation():
     """信徒送出預約單"""
@@ -769,45 +727,31 @@ def create_pickup_reservation():
         return jsonify({"error": "請先使用 LINE 登入"}), 401
         
     data = request.get_json()
-    pickup_type = data.get('pickupType') # 'self' 或 'delivery'
+    pickup_type = data.get('pickupType') 
     pickup_date = data.get('pickupDate')
     clothes = data.get('clothes', [])
     
     if not pickup_type or not pickup_date or not clothes:
         return jsonify({"error": "資料不完整"}), 400
 
-    # ==========================================
-    # ★ 修改檢查邏輯：防止衣服編號在「未來」重複預約
-    # ==========================================
     if db is not None:
-        # 1. 取出這次請求中所有的衣服編號
         incoming_ids = [c.get('clothId', '').strip() for c in clothes if c.get('clothId')]
-        
-        # 2. 取得台灣今天的日期字串
         tw_now = datetime.utcnow() + timedelta(hours=8)
         today_str = tw_now.strftime('%Y-%m-%d')
         
-        # 3. 到資料庫檢查，這些編號是否已經存在於「尚未過期」的預約單中
-        # 條件 "pickupDate": {"$gte": today_str} 代表只檢查今天或未來的單子
         duplicate_order = db.pickups.find_one({
             "clothes.clothId": {"$in": incoming_ids},
             "pickupDate": {"$gte": today_str}
         })
         
-        # 4. 如果找到了重複的未來單子
         if duplicate_order:
-            # 找出具體是哪一件重複，方便提示使用者
             found_id = ""
             for item in duplicate_order.get('clothes', []):
                 if item.get('clothId') in incoming_ids:
                     found_id = item.get('clothId')
                     break
-            
             error_msg = f"衣服編號【{found_id}】目前的預約尚未過期！如需重新安排，請先至「個人專區」刪除舊紀錄。"
             return jsonify({"error": error_msg}), 400
-    # ==========================================
-    # ★ 檢查結束
-    # ==========================================
     
     new_reservation = {
         "lineId": line_id,
@@ -826,18 +770,15 @@ def create_pickup_reservation():
 @app.route('/api/pickup/public', methods=['GET'])
 def get_public_pickups():
     """給門市人員與大眾看的電子佈告欄 (自動過濾與遮蔽)"""
-    if db is None: return jsonify([])
+    if db is None: 
+        return jsonify([])
     
-    # 邏輯：計算台灣時間昨天的日期。
-    # 這樣假設今天是 2/27，系統就只會抓 2/26 (包含) 以後的資料。
-    # 2/25 的預約就會永遠從這份名單上消失！
     taiwan_now = datetime.utcnow() + timedelta(hours=8)
     threshold_date = (taiwan_now - timedelta(days=1)).strftime('%Y-%m-%d')
     
     cursor = db.pickups.find({"pickupDate": {"$gte": threshold_date}}).sort("pickupDate", 1)
-    
-# 依照日期將資料分組
     results = {}
+    
     for doc in cursor:
         date_str = doc['pickupDate']
         p_type = doc['pickupType'] 
@@ -845,22 +786,19 @@ def get_public_pickups():
         if date_str not in results:
             results[date_str] = {'self': [], 'delivery': []}
             
-        # ★ 修改這裡：把同一單的衣服包在一起，而不是打散
         masked_clothes = []
         for c in doc.get('clothes', []):
             masked_clothes.append({
                 "clothId": c.get('clothId', ''),
-                "name": mask_name(c.get('name', '')), # 執行姓名遮蔽
+                "name": mask_name(c.get('name', '')), 
                 "birthYear": c.get('birthYear', '')
             })
             
-        # 將整組衣服作為「一包」塞進看板陣列中
         if masked_clothes:
             results[date_str][p_type].append({
                 "clothes": masked_clothes
             })
             
-    # 轉成陣列格式方便前端卡片渲染
     formatted_results = []
     for d in sorted(results.keys()):
         formatted_results.append({
@@ -871,7 +809,6 @@ def get_public_pickups():
         
     return jsonify(formatted_results)
 
-# === 修改原本的查詢 API，加入可否刪除的判斷 ===
 @app.route('/api/user/pickups', methods=['GET'])
 def get_user_pickups():
     """給信徒「個人專區」看的自己專屬預約紀錄 (不遮蔽姓名)"""
@@ -882,12 +819,10 @@ def get_user_pickups():
     cursor = db.pickups.find({"lineId": line_id}).sort("pickupDate", -1)
     results = []
     
-    # 取得台灣今天的日期 (用於比對)
     tw_now = datetime.utcnow() + timedelta(hours=8)
     today = tw_now.replace(hour=0, minute=0, second=0, microsecond=0)
 
     for doc in cursor:
-        # 判斷是否可刪除：今天 < 取件日 (例如今天 3/1 < 取件 3/2，則可刪除)
         is_deletable = False
         try:
             p_date = datetime.strptime(doc.get('pickupDate'), '%Y-%m-%d')
@@ -901,25 +836,25 @@ def get_user_pickups():
             "pickupType": doc.get('pickupType'),
             "pickupDate": doc.get('pickupDate'),
             "clothes": doc.get('clothes', []),
-            "createdAt": doc['createdAt'].strftime('%Y-%m-%d %H:%M'),
-            "isDeletable": is_deletable  # 傳給前端
+            "createdAt": doc['createdAt'].strftime('%Y-%m-%d %H:%M') if 'createdAt' in doc else '',
+            "isDeletable": is_deletable 
         })
     return jsonify(results)
 
-# === 新增：刪除預約的 API ===
 @app.route('/api/pickup/<pid>', methods=['DELETE'])
 def delete_pickup(pid):
     line_id = session.get('user_line_id')
-    if not line_id: return jsonify({"error": "請先登入"}), 401
+    if not line_id: 
+        return jsonify({"error": "請先登入"}), 401
     
     oid = get_object_id(pid)
-    if not oid: return jsonify({"error": "格式錯誤"}), 400
+    if not oid: 
+        return jsonify({"error": "格式錯誤"}), 400
 
-    # 1. 確保是該使用者的預約
     pickup = db.pickups.find_one({"_id": oid, "lineId": line_id})
-    if not pickup: return jsonify({"error": "找不到預約"}), 404
+    if not pickup: 
+        return jsonify({"error": "找不到預約"}), 404
 
-    # 2. 再次檢查日期 (防止有人繞過前端直接呼叫 API)
     try:
         p_date = datetime.strptime(pickup.get('pickupDate'), '%Y-%m-%d')
         tw_now = datetime.utcnow() + timedelta(hours=8)
@@ -932,11 +867,13 @@ def delete_pickup(pid):
 
     db.pickups.delete_one({"_id": oid})
     return jsonify({"success": True})
+
 # =========================================
 # 5. 後台頁面路由 & API
 # =========================================
 @app.route('/admin')
-def admin_page(): return render_template('admin.html')
+def admin_page(): 
+    return render_template('admin.html')
 
 @app.route('/api/session_check', methods=['GET'])
 def session_check():
@@ -960,41 +897,45 @@ def api_logout():
 
 # --- Feedback API ---
 def enrich_feedback_for_admin(cursor):
-    """【後台專用輔助函式】自動將回饋與會員資料表合併，並標記是否領過神衣"""
+    """【後台專用輔助函式】自動將回饋與會員資料表合併"""
     results = []
     for doc in cursor:
         line_id = doc.get('lineId')
         user = db.users.find_one({"lineId": line_id}) if line_id else {}
-        # 檢查該 LINE ID 過去是否有 status=sent 的紀錄
-        has_received = db.feedback.count_documents({"lineId": line_id, "status": "sent"}) > 0 if line_id else False
+        has_received = False
+        if line_id:
+            has_received = db.feedback.count_documents({"lineId": line_id, "status": "sent"}) > 0
 
-        # 如果會員資料有填，就用會員的；如果沒有（舊資料），就用原本存在回饋裡的
         doc['realName'] = user.get('realName') or doc.get('realName', '未填寫')
         doc['phone'] = user.get('phone') or doc.get('phone', '未填寫')
         doc['address'] = user.get('address') or doc.get('address', '未填寫')
         doc['email'] = user.get('email') or doc.get('email', '')
-        
-        # 👇 新增這行：把農曆生日抓出來
         doc['lunarBirthday'] = user.get('lunarBirthday') or '未提供'
-        
         doc['has_received'] = has_received
-
         doc['_id'] = str(doc['_id'])
-        if 'createdAt' in doc: doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S')
-        if 'approvedAt' in doc: doc['approvedAt'] = doc['approvedAt'].strftime('%Y-%m-%d %H:%M')
-        if 'sentAt' in doc: doc['sentAt'] = doc['sentAt'].strftime('%Y-%m-%d %H:%M')
+        
+        if 'createdAt' in doc: 
+            doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S')
+        if 'approvedAt' in doc: 
+            doc['approvedAt'] = doc['approvedAt'].strftime('%Y-%m-%d %H:%M')
+        if 'sentAt' in doc: 
+            doc['sentAt'] = doc['sentAt'].strftime('%Y-%m-%d %H:%M')
+            
         results.append(doc)
     return results
+
 @app.route('/api/feedback', methods=['POST'])
 def add_feedback():
-    if db is None: return jsonify({"error": "DB Error"}), 500
+    if db is None: 
+        return jsonify({"error": "DB Error"}), 500
     line_id = session.get('user_line_id')
-    if not line_id: return jsonify({"error": "請先使用 LINE 登入"}), 401
+    if not line_id: 
+        return jsonify({"error": "請先使用 LINE 登入"}), 401
         
     data = request.get_json()
-    if not data.get('agreed'): return jsonify({"error": "必須勾選同意條款"}), 400
+    if not data.get('agreed'): 
+        return jsonify({"error": "必須勾選同意條款"}), 400
     
-    # 極簡化：只存回饋內容，個資一律去 users 資料表抓
     new_feedback = {
         "lineId": line_id,
         "nickname": data.get('nickname'),
@@ -1008,9 +949,10 @@ def add_feedback():
     db.feedback.insert_one(new_feedback)
     return jsonify({"success": True, "message": "回饋已送出"})
 
-# 這是給 [前台] 看的，保護隱私不回傳個資
 @app.route('/api/feedback/approved', methods=['GET']) 
 def get_public_approved_feedback():
+    if db is None:
+        return jsonify([])
     cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", -1)
     results = []
     for doc in cursor:
@@ -1018,13 +960,12 @@ def get_public_approved_feedback():
             '_id': str(doc['_id']),
             'feedbackId': doc.get('feedbackId', ''),
             'nickname': doc.get('nickname', '匿名'),  
-            'category': doc.get('category', []),      
+            'category': doc.get('category', []),     
             'content': doc.get('content', ''),        
-            'createdAt': doc['createdAt'].strftime('%Y-%m-%d') 
+            'createdAt': doc['createdAt'].strftime('%Y-%m-%d') if 'createdAt' in doc else '' 
         })
     return jsonify(results)
 
-# 以下是給 [後台] 管理員看的，包含合併後的完整個資與標籤
 @app.route('/api/feedback/status/pending', methods=['GET'])
 @login_required
 def get_pending_feedback():
@@ -1047,14 +988,15 @@ def get_sent_feedback():
 @login_required
 def approve_feedback(fid):
     oid = get_object_id(fid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
     fb = db.feedback.find_one({'_id': oid})
-    if not fb: return jsonify({"error": "No data"}), 404
+    if not fb: 
+        return jsonify({"error": "No data"}), 404
     
     fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
     db.feedback.update_one({'_id': oid}, {'$set': {'status': 'approved', 'feedbackId': fb_id, 'approvedAt': datetime.utcnow()}})
     
-    # 抓取會員 Email 寄信
     user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
     email = user.get('email') or fb.get('email')
     if email:
@@ -1067,10 +1009,13 @@ def approve_feedback(fid):
 @login_required
 def ship_feedback(fid):
     oid = get_object_id(fid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
     data = request.get_json()
     tracking = data.get('trackingNumber', '')
     fb = db.feedback.find_one({'_id': oid})
+    if not fb:
+        return jsonify({"error": "No data"}), 404
     
     db.feedback.update_one({'_id': oid}, {'$set': {'status': 'sent', 'trackingNumber': tracking, 'sentAt': datetime.utcnow()}})
     
@@ -1086,8 +1031,11 @@ def ship_feedback(fid):
 @login_required
 def delete_feedback(fid):
     oid = get_object_id(fid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
     fb = db.feedback.find_one({'_id': oid})
+    if not fb:
+        return jsonify({"error": "No data"}), 404
     
     user = db.users.find_one({"lineId": fb.get('lineId')}) if fb and fb.get('lineId') else {}
     email = user.get('email') or (fb.get('email') if fb else None)
@@ -1103,7 +1051,8 @@ def delete_feedback(fid):
 @login_required
 def update_feedback(fid):
     oid = get_object_id(fid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
     data = request.get_json()
     db.feedback.update_one({'_id': oid}, {'$set': {'nickname': data.get('nickname'), 'category': data.get('category'), 'content': data.get('content')}})
     return jsonify({"success": True})
@@ -1113,13 +1062,14 @@ def update_feedback(fid):
 def export_sent_feedback_txt():
     cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
     enriched = enrich_feedback_for_admin(cursor)
-    if not enriched: return jsonify({"error": "無已寄送資料"}), 404
+    if not enriched: 
+        return jsonify({"error": "無已寄送資料"}), 404
     
     si = io.StringIO()
     si.write(f"已寄送名單匯出\n匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
     si.write("=" * 50 + "\n")
     for doc in enriched:
-        si.write(f"{doc['realName']}\t{doc['phone']}\t{doc['address']}\n")
+        si.write(f"{doc.get('realName', '')}\t{doc.get('phone', '')}\t{doc.get('address', '')}\n")
     return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": "attachment;filename=sent_feedback_list.txt"})
 
 @app.route('/api/feedback/export-txt', methods=['POST'])
@@ -1127,15 +1077,16 @@ def export_sent_feedback_txt():
 def export_feedback_txt():
     cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", 1)
     enriched = enrich_feedback_for_admin(cursor)
-    if not enriched: return jsonify({"error": "無資料"}), 404
+    if not enriched: 
+        return jsonify({"error": "無資料"}), 404
     
     si = io.StringIO()
     si.write(f"匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n")
     for doc in enriched:
         si.write(f"【編號】{doc.get('feedbackId', '無')}\n")
-        si.write(f"姓名：{doc['realName']}\n")
-        si.write(f"電話：{doc['phone']}\n")
-        si.write(f"地址：{doc['address']}\n")
+        si.write(f"姓名：{doc.get('realName', '')}\n")
+        si.write(f"電話：{doc.get('phone', '')}\n")
+        si.write(f"地址：{doc.get('address', '')}\n")
         si.write("-" * 30 + "\n")
     return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": "attachment;filename=feedback_list.txt"})
 
@@ -1143,7 +1094,6 @@ def export_feedback_txt():
 @login_required
 def handle_bank_settings():
     if request.method == 'GET':
-        # 一次回傳兩組設定
         fund_set = db.settings.find_one({"type": "bank_info"}) or {}
         shop_set = db.settings.find_one({"type": "bank_info_shop"}) or {}
         
@@ -1160,40 +1110,26 @@ def handle_bank_settings():
             }
         })
     else:
-        # 接收並儲存兩組設定
         data = request.get_json()
-        
-        # 儲存建廟基金 (Fund) - 維持原本的 key
         if 'fund' in data:
             db.settings.update_one(
                 {"type": "bank_info"},
                 {"$set": data['fund']},
                 upsert=True
             )
-            
-        # 儲存一般/捐香 (Shop) - 使用新的 key
         if 'shop' in data:
             db.settings.update_one(
                 {"type": "bank_info_shop"},
                 {"$set": data['shop']},
                 upsert=True
             )
-            
         return jsonify({"success": True})
-# =========================================
-# 新增：公開的匯款資訊查詢 API (給前台頁面用)
-# =========================================
+
 @app.route('/api/public/bank-info', methods=['GET'])
 def get_public_bank_info():
-    # 取得參數 type，預設為 'shop' (一般/捐香)
     usage = request.args.get('type', 'shop') 
-    
-    # 決定要抓哪一組設定
-    # fund -> 抓原本的 bank_info
-    # shop/donation -> 抓新的 bank_info_shop
     setting_key = "bank_info" if usage == 'fund' else "bank_info_shop"
     
-    # 預設值 (避免資料庫沒設定時前台壞掉)
     defaults = {
         'fund': {'code': '103', 'name': '新光銀行', 'account': '0666-50-971133-3'},
         'shop': {'code': '808', 'name': '玉山銀行', 'account': '尚未設定'}
@@ -1208,7 +1144,7 @@ def get_public_bank_info():
         "bankName": settings.get('bankName', defaults[usage]['name']),
         "account": settings.get('account', defaults[usage]['account'])
     })
-# --- 其他 API ---
+
 @app.route('/api/shipclothes/calc-date', methods=['GET'])
 def get_pickup_date_preview():
     today = datetime.utcnow() + timedelta(hours=8)
@@ -1217,15 +1153,22 @@ def get_pickup_date_preview():
 
 @app.route('/api/shipclothes', methods=['POST'])
 def submit_ship_clothes():
-    if db is None: return jsonify({"success": False, "message": "資料庫未連線"}), 500
+    if db is None: 
+        return jsonify({"success": False, "message": "資料庫未連線"}), 500
     data = request.get_json()
     user_captcha = data.get('captcha', '').strip()
     correct_answer = session.get('captcha_answer')
     session.pop('captcha_answer', None)
-    if not correct_answer or user_captcha != correct_answer: return jsonify({"success": False, "message": "驗證碼錯誤"}), 400
-    if not all(k in data and data[k] for k in ['name', 'lineGroup', 'lineName', 'birthYear', 'clothes']): return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
+    
+    if not correct_answer or user_captcha != correct_answer: 
+        return jsonify({"success": False, "message": "驗證碼錯誤"}), 400
+    
+    if not all(k in data and data[k] for k in ['name', 'lineGroup', 'lineName', 'birthYear', 'clothes']): 
+        return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
+        
     now_tw = datetime.utcnow() + timedelta(hours=8)
     pickup_date = calculate_business_d2(now_tw)
+    
     db.shipments.insert_one({
         "name": data['name'], "birthYear": data['birthYear'], "lineGroup": data['lineGroup'], "lineName": data['lineName'],
         "clothes": data['clothes'], "submitDate": now_tw, "submitDateStr": now_tw.strftime('%Y/%m/%d'),
@@ -1235,11 +1178,13 @@ def submit_ship_clothes():
 
 @app.route('/api/shipclothes/list', methods=['GET'])
 def get_ship_clothes_list():
-    if db is None: return jsonify([]), 500
+    if db is None: 
+        return jsonify([]), 500
     now_tw = datetime.utcnow() + timedelta(hours=8)
     today_date = now_tw.replace(hour=0, minute=0, second=0, microsecond=0)
     start_date = today_date - timedelta(days=1)
     end_date = today_date + timedelta(days=5)
+    
     cursor = db.shipments.find({"pickupDate": { "$gte": start_date, "$lte": end_date }}).sort("pickupDate", 1)
     results = []
     for doc in cursor:
@@ -1253,24 +1198,18 @@ def get_ship_clothes_list():
 
 @app.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
-    if db is None: return jsonify([]), 500
-    
-    # 1. 取得前端傳來的 type 參數
-    # 如果前端沒傳 (像 donation.html)，就預設用 'donation'
+    if db is None: 
+        return jsonify([]), 500
+        
     target_type = request.args.get('type', 'donation')
-    
-    # 2. 建立查詢條件 (只抓已付款)
     query = {"status": "paid"}
     
-    # 判斷要抓哪種類型
     if target_type == 'all':
         query["orderType"] = {"$in": ["donation", "fund"]}
     else:
         query["orderType"] = target_type
         
-    # 3. 執行查詢 (依更新時間排序，取前 30 筆)
     cursor = db.orders.find(query).sort("updatedAt", -1).limit(30)
-    
     results = []
     for doc in cursor:
         items_summary = [f"{i['name']} x{i['qty']}" for i in doc.get('items', [])]
@@ -1284,21 +1223,22 @@ def get_public_donations():
 @app.route('/api/donations/admin', methods=['GET'])
 @login_required
 def get_admin_donations():
-    type_filter = request.args.get('type') # 'donation' 或 'fund'
-    status_filter = request.args.get('status') # 'paid', 'pending'
-    report_filter = request.args.get('reported') # '0' (未稟告), '1' (已稟告)
+    type_filter = request.args.get('type') 
+    status_filter = request.args.get('status') 
+    report_filter = request.args.get('reported') 
     
     query = {}
-    if type_filter: query['orderType'] = type_filter
-    else: query['orderType'] = {"$in": ["donation", "fund"]} # 預設抓這兩種
-    
-    if status_filter: query['status'] = status_filter
-    
-    # 稟告篩選 (只針對捐香有效)
+    if type_filter: 
+        query['orderType'] = type_filter
+    else: 
+        query['orderType'] = {"$in": ["donation", "fund"]}
+        
+    if status_filter: 
+        query['status'] = status_filter
+        
     if type_filter == 'donation' and report_filter is not None:
         query['is_reported'] = (report_filter == '1')
 
-    # 日期篩選 (選填)
     start_str = request.args.get('start')
     end_str = request.args.get('end')
     if start_str and end_str:
@@ -1306,14 +1246,14 @@ def get_admin_donations():
             start_date = datetime.strptime(start_str, '%Y-%m-%d')
             end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
             query["createdAt"] = {"$gte": start_date, "$lt": end_date}
-        except: pass
+        except: 
+            pass
 
     cursor = db.orders.find(query).sort([("is_reported", 1), ("createdAt", -1)])
     results = []
     for doc in cursor:
         doc['_id'] = str(doc['_id'])
         doc['createdAt'] = (doc['createdAt'] + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
-        # 顯示稟告時間
         if doc.get('reportedAt'):
             doc['reportedAt'] = (doc['reportedAt'] + timedelta(hours=8)).strftime('%Y-%m-%d')
         results.append(doc)
@@ -1331,7 +1271,8 @@ def export_donations_txt():
             start_date = datetime.strptime(start_str, '%Y-%m-%d')
             end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
             query["updatedAt"] = {"$gte": start_date, "$lt": end_date}
-        except: pass
+        except: 
+            pass
     cursor = db.orders.find(query).sort("updatedAt", 1)
     
     si = io.StringIO()
@@ -1359,12 +1300,11 @@ def export_donations_txt():
 @login_required
 def cleanup_unpaid_orders():
     cutoff = datetime.utcnow() - timedelta(hours=76)
-    # 刪除前先寄信
     cursor = db.orders.find({"status": "pending", "createdAt": {"$lt": cutoff}})
     for order in cursor:
         if order.get('customer', {}).get('email'):
             subject = f"【承天中承府】訂單/捐贈登記已取消 ({order['orderId']})"
-            body = f"親愛的 {order['customer']['name']} 您好：\n您的訂單/捐贈登記 ({order['orderId']}) 因超過付款期限，系統已自動取消。如需服務請重新下單。"
+            body = f"親愛的 {order['customer'].get('name', '信徒')} 您好：\n您的訂單/捐贈登記 ({order['orderId']}) 因超過付款期限，系統已自動取消。如需服務請重新下單。"
             send_email(order['customer']['email'], subject, body)
     
     result = db.orders.delete_many({"status": "pending", "createdAt": {"$lt": cutoff}})
@@ -1372,25 +1312,24 @@ def cleanup_unpaid_orders():
 
 @app.route('/api/orders', methods=['POST'])
 def create_order():
-    if db is None: return jsonify({"error": "DB Error"}), 500
+    if db is None: 
+        return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
     line_id = session.get('user_line_id')
-    if not line_id: return jsonify({"error": "請先使用 LINE 登入"}), 401
+    if not line_id: 
+        return jsonify({"error": "請先使用 LINE 登入"}), 401
     
     order_type = data.get('orderType', 'shop')
-    # ==========================================
-    # ★ 新增：針對建廟基金 (fund) 的數量限制與名額檢查
-    # ==========================================
+    
+    # 建廟基金 (fund) 防護
     if order_type == 'fund':
         for item in data.get('items', []):
             item_name = item.get('name')
             item_qty = int(item.get('qty', 0))
             
-            # 1. 職位型項目強制數量只能是 1
             if item_name in ['副主委', '委員', '顧問'] and item_qty != 1:
                 return jsonify({"error": f"【{item_name}】每次結帳限購 1 名，數量不可更改。"}), 400
             
-            # 2. 副主委名額查核 (結帳瞬間再次即時計算)
             if item_name == '副主委':
                 used_count = db.orders.count_documents({
                     "orderType": "fund",
@@ -1399,14 +1338,40 @@ def create_order():
                 })
                 if used_count >= 7:
                     return jsonify({"error": "非常抱歉，【副主委】7名額已全數被預約完畢！"}), 400
-    # ==========================================
+
+    # 委員會 (committee) 專屬防護與名額檢查
+    if order_type == 'committee':
+        for item in data.get('items', []):
+            item_name = item.get('name')
+            item_qty = int(item.get('qty', 0))
+            
+            if item_qty != 1 and item_name != '[建廟] 功德主':
+                return jsonify({"error": f"【{item_name}】每次結帳限購 1 名。"}), 400
+            
+            def check_limit(name, max_limit):
+                used = db.orders.count_documents({
+                    "orderType": "committee", 
+                    "status": {"$in": ["paid", "pending"]}, 
+                    "items.name": name
+                })
+                return used >= max_limit
+
+            if item_name == '[本府] 主委' and check_limit(item_name, 1): 
+                return jsonify({"error": "【[本府] 主委】名額已滿！"}), 400
+            if item_name == '[本府] 副主委' and check_limit(item_name, 7): 
+                return jsonify({"error": "【[本府] 副主委】名額已滿！"}), 400
+            if item_name == '[建廟] 籌備主委' and check_limit(item_name, 1): 
+                return jsonify({"error": "【[建廟] 籌備主委】名額已滿！"}), 400
+            if item_name == '[建廟] 籌備副主委' and check_limit(item_name, 10): 
+                return jsonify({"error": "【[建廟] 籌備副主委】名額已滿！"}), 400
+
     prefix = "ORD"
     if order_type == 'donation': prefix = "DON"
     elif order_type == 'fund': prefix = "FND"
+    elif order_type == 'committee': prefix = "COM" 
     
     order_id = f"{prefix}{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
     
-    # 接收新欄位
     customer_info = {
         "name": data.get('name'), 
         "phone": data.get('phone'), 
@@ -1414,10 +1379,9 @@ def create_order():
         "address": data.get('address'), 
         "last5": data.get('last5'),
         "lunarBirthday": data.get('lunarBirthday', ''),
-        # 新增配送資訊
-        "shippingMethod": data.get('shippingMethod', 'home'), # home 或 711
-        "storeInfo": data.get('storeInfo', ''),               # 7-11 門市資訊
-        "shippingFee": data.get('shippingFee', 120)           # 記錄當時的運費
+        "shippingMethod": data.get('shippingMethod', 'home'), 
+        "storeInfo": data.get('storeInfo', ''),                
+        "shippingFee": data.get('shippingFee', 120)            
     }
     
     now = datetime.utcnow()
@@ -1437,25 +1401,29 @@ def create_order():
     db.orders.insert_one(order)
     
     subject = f"【承天中承府】訂單確認 ({order_id})"
-    if order_type == 'donation': subject = f"【承天中承府】捐香登記確認 ({order_id})"
-    elif order_type == 'fund': subject = f"【承天中承府】建廟護持確認 ({order_id})"
+    if order_type == 'donation': 
+        subject = f"【承天中承府】捐香登記確認 ({order_id})"
+    elif order_type == 'fund': 
+        subject = f"【承天中承府】建廟護持確認 ({order_id})"
+    elif order_type == 'committee': 
+        subject = f"【承天中承府】委員會發心護持確認 ({order_id})"
     
-    if order_type in ['donation', 'fund']:
+    if order_type in ['donation', 'fund', 'committee']:
         html = generate_donation_created_email(order)
     else:
         html = generate_shop_email_html(order, 'created')
         
     send_email(customer_info['email'], subject, html, is_html=True)
     return jsonify({"success": True, "orderId": order_id})
-# === 3. 新增 API: 批次標記捐香為「已稟告」 ===
+
 @app.route('/api/donations/mark-reported', methods=['POST'])
 @login_required
 def mark_donations_reported():
     data = request.get_json()
     ids = data.get('ids', [])
-    if not ids: return jsonify({"success": False, "message": "無選取訂單"})
+    if not ids: 
+        return jsonify({"success": False, "message": "無選取訂單"})
     
-    # 轉換 ID 並更新
     object_ids = [get_object_id(i) for i in ids if get_object_id(i)]
     if object_ids:
         db.orders.update_many(
@@ -1463,20 +1431,17 @@ def mark_donations_reported():
             {"$set": {"is_reported": True, "reportedAt": datetime.utcnow()}}
         )
     return jsonify({"success": True})
+
 @app.route('/api/user/orders', methods=['GET'])
 def get_user_orders():
-    """給信徒「個人專區」看的商城訂單紀錄"""
     line_id = session.get('user_line_id')
     if not line_id or db is None:
         return jsonify([])
         
-    # 只抓取商品訂單，不含建廟捐款
     cursor = db.orders.find({"lineId": line_id, "orderType": "shop"}).sort("createdAt", -1)
     results = []
     for doc in cursor:
-        # 轉換為台灣時間字串
         tw_created = doc['createdAt'] + timedelta(hours=8)
-        # 若是舊訂單沒有 paymentDeadline，相容處理為創建時間+2小時
         tw_deadline = doc.get('paymentDeadline', doc['createdAt'] + timedelta(hours=2)) + timedelta(hours=8)
         
         results.append({
@@ -1488,9 +1453,10 @@ def get_user_orders():
             "trackingNumber": doc.get('trackingNumber', ''),
             "createdAt": tw_created.strftime('%Y-%m-%d %H:%M'),
             "paymentDeadline": tw_deadline.strftime('%Y-%m-%d %H:%M'),
-            "deadline_iso": tw_deadline.isoformat() # 用於前端 JS 比較是否過期
+            "deadline_iso": tw_deadline.isoformat() 
         })
     return jsonify(results)
+
 @app.route('/api/user/donations', methods=['GET'])
 def get_user_donations():
     line_id = session.get('user_line_id')
@@ -1516,11 +1482,10 @@ def get_user_donations():
             "deadline_iso": tw_deadline.isoformat()
         })
     return jsonify(results)
+
 @app.route('/api/orders', methods=['GET'])
 @login_required
 def get_orders():
-    """一般訂單 API (只抓取 shop)"""
-    # 關鍵：明確指定只抓取一般商品訂單 (shop)
     cursor = db.orders.find({"orderType": "shop"}).sort("createdAt", -1)
     results = []
     for doc in cursor:
@@ -1539,15 +1504,18 @@ def cleanup_shipped_orders():
 @app.route('/api/orders/<oid>/confirm', methods=['PUT'])
 @login_required
 def confirm_order_payment(oid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid_obj = get_object_id(oid)
-    if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid_obj: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     order = db.orders.find_one({'_id': oid_obj})
-    if not order: return jsonify({"error": "No order"}), 404
+    if not order: 
+        return jsonify({"error": "No order"}), 404
+        
     now = datetime.utcnow()
     db.orders.update_one({'_id': oid_obj}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}})
     cust = order['customer']
+    
     if order.get('orderType') in ['donation', 'fund']:
         email_subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order['orderId']})"
         email_html = generate_donation_paid_email(cust, order['orderId'], order['items'])
@@ -1561,16 +1529,19 @@ def confirm_order_payment(oid):
 @app.route('/api/orders/<oid>/resend-email', methods=['POST'])
 @login_required
 def resend_order_email(oid):
-    # [資安修正] 使用 get_object_id 檢查格式
     oid_obj = get_object_id(oid)
-    if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid_obj: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     data = request.get_json()
     new_email = data.get('email')
     order = db.orders.find_one({'_id': oid_obj})
-    if not order: return jsonify({"error": "No order"}), 404
+    if not order: 
+        return jsonify({"error": "No order"}), 404
+        
     cust = order['customer']
     target_email = cust.get('email')
+    
     if new_email and new_email != target_email:
         db.orders.update_one({'_id': oid_obj}, {'$set': {'customer.email': new_email}})
         cust['email'] = new_email
@@ -1585,9 +1556,13 @@ def resend_order_email(oid):
             email_html = generate_donation_created_email(order)
     else:
         email_subject = f"【承天中承府】訂單信件補寄 ({order['orderId']})"
-        if order.get('status') == 'shipped': email_html = generate_shop_email_html(order, 'shipped', order.get('trackingNumber'))
-        elif order.get('status') == 'paid': email_html = generate_shop_email_html(order, 'paid')
-        else: email_html = generate_shop_email_html(order, 'created')
+        if order.get('status') == 'shipped': 
+            email_html = generate_shop_email_html(order, 'shipped', order.get('trackingNumber'))
+        elif order.get('status') == 'paid': 
+            email_html = generate_shop_email_html(order, 'paid')
+        else: 
+            email_html = generate_shop_email_html(order, 'created')
+            
     send_email(target_email, email_subject, email_html, is_html=True)
     return jsonify({"success": True})
 
@@ -1595,20 +1570,23 @@ def resend_order_email(oid):
 @login_required
 def delete_order(oid):
     oid_obj = get_object_id(oid)
-    if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid_obj: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     order = db.orders.find_one({'_id': oid_obj})
     if order and order.get('customer', {}).get('email'):
         subject = f"【承天中承府】訂單/登記已取消 ({order['orderId']})"
-        body = f"親愛的 {order['customer']['name']} 您好：\n您的訂單/登記 ({order['orderId']}) 已被取消。如為誤操作或有任何疑問，請聯繫官方 LINE。"
+        body = f"親愛的 {order['customer'].get('name', '信徒')} 您好：\n您的訂單/登記 ({order['orderId']}) 已被取消。如為誤操作或有任何疑問，請聯繫官方 LINE。"
         send_email(order['customer']['email'], subject, body)
+        
     db.orders.delete_one({'_id': oid_obj})
     return jsonify({"success": True})
 
 @app.route('/api/products', methods=['GET'])
 def get_products():
     products = list(db.products.find().sort([("category", 1), ("createdAt", -1)]))
-    for p in products: p['_id'] = str(p['_id'])
+    for p in products: 
+        p['_id'] = str(p['_id'])
     return jsonify(products)
 
 @app.route('/api/products', methods=['POST'])
@@ -1627,7 +1605,8 @@ def add_product():
 @login_required
 def update_product(pid):
     oid = get_object_id(pid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     data = request.get_json()
     fields = {k: data.get(k) for k in ['name', 'category', 'price', 'description', 'image', 'isActive', 'variants', 'isDonation', 'series', 'seriesSort'] if k in data}
@@ -1640,7 +1619,8 @@ def update_product(pid):
 @login_required
 def delete_product(pid):
     oid = get_object_id(pid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     db.products.delete_one({'_id': oid})
     return jsonify({"success": True})
@@ -1651,7 +1631,8 @@ def get_announcements():
     results = []
     for doc in cursor:
         doc['_id'] = str(doc['_id'])
-        if 'date' in doc and isinstance(doc['date'], datetime): doc['date'] = doc['date'].strftime('%Y/%m/%d')
+        if 'date' in doc and isinstance(doc['date'], datetime): 
+            doc['date'] = doc['date'].strftime('%Y/%m/%d')
         results.append(doc)
     return jsonify(results)
 
@@ -1659,9 +1640,17 @@ def get_announcements():
 @login_required
 def add_announcement():
     data = request.get_json()
+    try:
+        date_obj = datetime.strptime(data['date'].replace('-', '/'), '%Y/%m/%d')
+    except ValueError:
+        return jsonify({"error": "日期格式錯誤，請使用 YYYY/MM/DD"}), 400
+        
     db.announcements.insert_one({
-        "date": datetime.strptime(data['date'], '%Y/%m/%d'), "title": data['title'],
-        "content": data['content'], "isPinned": data.get('isPinned', False), "createdAt": datetime.utcnow()
+        "date": date_obj, 
+        "title": data['title'],
+        "content": data['content'], 
+        "isPinned": data.get('isPinned', False), 
+        "createdAt": datetime.utcnow()
     })
     return jsonify({"success": True})
 
@@ -1669,12 +1658,20 @@ def add_announcement():
 @login_required
 def update_announcement(aid):
     oid = get_object_id(aid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     data = request.get_json()
+    try:
+        date_obj = datetime.strptime(data['date'].replace('-', '/'), '%Y/%m/%d')
+    except ValueError:
+        return jsonify({"error": "日期格式錯誤"}), 400
+
     db.announcements.update_one({'_id': oid}, {'$set': {
-        "date": datetime.strptime(data['date'], '%Y/%m/%d'), "title": data['title'],
-        "content": data['content'], "isPinned": data.get('isPinned', False)
+        "date": date_obj, 
+        "title": data['title'],
+        "content": data['content'], 
+        "isPinned": data.get('isPinned', False)
     }})
     return jsonify({"success": True})
 
@@ -1682,7 +1679,8 @@ def update_announcement(aid):
 @login_required
 def delete_announcement(aid):
     oid = get_object_id(aid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     db.announcements.delete_one({'_id': oid})
     return jsonify({"success": True})
@@ -1694,13 +1692,16 @@ def get_faqs():
     return jsonify([{**doc, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d')} for doc in faqs])
 
 @app.route('/api/faq/categories', methods=['GET'])
-def get_faq_categories(): return jsonify(db.faq.distinct('category'))
+def get_faq_categories(): 
+    return jsonify(db.faq.distinct('category'))
 
 @app.route('/api/faq', methods=['POST'])
 @login_required
 def add_faq():
     data = request.get_json()
-    if not re.match(r'^[\u4e00-\u9fff]+$', data.get('category', '')): return jsonify({"error": "分類限中文"}), 400
+    if not re.match(r'^[\u4e00-\u9fff]+$', data.get('category', '')): 
+        return jsonify({"error": "分類限中文"}), 400
+        
     db.faq.insert_one({
         "question": data['question'], "answer": data['answer'], "category": data['category'],
         "isPinned": data.get('isPinned', False), "createdAt": datetime.utcnow()
@@ -1711,7 +1712,8 @@ def add_faq():
 @login_required
 def update_faq(fid):
     oid = get_object_id(fid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     data = request.get_json()
     db.faq.update_one({'_id': oid}, {'$set': {
@@ -1723,7 +1725,8 @@ def update_faq(fid):
 @login_required
 def delete_faq(fid):
     oid = get_object_id(fid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     db.faq.delete_one({'_id': oid})
     return jsonify({"success": True})
@@ -1738,31 +1741,28 @@ def get_fund_settings():
     ]
     
     if db is not None:
-        # 1. 計算目前的捐款總額 (只算已付款)
         result = list(db.orders.aggregate(pipeline))
         calculated_current = result[0]['total_current'] if result else 0
         
-        # 2. 【新增】即時計算「副主委」已被佔用的名額 (包含 paid 已付款 + pending 未付款)
         vice_chair_used = db.orders.count_documents({
             "orderType": "fund",
             "status": {"$in": ["paid", "pending"]},
             "items.name": "副主委"
         })
-        # 剩餘名額 = 7 減去已被佔用的，且最低不會小於 0
         settings['vice_chair_remain'] = max(0, 7 - vice_chair_used)
     else:
         calculated_current = 0
         settings['vice_chair_remain'] = 7
         
     settings['current_amount'] = calculated_current
-    if '_id' in settings: settings['_id'] = str(settings['_id'])
+    if '_id' in settings: 
+        settings['_id'] = str(settings['_id'])
     return jsonify(settings)
 
 @app.route('/api/fund-settings', methods=['POST'])
 @login_required
 def update_fund_settings():
     data = request.get_json()
-    # 💡 現在只需更新目標金額 (goal_amount)，目前金額已完全自動化不須存進設定檔
     db.temple_fund.update_one(
         {"type": "main_fund"}, 
         {"$set": {"goal_amount": int(data.get('goal_amount', 10000000))}}, 
@@ -1778,7 +1778,8 @@ def get_links():
 @login_required
 def update_link(lid):
     oid = get_object_id(lid)
-    if not oid: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     data = request.get_json()
     db.links.update_one({'_id': oid}, {'$set': {'url': data['url']}})
@@ -1788,12 +1789,15 @@ def update_link(lid):
 @login_required
 def ship_order(oid):
     oid_obj = get_object_id(oid)
-    if not oid_obj: return jsonify({"error": "無效的 ID 格式"}), 400
+    if not oid_obj: 
+        return jsonify({"error": "無效的 ID 格式"}), 400
 
     data = request.get_json() or {}
     tracking_num = data.get('trackingNumber', '').strip()
     order = db.orders.find_one({'_id': oid_obj})
-    if not order: return jsonify({"error": "No order"}), 404
+    if not order: 
+        return jsonify({"error": "No order"}), 404
+        
     now = datetime.utcnow()
     db.orders.update_one({'_id': oid_obj}, {'$set': {
         'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 'trackingNumber': tracking_num
@@ -1813,7 +1817,5 @@ def debug_connection():
     except Exception as e:
         status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
     return jsonify(status)
-
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
