@@ -5,114 +5,179 @@
 {% block content %}
 <style>
     :root {
-        --royal-bg-dark: #1a0505;
-        --royal-bg-red: #4a0e0e;
-        --royal-gold-light: #fcf6ba;
-        --royal-gold-main: #bf953f;
-        --royal-gold-dark: #8a6e2f;
+        --royal-bg-dark: #120202;     /* 加深背景，讓金色更跳 */
+        --royal-bg-red: #5a0b0b;
+        --royal-gold-light: #fef0a5;
+        --royal-gold-main: #d4af37;   /* 調整為更輝煌的純金色 */
+        --royal-gold-dark: #997a00;
         --royal-text-light: #fdfbf7;
     }
+
+    /* 1. 全局字型改為 LXGW WenKai TC */
     .committee-page-wrapper {
         background-color: var(--royal-bg-dark);
-        background-image: radial-gradient(circle at 50% 10%, var(--royal-bg-red), var(--royal-bg-dark) 80%);
-        font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+        background-image: radial-gradient(circle at 50% 5%, var(--royal-bg-red) 0%, var(--royal-bg-dark) 70%);
+        font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
         color: var(--royal-text-light);
         min-height: 100vh;
         padding-bottom: 80px;
     }
-    .header-banner {
-        text-align: center; padding: 60px 20px 40px;
-        border-bottom: 2px solid rgba(191, 149, 63, 0.3);
-        background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
-    }
-    .main-title {
-        font-size: 2.5rem; font-weight: 900; letter-spacing: 4px;
-        background: linear-gradient(to bottom, #fcf6ba 0%, #bf953f 50%, #b38728 100%);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        margin-bottom: 10px;
-    }
-    .sub-title { color: var(--royal-gold-light); font-size: 1.2rem; letter-spacing: 2px; }
-    
-    .section-container { max-width: 1100px; margin: 0 auto; padding: 50px 20px; }
-    .intro-text { text-align: center; font-size: 1.15rem; line-height: 1.8; color: #ddd; margin-bottom: 40px; }
-    
-    .section-divider {
-        display: flex; align-items: center; text-align: center; margin: 60px 0;
-    }
-    .section-divider::before, .section-divider::after {
-        content: ''; flex: 1; border-bottom: 2px solid var(--royal-gold-dark);
-    }
-    .section-divider span {
-        padding: 0 20px; font-size: 2rem; font-weight: bold; color: var(--royal-gold-main);
-        text-shadow: 0 0 15px rgba(191, 149, 63, 0.5);
+
+    /* 確保按鈕、輸入框與標籤保留 Noto Sans TC */
+    button, input, .btn-action, .qty-btn, .limit-tag, .form-control {
+        font-family: 'Noto Sans TC', sans-serif !important;
     }
 
-    /* 卡片與網格 */
-    .card-grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 25px; margin-bottom: 40px; }
+    .header-banner {
+        text-align: center; 
+        padding: 60px 20px 40px;
+        border-bottom: 2px solid rgba(212, 175, 55, 0.5);
+        background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(30,5,5,0.6) 50%, transparent 100%);
+    }
+
+    /* 3. 浮誇發光標題動畫 */
+    @keyframes title-glow {
+        0%, 100% { filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5)); }
+        50% { filter: drop-shadow(0 0 20px rgba(254, 240, 165, 0.9)); }
+    }
+    .main-title {
+        font-size: 2.8rem; 
+        font-weight: 900; 
+        letter-spacing: 5px;
+        background: linear-gradient(to bottom, #fffde7 0%, #d4af37 40%, #a67c00 100%);
+        -webkit-background-clip: text; 
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 15px;
+        animation: title-glow 3s ease-in-out infinite;
+    }
+    .sub-title { 
+        color: var(--royal-gold-light); 
+        font-size: 1.3rem; 
+        letter-spacing: 3px; 
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+    }
+    
+    .section-container { max-width: 1100px; margin: 0 auto; padding: 50px 20px; }
+    .intro-text { text-align: center; font-size: 1.25rem; line-height: 1.9; color: #eed; margin-bottom: 50px; }
+    
+    /* 3. 浮誇漸層分割線 */
+    .section-divider {
+        display: flex; align-items: center; text-align: center; margin: 70px 0 50px;
+    }
+    .section-divider::before, .section-divider::after {
+        content: ''; flex: 1; 
+        border-bottom: 3px solid transparent;
+        border-image: linear-gradient(to right, transparent, var(--royal-gold-main), transparent) 1;
+    }
+    .section-divider span {
+        padding: 0 30px; 
+        font-size: 2.2rem; 
+        font-weight: bold; 
+        color: var(--royal-gold-light);
+        text-shadow: 0 0 25px rgba(212, 175, 55, 0.9), 0 0 10px rgba(212, 175, 55, 0.5);
+        letter-spacing: 2px;
+    }
+
+    /* 卡片與網格 - 浮誇立體化 */
+    .card-grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; margin-bottom: 50px; }
     .role-card {
-        background: rgba(30, 10, 10, 0.7); backdrop-filter: blur(5px);
-        border: 1px solid rgba(191, 149, 63, 0.4); border-radius: 15px;
-        padding: 25px 20px; width: 240px; text-align: center;
-        transition: 0.3s; cursor: pointer; position: relative;
+        background: linear-gradient(145deg, rgba(40, 5, 5, 0.85), rgba(15, 0, 0, 0.95)); 
+        backdrop-filter: blur(8px);
+        border: 2px solid rgba(212, 175, 55, 0.4); 
+        border-radius: 18px;
+        padding: 30px 20px; 
+        width: 250px; 
+        text-align: center;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        cursor: pointer; 
+        position: relative;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.6);
     }
     .role-card:hover, .role-card.selected {
-        background: linear-gradient(135deg, #6b0f0f 0%, #3a0000 100%);
-        border-color: var(--royal-gold-light); transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(191, 149, 63, 0.5);
+        background: linear-gradient(135deg, #7a1010 0%, #3a0000 100%);
+        border-color: var(--royal-gold-light); 
+        transform: translateY(-10px) scale(1.03);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.8), 
+                    0 0 25px rgba(212, 175, 55, 0.6), 
+                    inset 0 0 20px rgba(212, 175, 55, 0.3);
     }
-    .role-card.sold-out { opacity: 0.5; filter: grayscale(80%); pointer-events: none; }
+    .role-card.sold-out { opacity: 0.6; filter: grayscale(80%); pointer-events: none; }
     
     .limit-tag {
-        background: var(--royal-gold-main); color: #000; font-size: 0.85rem; font-weight: bold;
-        padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 15px;
+        background: linear-gradient(90deg, #d4af37, #fef0a5, #d4af37);
+        background-size: 200% auto;
+        color: #000; font-size: 0.9rem; font-weight: 900;
+        padding: 5px 15px; border-radius: 20px; display: inline-block; margin-bottom: 18px;
+        box-shadow: 0 2px 10px rgba(212, 175, 55, 0.5);
     }
-    .role-card.sold-out .limit-tag { background: #555; color: #fff; }
+    .role-card.sold-out .limit-tag { background: #555; color: #fff; box-shadow: none; }
     
-    .role-title { font-size: 1.6rem; color: #fff; margin-bottom: 10px; font-weight: bold; }
-    .role-price { font-size: 1.3rem; color: var(--royal-gold-main); margin-bottom: 20px; }
+    .role-title { font-size: 1.8rem; color: #fff; margin-bottom: 12px; font-weight: bold; text-shadow: 0 2px 5px #000; }
+    .role-price { font-size: 1.4rem; color: var(--royal-gold-light); margin-bottom: 25px; text-shadow: 0 0 10px rgba(212,175,55,0.5); }
     
     .qty-control { display: flex; justify-content: center; align-items: center; gap: 15px; }
     .qty-btn {
-        width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--royal-gold-dark);
-        background: transparent; color: var(--royal-gold-main); cursor: pointer; font-size: 1rem;
+        width: 36px; height: 36px; border-radius: 50%; 
+        border: 2px solid var(--royal-gold-dark);
+        background: rgba(0,0,0,0.5); color: var(--royal-gold-main); 
+        cursor: pointer; font-size: 1.2rem; font-weight: bold;
+        transition: 0.2s;
     }
-    .qty-display { width: 30px; font-size: 1.2rem; color: #fff; }
+    .qty-btn:hover { background: var(--royal-gold-main); color: #000; box-shadow: 0 0 10px var(--royal-gold-main); }
+    .qty-display { width: 30px; font-size: 1.4rem; color: #fff; font-family: 'Noto Sans TC', sans-serif;}
 
     /* 權益區塊 */
     .benefits-box {
-        background: rgba(0, 0, 0, 0.4); border-left: 4px solid var(--royal-gold-main);
-        padding: 25px; border-radius: 0 10px 10px 0; text-align: left; max-width: 800px; margin: 0 auto;
+        background: linear-gradient(135deg, rgba(30,5,5,0.8) 0%, rgba(10,0,0,0.9) 100%);
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        border-left: 6px solid var(--royal-gold-main);
+        padding: 30px; border-radius: 10px; text-align: left; max-width: 850px; margin: 0 auto;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 20px rgba(212, 175, 55, 0.1);
     }
-    .benefits-title { font-size: 1.3rem; color: var(--royal-gold-light); margin-bottom: 15px; font-weight: bold; }
-    .benefit-item { display: flex; align-items: flex-start; margin-bottom: 12px; font-size: 1.05rem; color: #ccc; }
-    .benefit-item span.icon { color: var(--royal-gold-main); margin-right: 10px; font-size: 1.2rem; }
+    .benefits-title { font-size: 1.5rem; color: var(--royal-gold-light); margin-bottom: 20px; text-shadow: 0 0 8px rgba(212,175,55,0.6); }
+    .benefit-item { display: flex; align-items: flex-start; margin-bottom: 15px; font-size: 1.15rem; color: #eee; line-height: 1.6; }
+    .benefit-item span.icon { color: var(--royal-gold-light); margin-right: 12px; font-size: 1.3rem; filter: drop-shadow(0 0 5px var(--royal-gold-main)); }
 
-    /* 祈福結尾語 */
+    /* 2. 祈福結尾語 (漸層光暈版) */
     .blessing-text {
-        text-align: center; margin-top: 80px; padding: 40px;
-        background: url('{{ url_for("static", filename="images/common/BG-cloud.png") }}') no-repeat center center/cover;
-        border: 1px solid rgba(191, 149, 63, 0.2); border-radius: 15px;
+        text-align: center; margin-top: 100px; padding: 60px 40px;
+        /* 替換原本的 BG-cloud.png，改用神聖光暈 */
+        background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.35) 0%, rgba(120, 15, 15, 0.5) 45%, transparent 80%);
+        border: 1px solid rgba(212, 175, 55, 0.3); 
+        border-radius: 20px;
+        box-shadow: inset 0 0 50px rgba(212, 175, 55, 0.1);
+        position: relative;
     }
     .blessing-text p {
-        font-size: 1.2rem; line-height: 2.2; color: var(--royal-gold-light); letter-spacing: 3px;
+        font-size: 1.4rem; line-height: 2.4; color: var(--royal-gold-light); letter-spacing: 4px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.8);
     }
 
-    /* 浮動結帳條 */
+    /* 浮動結帳條 - 加強光影 */
+    @keyframes pulse-btn {
+        0% { box-shadow: 0 5px 15px rgba(0,0,0,0.5), 0 0 10px rgba(212, 175, 55, 0.4); }
+        50% { box-shadow: 0 5px 15px rgba(0,0,0,0.5), 0 0 25px rgba(212, 175, 55, 0.8); }
+        100% { box-shadow: 0 5px 15px rgba(0,0,0,0.5), 0 0 10px rgba(212, 175, 55, 0.4); }
+    }
     .checkout-bar {
         position: fixed; bottom: 0; left: 0; width: 100%;
-        background: rgba(20, 0, 0, 0.95); backdrop-filter: blur(10px);
-        border-top: 2px solid var(--royal-gold-main); padding: 15px 20px;
+        background: rgba(15, 2, 2, 0.95); backdrop-filter: blur(15px);
+        border-top: 3px solid var(--royal-gold-main); 
+        padding: 15px 25px;
         display: flex; justify-content: space-between; align-items: center; z-index: 1000;
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
+        box-shadow: 0 -10px 30px rgba(212, 175, 55, 0.15), 0 -5px 15px rgba(0,0,0,0.8);
     }
-    .total-price { font-size: 1.5rem; color: var(--royal-gold-main); font-weight: bold; }
+    .total-price { font-size: 1.8rem; color: var(--royal-gold-light); font-weight: bold; text-shadow: 0 0 10px rgba(212, 175, 55, 0.6); font-family: 'Noto Sans TC', sans-serif;}
     .btn-action {
-        padding: 12px 30px; font-size: 1.1rem; font-weight: bold; color: #2b0808;
-        background: linear-gradient(to bottom, #fcf6ba 0%, #bf953f 50%, #8a6e2f 100%);
-        border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        padding: 12px 35px; font-size: 1.15rem; font-weight: 900; color: #2b0808;
+        background: linear-gradient(to bottom, #fffacd 0%, #d4af37 50%, #b8860b 100%);
+        border: 1px solid #fff; border-radius: 30px; cursor: pointer; 
+        animation: pulse-btn 2s infinite;
+        transition: transform 0.2s;
     }
+    .btn-action:hover { transform: scale(1.05); }
 
-    /* Modal (沿用) */
+    /* Modal (沿用並微調) */
     .modal-overlay {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 2000;
@@ -121,9 +186,12 @@
     .modal-content {
         background: #fdfbf7; color: #333; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
         border: 4px solid var(--royal-gold-main); border-radius: 15px; padding: 30px;
+        box-shadow: 0 0 40px rgba(212,175,55,0.4);
+        font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
     }
-    .form-control { width: 100%; padding: 10px; margin-top:5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-    .form-group { margin-bottom: 15px; }
+    .form-control { width: 100%; padding: 12px; margin-top:5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1rem;}
+    .form-group { margin-bottom: 15px; font-weight: bold;}
+    .form-group label { color: #5a0b0b; }
 </style>
 
 <div class="committee-page-wrapper">
