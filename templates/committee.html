@@ -306,7 +306,70 @@
                 <span class="icon">🌟</span>【建廟功德】：凡發心護持建廟者，待建廟完成後，功德芳名將留名於建廟功德牆，永誌紀念。
             </div>
         </div>
+        <div class="section-divider"><span>顧問團</span></div>
+        <div class="intro-text">
+            為護持本府聖業發展，凝聚十方善信之力，特設立顧問團。<br>
+            誠邀十方善信大德發心護持、隨喜贊助，<br>
+            共同護持帥府香火鼎盛，聖業長存。<br>
+            <div style="margin-top:15px; font-size:0.95rem; color:#888;">
+                【顧問團編制 任期：一年】<br>
+                ※ 顧問團為榮譽護持職，不參與本府行政事務與決策。
+            </div>
+        </div>
 
+        <div class="card-grid">
+            <div class="role-card" id="card-adv_main" onclick="selectItem('adv_main')">
+                <div class="limit-tag" id="tag-adv_main">剩餘 <span id="rem-adv_main">1</span> 名</div>
+                <div class="role-title">顧問主席</div>
+                <div class="role-price">功德金 50,000元</div>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="updateQty('adv_main', -1); event.stopPropagation();">-</button>
+                    <span class="qty-display" id="qty-adv_main">0</span>
+                    <button class="qty-btn" onclick="updateQty('adv_main', 1); event.stopPropagation();">+</button>
+                </div>
+            </div>
+            <div class="role-card" id="card-adv_vice" onclick="selectItem('adv_vice')">
+                <div class="limit-tag" id="tag-adv_vice">剩餘 <span id="rem-adv_vice">7</span> 名</div>
+                <div class="role-title">顧問副主席</div>
+                <div class="role-price">功德金 36,000元</div>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="updateQty('adv_vice', -1); event.stopPropagation();">-</button>
+                    <span class="qty-display" id="qty-adv_vice">0</span>
+                    <button class="qty-btn" onclick="updateQty('adv_vice', 1); event.stopPropagation();">+</button>
+                </div>
+            </div>
+            <div class="role-card" onclick="selectItem('adv_member')">
+                <div class="limit-tag" style="background:transparent; color:#aaa; border:1px solid #aaa;">名額不限</div>
+                <div class="role-title">顧問</div>
+                <div class="role-price">功德金 10,000元</div>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="updateQty('adv_member', -1); event.stopPropagation();">-</button>
+                    <span class="qty-display" id="qty-adv_member">0</span>
+                    <button class="qty-btn" onclick="updateQty('adv_member', 1); event.stopPropagation();">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="benefits-box">
+            <div class="benefits-title">【顧問團成員禮遇】</div>
+            <div class="benefit-item"><span class="icon">📜</span>芳名登錄本府功德簿，永誌留存。</div>
+            <div class="benefit-item"><span class="icon">🙏</span>參與本府法會與科儀，享有優先登記。</div>
+            <div class="benefit-item"><span class="icon">🏛️</span>未來建廟功德芳名，優先登錄。</div>
+            <div class="benefit-item"><span class="icon">📅</span>芳名刊登於本府年曆首頁。</div>
+            <div class="benefit-item"><span class="icon">✨</span>蒙煙島中壇元帥庇佑，福報綿長。</div>
+        </div>
+        <div class="blessing-text">
+            <p>
+                護持聖業 功德無量<br>
+                同心協力 福澤綿長<br>
+                香火鼎盛 澤被四方<br>
+                <br>
+                <strong style="color:#fff; font-size:1.4rem;">願 煙島中壇元帥庇佑</strong><br>
+                闔家平安 福祿綿長 財源廣進 萬事順遂<br>
+                <br>
+                <span style="font-size:1rem; color:#aaa;">桃城 承天中承府 敬啟</span>
+            </p>
+        </div>
         <div class="blessing-text">
             <p>
                 護持聖業 功德無量<br>
@@ -319,6 +382,7 @@
                 <span style="font-size:1rem; color:#aaa;">桃城 承天 中承府 敬啟</span>
             </p>
         </div>
+
     </div>
 </div>
 
@@ -399,7 +463,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-    const limits = { 'hon_main': 1, 'hon_vice': 7, 'bld_main': 1, 'bld_vice': 10 };
+    const limits = { 'hon_main': 1, 'hon_vice': 7, 'bld_main': 1, 'bld_vice': 10, 'adv_main': 1, 'adv_vice': 7 };
     window.remainData = { ...limits };
 
     // 1. 取得最新名額狀態
@@ -423,10 +487,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         'hon_main': { name: '[本府] 主委', price: 50000, qty: 0, isPos: true },
         'hon_vice': { name: '[本府] 副主委', price: 36000, qty: 0, isPos: true },
         'hon_com': { name: '[本府] 委員', price: 25000, qty: 0, isPos: true },
-        'hon_adv': { name: '[本府] 顧問', price: 15000, qty: 0, isPos: true },
+        'hon_adv': { name: '[本府] 顧問', price: 15000, qty: 0, isPos: true }, // 保留原本的
         'bld_main': { name: '[建廟] 籌備主委', price: 50000, qty: 0, isPos: true },
         'bld_vice': { name: '[建廟] 籌備副主委', price: 36000, qty: 0, isPos: true },
-        'bld_merit': { name: '[建廟] 功德主', price: 10000, qty: 0, isPos: false } // 功德金不限購1個
+        'bld_merit': { name: '[建廟] 功德主', price: 10000, qty: 0, isPos: false }, // 功德金不限購1個
+        // 👇 新增：顧問團
+        'adv_main': { name: '[顧問團] 顧問主席', price: 50000, qty: 0, isPos: true },
+        'adv_vice': { name: '[顧問團] 顧問副主席', price: 36000, qty: 0, isPos: true },
+        'adv_member': { name: '[顧問團] 顧問', price: 10000, qty: 0, isPos: true }
     };
 
     window.updateQty = (key, change) => {
