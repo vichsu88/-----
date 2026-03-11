@@ -308,37 +308,45 @@ document.addEventListener('DOMContentLoaded', () => {
        4. 捐贈管理 (捐香與建廟分流)
        ========================================= */
 
-    // 切換子分頁
+// 切換子分頁
     window.switchDonationTab = (type) => {
         document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-        if(event) event.target.classList.add('active');
+        if(event && event.target) event.target.classList.add('active');
         
         const incenseDiv = document.getElementById('subtab-incense');
         const fundDiv = document.getElementById('subtab-fund');
+        const committeeDiv = document.getElementById('subtab-committee'); // 👈 新增委員會區塊
         
-        if(incenseDiv && fundDiv) {
+        if(incenseDiv && fundDiv && committeeDiv) {
             incenseDiv.style.display = type === 'incense' ? 'block' : 'none';
             fundDiv.style.display = type === 'fund' ? 'block' : 'none';
+            committeeDiv.style.display = type === 'committee' ? 'block' : 'none'; // 👈 新增顯示切換
         }
         
         // 載入對應資料
         if (type === 'incense') fetchDonations('donation');
-        else fetchDonations('fund');
+        else if (type === 'fund') fetchDonations('fund');
+        else if (type === 'committee') fetchDonations('committee'); // 👈 新增委員會資料抓取
     };
-
-    // 載入列表 (共用函式)
+// 載入列表 (共用函式)
     window.fetchDonations = async (type) => {
         // 如果沒有傳入 type，預設判斷目前哪個分頁是開的
         if(!type) {
             const isFundVisible = document.getElementById('subtab-fund').style.display === 'block';
-            type = isFundVisible ? 'fund' : 'donation';
+            const isCommitteeVisible = document.getElementById('subtab-committee').style.display === 'block'; // 👈 檢查委員會分頁
+            if (isFundVisible) type = 'fund';
+            else if (isCommitteeVisible) type = 'committee'; // 👈 設定型態
+            else type = 'donation';
         }
 
-        const container = type === 'donation' ? document.getElementById('incense-list') : document.getElementById('fund-list');
+        let container;
+        if (type === 'donation') container = document.getElementById('incense-list');
+        else if (type === 'fund') container = document.getElementById('fund-list');
+        else if (type === 'committee') container = document.getElementById('committee-list'); // 👈 指定委員會的畫面容器
+
         if(!container) return;
         container.innerHTML = '<p>載入中...</p>';
         
-        // ★ 修改：移除 status=paid 限制，抓取所有資料
         let url = `/api/donations/admin?type=${type}`;
         
         // 如果是捐香，加上稟告狀態篩選
@@ -351,14 +359,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const orders = await apiFetch(url);
             
-            // ★ 修改：自動分流 待審核 與 已付款
+            // 自動分流 待審核 與 已付款
             const pendingOrders = orders.filter(o => o.status === 'pending');
             const paidOrders = orders.filter(o => o.status === 'paid');
 
             if (type === 'donation') {
                 renderIncenseList(pendingOrders, paidOrders, container);
             } else {
-                renderFundList(pendingOrders, paidOrders, container);
+                // 👈 委員會與建廟共用同一種顯示介面，這裡把 type 傳進去讓後續按鈕知道對象是誰
+                renderFundList(pendingOrders, paidOrders, container, type); 
             }
         } catch(e) { container.innerHTML = '載入失敗'; console.error(e); }
     };
@@ -442,8 +451,8 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = html;
     }
 
-    // 渲染建廟基金列表
-    function renderFundList(pending, paid, container) {
+// 渲染建廟基金 / 委員會列表 (共用)
+    function renderFundList(pending, paid, container, orderType = 'fund') {
         let html = '';
 
         // 1. 待審核區塊
@@ -458,8 +467,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="color:#C48945; font-weight:bold; margin-top:5px;">$ ${o.total}</div>
                         </div>
                         <div style="text-align:right;">
-                            <button class="btn btn--green" onclick="confirmDonation('${o._id}', 'fund')">✅ 已收款</button>
-                            <button class="btn btn--red" onclick="delOrder('${o._id}', 'fund')">🗑️ 刪除</button>
+                            <button class="btn btn--green" onclick="confirmDonation('${o._id}', '${orderType}')">✅ 已收款</button>
+                            <button class="btn btn--red" onclick="delOrder('${o._id}', '${orderType}')">🗑️ 刪除</button>
                         </div>
                     </div>
                     <div style="color:#555; margin-top:5px; font-size:14px;">
@@ -654,10 +663,11 @@ document.addEventListener('DOMContentLoaded', () => {
             await apiFetch(`/api/orders/${id}`, {method:'DELETE'}); 
             if(type === 'donation') fetchDonations('donation'); 
             else if(type === 'fund') fetchDonations('fund');
+            else if(type === 'committee') fetchDonations('committee'); // 👈 新增這行
             else fetchOrders();
         } 
     };
-
+    
     /* =========================================
        6. 信徒回饋 (三階段流程 + 統計與抽獎)
        ========================================= */
