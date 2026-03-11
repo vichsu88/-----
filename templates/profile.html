@@ -270,8 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileContent.style.display = 'block';
                 
                 const u = data.user;
-                document.getElementById('user-greeting').textContent = `歡迎回來，${u.displayName || u.realName}！`;
-                
+                const titleSuffix = u.title ? u.title : '';
+                document.getElementById('user-greeting').textContent = `歡迎回來，${u.displayName || u.realName}${titleSuffix}！`;                
                 // 填入表單
                 if(u.realName) profileForm.realName.value = u.realName;
                 if(u.nickname) profileForm.nickname.value = u.nickname;
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 4. 載入捐贈紀錄
+// 4. 載入捐贈紀錄
     async function loadDonationHistory() {
         try {
             const res = await fetch('/api/user/donations');
@@ -438,26 +438,33 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('donation-list').innerHTML = data.map(order => {
                 let statusHtml = '';
                 let borderColor = '#ccc';
-                let typeBadge = order.orderType === 'fund' 
-                    ? '<span style="background:#8B4513; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🏗️ 建廟</span>' 
-                    : '<span style="background:#C48945; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🕯️ 捐香</span>';
+                let typeBadge = '';
+
+                // 判斷徽章類型 (加入委員會)
+                if (order.orderType === 'fund') {
+                    typeBadge = '<span style="background:#8B4513; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🏗️ 建廟</span>';
+                } else if (order.orderType === 'committee') {
+                    typeBadge = '<span style="background:#B22222; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🏛️ 委員會</span>';
+                } else {
+                    typeBadge = '<span style="background:#C48945; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🕯️ 捐香</span>';
+                }
 
                 if (order.status === 'pending') {
                     const deadline = new Date(order.deadline_iso);
-                if (now > deadline) {
-                    // 超過 2 小時，但後端還沒刪除 (代表處於 2~76 小時的緩衝期)
-                    // 改用橘色 (Orange) 顯示，安撫信徒
-                    borderColor = '#fd7e14'; 
-                    statusHtml = `
-                        <div class="history-item-status" style="background:#fff3cd; color:#856404; border-left:4px solid #fd7e14;">
-                            🟠 <b>請盡速匯款</b><br>
-                            <span style="font-size:13px; color:#666;">若您已完成匯款，請無須擔心，人工對帳約需一個工作天，確認入帳後將更新狀態。</span>
-                        </div>`;
-                } else {
-                    // 2 小時內 (正常顯示)
-                    borderColor = '#ffc107';
-                    statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold;">${order.paymentDeadline}</span> 前完成匯款。</div>`;
-                }
+                    if (now > deadline) {
+                        // 超過 2 小時，但後端還沒刪除 (代表處於 2~76 小時的緩衝期)
+                        // 改用橘色 (Orange) 顯示，安撫信徒
+                        borderColor = '#fd7e14'; 
+                        statusHtml = `
+                            <div class="history-item-status" style="background:#fff3cd; color:#856404; border-left:4px solid #fd7e14;">
+                                🟠 <b>請盡速匯款</b><br>
+                                <span style="font-size:13px; color:#666;">若您已完成匯款，請無須擔心，人工對帳約需一個工作天，確認入帳後將更新狀態。</span>
+                            </div>`;
+                    } else {
+                        // 2 小時內 (正常顯示)
+                        borderColor = '#ffc107';
+                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold;">${order.paymentDeadline}</span> 前完成匯款。</div>`;
+                    }
                 } else if (order.status === 'paid') {
                     borderColor = '#28a745';
                     let reportText = '';
@@ -489,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('donation-list').innerHTML = '<p style="color: red; text-align: center;">紀錄載入失敗</p>';
         }
     }
-
+    
     // 5. 載入收驚預約清單
     async function loadPickupHistory() {
         try {

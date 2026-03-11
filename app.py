@@ -650,7 +650,7 @@ def line_callback():
 
 @app.route('/api/user/me', methods=['GET'])
 def get_current_user():
-    """前端用來檢查目前是否有登入，並取得基本資料"""
+    """前端用來檢查目前是否有登入，並取得基本資料與頭銜"""
     line_id = session.get('user_line_id')
     if not line_id:
         return jsonify({"logged_in": False})
@@ -660,6 +660,33 @@ def get_current_user():
         if user:
             has_received = db.feedback.count_documents({"lineId": line_id, "status": "sent"}) > 0
             user['has_received_gift'] = has_received
+            
+            # --- 抓取委員會稱謂邏輯 ---
+            user['title'] = ""
+            committee_orders = db.orders.find({
+                "lineId": line_id,
+                "orderType": "committee",
+                "status": "paid"
+            })
+            
+            highest_title = ""
+            current_rank = 99
+            # 定義階級 (數字越小階級越高)
+            rank_map = {"主委": 1, "副主委": 2, "顧問": 3, "委員": 4, "功德主": 5}
+            
+            for order in committee_orders:
+                for item in order.get('items', []):
+                    name = item.get('name', '')
+                    # 濾除括號與前綴，只留核心職稱
+                    clean_title = name.replace('[本府] ', '').replace('[建廟] ', '').replace('籌備', '')
+                    rank = rank_map.get(clean_title, 99)
+                    if rank < current_rank:
+                        current_rank = rank
+                        highest_title = clean_title
+            
+            user['title'] = highest_title
+            # ---------------------------
+
             return jsonify({"logged_in": True, "user": user})
             
     return jsonify({"logged_in": False})
@@ -1205,7 +1232,7 @@ def get_public_donations():
     query = {"status": "paid"}
     
     if target_type == 'all':
-        query["orderType"] = {"$in": ["donation", "fund"]}
+        query["orderType"] = {"$in": ["donation", "fund", "committee"]}
     else:
         query["orderType"] = target_type
         
@@ -1231,7 +1258,7 @@ def get_admin_donations():
     if type_filter: 
         query['orderType'] = type_filter
     else: 
-        query['orderType'] = {"$in": ["donation", "fund"]}
+        query['orderType'] = {"$in": ["donation", "fund", "committee"]}
         
     if status_filter: 
         query['status'] = status_filter
@@ -1463,7 +1490,7 @@ def get_user_donations():
     if not line_id or db is None:
         return jsonify([])
         
-    cursor = db.orders.find({"lineId": line_id, "orderType": {"$in": ["donation", "fund"]}}).sort("createdAt", -1)
+    cursor = db.orders.find({"lineId": line_id, "orderType": {"$in": ["donation", "fund", "committee"]}}).sort("createdAt", -1)
     results = []
     for doc in cursor:
         tw_created = doc['createdAt'] + timedelta(hours=8)
@@ -1516,7 +1543,7 @@ def confirm_order_payment(oid):
     db.orders.update_one({'_id': oid_obj}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}})
     cust = order['customer']
     
-    if order.get('orderType') in ['donation', 'fund']:
+    if order.get('orderType') in ['donation', 'fund','committee']:
         email_subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order['orderId']})"
         email_html = generate_donation_paid_email(cust, order['orderId'], order['items'])
         send_email(cust.get('email'), email_subject, email_html, is_html=True)

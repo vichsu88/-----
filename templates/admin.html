@@ -183,6 +183,7 @@
                     <div class="sub-tab-group">
                         <button class="sub-tab-btn active" onclick="switchDonationTab('incense')">🕯️ 捐香 (日常)</button>
                         <button class="sub-tab-btn" onclick="switchDonationTab('fund')">🏗️ 建廟 (基金)</button>
+                        <button class="sub-tab-btn" onclick="switchDonationTab('committee')">🏛️ 委員會</button>
                     </div>
 
                     <div id="subtab-incense">
@@ -207,6 +208,13 @@
                             <button class="btn btn--green" onclick="exportFundList()">📋 匯出建廟徵信清單</button>
                         </div>
                         <div id="fund-list"></div>
+                    </div>
+
+                    <div id="subtab-committee" style="display:none;">
+                        <div class="donation-toolbar">
+                            <span style="color:#666; font-weight:bold;">🏛️ 委員會護持名單審核與管理</span>
+                        </div>
+                        <div id="committee-list"></div>
                     </div>
                 </div>
 
