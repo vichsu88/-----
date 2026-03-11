@@ -292,16 +292,6 @@
                     <button class="qty-btn" onclick="updateQty('bld_vice', 1); event.stopPropagation();">+</button>
                 </div>
             </div>
-            <div class="role-card" onclick="selectItem('bld_merit')">
-                <div class="limit-tag" style="background:transparent; color:#aaa; border:1px solid #aaa;">名額不限</div>
-                <div class="role-title">建廟功德主</div>
-                <div class="role-price">功德金 10,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('bld_merit', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-bld_merit">0</span>
-                    <button class="qty-btn" onclick="updateQty('bld_merit', 1); event.stopPropagation();">+</button>
-                </div>
-            </div>
         </div>
 
         <div class="benefits-box">
@@ -541,6 +531,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+            if (!res.ok) {
+            const errorText = await res.text();
+            console.error("伺服器回應錯誤:", errorText);}
             const result = await res.json();
             if(result.success) {
                 confirmModal.style.display = 'none';

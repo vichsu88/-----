@@ -1337,6 +1337,7 @@ def cleanup_unpaid_orders():
     result = db.orders.delete_many({"status": "pending", "createdAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
+@csrf.exempt
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     if db is None: 
