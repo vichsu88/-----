@@ -114,6 +114,28 @@
         padding: 30px; border-radius: 10px; text-align: left; max-width: 850px; margin: 0 auto;
         box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 20px rgba(212, 175, 55, 0.1);
     }
+    /* 建廟功德專屬導覽按鈕 */
+    .benefit-link-btn {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 8px;
+        padding: 5px 15px;
+        font-size: 0.95rem;
+        color: #3a0000 !important; /* 深紅字體，確保對比度 */
+        background: linear-gradient(to right, #fef0a5, #d4af37);
+        border-radius: 20px;
+        text-decoration: none;
+        font-weight: 900;
+        font-family: 'Noto Sans TC', sans-serif;
+        box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+        transition: all 0.3s ease;
+        letter-spacing: 1px;
+    }
+    .benefit-link-btn:hover {
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.8);
+        color: #000 !important;
+    }
     .benefits-title { font-size: 1.5rem; color: var(--royal-gold-light); margin-bottom: 20px; text-shadow: 0 0 8px rgba(212,175,55,0.6); }
     .benefit-item { display: flex; align-items: flex-start; margin-bottom: 15px; font-size: 1.15rem; color: #eee; line-height: 1.6; }
     .benefit-item span.icon { color: var(--royal-gold-light); margin-right: 12px; font-size: 1.3rem; filter: drop-shadow(0 0 5px var(--royal-gold-main)); }
