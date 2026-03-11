@@ -306,6 +306,7 @@
                 <span class="icon">🌟</span>【建廟功德】：凡發心護持建廟者，待建廟完成後，功德芳名將留名於建廟功德牆，永誌紀念。
             </div>
         </div>
+        
         <div class="section-divider"><span>顧問團</span></div>
         <div class="intro-text">
             為護持本府聖業發展，凝聚十方善信之力，特設立顧問團。<br>
@@ -358,6 +359,7 @@
             <div class="benefit-item"><span class="icon">📅</span>芳名刊登於本府年曆首頁。</div>
             <div class="benefit-item"><span class="icon">✨</span>蒙煙島中壇元帥庇佑，福報綿長。</div>
         </div>
+        
         <div class="blessing-text">
             <p>
                 護持聖業 功德無量<br>
@@ -368,18 +370,6 @@
                 闔家平安 福祿綿長 財源廣進 萬事順遂<br>
                 <br>
                 <span style="font-size:1rem; color:#aaa;">桃城 承天中承府 敬啟</span>
-            </p>
-        </div>
-        <div class="blessing-text">
-            <p>
-                護持聖業 功德無量<br>
-                同心協力 福澤綿長<br>
-                香火鼎盛 澤被四方<br>
-                <br>
-                <strong style="color:#fff; font-size:1.4rem;">願 煙島中壇元帥庇佑</strong><br>
-                闔家平安 福祿綿長 財源廣進 萬事順遂<br>
-                <br>
-                <span style="font-size:1rem; color:#aaa;">桃城 承天 中承府 敬啟</span>
             </p>
         </div>
 
@@ -463,6 +453,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
+    // 移除重複宣告，統一在這邊設定 limits
     const limits = { 'hon_main': 1, 'hon_vice': 7, 'bld_main': 1, 'bld_vice': 10, 'adv_main': 1, 'adv_vice': 7 };
     window.remainData = { ...limits };
 
@@ -470,31 +461,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const res = await fetch('/api/committee/status');
         const data = await res.json();
+        
         for (let key in limits) {
             window.remainData[key] = data[key] !== undefined ? data[key] : limits[key];
-            const remSpan = document.getElementById(`rem-${key}`);
-            if(remSpan) remSpan.innerText = window.remainData[key];
             
+            // 強制讓兩個主委名額歸 0
+            if (key === 'hon_main' || key === 'bld_main') {
+                window.remainData[key] = 0; 
+            }
+
+            const remSpan = document.getElementById(`rem-${key}`);
+            if (remSpan) remSpan.innerText = window.remainData[key];
+            
+            // 如果剩餘名額 <= 0，自動套用已售完的樣式
             if (window.remainData[key] <= 0) {
                 document.getElementById(`card-${key}`).classList.add('sold-out');
+                // 維持顯示「名額已滿」
                 document.getElementById(`tag-${key}`).innerText = '名額已滿';
             }
         }
-    } catch(e) { console.error("獲取名額失敗", e); }
+    } catch(e) { 
+        console.error("獲取名額失敗", e); 
+    }
 
-    // 2. 購物車邏輯 (注意這裡的 name 加上了前綴，讓後端能辨識！)
+    // 2. 購物車邏輯
     const items = {
         'hon_main': { name: '[本府] 主委', price: 50000, qty: 0, isPos: true },
         'hon_vice': { name: '[本府] 副主委', price: 36000, qty: 0, isPos: true },
         'hon_com': { name: '[本府] 委員', price: 25000, qty: 0, isPos: true },
-        'hon_adv': { name: '[本府] 顧問', price: 15000, qty: 0, isPos: true }, // 保留原本的
+        'hon_adv': { name: '[本府] 顧問', price: 15000, qty: 0, isPos: true }, 
         'bld_main': { name: '[建廟] 籌備主委', price: 50000, qty: 0, isPos: true },
         'bld_vice': { name: '[建廟] 籌備副主委', price: 36000, qty: 0, isPos: true },
-        'bld_merit': { name: '[建廟] 功德主', price: 10000, qty: 0, isPos: false }, // 功德金不限購1個
-        // 👇 新增：顧問團
+        'bld_merit': { name: '[建廟] 功德主', price: 10000, qty: 0, isPos: false }, 
         'adv_main': { name: '[顧問團] 顧問主席', price: 50000, qty: 0, isPos: true },
         'adv_vice': { name: '[顧問團] 顧問副主席', price: 36000, qty: 0, isPos: true },
-        'adv_member': { name: '[顧問團] 顧問', price: 10000, qty: 0, isPos: true }
+        'adv_member': { name: '[顧問團] 顧問', price: 10000, qty: 0, isPos: true } // ★ 已統一為 10000 元防呆對齊
     };
 
     window.updateQty = (key, change) => {
@@ -514,17 +515,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById(`qty-${key}`).innerText = items[key].qty;
         
         const card = document.querySelector(`.role-card[onclick*="${key}"]`);
-        if(items[key].qty > 0) card.classList.add('selected');
-        else card.classList.remove('selected');
+        if (items[key].qty > 0) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
         
         calcTotal();
     };
 
-    window.selectItem = (key) => { if(items[key].qty === 0) updateQty(key, 1); };
+    window.selectItem = (key) => { 
+        if(items[key].qty === 0) updateQty(key, 1); 
+    };
 
     function calcTotal() {
         let total = 0;
-        for(let key in items) total += items[key].price * items[key].qty;
+        for (let key in items) {
+            total += items[key].price * items[key].qty;
+        }
         document.getElementById('total-amount').innerText = total.toLocaleString();
     }
 
@@ -535,9 +543,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window.openFormModal = async () => {
         const total = parseInt(document.getElementById('total-amount').innerText.replace(/,/g,''));
-        if(total === 0) return alert('請先選擇欲護持的項目');
+        if (total === 0) return alert('請先選擇欲護持的項目');
 
-        // 自動載入會員資料...
+        // 自動載入會員資料
         try {
             const res = await fetch('/api/user/me');
             const data = await res.json();
@@ -553,10 +561,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(!form.address.value) form.address.value = user.address || '';
             if(!form.lunarBirthday.value) form.lunarBirthday.value = user.lunarBirthday || '';
             formModal.style.display = 'flex';
-        } catch(e) { alert('系統忙碌中'); }
+        } catch(e) { 
+            alert('系統忙碌中'); 
+        }
     };
 
-    window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+    window.closeModal = (id) => {
+        document.getElementById(id).style.display = 'none';
+    };
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -565,8 +577,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('conf-phone').innerText = form.phone.value;
         
         let itemsHtml = '';
-        for(let key in items) {
-            if(items[key].qty > 0) itemsHtml += `${items[key].name} x ${items[key].qty}<br>`;
+        for (let key in items) {
+            if (items[key].qty > 0) {
+                itemsHtml += `${items[key].name} x ${items[key].qty}<br>`;
+            }
         }
         document.getElementById('conf-items').innerHTML = itemsHtml;
         document.getElementById('conf-total').innerText = document.getElementById('total-amount').innerText;
@@ -576,19 +590,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('final-submit-btn').onclick = async () => {
         const btn = document.getElementById('final-submit-btn');
-        btn.disabled = true; btn.innerText = '處理中...';
+        btn.disabled = true; 
+        btn.innerText = '處理中...';
 
         const orderItems = [];
-        for(let key in items) {
-            if(items[key].qty > 0) orderItems.push({
-                name: items[key].name, price: items[key].price, qty: items[key].qty, id: key
-            });
+        for (let key in items) {
+            if (items[key].qty > 0) {
+                orderItems.push({
+                    name: items[key].name, 
+                    price: items[key].price, 
+                    qty: items[key].qty, 
+                    id: key
+                });
+            }
         }
 
         const payload = {
-            orderType: 'committee', // ★ 這裡告訴後端這是委員會訂單，要用新帳號！
-            name: form.name.value, phone: form.phone.value, address: form.address.value,
-            last5: form.last5.value, email: form.email.value, lunarBirthday: form.lunarBirthday.value,
+            orderType: 'committee',
+            name: form.name.value, 
+            phone: form.phone.value, 
+            address: form.address.value,
+            last5: form.last5.value, 
+            email: form.email.value, 
+            lunarBirthday: form.lunarBirthday.value,
             items: orderItems,
             total: parseInt(document.getElementById('total-amount').innerText.replace(/,/g,''))
         };
@@ -599,18 +623,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+            
             if (!res.ok) {
-            const errorText = await res.text();
-            console.error("伺服器回應錯誤:", errorText);}
+                const errorText = await res.text();
+                console.error("伺服器回應錯誤:", errorText);
+            }
+            
             const result = await res.json();
-            if(result.success) {
+            if (result.success) {
                 confirmModal.style.display = 'none';
                 document.getElementById('success-modal').style.display = 'flex';
             } else {
                 alert('送出失敗: ' + (result.error || result.message || '未知錯誤'));
-                btn.disabled = false; btn.innerText = '確認送出';
+                btn.disabled = false; 
+                btn.innerText = '確認送出';
             }
-        } catch(e) { alert('連線錯誤'); btn.disabled = false; btn.innerText = '確認送出'; }
+        } catch(e) { 
+            alert('連線錯誤'); 
+            btn.disabled = false; 
+            btn.innerText = '確認送出'; 
+        }
     };
 });
 </script>
