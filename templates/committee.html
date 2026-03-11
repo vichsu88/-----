@@ -250,16 +250,6 @@
                 </div>
             </article>
             
-            <article class="role-card" onclick="selectItem('hon_adv')">
-                <div class="limit-tag limit-tag-unlimited">名額不限</div>
-                <div class="role-title">顧問</div>
-                <div class="role-price">功德金 15,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('hon_adv', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-hon_adv">0</span>
-                    <button class="qty-btn" onclick="updateQty('hon_adv', 1); event.stopPropagation();">+</button>
-                </div>
-            </article>
         </div>
 
         <div class="benefits-box">
@@ -352,7 +342,7 @@
             <article class="role-card" onclick="selectItem('adv_member')">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">顧問</div>
-                <div class="role-price">功德金 18,000元</div>
+                <div class="role-price">功德金 20,000元</div>
                 <div class="qty-control">
                     <button class="qty-btn" onclick="updateQty('adv_member', -1); event.stopPropagation();">-</button>
                     <span class="qty-display" id="qty-adv_member">0</span>
@@ -478,13 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
         'hon_main': { name: '[本府] 主委', price: 50000, qty: 0, isPos: true },
         'hon_vice': { name: '[本府] 副主委', price: 36000, qty: 0, isPos: true },
         'hon_com': { name: '[本府] 委員', price: 25000, qty: 0, isPos: true },
-        'hon_adv': { name: '[本府] 顧問', price: 15000, qty: 0, isPos: true }, 
         'bld_main': { name: '[建廟] 籌備主委', price: 50000, qty: 0, isPos: true },
         'bld_vice': { name: '[建廟] 籌備副主委', price: 36000, qty: 0, isPos: true },
-        'bld_merit': { name: '[建廟] 功德主', price: 10000, qty: 0, isPos: false }, 
         'adv_main': { name: '[顧問團] 顧問主席', price: 50000, qty: 0, isPos: true },
         'adv_vice': { name: '[顧問團] 顧問副主席', price: 36000, qty: 0, isPos: true },
-        'adv_member': { name: '[顧問團] 顧問', price: 18000, qty: 0, isPos: true } 
+        'adv_member': { name: '[顧問團] 顧問', price: 20000, qty: 0, isPos: true } 
     };
 
     // 初始化執行
