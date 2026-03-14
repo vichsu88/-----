@@ -1373,7 +1373,7 @@ def create_order():
             item_name = item.get('name')
             item_qty = int(item.get('qty', 0))
             
-            if item_qty != 1 and item_name != '[建廟] 功德主':
+            if item_qty != 1 and item_name != '[建廟] 建廟功德金':
                 return jsonify({"error": f"【{item_name}】每次結帳限購 1 名。"}), 400
             
             def check_limit(name, max_limit):
