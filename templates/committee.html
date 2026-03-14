@@ -313,6 +313,16 @@
                 </div>
             </article>
         </div>
+            <article class="role-card" onclick="selectItem('bld_merit')">
+                <div class="limit-tag limit-tag-unlimited">名額不限</div>
+                <div class="role-title">建廟功德金</div>
+                <div class="role-price">功德金 10,000元</div>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="updateQty('bld_merit', -1); event.stopPropagation();">-</button>
+                    <span class="qty-display" id="qty-bld_merit">0</span>
+                    <button class="qty-btn" onclick="updateQty('bld_merit', 1); event.stopPropagation();">+</button>
+                </div>
+            </article>
 
         <div class="benefits-box">
             <div class="benefits-title">【建廟籌備委員會成員權益】</div>
@@ -326,7 +336,7 @@
                 <span class="icon">🌟</span>
                 <div style="flex: 1;">
                     【建廟功德】：凡發心護持建廟者，待建廟完成後，功德芳名將留名於建廟功德牆，永誌紀念。<br>
-                    <a href="/fund" class="benefit-link-btn">前往了解建廟功德 ➔</a>
+                    <a href="/fund" class="benefit-link-btn">前往建廟基金 ➔</a>
                 </div>
             </div>
         </div>
@@ -496,6 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'hon_com': { name: '[本府] 委員', price: 25000, qty: 0, isPos: true },
         'bld_main': { name: '[建廟] 籌備主委', price: 50000, qty: 0, isPos: true },
         'bld_vice': { name: '[建廟] 籌備副主委', price: 36000, qty: 0, isPos: true },
+        'bld_merit': { name: '[建廟] 建廟功德金', price: 10000, qty: 0, isPos: false },
         'adv_main': { name: '[顧問團] 顧問主席', price: 50000, qty: 0, isPos: true },
         'adv_vice': { name: '[顧問團] 顧問副主席', price: 36000, qty: 0, isPos: true },
         'adv_member': { name: '[顧問團] 顧問', price: 20000, qty: 0, isPos: true } 
