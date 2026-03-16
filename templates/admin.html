@@ -205,14 +205,15 @@
 
                     <div id="subtab-fund" style="display:none;">
                         <div class="donation-toolbar">
-                            <button class="btn btn--green" onclick="exportFundList()">📋 匯出建廟徵信清單</button>
+                            <button class="btn btn--green" onclick="exportDonationList('fund')">📋 匯出清單</button>
                         </div>
                         <div id="fund-list"></div>
                     </div>
 
                     <div id="subtab-committee" style="display:none;">
-                        <div class="donation-toolbar">
+                        <div class="donation-toolbar d-flex justify-between align-center">
                             <span style="color:#666; font-weight:bold;">🏛️ 委員會護持名單審核與管理</span>
+                            <button class="btn btn--green" onclick="exportDonationList('committee')">📋 匯出清單</button>
                         </div>
                         <div id="committee-list"></div>
                     </div>
@@ -432,7 +433,14 @@
             <div id="feedback-detail-body" style="line-height:1.8; color:#333;"></div>
         </div>
     </div>
-
+    <div id="donation-detail-modal" class="admin-modal-overlay">
+        <div class="admin-modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h3>詳細資料</h3>
+            <div id="donation-detail-body" style="font-size:16px; line-height:1.6; color:#333;"></div>
+        </div>
+    </div>
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    
 </body>
 </html>
