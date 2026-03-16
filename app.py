@@ -1289,10 +1289,16 @@ def get_admin_donations():
 @app.route('/api/donations/export-txt', methods=['POST'])
 @login_required
 def export_donations_txt():
-    data = request.get_json()
+    data = request.get_json() or {}
     start_str = data.get('start')
     end_str = data.get('end')
-    query = {"orderType": "donation", "status": "paid"}
+    
+    # 1. 取得前端傳來的訂單類別，預設為 donation
+    order_type = data.get('type', 'donation') 
+    
+    # 2. 將寫死的 "donation" 改為 order_type 變數
+    query = {"orderType": order_type, "status": "paid"}
+    
     if start_str and end_str:
         try:
             start_date = datetime.strptime(start_str, '%Y-%m-%d')
@@ -1300,14 +1306,24 @@ def export_donations_txt():
             query["updatedAt"] = {"$gte": start_date, "$lt": end_date}
         except: 
             pass
+            
     cursor = db.orders.find(query).sort("updatedAt", 1)
     
+    # 將 cursor 轉換為列表檢查是否有資料
+    orders = list(cursor)
+    if not orders:
+        return jsonify({"error": "目前無資料"}), 404
+    
+    # 判斷匯出清單的標題
+    title_map = {'fund': '建廟基金護持清單', 'committee': '委員會護持清單', 'donation': '捐贈稟報清單'}
+    report_title = title_map.get(order_type, '護持清單')
+
     si = io.StringIO()
-    si.write(f"捐贈稟報清單\n匯出日期：{datetime.now().strftime('%Y-%m-%d')}\n")
+    si.write(f"{report_title}\n匯出日期：{datetime.now().strftime('%Y-%m-%d')}\n")
     si.write("="*40 + "\n\n")
     
     idx = 1
-    for doc in cursor:
+    for doc in orders:
         cust = doc.get('customer', {})
         items_str = "、".join([f"{i['name']}x{i['qty']}" for i in doc.get('items', [])])
         paid_date = doc.get('updatedAt').strftime('%Y/%m/%d') if doc.get('updatedAt') else ''
@@ -1317,11 +1333,17 @@ def export_donations_txt():
         si.write(f"姓名：{cust.get('name', '')}\n")
         si.write(f"農曆：{cust.get('lunarBirthday', '')}\n")
         si.write(f"地址：{cust.get('address', '')}\n")
+        
+        # 若為 fund，額外顯示匯款後五碼或總額方便對帳 (可選)
+        if order_type in ['fund', 'committee']:
+            si.write(f"金額：${doc.get('total', 0)}\n")
+            si.write(f"末五碼：{cust.get('last5', '無')}\n")
+            
         si.write(f"項目：{items_str}\n")
         si.write("-" * 20 + "\n")
         idx += 1
         
-    return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": f"attachment; filename=donation_list.txt"})
+    return Response(si.getvalue(), mimetype='text/plain', headers={"Content-Disposition": f"attachment; filename={order_type}_list.txt"})
 
 @app.route('/api/donations/cleanup-unpaid', methods=['DELETE'])
 @login_required

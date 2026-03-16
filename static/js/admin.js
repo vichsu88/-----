@@ -606,7 +606,32 @@ document.addEventListener('DOMContentLoaded', () => {
         
         window.fetchDonations(type);
     };
-
+    window.exportDonationList = async (type) => {
+        try {
+            const res = await fetch('/api/donations/export-txt', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': Core.getCsrfToken() 
+                },
+                body: JSON.stringify({ type: type }) // 傳遞要匯出的類別 (fund, committee 等)
+            });
+            
+            if (res.status === 404) return alert('目前無資料可供匯出');
+            if (!res.ok) throw new Error('匯出失敗');
+            
+            const blob = await res.blob();
+            const a = document.createElement('a'); 
+            a.href = URL.createObjectURL(blob); 
+            
+            // 設定下載檔名
+            let typeName = type === 'fund' ? '建廟基金' : (type === 'committee' ? '委員會' : '日常捐香');
+            a.download = `${typeName}名單_${new Date().toISOString().slice(0,10)}.txt`; 
+            a.click();
+        } catch(e) { 
+            alert('匯出發生錯誤，請檢查網路或系統狀態'); 
+        }
+    };
     window.fetchDonations = async (type) => {
         if(!type) {
             if (document.getElementById('subtab-fund').style.display === 'block') type = 'fund';
