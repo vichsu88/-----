@@ -25,20 +25,38 @@
         body { background-color: var(--bg-light); margin: 0; height: 100vh; overflow: hidden; display: flex; font-family: 'Microsoft JhengHei', sans-serif; color: var(--text-dark); }
         h2, h3 { margin-top: 0; }
         
-        /* --- Utilities --- */
-        /* 修正：移除 !important 以確保 JS style.display 可以運作 */
+        /* --- Utilities (新增共用類別以取代行內樣式) --- */
         .d-none { display: none; } 
         .d-flex { display: flex; }
         .flex-col { flex-direction: column; }
+        .flex-wrap { flex-wrap: wrap; }
         .justify-between { justify-content: space-between; }
         .align-center { align-items: center; }
         .align-end { align-items: flex-end; }
         .flex-1 { flex: 1; }
+        .flex-2 { flex: 2; }
+        
         .gap-10 { gap: 10px; }
         .gap-20 { gap: 20px; }
+        
         .text-right { text-align: right; }
         .text-center { text-align: center; }
+        .text-brown { color: var(--main-brown); }
+        .text-danger { color: var(--danger); }
+        .text-gray { color: var(--text-gray); }
+        .text-dark { color: var(--text-dark); }
+        .fw-bold { font-weight: bold; }
+        
+        .fs-14 { font-size: 14px; }
+        .fs-16 { font-size: 16px; }
+        .lh-16 { line-height: 1.6; }
+        .lh-18 { line-height: 1.8; }
+        
         .w-100 { width: 100%; }
+        .w-120px { width: 120px; }
+        .h-42px { height: 42px; }
+        
+        .mt-0 { margin-top: 0; }
         .mt-10 { margin-top: 10px; }
         .mt-20 { margin-top: 20px; }
         .mt-30 { margin-top: 30px; }
@@ -46,6 +64,9 @@
         .mb-10 { margin-bottom: 10px; }
         .mb-15 { margin-bottom: 15px; }
         .mb-20 { margin-bottom: 20px; }
+        
+        .p-5 { padding: 5px; }
+        .p-12 { padding: 12px; }
         .p-20 { padding: 20px; }
         
         /* --- Layout: Login --- */
@@ -54,6 +75,7 @@
 
         /* --- Layout: Admin Wrapper --- */
         #admin-wrapper { display: flex; width: 100%; height: 100%; }
+        .sidebar-overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
         
         /* Sidebar */
         .admin-sidebar { width: 250px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
@@ -83,6 +105,14 @@
         .card, .feedback-card, .admin-list-item { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
         .admin-list-item { padding: 15px; }
         .admin-list-item-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        
+        /* Bank & Product Specific Cards */
+        .bank-card { flex: 1; padding: 15px; border-radius: 8px; }
+        .bank-card--shop { background: #f9f9f9; border: 1px solid #eee; }
+        .bank-card--fund { background: #fff5f5; border: 1px solid #ffcccc; }
+        .product-series-box { background: #f0f4f8; padding: 10px; border-radius: 5px; border: 1px dashed #ccc; }
+        .product-variant-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
+        .product-preview-img { max-height: 150px; display: none; border-radius: 5px; }
 
         /* Buttons */
         .btn { padding: 6px 12px; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 14px; transition: 0.2s; display: inline-block; text-align: center; }
@@ -138,16 +168,16 @@
 <body>
     <div id="login-wrapper">
         <form id="login-form" class="login-box">
-            <h2 style="color:var(--main-brown);">後台登入</h2>
+            <h2 class="text-brown">後台登入</h2>
             <input type="password" id="admin-password" placeholder="請輸入管理員密碼" required>
-            <button type="submit" class="btn btn--brown btn-block" style="padding:12px;">登入系統</button>
-            <p id="login-error" style="color:red; margin-top:10px; font-size:14px;"></p>
+            <button type="submit" class="btn btn--brown btn-block p-12">登入系統</button>
+            <p id="login-error" class="text-danger mt-10 fs-14"></p>
         </form>
     </div>
 
     <div id="admin-content" style="display:none;">
         <button id="sidebar-toggle">☰ 選單</button>
-        <div id="sidebar-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999;"></div>
+        <div id="sidebar-overlay" class="sidebar-overlay-bg" style="display:none;"></div>
         
         <div id="admin-wrapper">
             <aside class="admin-sidebar" id="admin-sidebar">
@@ -190,7 +220,7 @@
                         <div class="donation-toolbar">
                             <div class="d-flex align-center gap-10">
                                 <label class="mb-0">篩選：</label>
-                                <select id="incense-report-filter" class="mb-0" style="width:120px;" onchange="fetchDonations('donation')">
+                                <select id="incense-report-filter" class="mb-0 w-120px" onchange="fetchDonations('donation')">
                                     <option value="0">未稟告</option>
                                     <option value="1">已稟告</option>
                                     <option value="">全部</option>
@@ -212,7 +242,7 @@
 
                     <div id="subtab-committee" style="display:none;">
                         <div class="donation-toolbar d-flex justify-between align-center">
-                            <span style="color:#666; font-weight:bold;">🏛️ 委員會護持名單審核與管理</span>
+                            <span class="text-gray fw-bold">🏛️ 委員會護持名單審核與管理</span>
                             <button class="btn btn--green" onclick="exportDonationList('committee')">📋 匯出清單</button>
                         </div>
                         <div id="committee-list"></div>
@@ -255,7 +285,7 @@
                 <div id="tab-fund" class="tab-content">
                     <div class="card">
                         <h3>建廟基金設定</h3>
-                        <form id="fund-form" class="d-flex gap-10 align-end" style="flex-wrap:wrap;">
+                        <form id="fund-form" class="d-flex gap-10 align-end flex-wrap">
                             <div class="flex-1">
                                 <label>目標金額</label>
                                 <input type="number" id="fund-goal" value="10000000">
@@ -264,7 +294,7 @@
                                 <label>目前金額 <small class="text-danger" style="font-weight:normal;">(系統自動加總，無法手動修改)</small></label>
                                 <input type="number" id="fund-current" value="0" class="readonly-input" readonly>
                             </div>
-                            <button type="submit" class="btn btn--brown mb-15" style="height:42px;">更新設定</button>
+                            <button type="submit" class="btn btn--brown mb-15 h-42px">更新設定</button>
                         </form>
                     </div>
                     <div class="d-flex justify-between mt-30 mb-15">
@@ -288,28 +318,28 @@
                             <div id="links-list"></div>
                         </div>
                         <div class="card">
-    <h3 class="mt-0">🏦 匯款帳號設定</h3>
-    <p class="help-text">設定不同用途的收款帳號，系統將自動帶入對應信件中。</p>
-    
-    <form id="bank-form">
-        <div style="display:flex; gap:20px; flex-wrap:wrap;">
-            <div style="flex:1; background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
-                <h4 style="margin-top:0; color:var(--main-brown);">賣場/捐香</h4>
-                <label>銀行代碼</label><input type="text" name="shop_bankCode" placeholder="808">
-                <label>銀行名稱</label><input type="text" name="shop_bankName" placeholder="玉山銀行">
-                <label>帳號</label><input type="text" name="shop_account" placeholder="帳號...">
-            </div>
+                            <h3 class="mt-0">🏦 匯款帳號設定</h3>
+                            <p class="help-text">設定不同用途的收款帳號，系統將自動帶入對應信件中。</p>
+                            
+                            <form id="bank-form">
+                                <div class="d-flex gap-20 flex-wrap">
+                                    <div class="bank-card bank-card--shop">
+                                        <h4 class="mt-0 text-brown">賣場/捐香</h4>
+                                        <label>銀行代碼</label><input type="text" name="shop_bankCode" placeholder="808">
+                                        <label>銀行名稱</label><input type="text" name="shop_bankName" placeholder="玉山銀行">
+                                        <label>帳號</label><input type="text" name="shop_account" placeholder="帳號...">
+                                    </div>
 
-            <div style="flex:1; background:#fff5f5; padding:15px; border-radius:8px; border:1px solid #ffcccc;">
-                <h4 style="margin-top:0; color:#dc3545;">建廟基金</h4>
-                <label>銀行代碼</label><input type="text" name="fund_bankCode" placeholder="103">
-                <label>銀行名稱</label><input type="text" name="fund_bankName" placeholder="新光銀行">
-                <label>帳號</label><input type="text" name="fund_account" placeholder="帳號...">
-            </div>
-        </div>
-        <button type="submit" class="btn btn--brown btn-block mt-20">儲存所有匯款設定</button>
-    </form>
-</div>
+                                    <div class="bank-card bank-card--fund">
+                                        <h4 class="mt-0 text-danger">建廟基金</h4>
+                                        <label>銀行代碼</label><input type="text" name="fund_bankCode" placeholder="103">
+                                        <label>銀行名稱</label><input type="text" name="fund_bankName" placeholder="新光銀行">
+                                        <label>帳號</label><input type="text" name="fund_account" placeholder="帳號...">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn--brown btn-block mt-20">儲存所有匯款設定</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -331,13 +361,13 @@
                     <option value="其他">其他</option>
                 </select>
                 
-                <div style="background:#f0f4f8; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #ccc;" class="d-flex gap-10">
-                    <div style="flex:2;">
+                <div class="product-series-box d-flex gap-10 mb-15">
+                    <div class="flex-2">
                         <label class="help-text">系列名稱 (選填)</label>
                         <input type="text" name="series" placeholder="例如：招財系列" list="series-list" class="mb-0">
                         <datalist id="series-list"></datalist>
                     </div>
-                    <div style="flex:1;">
+                    <div class="flex-1">
                         <label class="help-text">系列排序 (數字)</label>
                         <input type="number" name="seriesSort" placeholder="1, 3, 5..." class="mb-0">
                     </div>
@@ -348,23 +378,23 @@
                 <label>商品圖片</label>
                 <input type="file" id="product-image-input" accept="image/*">
                 <input type="hidden" name="image">
-                <img id="preview-image" style="max-height:150px; display:none; margin-top:10px; border-radius:5px;">
+                <img id="preview-image" class="product-preview-img mt-10">
                 
-                <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #eee;">
-                    <label style="color:var(--main-brown);">規格與價格設定</label>
+                <div class="product-variant-box mt-20">
+                    <label class="text-brown">規格與價格設定</label>
                     <div id="variants-container"></div>
-                    <button type="button" id="add-variant-btn" class="btn btn--grey w-100 mt-10" style="padding:5px;">+ 新增規格</button>
+                    <button type="button" id="add-variant-btn" class="btn btn--grey w-100 mt-10 p-5">+ 新增規格</button>
                 </div>
 
                 <div class="mt-20 d-flex gap-20">
                     <label class="checkbox-label">
                         <input type="checkbox" name="isActive" checked> 上架中
                     </label>
-                    <label class="checkbox-label" style="color:var(--main-brown);">
+                    <label class="checkbox-label text-brown">
                         <input type="checkbox" name="isDonation"> 🙏 開放捐贈 (Donation)
                     </label>
                 </div>
-                <button type="submit" class="btn btn--brown w-100 mt-20" style="font-size:16px; padding:12px;">儲存商品</button>
+                <button type="submit" class="btn btn--brown w-100 mt-20 p-12 fs-16">儲存商品</button>
             </form>
         </div>
     </div>
@@ -373,7 +403,7 @@
         <div class="admin-modal-content">
             <button class="modal-close-btn">&times;</button>
             <h3>訂單詳細資料</h3>
-            <div id="order-detail-body" style="font-size:16px; line-height:1.6; color:#333;"></div>
+            <div id="order-detail-body" class="fs-16 lh-16 text-dark"></div>
         </div>
     </div>
 
@@ -430,17 +460,18 @@
         <div class="admin-modal-content">
             <button class="modal-close-btn">&times;</button>
             <h3>回饋詳細資料</h3>
-            <div id="feedback-detail-body" style="line-height:1.8; color:#333;"></div>
+            <div id="feedback-detail-body" class="lh-18 text-dark"></div>
         </div>
     </div>
+
     <div id="donation-detail-modal" class="admin-modal-overlay">
         <div class="admin-modal-content">
             <button class="modal-close-btn">&times;</button>
             <h3>詳細資料</h3>
-            <div id="donation-detail-body" style="font-size:16px; line-height:1.6; color:#333;"></div>
+            <div id="donation-detail-body" class="fs-16 lh-16 text-dark"></div>
         </div>
     </div>
+
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
-    
 </body>
 </html>
