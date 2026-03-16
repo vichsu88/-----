@@ -99,7 +99,21 @@
         .sub-tab-btn { flex: 1; padding: 15px; border: none; background: none; font-size: 16px; cursor: pointer; color: var(--text-gray); font-weight: bold; border-bottom: 4px solid transparent; transition: 0.3s; }
         .sub-tab-btn.active { color: var(--main-brown); border-bottom-color: var(--main-brown); background: rgba(196, 137, 69, 0.05); }
         .sub-tab-btn:hover { background: rgba(0,0,0,0.02); }
-
+        /* 側邊欄通知標籤 (紅底白字 N) */
+        .badge-n {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
         /* --- Components --- */
         /* Cards */
         .card, .feedback-card, .admin-list-item { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
@@ -187,8 +201,8 @@
                 </div>
                 <nav class="sidebar-nav">
                     <button class="nav-item active" data-tab="tab-products">🛍️ 商品管理</button>
-                    <button class="nav-item" data-tab="tab-donations">🙏 捐贈管理</button>
-                    <button class="nav-item" data-tab="tab-orders">📦 一般訂單</button>
+                    <button class="nav-item" data-tab="tab-donations">🙏 捐贈管理 <span id="badge-donations" class="badge-n d-none">N</span></button>
+                    <button class="nav-item" data-tab="tab-orders">📦 一般訂單 <span id="badge-orders" class="badge-n d-none">N</span></button>
                     <button class="nav-item" data-tab="tab-feedback">💬 信徒回饋</button>
                     <button class="nav-item" data-tab="tab-fund">📊 基金與公告</button>
                     <button class="nav-item" data-tab="tab-qa">❓ 常見問答</button>

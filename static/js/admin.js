@@ -60,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 預設載入第一個分頁 (商品管理)
                 document.querySelector('.nav-item[data-tab="tab-products"]')?.click();
                 this.adminContent.dataset.initialized = 'true';
+                
+                // 登入初始化時執行一次背景檢查
+                if (window.updateNotificationBadges) window.updateNotificationBadges();
             }
         },
 
@@ -396,6 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 `;
+
+                // 同步更新側邊欄通知
+                if (window.updateNotificationBadges) window.updateNotificationBadges();
+
             } catch(e) {
                 listEl.innerHTML = '<p>載入失敗</p>';
             }
@@ -587,6 +594,32 @@ document.addEventListener('DOMContentLoaded', () => {
     /* =========================================
        8. 導出所有 HTML 內聯事件綁定 (Global Bindings)
        ========================================= */
+       
+    // ▼▼▼ 背景更新通知標籤的函式 ▼▼▼
+    window.updateNotificationBadges = async () => {
+        try {
+            // 1. 檢查一般訂單 (Shop)
+            const orders = await Core.apiFetch('/api/orders');
+            const pendingOrders = orders.filter(o => o.status === 'pending').length;
+            const badgeOrders = document.getElementById('badge-orders');
+            if (badgeOrders) {
+                if (pendingOrders > 0) badgeOrders.classList.remove('d-none');
+                else badgeOrders.classList.add('d-none');
+            }
+
+            // 2. 檢查捐贈管理 (Donation, Fund, Committee 總和)
+            const donations = await Core.apiFetch('/api/donations/admin');
+            const pendingDonations = donations.filter(o => o.status === 'pending').length;
+            const badgeDonations = document.getElementById('badge-donations');
+            if (badgeDonations) {
+                if (pendingDonations > 0) badgeDonations.classList.remove('d-none');
+                else badgeDonations.classList.add('d-none');
+            }
+        } catch (e) {
+            console.error('更新通知標籤失敗', e);
+        }
+    };
+
     // --- Utils ---
     window.toggleContent = function(id, btn) {
         const box = document.getElementById(`content-${id}`);
@@ -606,6 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         window.fetchDonations(type);
     };
+
     window.exportDonationList = async (type) => {
         try {
             const res = await fetch('/api/donations/export-txt', {
@@ -632,6 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('匯出發生錯誤，請檢查網路或系統狀態'); 
         }
     };
+
     window.fetchDonations = async (type) => {
         if(!type) {
             if (document.getElementById('subtab-fund').style.display === 'block') type = 'fund';
@@ -658,6 +693,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (type === 'donation') renderIncenseList(pending, paid, container);
             else renderFundList(pending, paid, container, type); 
+
+            // 同步更新側邊欄通知
+            if (window.updateNotificationBadges) window.updateNotificationBadges();
+
         } catch(e) { container.innerHTML = '載入失敗'; }
     };
 
