@@ -4,19 +4,20 @@
 
 {% block content %}
 <style>
-    /* === 皇家正紅：核心變數設定 === */
+    /* ==========================================================================
+       1. 核心變數與全域設定 (Variables & Global)
+       ========================================================================== */
     :root {
         --royal-bg-dark: #1a0505;
         --royal-bg-red: #4a0e0e;
-        --royal-gold-light: #fcf6ba; /* 亮金 */
-        --royal-gold-main: #bf953f;  /* 黃金 */
-        --royal-gold-dark: #8a6e2f;  /* 暗金 */
+        --royal-gold-light: #fcf6ba;
+        --royal-gold-main: #bf953f;
+        --royal-gold-dark: #8a6e2f;
         --royal-text-light: #fdfbf7;
         --glass-bg: rgba(40, 10, 10, 0.65);
         --glass-border: rgba(255, 215, 0, 0.3);
     }
 
-    /* === 全局覆蓋 (Scoped to this page) === */
     .fund-page-wrapper {
         background-color: var(--royal-bg-dark);
         background-image: radial-gradient(circle at 50% 20%, var(--royal-bg-red), var(--royal-bg-dark) 90%);
@@ -49,12 +50,18 @@
         display: inline-block;
     }
     .section-title-fund::after {
-        content: ''; display: block; width: 60px; height: 3px;
+        content: ''; 
+        display: block; 
+        width: 60px; 
+        height: 3px;
         background: linear-gradient(90deg, transparent, var(--royal-gold-main), transparent);
         margin: 15px auto 0;
     }
 
-    /* === 第一區：Hero & 燃燒金環 === */
+    /* ==========================================================================
+       2. 各區塊樣式 (Sections)
+       ========================================================================== */
+    /* === 2-1. 第一區：Hero & 燃燒金環 === */
     .fund-hero {
         position: relative;
         height: 90vh;
@@ -118,11 +125,9 @@
         letter-spacing: 3px;
         text-shadow: 0 2px 5px rgba(0,0,0,0.8);
     }
-    .hero-scroll-icon {
-        position: absolute; bottom: 30px; animation: float 2s infinite;
-    }
+    .hero-scroll-icon { position: absolute; bottom: 30px; animation: float 2s infinite; }
 
-    /* === 第二區：影片外框 === */
+    /* === 2-2. 第二區：影片外框 === */
     .video-wrapper {
         position: relative;
         padding-bottom: 56.25%;
@@ -136,7 +141,7 @@
     }
     .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-    /* === 第三區：願景 (黑金卡片) === */
+    /* === 2-3. 第三區：願景 (黑金卡片) === */
     .vision-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -164,9 +169,7 @@
         width: 100%; height: 300px; overflow: hidden; border-radius: 10px;
         border: 1px solid var(--royal-gold-dark);
     }
-    .vision-img-box img {
-        width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease;
-    }
+    .vision-img-box img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease; }
     .vision-item:hover .vision-img-box img { transform: scale(1.1); }
     .vision-content h3 {
         color: var(--royal-gold-main);
@@ -178,32 +181,13 @@
     }
     .vision-content p { font-size: 1.1rem; line-height: 1.8; color: #ccc; text-align: justify; }
 
-    @media (min-width: 768px) {
-        .vision-item { flex-direction: row; align-items: center; }
-        .vision-item:nth-child(even) { flex-direction: row-reverse; }
-        .vision-img-box { flex: 1; height: 350px; }
-        .vision-content { flex: 1; }
-    }
-
-    /* === 第四區：捐款與芳名錄 === */
-    .donation-section {
-        background: transparent;
-        padding: 80px 20px;
-        position: relative;
-        border-top: 1px solid rgba(191, 149, 63, 0.3);
-    }
+    /* === 2-4. 第四區：捐款與芳名錄 === */
+    .donation-section { background: transparent; padding: 80px 20px; position: relative; border-top: 1px solid rgba(191, 149, 63, 0.3); }
     
     .honor-roll-section {
-        max-width: 900px;
-        margin: 0 auto 60px auto;
-        background-color: #8B0000;
-        border: 4px solid var(--royal-gold-main);
-        outline: 2px solid #8B0000;
-        outline-offset: 4px;
-        border-radius: 4px;
-        padding: 25px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-        position: relative;
+        max-width: 900px; margin: 0 auto 60px auto; background-color: #8B0000;
+        border: 4px solid var(--royal-gold-main); outline: 2px solid #8B0000; outline-offset: 4px;
+        border-radius: 4px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative;
     }
     .honor-roll-section::before, .honor-roll-section::after {
         content: ''; position: absolute; width: 30px; height: 104%;
@@ -215,25 +199,16 @@
 
     .honor-title {
         font-size: 1.8rem; font-weight: bold; color: var(--royal-gold-light);
-        text-align: center; margin-bottom: 20px;
-        border-bottom: 1px dashed rgba(255, 215, 0, 0.4);
-        padding-bottom: 15px;
+        text-align: center; margin-bottom: 20px; border-bottom: 1px dashed rgba(255, 215, 0, 0.4); padding-bottom: 15px;
     }
 
-    /* 無縫捲動 */
+    /* 無縫捲動區塊 */
     .marquee-container { 
-        height: 300px; 
-        overflow: hidden; 
-        position: relative; 
+        height: 300px; overflow: hidden; position: relative; 
         mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
         -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
     }
     .marquee-scroll-wrapper { width: 100%; }
-    
-    @keyframes seamlessScroll {
-        0% { transform: translateY(0); }
-        100% { transform: translateY(-50%); }
-    }
     
     .donor-item {
         display: flex; justify-content: space-between; align-items: flex-start;
@@ -269,7 +244,7 @@
     .step-title { color: var(--royal-gold-main); font-size: 1.2rem; font-weight: bold; display: block; margin-bottom: 5px;}
     .step-desc { color: #aaa; font-size: 0.95rem; display: block; }
 
-    /* 捐款卡片 */
+    /* 捐款卡片與購物車 */
     .donation-options { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 50px; }
     .donate-card {
         background: rgba(30, 30, 30, 0.6); backdrop-filter: blur(10px);
@@ -292,12 +267,12 @@
     .qty-btn:hover { background: var(--royal-gold-main); color: #000; }
     .qty-display { width: 40px; text-align: center; font-size: 1.4rem; color: #fff; }
 
-    /* 總額計算與按鈕 */
     .donation-total {
         text-align: center; font-size: 1.8rem; font-weight: bold; margin-bottom: 20px; 
         color: var(--royal-gold-main); text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
 
+    /* 按鈕樣式 */
     .btn-action {
         display: block; width: 100%; max-width: 350px; margin: 20px auto 0;
         padding: 18px; font-size: 1.2rem; font-weight: bold; color: #2b0808;
@@ -313,39 +288,29 @@
         background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
         transform: skewX(-20deg); animation: sheen 3s infinite;
     }
-    .btn-secondary {
-        background: #ccc; margin-top: 10px; box-shadow: none; color: #333; animation: none;
-    }
+    .btn-secondary { background: #ccc; margin-top: 10px; box-shadow: none; color: #333; animation: none; }
     .btn-secondary:hover { background: #bbb; transform: none; }
     .btn-submit-form { margin-top: 20px; box-shadow: none; animation: none; }
 
-    /* === 委員會招募 Banner === */
+    /* === 2-5. 委員會招募 Banner === */
     .committee-banner {
         background: linear-gradient(135deg, rgba(139, 0, 0, 0.8), rgba(60, 0, 0, 0.9)); 
-        border: 2px solid var(--royal-gold-main); 
-        border-radius: 15px; 
-        padding: 50px 30px; 
-        text-align: center; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 20px rgba(191, 149, 63, 0.2); 
-        position: relative; 
-        overflow: hidden;
+        border: 2px solid var(--royal-gold-main); border-radius: 15px; padding: 50px 30px; 
+        text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 20px rgba(191, 149, 63, 0.2); 
+        position: relative; overflow: hidden;
     }
-    .committee-bg-icon {
-        position: absolute; font-size: 120px; opacity: 0.1; filter: grayscale(1);
-    }
+    .committee-bg-icon { position: absolute; font-size: 120px; opacity: 0.1; filter: grayscale(1); }
     .committee-bg-icon.left { top: -30px; left: -20px; }
     .committee-bg-icon.right { bottom: -30px; right: -20px; }
-    .committee-title {
-        color: var(--royal-gold-light); font-size: 2rem; margin-bottom: 15px; 
-        text-shadow: 0 2px 5px rgba(0,0,0,0.8); position: relative; z-index: 2;
-    }
-    .committee-desc {
-        font-size: 1.15rem; color: #eed; margin-bottom: 30px; line-height: 1.8; position: relative; z-index: 2;
-    }
+    .committee-title { color: var(--royal-gold-light); font-size: 2rem; margin-bottom: 15px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); position: relative; z-index: 2; }
+    .committee-desc { font-size: 1.15rem; color: #eed; margin-bottom: 30px; line-height: 1.8; position: relative; z-index: 2; }
     .text-highlight { color: var(--royal-gold-main); font-weight: bold; }
     .btn-inline { display: inline-block; width: auto; margin: 0; padding: 15px 40px; position: relative; z-index: 2; }
 
-    /* === Modal 樣式 === */
+    /* ==========================================================================
+       3. 彈出視窗樣式 (Modals)
+       ========================================================================== */
+    /* 通用 Modal 遮罩與框 */
     .modal-overlay {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 2000;
@@ -360,31 +325,25 @@
         font-size: 1.5rem; font-weight: bold; color: #8B0000; 
         margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 10px; 
     }
-    .emotional-text { 
-        background: #fff5e6; padding: 15px; border-radius: 8px; font-size: 14px; 
-        line-height: 1.6; color: #555; margin-bottom: 20px; border-left: 4px solid #8B0000; 
-    }
+    
+    /* 表單元件 */
+    .emotional-text { background: #fff5e6; padding: 15px; border-radius: 8px; font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 20px; border-left: 4px solid #8B0000; }
     .form-row { display: flex; gap: 15px; flex-wrap: wrap; }
     .form-group { flex: 1; min-width: 200px; margin-bottom: 15px; text-align: left; }
     .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #333; }
     .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
     
+    /* 確認與成功 Modal 元件 */
     .summary-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; color: #333; text-align: left; }
     .summary-table td { padding: 8px; border-bottom: 1px solid #eee; }
     .summary-table td:first-child { width: 30%; }
     .summary-total { color: #C48945; font-weight: bold; }
-    
     .text-danger { color: red; font-size: 13px; text-align: center; }
-    
     .success-icon { font-size: 3rem; margin-bottom: 10px; }
     .success-title { color: #C48945; }
     .success-info-box { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; }
 
-    /* 動畫與狀態標籤 */
-    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-    @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(191, 149, 63, 0); } 100% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0); } }
-    @keyframes sheen { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
-    
+    /* 狀態標籤 */
     .limit-tag {
         background: var(--royal-gold-main); color: #000; font-size: 0.85rem; font-weight: bold;
         padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 10px;
@@ -393,7 +352,62 @@
     .donate-card.sold-out { opacity: 0.6; pointer-events: none; filter: grayscale(80%); }
     .donate-card.sold-out .limit-tag { background: #8B0000; color: #fff; }
 
-    /* 響應式 */
+    /* === 聖旨卷軸 Modal 專屬樣式 === */
+    .scroll-wrapper {
+        position: relative; width: 90%; max-width: 600px; display: flex; flex-direction: column; align-items: center;
+    }
+    .scroll-close-btn {
+        position: absolute; top: -20px; right: -20px; background: #4a0e0e; color: var(--royal-gold-light);
+        border: 2px solid var(--royal-gold-main); border-radius: 50%; width: 45px; height: 45px;
+        font-size: 20px; cursor: pointer; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+        transition: transform 0.3s; display: flex; justify-content: center; align-items: center;
+    }
+    .scroll-close-btn:hover { transform: rotate(90deg) scale(1.1); background: #8B0000; }
+    
+    .scroll-top-axis, .scroll-bottom-axis {
+        width: 105%; height: 35px; border-radius: 15px; position: relative; z-index: 3;
+        background: linear-gradient(to bottom, #fcf6ba 0%, #bf953f 40%, #8a6e2f 100%);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,0,0,0.5);
+    }
+    .scroll-top-axis::before, .scroll-top-axis::after,
+    .scroll-bottom-axis::before, .scroll-bottom-axis::after {
+        content: ''; position: absolute; top: -3px; width: 20px; height: 41px;
+        background: radial-gradient(circle, #5e0000, #1a0505);
+        border: 2px solid var(--royal-gold-main); border-radius: 5px;
+    }
+    .scroll-top-axis::before, .scroll-bottom-axis::before { left: -10px; }
+    .scroll-top-axis::after, .scroll-bottom-axis::after { right: -10px; }
+
+    .scroll-content {
+        width: 100%; background-color: #8B0000; padding: 0 25px; overflow-y: auto; opacity: 0; max-height: 0;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
+        border-left: 4px solid var(--royal-gold-main); border-right: 4px solid var(--royal-gold-main);
+        transition: max-height 1.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease, padding 1.2s ease;
+    }
+    .scroll-wrapper.unrolled .scroll-content { max-height: 65vh; opacity: 1; padding: 30px 25px; }
+
+    .scroll-content::-webkit-scrollbar { width: 6px; }
+    .scroll-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 10px; margin: 10px 0; }
+    .scroll-content::-webkit-scrollbar-thumb { background: var(--royal-gold-main); border-radius: 10px; }
+    
+    .scroll-content .donor-item { border-bottom: 1px dashed rgba(255,215,0,0.3); padding: 12px 0; }
+    .scroll-content .donor-item:last-child { border-bottom: none; }
+
+    /* ==========================================================================
+       4. 動畫與響應式 (Animations & RWD)
+       ========================================================================== */
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+    @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(191, 149, 63, 0); } 100% { box-shadow: 0 0 0 0 rgba(191, 149, 63, 0); } }
+    @keyframes sheen { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+    @keyframes seamlessScroll { 0% { transform: translateY(0); } 100% { transform: translateY(-50%); } }
+
+    @media (min-width: 768px) {
+        .vision-item { flex-direction: row; align-items: center; }
+        .vision-item:nth-child(even) { flex-direction: row-reverse; }
+        .vision-img-box { flex: 1; height: 350px; }
+        .vision-content { flex: 1; }
+    }
+
     @media (max-width: 768px) {
         .section-title-fund { font-size: 2.2rem; }
         .chart-container { width: 240px; height: 240px; }
@@ -448,7 +462,6 @@
                     <p>十年來，桃城承天中承府承蒙元帥神威，為無數信徒收驚解惑。然而，隨著善信日益增加，僅有的空間已不足以容納這份日益增長的香火與期待。</p>
                 </div>
             </article>
-            
             <article class="vision-item">
                 <div class="vision-img-box">
                     <img src="{{ url_for('static', filename='images/pages/index/fund2.png') }}" alt="責任與挑戰">
@@ -458,7 +471,6 @@
                     <p>看見信徒在烈日下等待收驚的汗水，看見法會時大家擠在狹窄過道的虔誠。建廟，已是刻不容緩的使命。</p>
                 </div>
             </article>
-
             <article class="vision-item">
                 <div class="vision-img-box">
                     <img src="{{ url_for('static', filename='images/pages/index/fund3.png') }}" alt="未來藍圖">
@@ -468,7 +480,6 @@
                     <p>未來的帥府，將不再只是一座建築。它將是莊嚴殿堂，讓善信舒適參拜；它是文化基地，傳承信仰。</p>
                 </div>
             </article>
-
             <article class="vision-item">
                 <div class="vision-img-box">
                     <img src="{{ url_for('static', filename='images/pages/index/fund4.png') }}" alt="邀請與行動">
@@ -488,10 +499,11 @@
                 <div class="honor-title">捐贈芳名錄</div>
                 <div class="marquee-container" id="marquee-container">
                     <div class="marquee-scroll-wrapper" id="honor-list">
-                        <div class="loading-text">
-                            正在從資料庫讀取善信名單...
-                        </div>
+                        <div class="loading-text">正在從資料庫讀取善信名單...</div>
                     </div>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn-action" style="padding: 10px 25px; font-size: 1rem; width: auto;" onclick="openScrollModal()">📜 展開完整芳名錄</button>
                 </div>
             </div>
 
@@ -664,10 +676,24 @@
     </div>
 </div>
 
+<div id="scroll-modal-overlay" class="modal-overlay" onclick="closeScrollModal(event)">
+    <div class="scroll-wrapper" id="scroll-wrapper" onclick="event.stopPropagation()">
+        <button class="scroll-close-btn" onclick="closeScrollModal()">✖</button>
+        <div class="scroll-top-axis"></div>
+        <div class="scroll-content" id="full-honor-list">
+            <div class="loading-text">正在展開名錄...</div>
+        </div>
+        <div class="scroll-bottom-axis"></div>
+    </div>
+</div>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     
-    // === 1. 狀態管理 (State) ===
+    // ==========================================================================
+    // 1. 狀態與資料定義 (State)
+    // ==========================================================================
     const items = {
         'suixi': { name: '隨喜助建', price: 100, qty: 0 },
         'tile': { name: '建廟瓦片', price: 600, qty: 0 },
@@ -677,12 +703,14 @@ document.addEventListener('DOMContentLoaded', () => {
         'consultant': { name: '顧問', price: 15000, qty: 0 }
     };
     
-    // === 2. 初始化核心功能 ===
+    // ==========================================================================
+    // 2. 網頁初始化與 API 讀取 (Initialization)
+    // ==========================================================================
     initChartAndLimits();
     initMarquee();
     initInputMasks();
 
-    // --- 圖表與名額邏輯 ---
+    // 讀取進度條與名額限制
     async function initChartAndLimits() {
         try {
             const res = await fetch('/api/fund-settings');
@@ -696,7 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('current-text').textContent = `$${current.toLocaleString()}`;
             document.getElementById('percent-text').textContent = `${percent}%`;
             
-            // 處理副主委剩餘名額 (相容原始邏輯)
+            // 處理職位剩餘名額 (若有)
             window.viceChairRemain = data.vice_chair_remain !== undefined ? data.vice_chair_remain : 7;
             const vcRemainElem = document.getElementById('vc-remain');
             const vcCard = document.getElementById('card-vice_chair');
@@ -714,11 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let p = 0;
             const interval = setInterval(() => {
                 if (p >= percent) clearInterval(interval);
-                chart.style.background = `conic-gradient(
-                    #ffd700 0%, 
-                    #bf953f ${p}%, 
-                    rgba(255,255,255,0.1) ${p}% 100%
-                )`;
+                chart.style.background = `conic-gradient(#ffd700 0%, #bf953f ${p}%, rgba(255,255,255,0.1) ${p}% 100%)`;
                 p++;
             }, 20);
         } catch(e) {
@@ -728,25 +752,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- 芳名錄無縫捲動 ---
+    // 讀取芳名錄名單 (供應跑馬燈與卷軸)
     async function initMarquee() {
         const listWrapper = document.getElementById('honor-list');
+        const fullListWrapper = document.getElementById('full-honor-list'); 
+        
         try {
             const res = await fetch('/api/donations/public?type=fund');
             const data = await res.json();
             
             if (!data || data.length === 0) {
-                listWrapper.innerHTML = '<div style="text-align:center; color:#ffd700; padding-top:40px; font-size:1.2rem;">🙏 期待您成為第一位護持者</div>'; 
+                const emptyHtml = '<div style="text-align:center; color:#ffd700; padding-top:40px; font-size:1.2rem;">🙏 期待您成為第一位護持者</div>';
+                listWrapper.innerHTML = emptyHtml; 
+                fullListWrapper.innerHTML = emptyHtml;
                 return;
             }
 
-            // 確保資料量足夠達成無縫捲動（過少時自動重複）
+            // 1. 生成卷軸 Modal 使用的「完整名單」
+            const fullHtml = data.map(d => {
+                const itemsHtml = d.items.replace(/, /g, '<br>');
+                return `<div class="donor-item">
+                            <span class="donor-name">${d.name}</span>
+                            <span class="donor-items">${itemsHtml}</span>
+                        </div>`;
+            }).join('');
+            fullListWrapper.innerHTML = fullHtml;
+
+            // 2. 生成首頁「無縫捲動」的清單 (過少時自動重複串接以確保順暢)
             let displayData = data;
             while (displayData.length < 6) {
                 displayData = displayData.concat(data);
             }
-
-            // 生成 HTML
             const singleSetHtml = displayData.map(d => {
                 const itemsHtml = d.items.replace(/, /g, '<br>');
                 return `<div class="donor-item">
@@ -755,24 +791,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>`;
             }).join('');
 
-            // 核心無縫原理：放置兩組相同的內容
             listWrapper.innerHTML = singleSetHtml + singleSetHtml; 
 
-            // 動態計算動畫時長 (每筆預設約 2.5 秒)
+            // 動態計算跑馬燈時長
             const duration = Math.max(20, displayData.length * 2.5);
             listWrapper.style.animation = `seamlessScroll ${duration}s linear infinite`;
-            
-            // 滑鼠互動暫停
             listWrapper.addEventListener('mouseenter', () => listWrapper.style.animationPlayState = 'paused');
             listWrapper.addEventListener('mouseleave', () => listWrapper.style.animationPlayState = 'running');
 
         } catch (err) {
             console.error('芳名錄載入失敗', err);
             listWrapper.innerHTML = '<div class="loading-text" style="color:red;">資料載入失敗，請稍後再試</div>';
+            fullListWrapper.innerHTML = '<div class="loading-text" style="color:red;">資料載入失敗</div>';
         }
     }
 
-    // --- 輸入框遮罩 (Input Mask) ---
+    // 初始化表單輸入遮罩 (防呆處理)
     function initInputMasks() {
         const dateInput = document.querySelector('input[data-mask="date"]');
         const phoneInput = document.querySelector('input[data-mask="phone"]');
@@ -798,7 +832,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (v.length > 7) v = v.slice(0, 7) + '/' + v.slice(7);
             return v;
         });
-
         applyMask(phoneInput, (v) => {
             if (v.length > 10) v = v.slice(0, 10);
             if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
@@ -807,7 +840,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // === 3. 購物車邏輯 (掛載於 Window 供 onClick 呼叫) ===
+    // ==========================================================================
+    // 3. 購物車與 UI 互動邏輯 (Cart & UI Interaction)
+    // ==========================================================================
+    
     window.updateQty = (key, change) => {
         const isPosition = ['vice_chair', 'committee', 'consultant'].includes(key);
         
@@ -847,20 +883,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         document.getElementById('total-amount').innerText = total.toLocaleString();
     }
+
+    // ==========================================================================
+    // 4. 各類彈出視窗控制 (Modal Controllers)
+    // ==========================================================================
     
-    // === 4. 表單與 Modal 流程 ===
     const formModal = document.getElementById('fund-form-modal');
     const confirmModal = document.getElementById('confirm-modal');
     const successModal = document.getElementById('success-modal');
     const form = document.getElementById('donation-form');
 
+    // 捲軸 Modal 開關
+    window.openScrollModal = () => {
+        const overlay = document.getElementById('scroll-modal-overlay');
+        const wrapper = document.getElementById('scroll-wrapper');
+        overlay.style.display = 'flex';
+        setTimeout(() => wrapper.classList.add('unrolled'), 50); 
+    };
+    window.closeScrollModal = (e) => {
+        if (e && e.target.id !== 'scroll-modal-overlay' && !e.target.classList.contains('scroll-close-btn')) return; 
+        const overlay = document.getElementById('scroll-modal-overlay');
+        const wrapper = document.getElementById('scroll-wrapper');
+        wrapper.classList.remove('unrolled');
+        setTimeout(() => overlay.style.display = 'none', 500);
+    };
+
+    // 表單 Modal 相關開關
+    window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+    window.backToEdit = () => { confirmModal.style.display = 'none'; formModal.style.display = 'flex'; };
+
     window.openFormModal = async () => {
         const totalAmountText = document.getElementById('total-amount').innerText.replace(/,/g, '');
         const total = parseInt(totalAmountText, 10);
-        
-        if (total === 0 || isNaN(total)) {
-            return alert('請先選擇欲護持的項目');
-        }
+        if (total === 0 || isNaN(total)) return alert('請先選擇欲護持的項目');
 
         const btn = document.querySelector('.btn-action');
         const originalText = btn.innerText;
@@ -877,7 +932,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 自動帶入既有使用者資料
             const user = data.user || {};
             if (!form.name.value && user.realName) form.name.value = user.realName;
             if (!form.phone.value && user.phone) form.phone.value = user.phone;
@@ -886,7 +940,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!form.lunarBirthday.value && user.lunarBirthday) form.lunarBirthday.value = user.lunarBirthday;
 
             formModal.style.display = 'flex';
-
         } catch(e) {
             console.error('使用者資料讀取失敗', e);
             alert('系統連線異常，請稍後再試');
@@ -896,10 +949,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.closeModal = (id) => document.getElementById(id).style.display = 'none';
-    window.backToEdit = () => { confirmModal.style.display = 'none'; formModal.style.display = 'flex'; };
+    // ==========================================================================
+    // 5. 訂單確認與表單送出 (Form Submission)
+    // ==========================================================================
 
-    // 表單第一步：顯示確認 Modal
+    // 第一步：顯示確認 Modal
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         
@@ -920,7 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmModal.style.display = 'flex';
     });
 
-    // 表單第二步：正式送出 API
+    // 第二步：正式送出 API 建立訂單
     document.getElementById('final-submit-btn').onclick = async () => {
         const btn = document.getElementById('final-submit-btn');
         btn.disabled = true; 
