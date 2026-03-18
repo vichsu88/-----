@@ -1236,7 +1236,7 @@ def get_public_donations():
     else:
         query["orderType"] = target_type
         
-    cursor = db.orders.find(query).sort("updatedAt", -1).limit(30)
+    cursor = db.orders.find(query).sort("updatedAt", -1).limit(1000)
     results = []
     for doc in cursor:
         items_summary = [f"{i['name']} x{i['qty']}" for i in doc.get('items', [])]
