@@ -615,6 +615,7 @@
                 <div class="form-group">
                     <label>真實姓名</label>
                     <input type="text" name="name" class="form-control" required placeholder="將用於疏文稟奏">
+                    <div style="color:#d32f2f; font-size:13px; margin-top:5px;">※ 系統限制：為利於疏文稟奏與建檔，此欄位【僅限填寫一位真實姓名】，請勿填寫多人、空格或「全家」等字眼。</div>
                 </div>
                 <div class="form-group">
                     <label>農曆生日 (YYYY/MM/DD)</label>
@@ -956,7 +957,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // 第一步：顯示確認 Modal
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-        
+        // --- 新增：姓名防呆驗證 ---
+        const nameVal = form.name.value.trim();
+        const nameRegex = /[、，,。/&＆\s]/; 
+        const nameKeywords = /(全家|一家|闔家|合家|等人|與|及)/;
+        if (nameRegex.test(nameVal) || nameKeywords.test(nameVal)) {
+            return alert('真實姓名僅限填寫「一位」。\n請移除空格、標點符號或「全家」、「等人」等字眼。');
+        }
+        // ------------------------
         document.getElementById('conf-name').innerText = form.name.value;
         document.getElementById('conf-birth').innerText = form.lunarBirthday.value;
         document.getElementById('conf-phone').innerText = form.phone.value;

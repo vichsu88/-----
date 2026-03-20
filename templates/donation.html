@@ -371,7 +371,11 @@
             <div class="form-section">
                 <p style="color:var(--c-red-bg); font-size:1rem; margin-bottom:20px; font-weight:bold;">※ 此為代捐公壇專用項目，不會寄送實體商品至您的地址。</p>
                 
-                <div class="form-group"><label>真實姓名</label><input type="text" name="name" class="form-control" required placeholder="將用於疏文稟奏"></div>
+                <div class="form-group">
+                    <label>真實姓名</label>
+                    <input type="text" name="name" class="form-control" required placeholder="將用於疏文稟奏">
+                    <div style="color:#d32f2f; font-size:13px; margin-top:5px;">※ 系統限制：為利於疏文稟奏，此欄位【僅限填寫一位真實姓名】，請勿填寫多人、空格或「全家」等字眼。</div>
+                </div>
                 
                 <div class="form-group">
                     <label>聯絡電話 (09XX-XXX-XXX)</label>
@@ -629,7 +633,12 @@
         const f = e.target;
         if(!/^09\d{2}-\d{3}-\d{3}$/.test(f.phone.value)) return alert('電話格式錯誤，請確認為 09XX-XXX-XXX');
         if(f.lunarBirthday.value && !/^\d{2,3}\/\d{2}\/\d{2}$/.test(f.lunarBirthday.value)) return alert('生日格式錯誤，請輸入民國年數字 (如 750821 或 1120101)');
-
+        const nameVal = f.name.value.trim();
+        const nameRegex = /[、，,。/&＆\s]/; 
+        const nameKeywords = /(全家|一家|闔家|合家|等人|與|及)/;
+        if (nameRegex.test(nameVal) || nameKeywords.test(nameVal)) {
+            return alert('真實姓名僅限填寫「一位」。\n請移除空格、標點符號或「全家」、「等人」等字眼。');
+        }
         const calculatedTotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
         const payload = {

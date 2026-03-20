@@ -217,6 +217,7 @@
             <div class="form-group">
                 <label>收件人姓名</label>
                 <input type="text" name="name" class="form-control" placeholder="請填寫真實姓名" required>
+                <div style="color:#d32f2f; font-size:13px; margin-top:5px;">※ 系統限制：為利於物流與建檔，此欄位【僅限填寫一位真實姓名】，請勿填寫多人、空格或「全家」等字眼。</div>
             </div>
             <div class="form-group">
                 <label>聯絡電話 (09XX-XXX-XXX)</label>
@@ -508,6 +509,12 @@
         e.preventDefault();
         const f = e.target;
         if(!/^09\d{2}-\d{3}-\d{3}$/.test(f.phone.value)) return alert('電話格式錯誤 (請輸入 09XX-XXX-XXX)');
+        const nameVal = f.name.value.trim();
+        const nameRegex = /[、，,。/&＆\s]/; // 偵測空格與標點符號
+        const nameKeywords = /(全家|一家|闔家|合家|等人|與|及)/; // 偵測特殊字眼
+        if (nameRegex.test(nameVal) || nameKeywords.test(nameVal)) {
+            return alert('姓名欄位僅限填寫「一位」真實姓名。\n請移除空格、標點符號或「全家」、「等人」等字眼。');
+        }
         
         // 取得配送資訊
         const shippingType = f.querySelector('input[name="shippingType"]:checked').value;

@@ -84,7 +84,7 @@ except Exception as e:
     print(f"--- MongoDB 連線失敗: {e} ---")
 
 # =========================================
-# 3. 工具函式
+# 3. 工具函式與裝飾器 (優化區塊)
 # =========================================
 def login_required(f):
     @wraps(f)
@@ -95,6 +95,28 @@ def login_required(f):
             return redirect(url_for('admin_page'))
         return f(*args, **kwargs)
     return decorated_function
+
+def user_login_required(f):
+    """【優化】信徒 LINE 登入驗證裝飾器"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        line_id = session.get('user_line_id')
+        if not line_id:
+            return jsonify({"error": "請先使用 LINE 登入"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+def get_tw_now():
+    """【優化】統一取得台灣時間 (UTC+8)"""
+    return datetime.utcnow() + timedelta(hours=8)
+
+def validate_real_name(name):
+    """【優化】姓名防呆驗證邏輯共用"""
+    if not name:
+        return True, ""
+    if re.search(r'[、，,。/&＆\s]', name) or re.search(r'(全家|一家|闔家|合家|等人|與|及)', name):
+        return False, "姓名僅限填寫「一位」，請勿包含空格、標點符號或群體字眼。"
+    return True, ""
 
 def calculate_business_d2(start_date):
     """計算 D+2 工作日 (跳過週六日)"""
@@ -157,7 +179,7 @@ def send_email_task(to_email, subject, body, is_html=False):
         error_body = "無法讀取內容"
         try:
             error_body = e.read().decode('utf-8')
-        except:
+        except Exception:
             pass
         print(f"❌ SendGrid API 錯誤 ({e.code}): {error_body}")
     except Exception as e:
@@ -256,8 +278,7 @@ def generate_feedback_email_html(feedback, status_type, tracking_num=None):
 def generate_shop_email_html(order, status_type, tracking_num=None):
     cust = order['customer']
     items = order['items']
-    tw_now = datetime.utcnow() + timedelta(hours=8)
-    date_str = tw_now.strftime('%Y/%m/%d %H:%M')
+    date_str = get_tw_now().strftime('%Y/%m/%d %H:%M')
     
     created_at_dt = order.get('createdAt')
     if created_at_dt and isinstance(created_at_dt, datetime):
@@ -371,8 +392,6 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
 def generate_donation_created_email(order):
     cust = order['customer']
     items = order['items']
-    tw_now = datetime.utcnow() + timedelta(hours=8)
-    created_at_str = tw_now.strftime('%Y/%m/%d %H:%M')
     order_type = order.get('orderType', 'donation')
     
     if order_type == 'committee':
@@ -462,7 +481,7 @@ def inject_links():
         links_cursor = db.links.find({})
         links_dict = {link['name']: link['url'] for link in links_cursor}
         return dict(links=links_dict)
-    except: 
+    except Exception: 
         return dict(links={})
 
 # =========================================
@@ -685,20 +704,22 @@ def get_current_user():
                         highest_title = clean_title
             
             user['title'] = highest_title
-            # ---------------------------
-
             return jsonify({"logged_in": True, "user": user})
             
     return jsonify({"logged_in": False})
 
 @app.route('/api/user/profile', methods=['PUT'])
+@user_login_required
 def update_user_profile():
     """讓信徒在個人專區修改自己的基本資料"""
-    line_id = session.get('user_line_id')
-    if not line_id:
-        return jsonify({"error": "請先使用 LINE 登入"}), 401
-        
     data = request.get_json()
+    line_id = session.get('user_line_id')
+    
+    # 呼叫共用的驗證邏輯
+    is_valid, error_msg = validate_real_name(data.get('realName', '').strip())
+    if not is_valid:
+        return jsonify({"error": error_msg}), 400
+
     if db is not None:
         db.users.update_one(
             {"lineId": line_id},
@@ -716,12 +737,10 @@ def update_user_profile():
     return jsonify({"error": "資料庫連線失敗"}), 500
 
 @app.route('/api/user/feedbacks', methods=['GET'])
+@user_login_required
 def get_user_feedbacks():
     """撈出該登入信徒過去所有的回饋紀錄"""
     line_id = session.get('user_line_id')
-    if not line_id:
-        return jsonify({"error": "請先使用 LINE 登入"}), 401
-        
     if db is not None:
         cursor = db.feedback.find({"lineId": line_id}).sort("createdAt", -1)
         results = []
@@ -747,12 +766,10 @@ def get_user_feedbacks():
 # 收驚衣服預約取件 API (看板與個人專區)
 # =========================================
 @app.route('/api/pickup/reserve', methods=['POST'])
+@user_login_required
 def create_pickup_reservation():
     """信徒送出預約單"""
     line_id = session.get('user_line_id')
-    if not line_id:
-        return jsonify({"error": "請先使用 LINE 登入"}), 401
-        
     data = request.get_json()
     pickup_type = data.get('pickupType') 
     pickup_date = data.get('pickupDate')
@@ -763,8 +780,7 @@ def create_pickup_reservation():
 
     if db is not None:
         incoming_ids = [c.get('clothId', '').strip() for c in clothes if c.get('clothId')]
-        tw_now = datetime.utcnow() + timedelta(hours=8)
-        today_str = tw_now.strftime('%Y-%m-%d')
+        today_str = get_tw_now().strftime('%Y-%m-%d')
         
         duplicate_order = db.pickups.find_one({
             "clothes.clothId": {"$in": incoming_ids},
@@ -800,9 +816,7 @@ def get_public_pickups():
     if db is None: 
         return jsonify([])
     
-    taiwan_now = datetime.utcnow() + timedelta(hours=8)
-    threshold_date = (taiwan_now - timedelta(days=1)).strftime('%Y-%m-%d')
-    
+    threshold_date = (get_tw_now() - timedelta(days=1)).strftime('%Y-%m-%d')
     cursor = db.pickups.find({"pickupDate": {"$gte": threshold_date}}).sort("pickupDate", 1)
     results = {}
     
@@ -837,17 +851,17 @@ def get_public_pickups():
     return jsonify(formatted_results)
 
 @app.route('/api/user/pickups', methods=['GET'])
+@user_login_required
 def get_user_pickups():
     """給信徒「個人專區」看的自己專屬預約紀錄 (不遮蔽姓名)"""
     line_id = session.get('user_line_id')
-    if not line_id or db is None:
+    if db is None:
         return jsonify([])
         
     cursor = db.pickups.find({"lineId": line_id}).sort("pickupDate", -1)
     results = []
     
-    tw_now = datetime.utcnow() + timedelta(hours=8)
-    today = tw_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today = get_tw_now().replace(hour=0, minute=0, second=0, microsecond=0)
 
     for doc in cursor:
         is_deletable = False
@@ -855,7 +869,7 @@ def get_user_pickups():
             p_date = datetime.strptime(doc.get('pickupDate'), '%Y-%m-%d')
             if today < p_date:
                 is_deletable = True
-        except:
+        except Exception:
             is_deletable = False
 
         results.append({
@@ -869,11 +883,9 @@ def get_user_pickups():
     return jsonify(results)
 
 @app.route('/api/pickup/<pid>', methods=['DELETE'])
+@user_login_required
 def delete_pickup(pid):
     line_id = session.get('user_line_id')
-    if not line_id: 
-        return jsonify({"error": "請先登入"}), 401
-    
     oid = get_object_id(pid)
     if not oid: 
         return jsonify({"error": "格式錯誤"}), 400
@@ -884,12 +896,11 @@ def delete_pickup(pid):
 
     try:
         p_date = datetime.strptime(pickup.get('pickupDate'), '%Y-%m-%d')
-        tw_now = datetime.utcnow() + timedelta(hours=8)
-        today = tw_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today = get_tw_now().replace(hour=0, minute=0, second=0, microsecond=0)
         
         if today >= p_date:
             return jsonify({"error": "已超過取消期限 (限取件日前一天)"}), 400
-    except:
+    except Exception:
         return jsonify({"error": "日期資料異常"}), 400
 
     db.pickups.delete_one({"_id": oid})
@@ -952,12 +963,11 @@ def enrich_feedback_for_admin(cursor):
     return results
 
 @app.route('/api/feedback', methods=['POST'])
+@user_login_required
 def add_feedback():
     if db is None: 
         return jsonify({"error": "DB Error"}), 500
     line_id = session.get('user_line_id')
-    if not line_id: 
-        return jsonify({"error": "請先使用 LINE 登入"}), 401
         
     data = request.get_json()
     if not data.get('agreed'): 
@@ -1174,8 +1184,7 @@ def get_public_bank_info():
 
 @app.route('/api/shipclothes/calc-date', methods=['GET'])
 def get_pickup_date_preview():
-    today = datetime.utcnow() + timedelta(hours=8)
-    pickup_date = calculate_business_d2(today)
+    pickup_date = calculate_business_d2(get_tw_now())
     return jsonify({"pickupDate": pickup_date.strftime('%Y/%m/%d (%a)')})
 
 @app.route('/api/shipclothes', methods=['POST'])
@@ -1193,7 +1202,7 @@ def submit_ship_clothes():
     if not all(k in data and data[k] for k in ['name', 'lineGroup', 'lineName', 'birthYear', 'clothes']): 
         return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
         
-    now_tw = datetime.utcnow() + timedelta(hours=8)
+    now_tw = get_tw_now()
     pickup_date = calculate_business_d2(now_tw)
     
     db.shipments.insert_one({
@@ -1207,8 +1216,7 @@ def submit_ship_clothes():
 def get_ship_clothes_list():
     if db is None: 
         return jsonify([]), 500
-    now_tw = datetime.utcnow() + timedelta(hours=8)
-    today_date = now_tw.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_date = get_tw_now().replace(hour=0, minute=0, second=0, microsecond=0)
     start_date = today_date - timedelta(days=1)
     end_date = today_date + timedelta(days=5)
     
@@ -1273,7 +1281,7 @@ def get_admin_donations():
             start_date = datetime.strptime(start_str, '%Y-%m-%d')
             end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
             query["createdAt"] = {"$gte": start_date, "$lt": end_date}
-        except: 
+        except Exception: 
             pass
 
     cursor = db.orders.find(query).sort([("is_reported", 1), ("createdAt", -1)])
@@ -1293,10 +1301,7 @@ def export_donations_txt():
     start_str = data.get('start')
     end_str = data.get('end')
     
-    # 1. 取得前端傳來的訂單類別，預設為 donation
     order_type = data.get('type', 'donation') 
-    
-    # 2. 將寫死的 "donation" 改為 order_type 變數
     query = {"orderType": order_type, "status": "paid"}
     
     if start_str and end_str:
@@ -1304,17 +1309,14 @@ def export_donations_txt():
             start_date = datetime.strptime(start_str, '%Y-%m-%d')
             end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
             query["updatedAt"] = {"$gte": start_date, "$lt": end_date}
-        except: 
+        except Exception: 
             pass
             
     cursor = db.orders.find(query).sort("updatedAt", 1)
-    
-    # 將 cursor 轉換為列表檢查是否有資料
     orders = list(cursor)
     if not orders:
         return jsonify({"error": "目前無資料"}), 404
     
-    # 判斷匯出清單的標題
     title_map = {'fund': '建廟基金護持清單', 'committee': '委員會護持清單', 'donation': '捐贈稟報清單'}
     report_title = title_map.get(order_type, '護持清單')
 
@@ -1334,7 +1336,6 @@ def export_donations_txt():
         si.write(f"農曆：{cust.get('lunarBirthday', '')}\n")
         si.write(f"地址：{cust.get('address', '')}\n")
         
-        # 若為 fund，額外顯示匯款後五碼或總額方便對帳 (可選)
         if order_type in ['fund', 'committee']:
             si.write(f"金額：${doc.get('total', 0)}\n")
             si.write(f"末五碼：{cust.get('last5', '無')}\n")
@@ -1361,15 +1362,19 @@ def cleanup_unpaid_orders():
 
 @csrf.exempt
 @app.route('/api/orders', methods=['POST'])
+@user_login_required
 def create_order():
     if db is None: 
         return jsonify({"error": "DB Error"}), 500
     data = request.get_json()
     line_id = session.get('user_line_id')
-    if not line_id: 
-        return jsonify({"error": "請先使用 LINE 登入"}), 401
     
     order_type = data.get('orderType', 'shop')
+    
+    # 共用姓名驗證
+    is_valid, error_msg = validate_real_name(data.get('name', '').strip())
+    if not is_valid:
+        return jsonify({"error": f"系統阻擋：{error_msg}"}), 400
     
     # 建廟基金 (fund) 防護
     if order_type == 'fund':
@@ -1867,5 +1872,6 @@ def debug_connection():
     except Exception as e:
         status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
     return jsonify(status)
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
