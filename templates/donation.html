@@ -41,7 +41,6 @@
         position: relative;
         overflow: hidden;
     }
-    /* 金色放射光暈疊加層 */
     .donation-hero::before { 
         content: ''; position: absolute; inset: 0; 
         background: radial-gradient(circle at 50% 40%, rgba(255,215,0,0.5) 0%, rgba(184,134,11,0.4) 30%, rgba(0,0,0,0.7) 100%);
@@ -51,7 +50,6 @@
     .hero-text h1 { 
         font-family: 'KouzanBrushFontOTF', 'Microsoft JhengHei', serif; 
         font-size: 4rem; margin-bottom: 15px; 
-        /* 文字漸層與強烈金光陰影 */
         background: linear-gradient(to bottom, #ffffff 0%, #FFD700 100%);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         filter: drop-shadow(0 0 20px rgba(255,215,0,0.8));
@@ -60,7 +58,6 @@
         font-size: 1.4rem; font-weight: bold; letter-spacing: 2px;
         text-shadow: 0 2px 10px rgba(0,0,0,0.9), 0 0 20px rgba(255,215,0,0.6); 
     }
-
     @keyframes floatUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
     /* === 內容容器 (發光祭壇感) === */
@@ -72,7 +69,6 @@
         border: 1px solid rgba(218, 165, 32, 0.3);
         border-top: 8px solid var(--divine-gold-deep);
     }
-    /* 內圈裝飾線 */
     .donation-container::after {
         content: ''; position: absolute; inset: 8px; border: 1px dashed rgba(184, 134, 11, 0.4); 
         border-radius: 10px; pointer-events: none; z-index: -1;
@@ -113,7 +109,6 @@
         font-size: 1.8rem; font-weight: bold; writing-mode: vertical-rl; text-orientation: upright; 
         letter-spacing: 6px; text-shadow: 0 0 10px rgba(255,215,0,0.5); color: #FFD700;
     }
-    /* 展開卷軸按鈕 */
     .btn-scroll-trigger {
         background: transparent; border: 1px solid var(--divine-gold); color: var(--divine-gold);
         padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; cursor: pointer;
@@ -123,18 +118,23 @@
         background: var(--divine-gold); color: var(--c-red-bg); box-shadow: 0 0 20px rgba(255,215,0,0.6); transform: scale(1.05); 
     }
 
-    .marquee-container { flex: 1; height: 160px; overflow: hidden; position: relative; 
+    .marquee-container { 
+        flex: 1; height: 160px; overflow: hidden; position: relative; 
         mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
         -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
     }
-    .marquee-content { position: absolute; width: 100%; animation: scrollUp 25s linear infinite; }
+    .marquee-content { 
+        position: absolute; width: 100%; 
+        animation: scrollUp 25s linear infinite; 
+        will-change: transform; /* GPU加速，讓捲動更順暢 */
+    }
     .marquee-container:hover .marquee-content { animation-play-state: paused; }
     .donor-item { 
         display: flex; justify-content: space-between; padding: 12px 10px; 
         border-bottom: 1px dashed rgba(255, 215, 0, 0.2); font-size: 1.15rem; color: #ffebcd;
     }
     .donor-item span:first-child { font-weight: bold; color: #FFF8D6; }
-    @keyframes scrollUp { 0% { top: 100%; } 100% { top: -200%; } }
+    @keyframes scrollUp { 0% { transform: translateY(100%); } 100% { transform: translateY(-200%); } }
 
     /* === 流金動態按鈕 === */
     .cta-container { margin: 40px 0; }
@@ -216,7 +216,6 @@
         position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
         background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 9999; 
     }
-    
     .scroll-wrapper { position: relative; width: 90%; max-width: 600px; display: flex; flex-direction: column; align-items: center; }
     .scroll-close-btn {
         position: absolute; top: -20px; right: -20px; background: #4a0e0e; color: #fcf6ba;
@@ -261,7 +260,7 @@
         .donation-hero { height: 45vh; min-height: 300px; }
         .hero-text h1 { font-size: 2.6rem; }
         .donation-container { margin-top: -30px; border-radius: 15px; padding: 25px 20px; border-top: 5px solid var(--divine-gold-deep); }
-        .donation-container::after { display: none; } /* 手機版隱藏內圈虛線增加空間 */
+        .donation-container::after { display: none; } 
         
         .honor-roll-section { flex-direction: column; padding: 20px 15px; gap: 15px; }
         .honor-title-col { border-right: none; border-bottom: 2px dashed rgba(255,215,0,0.3); padding-right: 0; padding-bottom: 15px; width: 100%; flex-direction: row; justify-content: space-between; }
@@ -381,8 +380,14 @@
                     <label>聯絡電話 (09XX-XXX-XXX)</label>
                     <input type="tel" name="phone" id="phone-input" class="form-control" placeholder="09XX-XXX-XXX" required maxlength="12">
                 </div>
-                <div class="form-group"><label>電子信箱 (接收電子確認信)</label><input type="email" name="email" class="form-control" required></div>
-                <div class="form-group"><label>聯絡地址 </label><input type="text" name="address" class="form-control" required></div>
+                <div class="form-group">
+                    <label>電子信箱 (接收電子確認信)</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>聯絡地址 </label>
+                    <input type="text" name="address" class="form-control" required>
+                </div>
                 
                 <div class="form-group">
                     <label>農曆生日 (請直接輸入數字，如：750815 或 1120101)</label>
@@ -434,10 +439,8 @@
     const selectedItems = {};
 
     document.addEventListener('DOMContentLoaded', () => {
-        loadMarquee();
-        loadProducts();
+        initPageData();
         setupFormatters();
-        fetchBankInfo();
         
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'donate') {
@@ -445,11 +448,22 @@
         }
     });
 
+    // 集中處理初始化的非同步請求 (利用 Promise.all 加速)
+    async function initPageData() {
+        await Promise.all([
+            loadMarquee(),
+            loadProducts(),
+            fetchBankInfo()
+        ]);
+    }
+
     // ==========================================================================
     // 芳名錄 (無縫跑馬燈與聖旨卷軸)
     // ==========================================================================
-    function loadMarquee() {
-        fetch('/api/donations/public').then(r=>r.json()).then(data => {
+    async function loadMarquee() {
+        try {
+            const res = await fetch('/api/donations/public');
+            const data = await res.json();
             const list = document.getElementById('honor-list');
             const fullList = document.getElementById('full-honor-list');
             
@@ -469,10 +483,10 @@
             
             list.innerHTML = html + html; 
             fullList.innerHTML = html;
-        }).catch(e => {
+        } catch (e) {
             console.error('芳名錄載入失敗', e);
             document.getElementById('honor-list').innerHTML = '<div class="text-center" style="padding:20px; color:#fcf6ba;">載入失敗</div>';
-        });
+        }
     }
 
     // 卷軸 Modal 控制
@@ -482,6 +496,7 @@
         overlay.classList.remove('d-none');
         setTimeout(() => wrapper.classList.add('unrolled'), 50);
     };
+
     window.closeScrollModal = (e) => {
         if (e && e.target.id !== 'scroll-modal-overlay' && !e.target.classList.contains('scroll-close-btn')) return;
         const overlay = document.getElementById('scroll-modal-overlay');
@@ -495,6 +510,8 @@
     // ==========================================================================
     window.startDonation = async () => {
         const btn = document.querySelector('.start-donate-btn');
+        if (!btn) return;
+        
         const originalText = btn.innerText;
         btn.disabled = true;
         btn.innerText = '讀取資料中...';
@@ -527,7 +544,6 @@
             });
             
             document.getElementById('cta-container').classList.add('d-none');
-
         } catch (e) {
             console.error(e);
             alert('系統忙碌中，請稍後再試');
@@ -553,7 +569,7 @@
                 <div class="donation-card" id="card-${p._id}">
                     <img src="${p.image || '/static/images/common/default_product.png'}" 
                          class="d-img" loading="lazy" 
-                         onerror="this.src='/static/images/common/default_product.png'">
+                         onerror="this.src='/static/images/common/default_product.png'" alt="${p.name}">
                     <div class="d-info">
                         <div class="d-title">${p.name}</div>
                         <div class="d-price">護持金 NT$ ${p.price}</div>
@@ -565,18 +581,26 @@
                     </div>
                 </div>
             `).join('');
-        } catch(e) { console.error('Load products failed', e); }
+        } catch(e) { 
+            console.error('Load products failed', e); 
+        }
     }
 
     window.changeQty = (id, delta) => {
         const p = products.find(x => x._id === id);
-        if(!selectedItems[id]) selectedItems[id] = { id: p._id, name: p.name, price: p.price, qty: 0 };
+        if(!p) return;
+        
+        if(!selectedItems[id]) {
+            selectedItems[id] = { id: p._id, name: p.name, price: p.price, qty: 0 };
+        }
         
         selectedItems[id].qty = Math.max(0, selectedItems[id].qty + delta);
         
-        document.getElementById(`qty-${id}`).textContent = selectedItems[id].qty;
+        const qtyDisplay = document.getElementById(`qty-${id}`);
         const card = document.getElementById(`card-${id}`);
-        card.classList.toggle('active', selectedItems[id].qty > 0);
+        
+        if(qtyDisplay) qtyDisplay.textContent = selectedItems[id].qty;
+        if(card) card.classList.toggle('active', selectedItems[id].qty > 0);
         
         if(selectedItems[id].qty === 0) delete selectedItems[id];
         updateSummary();
@@ -585,6 +609,7 @@
     function updateSummary() {
         const items = Object.values(selectedItems);
         const section = document.getElementById('summary-section');
+        if(!section) return;
         
         if(items.length === 0) {
             section.classList.add('d-none');
@@ -625,7 +650,7 @@
         }
     }
 
-    document.getElementById('donation-form').onsubmit = async (e) => {
+    document.getElementById('donation-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const items = Object.values(selectedItems);
         if (items.length === 0) return alert('請至少選擇一個護持項目');
@@ -633,12 +658,14 @@
         const f = e.target;
         if(!/^09\d{2}-\d{3}-\d{3}$/.test(f.phone.value)) return alert('電話格式錯誤，請確認為 09XX-XXX-XXX');
         if(f.lunarBirthday.value && !/^\d{2,3}\/\d{2}\/\d{2}$/.test(f.lunarBirthday.value)) return alert('生日格式錯誤，請輸入民國年數字 (如 750821 或 1120101)');
+        
         const nameVal = f.name.value.trim();
         const nameRegex = /[、，,。/&＆\s]/; 
         const nameKeywords = /(全家|一家|闔家|合家|等人|與|及)/;
         if (nameRegex.test(nameVal) || nameKeywords.test(nameVal)) {
             return alert('真實姓名僅限填寫「一位」。\n請移除空格、標點符號或「全家」、「等人」等字眼。');
         }
+        
         const calculatedTotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
         const payload = {
@@ -656,12 +683,17 @@
 
         const btn = f.querySelector('button[type="submit"]');
         const originalBtnText = btn.textContent;
-        btn.disabled = true; btn.textContent = "處理中...";
+        btn.disabled = true; 
+        btn.textContent = "處理中...";
 
         try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
             const res = await fetch('/api/orders', {
-                method:'POST',
-                headers:{'Content-Type':'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content},
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json', 
+                    'X-CSRFToken': csrfToken
+                },
                 body: JSON.stringify(payload)
             });
             
@@ -675,7 +707,7 @@
             if(result.success) {
                 document.getElementById('success-modal').classList.remove('d-none');
             } else {
-                throw new Error('API returned failure');
+                throw new Error(result.message || 'API returned failure');
             }
         } catch(err) {
             console.error(err);
@@ -683,21 +715,23 @@
             btn.disabled = false;
             btn.textContent = originalBtnText;
         }
-    };
+    });
 
-    function fetchBankInfo() {
-        fetch('/api/public/bank-info?type=shop')
-            .then(res => res.json())
-            .then(data => {
-                const elCode = document.getElementById('bank-code');
-                const elName = document.getElementById('bank-name');
-                const elAccount = document.getElementById('bank-account');
-                
-                if(elCode) elCode.textContent = data.bankCode;
-                if(elName) elName.textContent = data.bankName;
-                if(elAccount) elAccount.textContent = data.account;
-            })
-            .catch(err => console.error('無法載入匯款資訊', err));
+    async function fetchBankInfo() {
+        try {
+            const res = await fetch('/api/public/bank-info?type=shop');
+            const data = await res.json();
+            
+            const elCode = document.getElementById('bank-code');
+            const elName = document.getElementById('bank-name');
+            const elAccount = document.getElementById('bank-account');
+            
+            if(elCode) elCode.textContent = data.bankCode;
+            if(elName) elName.textContent = data.bankName;
+            if(elAccount) elAccount.textContent = data.account;
+        } catch (err) {
+            console.error('無法載入匯款資訊', err);
+        }
     }
 </script>
 {% endblock %}
