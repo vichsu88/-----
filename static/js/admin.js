@@ -738,43 +738,56 @@ document.addEventListener('DOMContentLoaded', () => {
         const printWindow = window.open('', '_blank');
         let itemsHtml = '';
         
-        orders.forEach((o, index) => {
-            const itemStr = o.items.map(i => `${i.name}x${i.qty}`).join('、');
-            const dateStr = o.createdAt ? o.createdAt.split(' ')[0].replace(/-/g, '/') : '';
+        orders.forEach((o) => {
+            const name = o.customer.name || '';
+            const address = o.customer.address || '';
             
-            itemsHtml += `
-                <div class="report-block">
-                    <div class="block-title">【${index + 1}】</div>
-                    <div class="block-text">日期：${dateStr}</div>
-                    <div class="block-text">姓名：${o.customer.name || ''}</div>
-                    <div class="block-text">農曆：${o.customer.lunarBirthday || ''}</div>
-                    <div class="block-text">地址：${o.customer.address || ''}</div>
-                    <div class="block-text">項目：${itemStr}</div>
-                </div>
-            `;
+            // 雙層迴圈：將同一個人的不同香品拆成多列
+            o.items.forEach(item => {
+                itemsHtml += `
+                    <tr>
+                        <td>${name}</td>
+                        <td>${item.name}</td>
+                        <td>${item.qty}</td>
+                        <td>${address}</td>
+                    </tr>
+                `;
+            });
         });
 
         printWindow.document.write(`
             <html>
             <head>
-                <title>稟告紅紙清單</title>
+                <title>公壇手工香信徒捐香登記表</title>
                 <style>
-                    body { font-family: "KaiTi", "標楷體", "Microsoft JhengHei", serif; padding: 20px; background: white; }
-                    .list-container { width: 100%; max-width: 800px; margin: 0 auto; }
-                    .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-                    .report-block { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #666; font-size: 18px; line-height: 1.6; color: #000; font-weight: bold; page-break-inside: avoid; }
-                    .block-title { font-size: 20px; margin-bottom: 5px; margin-left: -10px; }
-                    .block-text { margin-left: 10px; }
+                    body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; padding: 20px; background: white; color: #000; }
+                    .list-container { width: 100%; max-width: 1000px; margin: 0 auto; }
+                    .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; font-size: 16px; margin-top: 10px; }
+                    th, td { border: 1px solid #000; padding: 12px 10px; text-align: left; vertical-align: middle; }
+                    th { font-weight: bold; }
                     @media print {
                         @page { margin: 1cm; }
-                        body { -webkit-print-color-adjust: exact; background-color: #ffcccc; }
+                        body { -webkit-print-color-adjust: exact; }
                     }
                 </style>
             </head>
             <body>
                 <div class="list-container">
-                    <div class="header">承天中承府 捐香稟告清單 (${new Date().toLocaleDateString()})</div>
-                    ${itemsHtml}
+                    <div class="header">公壇手工香信徒捐香登記表</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="15%">姓名</th>
+                                <th width="25%">香品</th>
+                                <th width="10%">數量</th>
+                                <th width="50%">地址</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml}
+                        </tbody>
+                    </table>
                 </div>
                 <script>setTimeout(() => { window.print(); }, 500);<\/script>
             </body>
