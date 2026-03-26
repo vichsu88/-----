@@ -491,8 +491,8 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.keys(limits).forEach(key => {
                 window.remainData[key] = data[key] ?? limits[key];
                 
-                // 強制讓兩個主委名額歸 0 (保留原有防呆邏輯)
-                if (['hon_main', 'bld_main'].includes(key)) window.remainData[key] = 0; 
+                // 強制額歸 0 (保留原有防呆邏輯)
+                if (['hon_main', 'bld_main', 'bld_vice'].includes(key)) window.remainData[key] = 0;
 
                 const remSpan = document.getElementById(`rem-${key}`);
                 if (remSpan) remSpan.innerText = window.remainData[key];
