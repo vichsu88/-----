@@ -542,7 +542,7 @@ def get_committee_status():
         "hon_main": get_remain('[本府] 主委', 1),
         "hon_vice": get_remain('[本府] 副主委', 7),
         "bld_main": get_remain('[建廟] 籌備主委', 1),
-        "bld_vice": get_remain('[建廟] 籌備副主委', 10)
+        "bld_vice": 0
     })
 
 @app.route('/feedback')
@@ -1417,7 +1417,7 @@ def create_order():
                 return jsonify({"error": "【[本府] 副主委】名額已滿！"}), 400
             if item_name == '[建廟] 籌備主委' and check_limit(item_name, 1): 
                 return jsonify({"error": "【[建廟] 籌備主委】名額已滿！"}), 400
-            if item_name == '[建廟] 籌備副主委' and check_limit(item_name, 10): 
+            if item_name == '[建廟] 籌備副主委' and check_limit(item_name, 0): 
                 return jsonify({"error": "【[建廟] 籌備副主委】名額已滿！"}), 400
 
     prefix = "ORD"
