@@ -1511,7 +1511,49 @@ def get_user_orders():
             "deadline_iso": tw_deadline.isoformat() 
         })
     return jsonify(results)
+@app.route('/api/user/fund-summary', methods=['GET'])
+@user_login_required
+def get_user_fund_summary():
+    """取得登入信徒的建廟基金累計總額 (依姓名分組)"""
+    line_id = session.get('user_line_id')
+    if db is None:
+        return jsonify([])
 
+    # 1. 條件過濾：同一 LINE ID、建廟基金、且已付款
+    cursor = db.orders.find({
+        "lineId": line_id,
+        "orderType": "fund",
+        "status": "paid"
+    })
+
+    summary_dict = {}
+
+    # 2. 逐筆處理與加總
+    for doc in cursor:
+        customer = doc.get('customer', {})
+        raw_name = customer.get('name', '未具名')
+        
+        # 關鍵防呆：自動去除半形與全形空白
+        clean_name = raw_name.replace(" ", "").replace("　", "")
+        if not clean_name:
+            continue
+
+        amount = doc.get('total', 0)
+
+        # 累計金額
+        if clean_name in summary_dict:
+            summary_dict[clean_name] += amount
+        else:
+            summary_dict[clean_name] = amount
+
+    # 3. 整理成前端需要的格式，並稍微做個排序 (金額大的排前面)
+    results = [
+        {"name": name, "total": total}
+        for name, total in summary_dict.items()
+    ]
+    results.sort(key=lambda x: x['total'], reverse=True)
+
+    return jsonify(results)
 @app.route('/api/user/donations', methods=['GET'])
 def get_user_donations():
     line_id = session.get('user_line_id')

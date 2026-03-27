@@ -4,137 +4,230 @@
 
 {% block content %}
 <style>
+    /* =========================================
+       CSS 變數設定 (統一管理色彩與間距)
+       ========================================= */
+    :root {
+        --primary-gold: #C48945;
+        --light-gold: #E6BA67;
+        --bg-warm: #fffcf5;
+        --bg-gradient: linear-gradient(135deg, #fffcf5 0%, #fdf6e9 100%);
+        --text-dark: #333;
+        --text-muted: #666;
+        --text-brown: #8B4513;
+        
+        --status-pending-bg: #fff8e1;
+        --status-pending-text: #856404;
+        --status-pending-border: #ffc107;
+        
+        --status-approved-bg: #e2e3e5;
+        --status-approved-text: #383d41;
+        --status-approved-border: #6c757d;
+        
+        --status-sent-bg: #cce5ff;
+        --status-sent-text: #004085;
+        --status-sent-border: #007bff;
+        
+        --status-success-bg: #d4edda;
+        --status-success-text: #155724;
+        
+        --status-warning-bg: #ffeeba;
+        --status-warning-text: #856404;
+        
+        --status-urgent-bg: #fff3cd;
+        --status-urgent-border: #fd7e14;
+        
+        --danger: #dc3545;
+        --radius-md: 10px;
+        --radius-lg: 15px;
+    }
+
+    /* =========================================
+       版面基礎設定
+       ========================================= */
     .profile-page-wrapper {
         padding: 40px 20px;
         max-width: 800px;
         margin: 0 auto;
         font-family: 'Noto Sans TC', sans-serif;
     }
+    
     .profile-header {
         text-align: center;
         margin-bottom: 30px;
     }
     
-    /* 共用卡片樣式：#fffcf5 配金邊 */
+    .profile-header h2 { margin-bottom: 5px; }
+    .profile-header p { color: var(--text-muted); margin-top: 0; }
+
+    /* =========================================
+       登入與鎖定提示區塊
+       ========================================= */
+    .alert-box {
+        text-align: center;
+        padding: 40px;
+        background: var(--bg-warm);
+        border: 2px solid var(--light-gold);
+        border-radius: var(--radius-lg);
+    }
+    .alert-box.dashed { border-style: dashed; padding: 30px; margin-top: 20px; color: var(--text-brown); }
+    .alert-box h3 { color: var(--primary-gold); margin-top: 0; margin-bottom: 10px; }
+    .alert-box p { color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+    .btn-line-login {
+        background-color: #06C755;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        display: inline-block;
+    }
+
+    /* =========================================
+       卡片與表單共用樣式
+       ========================================= */
     .profile-card {
-        background: #fffcf5;
-        border: 2px solid #E6BA67;
-        border-radius: 15px;
+        background: var(--bg-warm);
+        border: 2px solid var(--light-gold);
+        border-radius: var(--radius-lg);
         padding: 25px;
         margin-bottom: 30px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    .profile-card h3 {
-        color: #C48945;
+    .profile-card h3.card-title {
+        color: var(--primary-gold);
         margin-top: 0;
-        border-bottom: 1px dashed #E6BA67;
+        border-bottom: 1px dashed var(--light-gold);
         padding-bottom: 10px;
         font-size: 20px;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        margin-bottom: 20px;
     }
 
-    /* 回饋卡片專用樣式 */
-    .feedback-id-tag {
-        font-size: 13px; color: #aaa; margin-bottom: 5px; 
-        font-family: monospace; letter-spacing: 1px;
-    }
-    .feedback-content-box {
-        color: #333; font-size: 15px; line-height: 1.6; margin-bottom: 10px;
-        position: relative;
-    }
-    /* 預設摺疊狀態：只顯示 3 行 */
-    .feedback-text {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: pre-wrap; /* 保留換行 */
-    }
-    /* 展開狀態 */
-    .feedback-text.expanded {
-        -webkit-line-clamp: unset;
-    }
-    /* 閱讀全文按鈕 */
-    .read-more-btn {
-        color: #C48945; font-size: 14px; font-weight: bold; 
-        cursor: pointer; margin-top: 5px; display: inline-block;
-        border: none; background: none; padding: 0;
-    }
-    .read-more-btn:hover { text-decoration: underline; }
-
-    /* 狀態標籤 */
-    .gift-status {
-        display: inline-block;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 14px;
-        font-weight: bold;
-    }
-    .gift-status.received { background: #d4edda; color: #155724; }
-    .gift-status.not-received { background: #ffeeba; color: #856404; }
-    .gift-note { font-size: 13px; color: #dc3545; margin-top: 5px; display: none; }
-
-    /* 表單樣式 */
-    .profile-form .form-group { margin-bottom: 15px; }
-    .profile-form label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 15px; }
-    .profile-form input, .profile-form select {
+    .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+    .form-group { flex: 1; min-width: 200px; margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 15px; }
+    .form-group input, .form-group select {
         width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px;
     }
     .btn-save {
-        background: #C48945; color: white; border: none; padding: 10px 25px; border-radius: 25px;
+        background: var(--primary-gold); color: white; border: none; padding: 10px 25px; border-radius: 25px;
         font-size: 16px; font-weight: bold; cursor: pointer; float: right; transition: 0.2s;
     }
     .btn-save:hover { opacity: 0.8; }
-    
-    /* 歷史紀錄卡片 (共用) */
-    .history-item {
-        background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 15px;
-    }
-    .history-item-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #888; }
-    .history-item-content { color: #333; font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
-    .history-item-status { padding: 10px; border-radius: 6px; font-size: 14px; line-height: 1.5; font-weight: 500;}
-    
-    .status-pending { background: #fff8e1; color: #856404; border-left: 4px solid #ffc107; }
-    .status-approved { background: #e2e3e5; color: #383d41; border-left: 4px solid #6c757d; }
-    .status-sent { background: #cce5ff; color: #004085; border-left: 4px solid #007bff; }
 
-    /* 收驚預約專屬樣式 */
+    /* =========================================
+       狀態標籤 (Badges)
+       ========================================= */
+    .badge {
+        display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white;
+    }
+    .badge-fund { background: #8B4513; }
+    .badge-committee { background: #B22222; }
+    .badge-donation { background: var(--primary-gold); }
+    .badge-urgent { background: var(--danger); font-size: 16px; }
+
+    .gift-status { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+    .gift-status.received { background: var(--status-success-bg); color: var(--status-success-text); }
+    .gift-status.not-received { background: var(--status-warning-bg); color: var(--status-warning-text); }
+    .gift-note { font-size: 13px; color: var(--danger); margin-top: 5px; display: none; }
+
     .cloth-pill {
-        display: inline-block; background: #fdf6e9; border: 1px solid #E6BA67; color: #C48945;
+        display: inline-block; background: #fdf6e9; border: 1px solid var(--light-gold); color: var(--primary-gold);
         padding: 4px 10px; border-radius: 15px; font-size: 13px; margin: 0 5px 5px 0; font-weight: bold;
     }
 
-    /* 鎖定提示樣式 */
-    .lock-message-box {
-        text-align: center; 
-        padding: 30px; 
-        background: #fffcf5; 
-        border: 2px dashed #E6BA67; 
-        border-radius: 15px; 
-        margin-top: 20px; 
-        color: #8B4513;
+    /* =========================================
+       建廟護持累計金卡
+       ========================================= */
+    .fund-grid { display: flex; flex-wrap: wrap; gap: 15px; }
+    .fund-gold-card {
+        flex: 1 1 250px;
+        background: var(--bg-gradient);
+        border: 2px solid var(--light-gold);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(196, 137, 69, 0.15);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
     }
+    .fund-gold-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+        background: linear-gradient(90deg, #fcf6ba, #bf953f, #fcf6ba);
+    }
+    .fund-gold-name { font-size: 20px; font-weight: bold; color: var(--text-brown); margin-bottom: 12px; }
+    .fund-gold-amount { font-size: 22px; font-weight: 900; color: var(--primary-gold); letter-spacing: 1px; }
+    
+    .tip-box {
+        background: var(--status-pending-bg); border-left: 4px solid var(--status-pending-border); 
+        padding: 12px 15px; border-radius: 6px; margin-bottom: 20px; 
+        color: var(--status-pending-text); font-size: 14px; line-height: 1.5;
+    }
+
+    /* =========================================
+       歷史紀錄卡片
+       ========================================= */
+    .history-item {
+        background: white; border: 1px solid #eee; border-radius: var(--radius-md); padding: 15px; margin-bottom: 15px;
+    }
+    .history-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; color: #888; }
+    .history-item-title { font-weight: bold; color: var(--text-dark); font-size: 15px;}
+    .history-item-content { color: var(--text-dark); font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
+    .history-item-list { margin: 0; padding-left: 20px; font-size: 14px; color: #555; }
+    .history-item-list li { margin-bottom: 3px; }
+    .history-item-total { margin-top: 10px; font-weight: bold; color: var(--primary-gold); font-size: 16px; }
+    
+    .history-item-status { padding: 10px; border-radius: 6px; font-size: 14px; line-height: 1.5; font-weight: 500; }
+    .status-pending { background: var(--status-pending-bg); color: var(--status-pending-text); border-left: 4px solid var(--status-pending-border); }
+    .status-approved { background: var(--status-approved-bg); color: var(--status-approved-text); border-left: 4px solid var(--status-approved-border); }
+    .status-sent { background: var(--status-sent-bg); color: var(--status-sent-text); border-left: 4px solid var(--status-sent-border); }
+    .status-urgent { background: var(--status-urgent-bg); color: var(--status-pending-text); border-left: 4px solid var(--status-urgent-border); }
+
+    /* =========================================
+       回饋卡片專用樣式
+       ========================================= */
+    .feedback-id-tag { font-size: 13px; color: #aaa; margin-bottom: 5px; font-family: monospace; letter-spacing: 1px; }
+    .feedback-content-box { color: var(--text-dark); font-size: 15px; line-height: 1.6; margin-bottom: 10px; position: relative; }
+    .feedback-text {
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        overflow: hidden; text-overflow: ellipsis; white-space: pre-wrap;
+    }
+    .feedback-text.expanded { -webkit-line-clamp: unset; }
+    .read-more-btn {
+        color: var(--primary-gold); font-size: 14px; font-weight: bold; cursor: pointer; 
+        margin-top: 5px; display: inline-block; border: none; background: none; padding: 0;
+    }
+    .read-more-btn:hover { text-decoration: underline; }
+    
+    /* 輔助樣式 */
+    .text-center { text-align: center; }
+    .text-muted { color: #888; }
+    .text-danger { color: var(--danger); }
+    .text-success { color: var(--status-success-text); }
+    .empty-state { text-align: center; color: #888; padding: 20px 0; }
+    .action-link { color: var(--primary-gold); font-weight: bold; text-decoration: none; }
+    .btn-delete { background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
 </style>
 
 <main class="profile-page-wrapper">
-    <div class="profile-header">
-        <h2 class="section-title" style="margin-bottom: 5px;">個人專區</h2>
-        <p style="color: #666; margin-top: 0;" id="user-greeting">讀取中...</p>
-    </div>
+    <header class="profile-header">
+        <h2>個人專區</h2>
+        <p id="user-greeting">讀取中...</p>
+    </header>
 
-    <div id="login-section" style="text-align: center; padding: 40px; background: #fffcf5; border: 2px solid #E6BA67; border-radius: 15px; display: none;">
-        <h3 style="color: #C48945;">請先登入以查看個人資料</h3>
-        <p style="color: #666; margin-bottom: 20px;">綁定 LINE 帳號，輕鬆管理資料與歷史紀錄。</p>
-        <a href="/api/line/login?next=/profile" style="background-color: #06C755; color: white; padding: 10px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; display: inline-block;">使用 LINE 登入</a>
-    </div>
+    <section id="login-section" class="alert-box" style="display: none;">
+        <h3>請先登入以查看個人資料</h3>
+        <p>綁定 LINE 帳號，輕鬆管理資料與歷史紀錄。</p>
+        <a href="/api/line/login?next=/profile" class="btn-line-login">使用 LINE 登入</a>
+    </section>
 
     <div id="profile-content" style="display: none;">
         
-        <div class="profile-card">
-            <h3>
+        <section class="profile-card">
+            <h3 class="card-title">
                 <span>📝 我的基本資料</span>
                 <div>
                     <span id="gift-status-badge" class="gift-status not-received">🧥小神衣：未領取</span>
@@ -143,34 +236,34 @@
             <p id="gift-note" class="gift-note">※ 您已領取過小神衣結緣品。未來的回饋文章我們將與大眾分享，不再重複寄送小神衣，感恩您的發心！</p>
             
             <form id="profile-form" class="profile-form">
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <div class="form-group" style="flex: 1; min-width: 200px;">
-                        <label>真實姓名 <span style="color:red">*</span></label>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>真實姓名 <span class="text-danger">*</span></label>
                         <input type="text" name="realName" required>
                     </div>
-                    <div class="form-group" style="flex: 1; min-width: 200px;">
-                        <label>暱稱 (公開顯示) <span style="color:red">*</span></label>
+                    <div class="form-group">
+                        <label>暱稱 (公開顯示) <span class="text-danger">*</span></label>
                         <input type="text" name="nickname" required>
                     </div>
                 </div>
                 
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <div class="form-group" style="flex: 1; min-width: 200px;">
-                        <label>聯絡電話 <span style="color:red">*</span></label>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>聯絡電話 <span class="text-danger">*</span></label>
                         <input type="tel" name="phone" required placeholder="09XX-XXX-XXX">
                     </div>
-                    <div class="form-group" style="flex: 1; min-width: 200px;">
-                        <label>電子信箱 <span style="color:red">*</span></label>
+                    <div class="form-group">
+                        <label>電子信箱 <span class="text-danger">*</span></label>
                         <input type="email" name="email" required>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                <div class="form-row">
+                    <div class="form-group">
                         <label>農曆生日 (數字)</label>
                         <input type="text" name="lunarBirthday" placeholder="例如：750815">
                     </div>
-                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <div class="form-group">
                         <label>出生時辰</label>
                         <select name="birthTime">
                             <option value="吉時">吉時</option>
@@ -190,142 +283,163 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>寄件地址 <span style="color:red">*</span></label>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>寄件地址 <span class="text-danger">*</span></label>
                     <input type="text" name="address" required>
                 </div>
 
-                <div style="overflow: hidden; margin-top: 10px;">
+                <div style="overflow: hidden; margin-top: 15px;">
                     <button type="submit" class="btn-save" id="save-btn">儲存修改</button>
                 </div>
             </form>
-        </div>
+        </section>
 
-        <div id="profile-lock-msg" class="lock-message-box" style="display: none;">
-            <h3 style="margin-bottom: 10px;">🔒 請先完成資料設定</h3>
-            <p style="line-height: 1.6; margin: 0;">
+        <section id="profile-lock-msg" class="alert-box dashed" style="display: none;">
+            <h3>🔒 請先完成資料設定</h3>
+            <p style="margin: 0;">
                 為了確保寄送資訊正確，請先完整填寫並<b>「儲存」</b>上方基本資料，<br>
                 系統將自動解鎖回饋紀錄、訂單查詢與其他功能。
             </p>
-        </div>
+        </section>
 
         <div id="extended-profile-section" style="display: none;">
-            <div class="profile-card">
-                <h3 style="margin-bottom: 20px;">📖 我的回饋紀錄</h3>
-                <div id="history-list">
-                    <p style="text-align: center; color: #888;">載入中...</p>
-                </div>
-            </div>
+            
+            <section class="profile-card">
+                <h3 class="card-title">📖 我的回饋紀錄</h3>
+                <div id="history-list"><p class="empty-state">載入中...</p></div>
+            </section>
 
-            <div class="profile-card">
-                <h3 style="margin-bottom: 20px;">🙏 我的捐贈紀錄 (捐香/建廟)</h3>
-                <div id="donation-list">
-                    <p style="text-align: center; color: #888;">載入中...</p>
-                </div>
-            </div>
+            <section class="profile-card">
+                <h3 class="card-title">🙏 我的捐贈紀錄 (捐香/建廟)</h3>
+                <div id="donation-list"><p class="empty-state">載入中...</p></div>
+            </section>
 
-            <div class="profile-card">
-                <h3 style="margin-bottom: 20px;">👕 取回收驚衣服預約</h3>
-                <div id="pickup-list">
-                    <p style="text-align: center; color: #888;">載入中...</p>
-                </div>
-            </div>
-            <div class="profile-card">
-                <h3 style="margin-bottom: 20px;">🛍️ 我的購買紀錄</h3>
-                <div id="order-list">
-                    <p style="text-align: center; color: #888;">載入中...</p>
-                </div>
-            </div>
+            <section class="profile-card">
+                <h3 class="card-title">👕 取回收驚衣服預約</h3>
+                <div id="pickup-list"><p class="empty-state">載入中...</p></div>
+            </section>
+            
+            <section class="profile-card">
+                <h3 class="card-title">🛍️ 我的購買紀錄</h3>
+                <div id="order-list"><p class="empty-state">載入中...</p></div>
+            </section>
         </div>
-
+        
+        <section class="profile-card">
+            <h3 class="card-title">🏗️ 我的建廟護持累計</h3>
+            <div class="tip-box">
+                💡 <b>溫馨提示：</b>系統將依據您填寫的「真實姓名」自動個別累計建廟功德。為確保累計精準，每次護持請確認姓名寫法一致喔！
+            </div>
+            <div id="fund-summary-list" class="fund-grid">
+                <p class="empty-state" style="width: 100%;">載入中...</p>
+            </div>
+        </section>
     </div>
 </main>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    // 安全獲取 CSRF Token
+    const getCsrfToken = () => {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    };
     
-    const loginSection = document.getElementById('login-section');
-    const profileContent = document.getElementById('profile-content');
-    const profileForm = document.getElementById('profile-form');
-    const historyList = document.getElementById('history-list');
-    const pickupList = document.getElementById('pickup-list');
-    const donationList = document.getElementById('donation-list');
-    
-    const lockMsg = document.getElementById('profile-lock-msg');
-    const extendedSection = document.getElementById('extended-profile-section');
+    // DOM 元素快取
+    const els = {
+        loginSection: document.getElementById('login-section'),
+        profileContent: document.getElementById('profile-content'),
+        profileForm: document.getElementById('profile-form'),
+        historyList: document.getElementById('history-list'),
+        pickupList: document.getElementById('pickup-list'),
+        donationList: document.getElementById('donation-list'),
+        orderList: document.getElementById('order-list'),
+        fundSummaryList: document.getElementById('fund-summary-list'),
+        lockMsg: document.getElementById('profile-lock-msg'),
+        extendedSection: document.getElementById('extended-profile-section'),
+        userGreeting: document.getElementById('user-greeting'),
+        saveBtn: document.getElementById('save-btn'),
+        giftBadge: document.getElementById('gift-status-badge'),
+        giftNote: document.getElementById('gift-note')
+    };
 
-    // 判斷資料是否完整的函式
-    function isProfileComplete(u) {
-        // 檢查必填欄位是否有值
-        return u.realName && u.nickname && u.phone && u.email && u.address;
-    }
+    // 檢查資料是否完整
+    const isProfileComplete = (u) => u.realName && u.nickname && u.phone && u.email && u.address;
 
-    // 1. 載入會員資料
+    // 通用產生 Empty State HTML
+    const createEmptyState = (msg, linkUrl, linkText) => 
+        `<div class="empty-state">
+            <p style="margin-bottom: 5px;">${msg}</p>
+            ${linkUrl ? `<br><a href="${linkUrl}" class="action-link">${linkText}</a>` : ''}
+        </div>`;
+
+    // ==========================================
+    // API 初始化與資料載入
+    // ==========================================
     fetch('/api/user/me')
         .then(res => res.json())
         .then(data => {
             if (data.logged_in) {
-                loginSection.style.display = 'none';
-                profileContent.style.display = 'block';
+                els.loginSection.style.display = 'none';
+                els.profileContent.style.display = 'block';
                 
                 const u = data.user;
                 const titleSuffix = u.title ? u.title : '';
-                document.getElementById('user-greeting').textContent = `歡迎回來，${u.displayName || u.realName}${titleSuffix}！`;                
-                // 填入表單
-                if(u.realName) profileForm.realName.value = u.realName;
-                if(u.nickname) profileForm.nickname.value = u.nickname;
-                else profileForm.nickname.value = u.displayName || '';
+                els.userGreeting.textContent = `歡迎回來，${u.displayName || u.realName}${titleSuffix}！`;
                 
-                if(u.phone) profileForm.phone.value = u.phone;
-                if(u.email) profileForm.email.value = u.email;
-                if(u.address) profileForm.address.value = u.address;
-                if(u.lunarBirthday) profileForm.lunarBirthday.value = u.lunarBirthday;
-                if(u.birthTime) profileForm.birthTime.value = u.birthTime;
+                // 填入表單
+                els.profileForm.realName.value = u.realName || '';
+                els.profileForm.nickname.value = u.nickname || u.displayName || '';
+                els.profileForm.phone.value = u.phone || '';
+                els.profileForm.email.value = u.email || '';
+                els.profileForm.address.value = u.address || '';
+                els.profileForm.lunarBirthday.value = u.lunarBirthday || '';
+                els.profileForm.birthTime.value = u.birthTime || '吉時';
 
                 // 處理小神衣狀態
-                const badge = document.getElementById('gift-status-badge');
-                if(u.has_received_gift) {
-                    badge.textContent = '🎁 小神衣：已領取';
-                    badge.className = 'gift-status received';
-                    document.getElementById('gift-note').style.display = 'block';
+                if (u.has_received_gift) {
+                    els.giftBadge.textContent = '🎁 小神衣：已領取';
+                    els.giftBadge.className = 'gift-status received';
+                    els.giftNote.style.display = 'block';
                 }
 
-                // ★ 檢查資料完整性來決定顯示哪個區塊
+                // 判斷是否解鎖擴充區塊
                 if (isProfileComplete(u)) {
-                    lockMsg.style.display = 'none';
-                    extendedSection.style.display = 'block';
+                    els.lockMsg.style.display = 'none';
+                    els.extendedSection.style.display = 'block';
                 } else {
-                    lockMsg.style.display = 'block';
-                    extendedSection.style.display = 'none';
+                    els.lockMsg.style.display = 'block';
+                    els.extendedSection.style.display = 'none';
                 }
 
-                // 並行載入紀錄 (即使隱藏也預先載入，避免切換時等待)
+                // 非同步載入各項歷史紀錄
+                loadFundSummary();
                 loadFeedbackHistory();
                 loadDonationHistory(); 
                 loadPickupHistory();
                 loadOrderHistory();
             } else {
-                document.getElementById('user-greeting').style.display = 'none';
-                loginSection.style.display = 'block';
+                els.userGreeting.style.display = 'none';
+                els.loginSection.style.display = 'block';
             }
         });
 
-    // 2. 儲存修改基本資料
-    profileForm.addEventListener('submit', async (e) => {
+    // ==========================================
+    // 儲存修改基本資料
+    // ==========================================
+    els.profileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = document.getElementById('save-btn');
-        btn.textContent = '儲存中...';
-        btn.disabled = true;
+        els.saveBtn.textContent = '儲存中...';
+        els.saveBtn.disabled = true;
 
         const payload = {
-            realName: profileForm.realName.value.trim(),
-            nickname: profileForm.nickname.value.trim(),
-            phone: profileForm.phone.value.trim(),
-            email: profileForm.email.value.trim(),
-            address: profileForm.address.value.trim(),
-            lunarBirthday: profileForm.lunarBirthday.value.trim(),
-            birthTime: profileForm.birthTime.value
+            realName: els.profileForm.realName.value.trim(),
+            nickname: els.profileForm.nickname.value.trim(),
+            phone: els.profileForm.phone.value.trim(),
+            email: els.profileForm.email.value.trim(),
+            address: els.profileForm.address.value.trim(),
+            lunarBirthday: els.profileForm.lunarBirthday.value.trim(),
+            birthTime: els.profileForm.birthTime.value
         };
 
         try {
@@ -336,224 +450,290 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if(res.ok) {
                 alert('資料已成功更新！功能已解鎖。');
-                // ★ 儲存成功後，立刻解鎖顯示
-                lockMsg.style.display = 'none';
-                extendedSection.style.display = 'block';
-                // 滾動到下方提示用戶
-                extendedSection.scrollIntoView({ behavior: 'smooth' });
+                els.lockMsg.style.display = 'none';
+                els.extendedSection.style.display = 'block';
+                els.extendedSection.scrollIntoView({ behavior: 'smooth' });
             } else {
                 alert('更新失敗，請稍後再試。');
             }
         } catch(err) {
             console.error(err);
         } finally {
-            btn.textContent = '儲存修改';
-            btn.disabled = false;
+            els.saveBtn.textContent = '儲存修改';
+            els.saveBtn.disabled = false;
         }
     });
 
-    // 3. 載入回饋紀錄清單 (含編號與展開全文)
+    // ==========================================
+    // 各區塊資料載入函式
+    // ==========================================
+    
+    // 載入建廟護持累計
+    async function loadFundSummary() {
+        try {
+            const res = await fetch('/api/user/fund-summary');
+            const data = await res.json();
+            
+            if(data.length === 0) {
+                els.fundSummaryList.innerHTML = createEmptyState('目前尚無建廟護持累計。', '/fund', '點此前往護持建廟');
+                return;
+            }
+
+            els.fundSummaryList.innerHTML = data.map(item => `
+                <div class="fund-gold-card">
+                    <div class="fund-gold-name">${item.name} 大德</div>
+                    <div class="fund-gold-amount">累計捐贈 NT$ ${item.total.toLocaleString()}</div>
+                </div>
+            `).join('');
+        } catch(err) {
+            els.fundSummaryList.innerHTML = '<p class="text-danger text-center w-100">累計資料載入失敗</p>';
+        }
+    }
+
+    // 載入回饋紀錄
     async function loadFeedbackHistory() {
         try {
             const res = await fetch('/api/user/feedbacks');
             const data = await res.json();
             
             if(data.length === 0) {
-                historyList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">您目前還沒有撰寫過回饋故事，<br><a href="/feedback" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往分享</a></p>';
+                els.historyList.innerHTML = createEmptyState('您目前還沒有撰寫過回饋故事，', '/feedback', '點此前往分享');
                 return;
             }
 
-            historyList.innerHTML = data.map((item, index) => {
+            els.historyList.innerHTML = data.map((item, index) => {
                 let statusHtml = '';
                 if(item.status === 'pending') {
                     statusHtml = `<div class="history-item-status status-pending">🟡 <b>審核中：</b>感謝您的分享，廟方正在用心閱讀中。</div>`;
                 } else if (item.status === 'approved') {
                     statusHtml = `<div class="history-item-status status-approved">🟢 <b>已刊登：</b>文章已刊登！元帥娘正在為您的小神衣開符加持中，開符完成後寄出請耐心等候。</div>`;
                 } else if (item.status === 'sent') {
-                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已寄出：</b>結緣品已寄出！。<br><span style="color:#333; margin-top:5px; display:inline-block;">📦 物流單號：<b>${item.trackingNumber || '無'}</b></span></div>`;
+                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已寄出：</b>結緣品已寄出！<br><span class="text-dark mt-1 d-inline-block">📦 物流單號：<b>${item.trackingNumber || '無'}</b></span></div>`;
                 }
                 
                 const cat = Array.isArray(item.category) ? item.category.join(', ') : item.category;
-                
-                // 處理編號顯示 (如果有)
                 const fbIdHtml = item.feedbackId ? `<div class="feedback-id-tag">#${item.feedbackId}</div>` : '';
-                
-                // 為了讓長文可以展開，我們給每個項目唯一的 ID
                 const contentId = `fb-content-${index}`;
                 const btnId = `fb-btn-${index}`;
-                
-                // 內容處理：保留換行
                 const safeContent = item.content || item.content_preview || '';
 
                 return `
-                <div class="history-item">
+                <article class="history-item">
                     ${fbIdHtml}
-                    <div class="history-item-header">
+                    <header class="history-item-header">
                         <span>🏷️ ${cat}</span>
-                        <span> ${item.createdAt}</span>
-                    </div>
-                    
+                        <span>${item.createdAt}</span>
+                    </header>
                     <div class="feedback-content-box">
                         <div id="${contentId}" class="feedback-text">${safeContent}</div>
                         <button id="${btnId}" class="read-more-btn" onclick="toggleFeedback('${contentId}', '${btnId}')">閱讀全文 🔽</button>
                     </div>
-
                     ${statusHtml}
-                </div>`;
+                </article>`;
             }).join('');
-            
         } catch(err) {
-            console.error(err);
-            historyList.innerHTML = '<p style="color: red; text-align: center;">紀錄載入失敗</p>';
+            els.historyList.innerHTML = '<p class="text-danger text-center">紀錄載入失敗</p>';
         }
     }
-    
-    // 切換展開/收起的函式 (掛載到 window)
-    window.toggleFeedback = function(contentId, btnId) {
-        const contentDiv = document.getElementById(contentId);
-        const btn = document.getElementById(btnId);
-        
-        if (contentDiv.classList.contains('expanded')) {
-            contentDiv.classList.remove('expanded');
-            btn.textContent = '閱讀全文';
-        } else {
-            contentDiv.classList.add('expanded');
-            btn.textContent = '收起內容';
-        }
-    };
 
-// 4. 載入捐贈紀錄
+    // 載入捐贈紀錄
     async function loadDonationHistory() {
         try {
             const res = await fetch('/api/user/donations');
             const data = await res.json();
             
             if(data.length === 0) {
-                document.getElementById('donation-list').innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">無捐贈紀錄。<br><a href="/donation" style="color: #C48945; font-weight: bold; text-decoration: none;">前往捐香</a> 或 <a href="/fund" style="color: #C48945; font-weight: bold; text-decoration: none;">護持建廟</a></p>';
+                els.donationList.innerHTML = createEmptyState('無捐贈紀錄。<br><a href="/donation" class="action-link">前往捐香</a> 或 <a href="/fund" class="action-link">護持建廟</a>');
                 return;
             }
 
             const now = new Date();
-
-            document.getElementById('donation-list').innerHTML = data.map(order => {
+            els.donationList.innerHTML = data.map(order => {
                 let statusHtml = '';
                 let borderColor = '#ccc';
                 let typeBadge = '';
 
-                // 判斷徽章類型 (加入委員會)
+                // 判斷徽章類型
                 if (order.orderType === 'fund') {
-                    typeBadge = '<span style="background:#8B4513; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🏗️ 建廟</span>';
+                    typeBadge = '<span class="badge badge-fund">🏗️ 建廟</span>';
                 } else if (order.orderType === 'committee') {
-                    typeBadge = '<span style="background:#B22222; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🏛️ 委員會</span>';
+                    typeBadge = '<span class="badge badge-committee">🏛️ 委員會</span>';
                 } else {
-                    typeBadge = '<span style="background:#C48945; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">🕯️ 捐香</span>';
+                    typeBadge = '<span class="badge badge-donation">🕯️ 捐香</span>';
                 }
 
                 if (order.status === 'pending') {
                     const deadline = new Date(order.deadline_iso);
                     if (now > deadline) {
-                        // 超過 2 小時，但後端還沒刪除 (代表處於 2~76 小時的緩衝期)
-                        // 改用橘色 (Orange) 顯示，安撫信徒
-                        borderColor = '#fd7e14'; 
+                        borderColor = 'var(--status-urgent-border)'; 
                         statusHtml = `
-                            <div class="history-item-status" style="background:#fff3cd; color:#856404; border-left:4px solid #fd7e14;">
+                            <div class="history-item-status status-urgent">
                                 🟠 <b>請盡速匯款</b><br>
-                                <span style="font-size:13px; color:#666;">若您已完成匯款，請無須擔心，人工對帳約需一個工作天，確認入帳後將更新狀態。</span>
+                                <span class="text-muted" style="font-size:13px;">若您已完成匯款，請無須擔心，人工對帳約需一個工作天，確認入帳後將更新狀態。</span>
                             </div>`;
                     } else {
-                        // 2 小時內 (正常顯示)
-                        borderColor = '#ffc107';
-                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold;">${order.paymentDeadline}</span> 前完成匯款。</div>`;
+                        borderColor = 'var(--status-pending-border)';
+                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span class="text-danger" style="font-weight:bold;">${order.paymentDeadline}</span> 前完成匯款。</div>`;
                     }
                 } else if (order.status === 'paid') {
                     borderColor = '#28a745';
                     let reportText = '';
                     if (order.orderType === 'donation') {
                         reportText = order.is_reported 
-                            ? '<br><span style="color:#155724; font-size:13px;">✅ 已稟告元帥</span>' 
+                            ? '<br><span class="text-success" style="font-size:13px;">✅ 已稟告元帥</span>' 
                             : '<br><span style="color:#856404; font-size:13px;">⏳ 待稟告元帥</span>';
                     }
                     statusHtml = `<div class="history-item-status status-approved">🟢 <b>功德圓滿：</b>感謝您的護持！電子感謝狀已寄至信箱。${reportText}</div>`;
                 }
 
-                const itemsHtml = order.items.map(i => `<li style="margin-bottom:3px;">${i.name} x ${i.qty}</li>`).join('');
+                const itemsHtml = order.items.map(i => `<li>${i.name} x ${i.qty}</li>`).join('');
 
                 return `
-                <div class="history-item" style="border-left: 4px solid ${borderColor};">
-                    <div class="history-item-header">
-                        <span style="font-weight:bold; color:#333;">${typeBadge} ${order.orderId}</span>
+                <article class="history-item" style="border-left: 4px solid ${borderColor};">
+                    <header class="history-item-header">
+                        <span class="history-item-title">${typeBadge} ${order.orderId}</span>
                         <span>${order.createdAt}</span>
-                    </div>
+                    </header>
                     <div class="history-item-content">
-                        <ul style="margin:0; padding-left:20px; font-size:14px; color:#555;">${itemsHtml}</ul>
-                        <div style="margin-top:10px; font-weight:bold; color:#C48945; font-size:16px;">護持金額：NT$ ${order.total}</div>
+                        <ul class="history-item-list">${itemsHtml}</ul>
+                        <div class="history-item-total">護持金額：NT$ ${order.total}</div>
                     </div>
                     ${statusHtml}
-                </div>`;
+                </article>`;
             }).join('');
-
         } catch(err) {
-            document.getElementById('donation-list').innerHTML = '<p style="color: red; text-align: center;">紀錄載入失敗</p>';
+            els.donationList.innerHTML = '<p class="text-danger text-center">紀錄載入失敗</p>';
         }
     }
-    
-    // 5. 載入收驚預約清單
+
+    // 載入取件預約紀錄
     async function loadPickupHistory() {
         try {
             const res = await fetch('/api/user/pickups');
             const data = await res.json();
             
             if(data.length === 0) {
-                pickupList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">無預約紀錄。<br><a href="/shipclothes" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往預約</a></p>';
+                els.pickupList.innerHTML = createEmptyState('無預約紀錄。', '/shipclothes', '點此前往預約');
                 return;
             }
 
-            pickupList.innerHTML = data.map(item => {
+            els.pickupList.innerHTML = data.map(item => {
                 const typeText = item.pickupType === 'self' ? '🏃 現場自取' : '🚚 黑貓寄件';
                 const typeColor = item.pickupType === 'self' ? '#28a745' : '#007bff';
                 
                 const deliveryNote = item.pickupType === 'delivery' 
-                    ? `<div style="color: #dc3545; font-size: 13px; margin-top: 5px;">※ 請記得自行聯繫黑貓宅急便於此日期後前來本府收件。</div>` 
+                    ? `<div class="text-danger" style="font-size: 13px; margin-top: 5px;">※ 請記得自行聯繫黑貓宅急便於此日期後前來本府收件。</div>` 
                     : '';
 
                 const clothesHtml = item.clothes.map(c => 
                     `<span class="cloth-pill">${c.clothId} ${c.name} (${c.birthYear})</span>`
                 ).join('');
 
-                let deleteBtn = '';
-                if (item.isDeletable) {
-                    deleteBtn = `<button onclick="cancelPickup('${item._id}')" style="background:#dc3545; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px; margin-left:10px;">取消預約</button>`;
-                }
+                const deleteBtn = item.isDeletable 
+                    ? `<button onclick="cancelPickup('${item._id}')" class="btn-delete">取消預約</button>`
+                    : '';
 
                 return `
-                <div class="history-item" style="border-left: 4px solid ${typeColor};">
-                    <div class="history-item-header" style="margin-bottom: 5px; display:flex; justify-content:space-between; align-items:center;">
+                <article class="history-item" style="border-left: 4px solid ${typeColor};">
+                    <header class="history-item-header">
                         <div>
                             <span style="font-weight: bold; color: ${typeColor}; font-size: 15px;">${typeText}</span>
-                            <span style="margin-left:10px; font-size:13px;">填單：${item.createdAt}</span>
+                            <span class="text-muted" style="margin-left:10px; font-size:13px;">填單：${item.createdAt}</span>
                         </div>
                         ${deleteBtn}
-                    </div>
-                    <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px;">
+                    </header>
+                    <div style="font-size: 18px; font-weight: bold; color: var(--text-dark); margin-bottom: 10px;">
                         預約日期：${item.pickupDate}
                     </div>
                     <div style="margin-bottom: 5px;">${clothesHtml}</div>
                     ${deliveryNote}
-                </div>`;
+                </article>`;
             }).join('');
-
         } catch(err) {
-            pickupList.innerHTML = '<p style="color: red; text-align: center;">預約紀錄載入失敗</p>';
+            els.pickupList.innerHTML = '<p class="text-danger text-center">預約紀錄載入失敗</p>';
         }
     }
+
+    // 載入商城訂單紀錄
+    async function loadOrderHistory() {
+        try {
+            const res = await fetch('/api/user/orders');
+            const data = await res.json();
+            
+            if(data.length === 0) {
+                els.orderList.innerHTML = createEmptyState('無購買紀錄。', '/shop', '點此前往賣場');
+                return;
+            }
+
+            const now = new Date();
+            els.orderList.innerHTML = data.map(order => {
+                let statusHtml = '';
+                let borderColor = '#ccc';
+
+                if (order.status === 'pending') {
+                    const deadline = new Date(order.deadline_iso);
+                    if (now > deadline) {
+                        borderColor = 'var(--status-urgent-border)';
+                        statusHtml = `
+                            <div class="history-item-status status-urgent">
+                                🟠 <b>請盡速匯款：您的訂單目前由人工進行款項核對。</b><br>
+                                <span class="text-muted" style="font-size:13px;">若您已匯款，請放心等待，對帳完成後將盡速為您出貨</span>
+                            </div>`;
+                    } else {
+                        borderColor = 'var(--status-pending-border)';
+                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span class="badge badge-urgent">${order.paymentDeadline}</span> 前完成匯款，逾期將自動取消。</div>`;
+                    }
+                } else if (order.status === 'paid') {
+                    borderColor = '#28a745';
+                    statusHtml = `<div class="history-item-status status-approved">🟢 <b>處理中：</b>廟方已確認收款，正在為您準備商品。</div>`;
+                } else if (order.status === 'shipped') {
+                    borderColor = '#007bff';
+                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已出貨：</b>商品已寄出！<br><span class="text-dark" style="margin-top:5px; display:inline-block;">📦 物流單號：<b>${order.trackingNumber || '無'}</b></span></div>`;
+                }
+
+                const itemsHtml = order.items.map(i => `<li>${i.name} (${i.variant}) x ${i.qty}</li>`).join('');
+
+                return `
+                <article class="history-item" style="border-left: 4px solid ${borderColor};">
+                    <header class="history-item-header">
+                        <span class="history-item-title">單號：${order.orderId}</span>
+                        <span>下單：${order.createdAt}</span>
+                    </header>
+                    <div class="history-item-content">
+                        <ul class="history-item-list">${itemsHtml}</ul>
+                        <div class="history-item-total">總金額：NT$ ${order.total}</div>
+                    </div>
+                    ${statusHtml}
+                </article>`;
+            }).join('');
+        } catch(err) {
+            els.orderList.innerHTML = '<p class="text-danger text-center">訂單載入失敗</p>';
+        }
+    }
+
+    // ==========================================
+    // 全域輔助函式與事件監聽
+    // ==========================================
     
-    // 刪除預約的函式 (掛載到 window)
-    window.cancelPickup = function(id) {
+    // 全文展開/收起
+    window.toggleFeedback = (contentId, btnId) => {
+        const contentDiv = document.getElementById(contentId);
+        const btn = document.getElementById(btnId);
+        
+        if (contentDiv.classList.toggle('expanded')) {
+            btn.textContent = '收起內容 🔼';
+        } else {
+            btn.textContent = '閱讀全文 🔽';
+        }
+    };
+
+    // 取消預約
+    window.cancelPickup = (id) => {
         if (!confirm('確定要取消這筆預約嗎？\n(注意：取消後若需取件請重新預約)')) return;
 
         fetch(`/api/pickup/${id}`, { 
             method: 'DELETE',
-            headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+            headers: { 'X-CSRFToken': getCsrfToken() }
         })
         .then(res => res.json())
         .then(data => {
@@ -564,79 +744,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(data.error || '取消失敗');
             }
         })
-        .catch(err => alert('連線錯誤'));
+        .catch(() => alert('連線錯誤'));
     };
 
-    // 6. 載入商城訂單紀錄
-    async function loadOrderHistory() {
-        try {
-            const res = await fetch('/api/user/orders');
-            const data = await res.json();
-            
-            if(data.length === 0) {
-                document.getElementById('order-list').innerHTML = '<p style="text-align: center; color: #888; padding: 20px 0;">無購買紀錄。<br><a href="/shop" style="color: #C48945; font-weight: bold; text-decoration: none;">點此前往賣場</a></p>';
-                return;
-            }
-
-            const now = new Date();
-
-            document.getElementById('order-list').innerHTML = data.map(order => {
-                let statusHtml = '';
-                let borderColor = '#ccc';
-
-                if (order.status === 'pending') {
-                    const deadline = new Date(order.deadline_iso);
-if (now > deadline) {
-    // 超過 2 小時 (緩衝期)
-    borderColor = '#fd7e14'; // 橘色邊框
-    statusHtml = `
-                        <div class="history-item-status" style="background:#fff3cd; color:#856404; border-left:4px solid #fd7e14;">
-                            🟠 <b>請盡速匯款：您的訂單目前由人工進行款項核對。</b><br>
-                            <span style="font-size:13px; color:#666;">若您已匯款，請放心等待，對帳完成後將盡速為您出貨</span>
-                        </div>`;
-                } else {
-                    // 2 小時內
-                    borderColor = '#ffc107';
-                    statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span style="color:#d32f2f; font-weight:bold; font-size:16px;">${order.paymentDeadline}</span> 前完成匯款，逾期將自動取消。</div>`;
-                }
-                } else if (order.status === 'paid') {
-                    borderColor = '#28a745';
-                    statusHtml = `<div class="history-item-status status-approved">🟢 <b>處理中：</b>廟方已確認收款，正在為您準備商品。</div>`;
-                } else if (order.status === 'shipped') {
-                    borderColor = '#007bff';
-                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已出貨：</b>商品已寄出！<br><span style="color:#333; margin-top:5px; display:inline-block;">📦 物流單號：<b>${order.trackingNumber || '無'}</b></span></div>`;
-                }
-
-                const itemsHtml = order.items.map(i => `<li style="margin-bottom:3px;">${i.name} (${i.variant}) x ${i.qty}</li>`).join('');
-
-                return `
-                <div class="history-item" style="border-left: 4px solid ${borderColor};">
-                    <div class="history-item-header">
-                        <span style="font-weight:bold; color:#333;">單號：${order.orderId}</span>
-                        <span>下單：${order.createdAt}</span>
-                    </div>
-                    <div class="history-item-content">
-                        <ul style="margin:0; padding-left:20px; font-size:14px; color:#555;">${itemsHtml}</ul>
-                        <div style="margin-top:10px; font-weight:bold; color:#C48945; font-size:16px;">總金額：NT$ ${order.total}</div>
-                    </div>
-                    ${statusHtml}
-                </div>`;
-            }).join('');
-
-        } catch(err) {
-            document.getElementById('order-list').innerHTML = '<p style="color: red; text-align: center;">訂單載入失敗</p>';
-        }
-    }
-    
-    // 欄位格式化邏輯
-    profileForm.phone.addEventListener('input', (e) => {
+    // 表單格式自動排版
+    els.profileForm.phone.addEventListener('input', (e) => {
         let v = e.target.value.replace(/\D/g, ''); 
         if (v.length > 10) v = v.slice(0, 10);
         if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
         else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
         e.target.value = v;
     });
-    profileForm.lunarBirthday.addEventListener('blur', (e) => {
+
+    els.profileForm.lunarBirthday.addEventListener('blur', (e) => {
         let v = e.target.value.replace(/\D/g, '');
         if(v.length === 6) e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
         else if (v.length === 7) e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
