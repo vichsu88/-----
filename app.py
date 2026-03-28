@@ -909,6 +909,36 @@ def delete_pickup(pid):
 # =========================================
 # 5. 後台頁面路由 & API
 # =========================================
+@app.route('/api/admin/receipt/<receipt_id>', methods=['DELETE'])
+@login_required
+def force_delete_receipt(receipt_id):
+    """【後台功能】輸入單號強制刪除單據"""
+    if db is None:
+        return jsonify({"error": "資料庫未連線"}), 500
+        
+    # 清理多餘空白並轉大寫，避免輸入錯誤
+    clean_id = receipt_id.strip().upper()
+    
+    # 判斷字首，決定要去哪裡刪除
+    if clean_id.startswith('FB'):
+        # 刪除信徒回饋 (db.feedback)
+        result = db.feedback.delete_one({"feedbackId": clean_id})
+        if result.deleted_count > 0:
+            return jsonify({"success": True, "message": f"已成功刪除回饋單：{clean_id}"})
+        else:
+            return jsonify({"error": f"找不到回饋單號：{clean_id}"}), 404
+            
+    elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
+        # 刪除各類訂單與護持單 (db.orders)
+        result = db.orders.delete_one({"orderId": clean_id})
+        if result.deleted_count > 0:
+            return jsonify({"success": True, "message": f"已成功刪除單據：{clean_id}"})
+        else:
+            return jsonify({"error": f"找不到此單號：{clean_id}"}), 404
+            
+    else:
+        # 字首不符合任何已知類型
+        return jsonify({"error": f"無法識別的單號格式：{clean_id}"}), 400
 @app.route('/admin')
 def admin_page(): 
     return render_template('admin.html')

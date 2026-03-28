@@ -1028,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
             populateFn(form, data); UI.openModal(modalId);
         };
     };
-
+    
     setupFormModal('add-announcement-btn', 'announcement-modal', 'ann-modal-title', '新增公告', 'announcement-form', (form, a) => {
         form.announcementId.value = a._id; form.date.value = a.date; form.title.value = a.title; form.content.value = a.content; form.isPinned.checked = a.isPinned;
     });
@@ -1052,7 +1052,65 @@ document.addEventListener('DOMContentLoaded', () => {
         await Core.apiFetch(id ? `/api/faq/${id}` : '/api/faq', { method: id ? 'PUT' : 'POST', body: JSON.stringify({ question: faqForm.question.value, answer: faqForm.answer.value, category: faqForm.other_category.value, isPinned: faqForm.isPinned.checked }) });
         UI.closeModal('faq-modal'); ContentManager.fetchFaqs();
     };
+    // ==========================================
+// 單據強制刪除功能 (Hard Delete)
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const forceDeleteBtn = document.getElementById('forceDeleteBtn');
+    const forceDeleteInput = document.getElementById('forceDeleteInput');
 
+    if (forceDeleteBtn && forceDeleteInput) {
+        forceDeleteBtn.addEventListener('click', async () => {
+            const receiptId = forceDeleteInput.value.trim();
+            
+            // 1. 檢查是否有輸入
+            if (!receiptId) {
+                alert('請先輸入要刪除的單據編號！');
+                return;
+            }
+
+            // 2. 防呆二次確認視窗
+            const isConfirmed = confirm(`您確定要刪除單號 ${receiptId} 嗎？此操作無法復原。`);
+            
+            // 如果管理員按「取消」，就中斷執行
+            if (!isConfirmed) return;
+
+            // 3. 呼叫後端 API 進行刪除
+            try {
+                // 為了防止誤觸，按鈕先呈現處理中狀態
+                forceDeleteBtn.disabled = true;
+                forceDeleteBtn.innerText = '刪除中...';
+
+                // 註：因為你的 app.py 有啟用 CSRFProtect，如果 admin.js 已經有統一處理 CSRF Header，這裡就可以照舊。
+                // 若沒有，你可能需要從 html meta tag 抓 csrf_token 放在 headers 裡。若有報 400 CSRF 錯誤我們再來補上。
+                const response = await fetch(`/api/admin/receipt/${receiptId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // 刪除成功
+                    alert(result.message);
+                    forceDeleteInput.value = ''; // 清空輸入框
+                } else {
+                    // 找不到單號或格式錯誤
+                    alert(`刪除失敗：${result.error}`);
+                }
+            } catch (error) {
+                console.error('刪除單據時發生錯誤:', error);
+                alert('系統發生異常，請確認網路連線或聯繫開發人員。');
+            } finally {
+                // 恢復按鈕狀態
+                forceDeleteBtn.disabled = false;
+                forceDeleteBtn.innerText = '確認刪除';
+            }
+        });
+    }
+});
     /* =========================================
        9. HTML 區塊渲染輔助函式
        ========================================= */
@@ -1126,6 +1184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         container.innerHTML = html;
     }
+    
 
     // 啟動流程
     UI.init();
