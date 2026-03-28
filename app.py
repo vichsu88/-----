@@ -9,10 +9,12 @@ import threading
 import urllib.request
 import urllib.error
 import io
+from collections import defaultdict
 from email.mime.text import MIMEText
 from email.header import Header
 from functools import wraps
 from datetime import datetime, timedelta
+
 from flask import Flask, jsonify, render_template, request, session, redirect, url_for, Response
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect
@@ -97,7 +99,6 @@ def login_required(f):
     return decorated_function
 
 def user_login_required(f):
-    """【優化】信徒 LINE 登入驗證裝飾器"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         line_id = session.get('user_line_id')
@@ -107,11 +108,9 @@ def user_login_required(f):
     return decorated_function
 
 def get_tw_now():
-    """【優化】統一取得台灣時間 (UTC+8)"""
     return datetime.utcnow() + timedelta(hours=8)
 
 def validate_real_name(name):
-    """【優化】姓名防呆驗證邏輯共用"""
     if not name:
         return True, ""
     if re.search(r'[、，,。/&＆\s]', name) or re.search(r'(全家|一家|闔家|合家|等人|與|及)', name):
@@ -119,7 +118,6 @@ def validate_real_name(name):
     return True, ""
 
 def calculate_business_d2(start_date):
-    """計算 D+2 工作日 (跳過週六日)"""
     current = start_date
     added_days = 0
     while added_days < 2:
@@ -129,7 +127,6 @@ def calculate_business_d2(start_date):
     return current
 
 def mask_name(real_name):
-    """姓名隱碼處理 (第二字變O)"""
     if not real_name: 
         return ""
     if len(real_name) >= 2:
@@ -137,7 +134,6 @@ def mask_name(real_name):
     return real_name
 
 def get_object_id(fid):
-    """安全地轉換 ObjectId，若格式錯誤回傳 None"""
     try:
         return ObjectId(fid)
     except (InvalidId, TypeError):
@@ -145,7 +141,6 @@ def get_object_id(fid):
 
 # === 新版寄信功能 (SendGrid API + 雙階段背景執行) ===
 def send_email_task(to_email, subject, body, is_html=False):
-    """【背景任務】呼叫 SendGrid API 發信"""
     print(f"--- 準備寄信給: {to_email} ---")
     if not SENDGRID_API_KEY or not MAIL_SENDER:
         print("❌ 錯誤: SENDGRID_API_KEY 或 MAIL_USERNAME 未設定")
@@ -186,7 +181,6 @@ def send_email_task(to_email, subject, body, is_html=False):
         print(f"❌ 寄信發生未知例外錯誤: {str(e)}")
 
 def send_email(to_email, subject, body, is_html=False):
-    """【主程式呼叫點】建立背景執行緒寄信"""
     if not to_email:
         return
     thread = threading.Thread(
@@ -197,7 +191,6 @@ def send_email(to_email, subject, body, is_html=False):
 
 # === Email 樣板產生器 ===
 def get_bank_info(usage='shop'):
-    """從資料庫讀取匯款資訊"""
     if db is None: 
         return "請聯繫廟方確認匯款資訊"
     
@@ -217,7 +210,6 @@ def get_bank_info(usage='shop'):
     """
 
 def generate_feedback_email_html(feedback, status_type, tracking_num=None):
-    """產生信徒回饋相關的 Email HTML"""
     name = feedback.get('realName', '信徒')
     
     if status_type == 'rejected':
@@ -346,11 +338,11 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
         """
         show_price = False
 
-    items_rows = ""
-    for item in items:
-        spec = f" ({item['variant']})" if 'variant' in item and item['variant'] != '標準' else ""
-        price_td = f'<td style="padding:10px; text-align:right;">${item["price"] * item["qty"]}</td>' if show_price else ''
-        items_rows += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}{spec}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td>{price_td}</tr>'
+    items_rows = "".join([
+        f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}{" (" + item["variant"] + ")" if "variant" in item and item["variant"] != "標準" else ""}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td>'
+        f'{f"<td style=\'padding:10px; text-align:right;\'>${item['price'] * item['qty']}</td>" if show_price else ""}</tr>'
+        for item in items
+    ])
     
     price_th = '<th style="padding:10px; text-align:right;">金額</th>' if show_price else ''
     total_row = f'''
@@ -404,9 +396,7 @@ def generate_donation_created_email(order):
         bank_type = 'fund' if order_type == 'fund' else 'shop'
         bank_html = get_bank_info(bank_type)
     
-    items_rows = ""
-    for item in items:
-        items_rows += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td><td style="padding: 10px; text-align: right;">${item["price"] * item["qty"]}</td></tr>'
+    items_rows = "".join([f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td><td style="padding: 10px; text-align: right;">${item["price"] * item["qty"]}</td></tr>' for item in items])
 
     return f"""
     <div style="font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background-color:#fff;">
@@ -442,10 +432,7 @@ def generate_donation_created_email(order):
     """
 
 def generate_donation_paid_email(cust, order_id, items, total):
-    # 將項目組成字串，並處理排版
     items_str = "、".join([f"{i['name']} x {i['qty']}" for i in items])
-    
-    # 取得台灣時間並轉換為民國年
     now = get_tw_now()
     roc_year = now.year - 1911
     date_str = f"中華民國 {roc_year} 年 {now.month} 月 {now.day} 日"
@@ -579,7 +566,6 @@ def committee_page(): return render_template('committee.html')
 
 @app.route('/api/committee/status', methods=['GET'])
 def get_committee_status():
-    """獲取委員會各職位的即時剩餘名額"""
     if db is None: 
         return jsonify({})
     def get_remain(name, max_limit):
@@ -643,7 +629,6 @@ def yuan_user_page(): return redirect(url_for('shop_page'))
 # =========================================
 @app.route('/api/line/login')
 def line_login():
-    """將使用者導向 LINE 的授權登入頁面"""
     if not LINE_CHANNEL_ID:
         return "伺服器尚未設定 LINE_CHANNEL_ID", 500
         
@@ -664,7 +649,6 @@ def line_login():
 
 @app.route('/api/line/callback')
 def line_callback():
-    """LINE 授權完畢後，回傳資料到這個網址"""
     code = request.args.get('code')
     state = request.args.get('state')
     session_state = session.get('line_state')
@@ -721,7 +705,6 @@ def line_callback():
 
 @app.route('/api/user/me', methods=['GET'])
 def get_current_user():
-    """前端用來檢查目前是否有登入，並取得基本資料與頭銜"""
     line_id = session.get('user_line_id')
     if not line_id:
         return jsonify({"logged_in": False})
@@ -742,13 +725,11 @@ def get_current_user():
             
             highest_title = ""
             current_rank = 99
-            # 定義階級 (數字越小階級越高)
             rank_map = {"主委": 1, "副主委": 2, "顧問": 3, "委員": 4, "功德主": 5}
             
             for order in committee_orders:
                 for item in order.get('items', []):
                     name = item.get('name', '')
-                    # 濾除括號與前綴，只留核心職稱
                     clean_title = name.replace('[本府] ', '').replace('[建廟] ', '').replace('籌備', '')
                     rank = rank_map.get(clean_title, 99)
                     if rank < current_rank:
@@ -763,11 +744,9 @@ def get_current_user():
 @app.route('/api/user/profile', methods=['PUT'])
 @user_login_required
 def update_user_profile():
-    """讓信徒在個人專區修改自己的基本資料"""
     data = request.get_json()
     line_id = session.get('user_line_id')
     
-    # 呼叫共用的驗證邏輯
     is_valid, error_msg = validate_real_name(data.get('realName', '').strip())
     if not is_valid:
         return jsonify({"error": error_msg}), 400
@@ -791,7 +770,6 @@ def update_user_profile():
 @app.route('/api/user/feedbacks', methods=['GET'])
 @user_login_required
 def get_user_feedbacks():
-    """撈出該登入信徒過去所有的回饋紀錄"""
     line_id = session.get('user_line_id')
     if db is not None:
         cursor = db.feedback.find({"lineId": line_id}).sort("createdAt", -1)
@@ -820,7 +798,6 @@ def get_user_feedbacks():
 @app.route('/api/pickup/reserve', methods=['POST'])
 @user_login_required
 def create_pickup_reservation():
-    """信徒送出預約單"""
     line_id = session.get('user_line_id')
     data = request.get_json()
     pickup_type = data.get('pickupType') 
@@ -870,15 +847,14 @@ def get_public_pickups():
     
     threshold_date = (get_tw_now() - timedelta(days=1)).strftime('%Y-%m-%d')
     cursor = db.pickups.find({"pickupDate": {"$gte": threshold_date}}).sort("pickupDate", 1)
-    results = {}
+    
+    # 【優化】使用 defaultdict 取代原先的鍵值檢查
+    results = defaultdict(lambda: {'self': [], 'delivery': []})
     
     for doc in cursor:
         date_str = doc['pickupDate']
         p_type = doc['pickupType'] 
         
-        if date_str not in results:
-            results[date_str] = {'self': [], 'delivery': []}
-            
         masked_clothes = []
         for c in doc.get('clothes', []):
             masked_clothes.append({
@@ -888,9 +864,7 @@ def get_public_pickups():
             })
             
         if masked_clothes:
-            results[date_str][p_type].append({
-                "clothes": masked_clothes
-            })
+            results[date_str][p_type].append({"clothes": masked_clothes})
             
     formatted_results = []
     for d in sorted(results.keys()):
@@ -905,14 +879,12 @@ def get_public_pickups():
 @app.route('/api/user/pickups', methods=['GET'])
 @user_login_required
 def get_user_pickups():
-    """給信徒「個人專區」看的自己專屬預約紀錄 (不遮蔽姓名)"""
     line_id = session.get('user_line_id')
     if db is None:
         return jsonify([])
         
     cursor = db.pickups.find({"lineId": line_id}).sort("pickupDate", -1)
     results = []
-    
     today = get_tw_now().replace(hour=0, minute=0, second=0, microsecond=0)
 
     for doc in cursor:
@@ -964,16 +936,12 @@ def delete_pickup(pid):
 @app.route('/api/admin/receipt/<receipt_id>', methods=['DELETE'])
 @login_required
 def force_delete_receipt(receipt_id):
-    """【後台功能】輸入單號強制刪除單據"""
     if db is None:
         return jsonify({"error": "資料庫未連線"}), 500
         
-    # 清理多餘空白並轉大寫，避免輸入錯誤
     clean_id = receipt_id.strip().upper()
     
-    # 判斷字首，決定要去哪裡刪除
     if clean_id.startswith('FB'):
-        # 刪除信徒回饋 (db.feedback)
         result = db.feedback.delete_one({"feedbackId": clean_id})
         if result.deleted_count > 0:
             return jsonify({"success": True, "message": f"已成功刪除回饋單：{clean_id}"})
@@ -981,7 +949,6 @@ def force_delete_receipt(receipt_id):
             return jsonify({"error": f"找不到回饋單號：{clean_id}"}), 404
             
     elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
-        # 刪除各類訂單與護持單 (db.orders)
         result = db.orders.delete_one({"orderId": clean_id})
         if result.deleted_count > 0:
             return jsonify({"success": True, "message": f"已成功刪除單據：{clean_id}"})
@@ -989,8 +956,8 @@ def force_delete_receipt(receipt_id):
             return jsonify({"error": f"找不到此單號：{clean_id}"}), 404
             
     else:
-        # 字首不符合任何已知類型
         return jsonify({"error": f"無法識別的單號格式：{clean_id}"}), 400
+
 @app.route('/admin')
 def admin_page(): 
     return render_template('admin.html')
@@ -1017,21 +984,39 @@ def api_logout():
 
 # --- Feedback API ---
 def enrich_feedback_for_admin(cursor):
-    """【後台專用輔助函式】自動將回饋與會員資料表合併"""
-    results = []
-    for doc in cursor:
-        line_id = doc.get('lineId')
-        user = db.users.find_one({"lineId": line_id}) if line_id else {}
-        has_received = False
-        if line_id:
-            has_received = db.feedback.count_documents({"lineId": line_id, "status": "sent"}) > 0
+    """【優化】解決 N+1 Query：批次取得 User 與 sent 狀態，避免在迴圈內反覆查詢資料庫"""
+    docs = list(cursor)
+    if not docs: 
+        return []
+        
+    line_ids = [d.get('lineId') for d in docs if d.get('lineId')]
+    
+    # 批次獲取使用者資料
+    users_map = {}
+    if line_ids:
+        for u in db.users.find({"lineId": {"$in": line_ids}}):
+            users_map[u['lineId']] = u
+            
+    # 批次獲取送出狀態
+    sent_set = set()
+    if line_ids:
+        sent_counts = db.feedback.aggregate([
+            {"$match": {"lineId": {"$in": line_ids}, "status": "sent"}},
+            {"$group": {"_id": "$lineId"}}
+        ])
+        sent_set = {item['_id'] for item in sent_counts}
 
+    results = []
+    for doc in docs:
+        line_id = doc.get('lineId')
+        user = users_map.get(line_id, {})
+        
         doc['realName'] = user.get('realName') or doc.get('realName', '未填寫')
         doc['phone'] = user.get('phone') or doc.get('phone', '未填寫')
         doc['address'] = user.get('address') or doc.get('address', '未填寫')
         doc['email'] = user.get('email') or doc.get('email', '')
         doc['lunarBirthday'] = user.get('lunarBirthday') or '未提供'
-        doc['has_received'] = has_received
+        doc['has_received'] = (line_id in sent_set)
         doc['_id'] = str(doc['_id'])
         
         if 'createdAt' in doc: 
@@ -1478,6 +1463,14 @@ def create_order():
 
     # 委員會 (committee) 專屬防護與名額檢查
     if order_type == 'committee':
+        def check_limit(name, max_limit):
+            used = db.orders.count_documents({
+                "orderType": "committee", 
+                "status": {"$in": ["paid", "pending"]}, 
+                "items.name": name
+            })
+            return used >= max_limit
+
         for item in data.get('items', []):
             item_name = item.get('name')
             item_qty = int(item.get('qty', 0))
@@ -1485,14 +1478,6 @@ def create_order():
             if item_qty != 1 and item_name != '[建廟] 建廟功德金':
                 return jsonify({"error": f"【{item_name}】每次結帳限購 1 名。"}), 400
             
-            def check_limit(name, max_limit):
-                used = db.orders.count_documents({
-                    "orderType": "committee", 
-                    "status": {"$in": ["paid", "pending"]}, 
-                    "items.name": name
-                })
-                return used >= max_limit
-
             if item_name == '[本府] 主委' and check_limit(item_name, 1): 
                 return jsonify({"error": "【[本府] 主委】名額已滿！"}), 400
             if item_name == '[本府] 副主委' and check_limit(item_name, 7): 
@@ -1593,42 +1578,31 @@ def get_user_orders():
             "deadline_iso": tw_deadline.isoformat() 
         })
     return jsonify(results)
+
 @app.route('/api/user/fund-summary', methods=['GET'])
 @user_login_required
 def get_user_fund_summary():
-    """取得登入信徒的建廟基金累計總額 (依姓名分組)"""
+    """【優化】取得登入信徒的建廟基金累計總額 (依姓名分組)，使用 defaultdict 取代傳統檢查"""
     line_id = session.get('user_line_id')
     if db is None:
         return jsonify([])
 
-    # 1. 條件過濾：同一 LINE ID、建廟基金、且已付款
     cursor = db.orders.find({
         "lineId": line_id,
         "orderType": "fund",
         "status": "paid"
     })
 
-    summary_dict = {}
+    summary_dict = defaultdict(int)
 
-    # 2. 逐筆處理與加總
     for doc in cursor:
         customer = doc.get('customer', {})
         raw_name = customer.get('name', '未具名')
-        
-        # 關鍵防呆：自動去除半形與全形空白
         clean_name = raw_name.replace(" ", "").replace("　", "")
         if not clean_name:
             continue
+        summary_dict[clean_name] += doc.get('total', 0)
 
-        amount = doc.get('total', 0)
-
-        # 累計金額
-        if clean_name in summary_dict:
-            summary_dict[clean_name] += amount
-        else:
-            summary_dict[clean_name] = amount
-
-    # 3. 整理成前端需要的格式，並稍微做個排序 (金額大的排前面)
     results = [
         {"name": name, "total": total}
         for name, total in summary_dict.items()
@@ -1636,6 +1610,7 @@ def get_user_fund_summary():
     results.sort(key=lambda x: x['total'], reverse=True)
 
     return jsonify(results)
+
 @app.route('/api/user/donations', methods=['GET'])
 def get_user_donations():
     line_id = session.get('user_line_id')
