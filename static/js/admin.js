@@ -1052,65 +1052,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await Core.apiFetch(id ? `/api/faq/${id}` : '/api/faq', { method: id ? 'PUT' : 'POST', body: JSON.stringify({ question: faqForm.question.value, answer: faqForm.answer.value, category: faqForm.other_category.value, isPinned: faqForm.isPinned.checked }) });
         UI.closeModal('faq-modal'); ContentManager.fetchFaqs();
     };
-    // ==========================================
-// 單據強制刪除功能 (Hard Delete)
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    const forceDeleteBtn = document.getElementById('forceDeleteBtn');
-    const forceDeleteInput = document.getElementById('forceDeleteInput');
 
-    if (forceDeleteBtn && forceDeleteInput) {
-        forceDeleteBtn.addEventListener('click', async () => {
-            const receiptId = forceDeleteInput.value.trim();
-            
-            // 1. 檢查是否有輸入
-            if (!receiptId) {
-                alert('請先輸入要刪除的單據編號！');
-                return;
-            }
-
-            // 2. 防呆二次確認視窗
-            const isConfirmed = confirm(`您確定要刪除單號 ${receiptId} 嗎？此操作無法復原。`);
-            
-            // 如果管理員按「取消」，就中斷執行
-            if (!isConfirmed) return;
-
-            // 3. 呼叫後端 API 進行刪除
-            try {
-                // 為了防止誤觸，按鈕先呈現處理中狀態
-                forceDeleteBtn.disabled = true;
-                forceDeleteBtn.innerText = '刪除中...';
-
-                // 註：因為你的 app.py 有啟用 CSRFProtect，如果 admin.js 已經有統一處理 CSRF Header，這裡就可以照舊。
-                // 若沒有，你可能需要從 html meta tag 抓 csrf_token 放在 headers 裡。若有報 400 CSRF 錯誤我們再來補上。
-                const response = await fetch(`/api/admin/receipt/${receiptId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    // 刪除成功
-                    alert(result.message);
-                    forceDeleteInput.value = ''; // 清空輸入框
-                } else {
-                    // 找不到單號或格式錯誤
-                    alert(`刪除失敗：${result.error}`);
-                }
-            } catch (error) {
-                console.error('刪除單據時發生錯誤:', error);
-                alert('系統發生異常，請確認網路連線或聯繫開發人員。');
-            } finally {
-                // 恢復按鈕狀態
-                forceDeleteBtn.disabled = false;
-                forceDeleteBtn.innerText = '確認刪除';
-            }
-        });
-    }
-});
     /* =========================================
        9. HTML 區塊渲染輔助函式
        ========================================= */
@@ -1184,9 +1126,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         container.innerHTML = html;
     }
+
+    /* =========================================
+       10. 單據強制刪除管理 (Force Delete Manager)
+       ========================================= */
+    const ForceDeleteManager = {
+        btn: document.getElementById('forceDeleteBtn'),
+        input: document.getElementById('forceDeleteInput'),
+
+        init() {
+            if (!this.btn || !this.input) return;
+            this.btn.addEventListener('click', this.handleDelete.bind(this));
+        },
+
+        async handleDelete() {
+            const receiptId = this.input.value.trim();
+            
+            if (!receiptId) {
+                alert('請先輸入要刪除的單據編號！');
+                return;
+            }
+
+            Core.confirmAction(`您確定要刪除單號 ${receiptId} 嗎？此操作無法復原。`, async () => {
+                try {
+                    this.btn.disabled = true;
+                    this.btn.innerText = '刪除中...';
+
+                    const result = await Core.apiFetch(`/api/admin/receipt/${receiptId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (result && result.success) {
+                        alert(result.message);
+                        this.input.value = ''; 
+                        
+                        // 順便刷新一下目前的列表資料
+                        if (document.getElementById('tab-orders')?.classList.contains('active')) OrderManager.fetchList();
+                        if (document.getElementById('tab-donations')?.classList.contains('active')) window.fetchDonations();
+                        if (document.getElementById('tab-feedback')?.classList.contains('active')) FeedbackManager.fetchList();
+                    } else {
+                        alert(`刪除失敗：${result.error}`);
+                    }
+                } catch (error) {
+                    console.error('刪除單據時發生錯誤:', error);
+                } finally {
+                    this.btn.disabled = false;
+                    this.btn.innerText = '確認刪除';
+                }
+            });
+        }
+    };
     
 
     // 啟動流程
     UI.init();
     Auth.checkSession();
+    ForceDeleteManager.init(); // 啟動強制刪除監聽
 });
