@@ -338,11 +338,15 @@ def generate_shop_email_html(order, status_type, tracking_num=None):
         """
         show_price = False
 
-    items_rows = "".join([
-        f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}{" (" + item["variant"] + ")" if "variant" in item and item["variant"] != "標準" else ""}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td>'
-        f'{f"<td style=\'padding:10px; text-align:right;\'>${item['price'] * item['qty']}</td>" if show_price else ""}</tr>'
-        for item in items
-    ])
+    items_rows = ""
+    for item in items:
+        # 判斷是否需要顯示規格
+        variant_str = f" ({item['variant']})" if "variant" in item and item["variant"] != "標準" else ""
+        # 判斷是否需要顯示價格
+        price_td = f'<td style="padding:10px; text-align:right;">${item["price"] * item["qty"]}</td>' if show_price else ""
+        
+        # 組合單行商品 HTML
+        items_rows += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px; color:#333;">{item["name"]}{variant_str}</td><td style="padding: 10px; text-align: center; color:#333;">x{item["qty"]}</td>{price_td}</tr>'
     
     price_th = '<th style="padding:10px; text-align:right;">金額</th>' if show_price else ''
     total_row = f'''
