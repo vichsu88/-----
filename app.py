@@ -441,34 +441,86 @@ def generate_donation_created_email(order):
     </div>
     """
 
-def generate_donation_paid_email(cust, order_id, items):
-    items_str = "<br>".join([f"• {i['name']} x {i['qty']}" for i in items])
+def generate_donation_paid_email(cust, order_id, items, total):
+    # 將項目組成字串，並處理排版
+    items_str = "、".join([f"{i['name']} x {i['qty']}" for i in items])
+    
+    # 取得台灣時間並轉換為民國年
+    now = get_tw_now()
+    roc_year = now.year - 1911
+    date_str = f"中華民國 {roc_year} 年 {now.month} 月 {now.day} 日"
+
     return f"""
-    <div style="font-family: 'KaiTi', 'Microsoft JhengHei', serif; max-width: 600px; margin: 0 auto; border: 4px double #C48945; padding: 40px; background-color: #fffcf5; color: #333;">
-        <div style="text-align: center;">
-            <h1 style="color: #C48945; font-size: 32px; margin-bottom: 10px;">感謝狀</h1>
-            <p style="font-size: 16px; color: #888;">承天中承府 ‧ 煙島中壇元帥</p>
+    <div style="font-family: 'KaiTi', 'BiauKai', 'DFKai-SB', serif; max-width: 650px; margin: 0 auto; border: 8px double #C48945; padding: 40px 30px; background-color: #fdf8e4; color: #333; line-height: 1.8; box-sizing: border-box;">
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <p style="font-size: 20px; margin: 0; font-weight: bold; color: #8B4513;">奉<br>煙島中壇元帥 聖示</p>
         </div>
-        <hr style="border: 0; border-top: 1px solid #C48945; margin: 20px 0;">
-        <p style="font-size: 18px; line-height: 1.8;">
-            親愛的 <strong>{cust['name']}</strong> 您好：<br><br>
-            感謝您的無私護持！您的善款已確認入帳。<br>
-            承天中承府的公壇，不只是神明的駐地，更是十方善信共同守護的心靈家園。每一次開壇辦事、每一份為信徒解惑的努力，背後都仰賴著志工們的汗水，以及像您這樣發心護持的善信。<br>
-            是您的這份心意，讓帥府的香火得以延續，讓濟世的聖務能夠圓滿。
-        </p>
-        <div style="background: #f0ebe5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #8B4513;">
-            <h3 style="margin-top:0; color:#8B4513; font-size:20px;">【稟報通知】</h3>
-            <p style="margin-bottom:0; font-size:16px; line-height:1.6;">
-                您的名字與護持項目，將錄入芳名錄。<br>我們將由 <strong>元帥娘</strong> 親自向 <strong>煙島中壇元帥</strong> 逐一稟報，將您的心意上達天聽。
-            </p>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="font-size: 22px; color: #555; margin: 0;">桃城 承天 中承府</h2>
+            <h1 style="font-size: 34px; color: #C48945; margin: 5px 0 0 0; letter-spacing: 2px;">【功德感謝狀】</h1>
         </div>
-        <p style="font-size: 18px; font-weight: bold; color: #C48945; margin-bottom: 10px;">【護持項目明細】</p>
-        <div style="padding-left: 15px; margin-bottom: 20px; font-size: 16px; line-height: 1.6;">{items_str}</div>
-        <p style="font-size: 18px; line-height: 1.8;">祈求元帥庇佑您：<br><strong>闔家平安，萬事如意</strong></p>
-        <p style="margin-top: 40px; text-align: right; font-size: 16px;">承天中承府 敬謝<br>{datetime.now().strftime('%Y 年 %m 月 %d 日')}</p>
-        <div style="text-align: center; margin-top: 40px;">
-            <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 50px; font-size: 14px; display: inline-block;">加入官方 LINE 客服</a>
-            <div style="margin-top: 10px; font-size: 12px; color: #999;">(此為系統自動發送之電子感謝狀，請妥善保存)</div>
+
+        <div style="font-size: 18px; margin-bottom: 35px; padding: 0 10px;">
+            <p style="margin: 0 0 10px 0; font-weight: bold;">茲感謝</p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 18px;">
+                <tr>
+                    <td style="width: 100px; padding: 6px 0; color: #555;">姓　　名：</td>
+                    <td style="border-bottom: 1px solid #aaa; font-weight: bold;">{cust.get('name', '')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; color: #555;">地　　址：</td>
+                    <td style="border-bottom: 1px solid #aaa;">{cust.get('address', '未提供')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; color: #555;">電　　話：</td>
+                    <td style="border-bottom: 1px solid #aaa;">{cust.get('phone', '未提供')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; color: #555;">功德項目：</td>
+                    <td style="border-bottom: 1px solid #aaa;">{items_str}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; color: #555;">功 德 金：</td>
+                    <td style="border-bottom: 1px solid #aaa; font-weight: bold; color: #C48945;">新臺幣 {total} 元整</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; color: #555;">備　　註：</td>
+                    <td style="border-bottom: 1px solid #aaa; font-family: monospace; font-size: 16px;">{order_id}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="text-align: center; font-size: 20px; color: #8B4513; margin-bottom: 35px; font-weight: bold;">
+            <p style="margin: 8px 0;">發心隨喜，護持聖務；<br>誠意昭然，德澤有憑。</p>
+            <p style="margin: 8px 0;">善念一動，功名入籍；<br>赤誠既至，福祿臨門。</p>
+        </div>
+
+        <div style="text-align: center; font-size: 18px; margin-bottom: 45px;">
+            <p style="margin: 0 0 15px 0;">特此敬謝，並祈</p>
+            <div style="display: inline-block; text-align: left; font-weight: bold; color: #C48945; font-size: 20px; border: 2px solid #E6BA67; padding: 15px 25px; border-radius: 8px; background: #fffcf5;">
+                <p style="margin: 5px 0;">天赦開恩　運勢轉昌</p>
+                <p style="margin: 5px 0;">財庫廣納　家道隆盛</p>
+                <p style="margin: 5px 0;">光明長照　福壽綿延</p>
+            </div>
+        </div>
+
+        <div style="text-align: right; font-size: 20px; margin-bottom: 30px; font-weight: bold; color: #333;">
+            <p style="margin: 5px 0;">桃城 承天 中承府</p>
+            <p style="margin: 5px 0;">煙島中壇元帥 鑑證</p>
+        </div>
+
+        <div style="text-align: right; font-size: 18px; margin-bottom: 40px; font-weight: bold; color: #555;">
+            <p style="margin: 0;">{date_str}</p>
+        </div>
+
+        <div style="border-top: 1px dashed #C48945; padding-top: 20px; text-align: center; font-size: 15px; color: #666;">
+            <p style="margin: 0; font-weight: bold; color: #8B4513;">附註：隨喜布施‧功德自記；福報隨行‧善緣自成。</p>
+            <div style="margin-top: 25px;">
+                <a href="https://line.me/R/ti/p/@566dcres" target="_blank" style="background: #00B900; color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 50px; font-size: 14px; display: inline-block; font-family: 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;">加入官方 LINE 客服</a>
+                <div style="margin-top: 10px; font-size: 12px; color: #999; font-family: 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;">(此為系統自動發送之電子感謝狀，請妥善保存)</div>
+            </div>
         </div>
     </div>
     """
@@ -1645,7 +1697,7 @@ def confirm_order_payment(oid):
     
     if order.get('orderType') in ['donation', 'fund','committee']:
         email_subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order['orderId']})"
-        email_html = generate_donation_paid_email(cust, order['orderId'], order['items'])
+        email_html = generate_donation_paid_email(cust, order['orderId'], order['items'], order['total'])
         send_email(cust.get('email'), email_subject, email_html, is_html=True)
     else:
         email_subject = f"【承天中承府】收款確認通知 ({order['orderId']})"
@@ -1677,7 +1729,7 @@ def resend_order_email(oid):
     if order.get('orderType') == 'donation':
         if order.get('status') == 'paid':
             email_subject = f"【補寄感謝狀】承天中承府 - 功德無量 ({order['orderId']})"
-            email_html = generate_donation_paid_email(cust, order['orderId'], order['items'])
+            email_html = generate_donation_paid_email(cust, order['orderId'], order['items'], order['total'])
         else:
             email_subject = f"【補寄】護持登記確認通知 ({order['orderId']})"
             email_html = generate_donation_created_email(order)
