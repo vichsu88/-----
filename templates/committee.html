@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}承天中承府 - 委員會組織{% endblock %}
+{% block title %}承天中承府 - 委員會與建廟籌備組織{% endblock %}
 
 {% block content %}
 <style>
@@ -20,10 +20,10 @@
         font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
         color: var(--royal-text-light);
         min-height: 100vh;
-        padding-bottom: 300px; /* 預留足夠底部空白，防止 footer 被懸浮列遮擋 */
+        padding-bottom: 200px; /* 預留足夠底部空白，防止 footer 被懸浮列遮擋 */
     }
 
-    button, input, .btn-action, .qty-btn, .limit-tag, .form-control, .total-price {
+    button, input, .btn-action, .limit-tag {
         font-family: 'Noto Sans TC', sans-serif !important;
     }
 
@@ -52,7 +52,7 @@
     /* === 3. 區塊與分隔線 === */
     .section-container { max-width: 1100px; margin: 0 auto; padding: 50px 20px; }
     .intro-text { text-align: center; font-size: 1.25rem; line-height: 1.9; color: #eed; margin-bottom: 50px; }
-    .intro-note { margin-top: 15px; font-size: 0.95rem; color: #888; }
+    .intro-note { margin-top: 15px; font-size: 1.05rem; color: #ccc; background: rgba(0,0,0,0.4); display: inline-block; padding: 10px 20px; border-radius: 10px; border: 1px solid rgba(212,175,55,0.3); }
     
     .section-divider { display: flex; align-items: center; text-align: center; margin: 70px 0 50px; }
     .section-divider::before, .section-divider::after {
@@ -64,126 +64,80 @@
         text-shadow: 0 0 25px rgba(212, 175, 55, 0.9), 0 0 10px rgba(212, 175, 55, 0.5); letter-spacing: 2px;
     }
 
-    /* === 4. 職位卡片設計 === */
+    /* === 4. 職位卡片設計 (純展示版) === */
     .card-grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; margin-bottom: 50px; }
     .role-card {
         background: linear-gradient(145deg, rgba(40, 5, 5, 0.85), rgba(15, 0, 0, 0.95)); 
         backdrop-filter: blur(8px); border: 2px solid rgba(212, 175, 55, 0.4); 
-        border-radius: 18px; padding: 30px 20px; width: 250px; text-align: center;
+        border-radius: 18px; padding: 40px 20px; width: 250px; text-align: center;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    .role-card:hover, .role-card.selected {
+    .role-card:hover {
         background: linear-gradient(135deg, #7a1010 0%, #3a0000 100%);
-        border-color: var(--royal-gold-light); transform: translateY(-10px) scale(1.03);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 25px rgba(212, 175, 55, 0.6), inset 0 0 20px rgba(212, 175, 55, 0.3);
+        border-color: var(--royal-gold-light); transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 25px rgba(212, 175, 55, 0.6);
     }
-    .role-card.sold-out { opacity: 0.6; filter: grayscale(80%); pointer-events: none; }
     
     .limit-tag {
         background: linear-gradient(90deg, #d4af37, #fef0a5, #d4af37); background-size: 200% auto;
-        color: #000; font-size: 0.9rem; font-weight: 900; padding: 5px 15px; border-radius: 20px; 
-        display: inline-block; margin-bottom: 18px; box-shadow: 0 2px 10px rgba(212, 175, 55, 0.5);
+        color: #000; font-size: 1rem; font-weight: 900; padding: 6px 20px; border-radius: 20px; 
+        display: inline-block; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(212, 175, 55, 0.5);
     }
     .limit-tag-unlimited { background: transparent; color: #aaa; border: 1px solid #aaa; box-shadow: none; }
-    .role-card.sold-out .limit-tag { background: #555; color: #fff; box-shadow: none; border: none; }
     
-    .role-title { font-size: 1.8rem; color: #fff; margin-bottom: 12px; font-weight: bold; text-shadow: 0 2px 5px #000; }
-    .role-price { font-size: 1.4rem; color: var(--royal-gold-light); margin-bottom: 25px; text-shadow: 0 0 10px rgba(212,175,55,0.5); }
-    
-    /* 數量控制按鈕 */
-    .qty-control { display: flex; justify-content: center; align-items: center; gap: 15px; }
-    .qty-btn {
-        width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--royal-gold-dark);
-        background: rgba(0,0,0,0.5); color: var(--royal-gold-main); cursor: pointer; 
-        font-size: 1.2rem; font-weight: bold; transition: 0.2s;
-    }
-    .qty-btn:hover { background: var(--royal-gold-main); color: #000; box-shadow: 0 0 10px var(--royal-gold-main); }
-    .qty-display { width: 30px; font-size: 1.4rem; color: #fff; }
+    .role-title { font-size: 2rem; color: #fff; margin-bottom: 15px; font-weight: bold; text-shadow: 0 2px 5px #000; letter-spacing: 2px; }
+    .role-price { font-size: 1.4rem; color: var(--royal-gold-light); text-shadow: 0 0 10px rgba(212,175,55,0.5); }
 
     /* === 5. 權益區塊與結尾祈福 === */
     .benefits-box {
         background: linear-gradient(135deg, rgba(30,5,5,0.8) 0%, rgba(10,0,0,0.9) 100%);
         border: 1px solid rgba(212, 175, 55, 0.5); border-left: 6px solid var(--royal-gold-main);
-        padding: 30px; border-radius: 10px; text-align: left; max-width: 850px; margin: 0 auto;
+        padding: 40px; border-radius: 10px; text-align: left; max-width: 850px; margin: 0 auto;
         box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 20px rgba(212, 175, 55, 0.1);
     }
-    .benefits-title { font-size: 1.5rem; color: var(--royal-gold-light); margin-bottom: 20px; text-shadow: 0 0 8px rgba(212,175,55,0.6); }
-    .benefit-item { display: flex; align-items: flex-start; margin-bottom: 15px; font-size: 1.15rem; color: #eee; line-height: 1.6; }
-    .benefit-item span.icon { color: var(--royal-gold-light); margin-right: 12px; font-size: 1.3rem; filter: drop-shadow(0 0 5px var(--royal-gold-main)); }
-    .benefit-divider { border: 0; border-top: 1px dashed rgba(191,149,63,0.3); margin: 15px 0; }
-    .benefit-highlight { color: var(--royal-gold-main); font-weight: bold; }
-
-    .benefit-link-btn {
-        display: inline-flex; align-items: center; margin-top: 8px; padding: 5px 15px; font-size: 0.95rem;
-        color: #3a0000 !important; background: linear-gradient(to right, #fef0a5, #d4af37);
-        border-radius: 20px; text-decoration: none; font-weight: 900; box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4); transition: all 0.3s ease; letter-spacing: 1px;
-    }
-    .benefit-link-btn:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 5px 15px rgba(212, 175, 55, 0.8); color: #000 !important; }
+    .benefits-title { font-size: 1.6rem; color: var(--royal-gold-light); margin-bottom: 25px; text-shadow: 0 0 8px rgba(212,175,55,0.6); font-weight: bold; }
+    .benefit-item { display: flex; align-items: flex-start; margin-bottom: 18px; font-size: 1.2rem; color: #eee; line-height: 1.7; }
+    .benefit-item span.icon { color: var(--royal-gold-light); margin-right: 15px; font-size: 1.4rem; filter: drop-shadow(0 0 5px var(--royal-gold-main)); }
+    .benefit-divider { border: 0; border-top: 1px dashed rgba(191,149,63,0.3); margin: 25px 0; }
+    .benefit-highlight { color: var(--royal-gold-main); font-weight: bold; font-size: 1.3rem;}
 
     .blessing-text {
-        text-align: center; margin-top: 100px; padding: 60px 40px; border-radius: 20px; position: relative;
-        background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.35) 0%, rgba(120, 15, 15, 0.5) 45%, transparent 80%);
+        text-align: center; margin-top: 80px; padding: 60px 40px; border-radius: 20px; position: relative;
+        background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.25) 0%, rgba(120, 15, 15, 0.4) 45%, transparent 80%);
         border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: inset 0 0 50px rgba(212, 175, 55, 0.1); 
     }
-    .blessing-text p { font-size: 1.4rem; line-height: 2.4; color: var(--royal-gold-light); letter-spacing: 4px; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
-    .blessing-highlight { color: #fff; font-size: 1.4rem; font-weight: bold; }
-    .blessing-sign { font-size: 1rem; color: #aaa; letter-spacing: 2px; }
+    .blessing-text p { font-size: 1.5rem; line-height: 2.2; color: var(--royal-gold-light); letter-spacing: 4px; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+    .blessing-sign { font-size: 1.1rem; color: #aaa; letter-spacing: 2px; display: block; margin-top: 20px; }
+    .disclaimer-text { font-size: 0.95rem; color: #777; margin-top: 30px; letter-spacing: 1px; }
 
-    /* === 6. 浮動膠囊結帳條 === */
+    /* === 6. 浮動引導按鈕 === */
     @keyframes pulse-btn {
-        0%, 100% { box-shadow: 0 5px 15px rgba(0,0,0,0.5), 0 0 10px rgba(212, 175, 55, 0.4); }
-        50% { box-shadow: 0 5px 15px rgba(0,0,0,0.5), 0 0 25px rgba(212, 175, 55, 0.8); }
+        0%, 100% { box-shadow: 0 5px 15px rgba(0,0,0,0.5), 0 0 10px rgba(212, 175, 55, 0.4); transform: scale(1); }
+        50% { box-shadow: 0 5px 15px rgba(0,0,0,0.5), 0 0 25px rgba(212, 175, 55, 0.8); transform: scale(1.02); }
     }
     .checkout-pill {
         position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-        width: 90%; max-width: 800px; background: rgba(20, 5, 5, 0.95); backdrop-filter: blur(15px);
-        border: 2px solid var(--royal-gold-main); border-radius: 50px; padding: 15px 35px;
-        display: flex; justify-content: space-between; align-items: center; z-index: 1000;
-        box-shadow: 0 15px 30px rgba(0,0,0,0.8), 0 0 20px rgba(212, 175, 55, 0.2);
+        width: 90%; max-width: 500px; background: rgba(20, 5, 5, 0.95); backdrop-filter: blur(15px);
+        border: 2px solid var(--royal-gold-main); border-radius: 50px; padding: 12px;
+        display: flex; justify-content: center; align-items: center; z-index: 1000;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.8), 0 0 20px rgba(212, 175, 55, 0.3);
     }
-    .total-price-wrapper { font-size: 1.2rem; color: #fff; }
-    .total-price { font-size: 1.8rem; color: var(--royal-gold-light); font-weight: bold; text-shadow: 0 0 10px rgba(212, 175, 55, 0.6); margin: 0 5px; }
     
-    .btn-action {
-        padding: 12px 35px; font-size: 1.15rem; font-weight: 900; color: #2b0808; border: 1px solid #fff; border-radius: 30px; 
+    .btn-action-large {
+        width: 100%; text-align: center; text-decoration: none; display: block;
+        padding: 15px 35px; font-size: 1.4rem; font-weight: 900; color: #2b0808; border: 1px solid #fff; border-radius: 40px; 
         background: linear-gradient(to bottom, #fffacd 0%, #d4af37 50%, #b8860b 100%);
-        cursor: pointer; animation: pulse-btn 2s infinite; transition: transform 0.2s; display: block;
+        cursor: pointer; animation: pulse-btn 2.5s infinite; letter-spacing: 2px;
     }
-    .btn-action:hover { transform: scale(1.05); }
-    .btn-action.full-width { width: 100%; margin-top: 15px; }
-    .btn-action.secondary { background: #ccc; animation: none; border: none; }
-
-    /* === 7. Modal 與表單 === */
-    .modal-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center;
-    }
-    .modal-content {
-        background: #fdfbf7; color: #333; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
-        border: 4px solid var(--royal-gold-main); border-radius: 15px; padding: 30px;
-        box-shadow: 0 0 40px rgba(212,175,55,0.4); font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
-    }
-    .modal-header { color: #8B0000; margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 10px; font-size: 1.5rem; font-weight: bold; }
-    
-    .form-row { display: flex; gap: 15px; flex-wrap: wrap; }
-    .form-group { flex: 1; min-width: 200px; margin-bottom: 15px; font-weight: bold; text-align: left; }
-    .form-group label { color: #5a0b0b; display: block; margin-bottom: 5px; font-size: 15px; }
-    .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
-    
-    .summary-table { width: 100%; line-height: 2; text-align: left; margin-bottom: 15px; border-collapse: collapse; }
-    .summary-table td { border-bottom: 1px solid #eee; padding: 8px 0; }
-    .summary-total { color: #C48945; font-weight: bold; }
-    .danger-text { color: red; font-size: 13px; text-align: center; margin: 15px 0; }
-    
-    .success-icon { font-size: 3rem; margin-bottom: 10px; }
-    .success-box { background: #fffcf5; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left; border-left: 5px solid #C48945; }
-    .success-box-title { margin-bottom: 10px; color: #8B0000; font-weight: bold; font-size: 1.1rem; }
+    .btn-action-large:hover { color: #000; text-decoration: none; background: linear-gradient(to bottom, #fff 0%, #fef0a5 50%, #d4af37 100%); }
 
     /* === 響應式 RWD === */
     @media (max-width: 768px) {
-        .checkout-pill { flex-direction: column; gap: 15px; bottom: 20px; border-radius: 20px; width: 95%; padding: 15px; }
-        .main-title { font-size: 2rem; }
+        .checkout-pill { bottom: 20px; width: 95%; }
+        .main-title { font-size: 2.2rem; }
+        .role-card { width: 100%; max-width: 320px; }
     }
 </style>
 
@@ -191,173 +145,139 @@
     <header class="header-banner">
         <div class="sub-title">桃城承天中承府</div>
         <div class="main-title">煙島中壇元帥聖駕</div>
-        <div class="header-desc">委員會組織暨建廟籌備公告</div>
+        <div class="header-desc">建廟籌備暨委員會 招募公告</div>
     </header>
 
     <section class="section-container">
-        <div class="section-divider"><span>本府委員會</span></div>
+        <div class="section-divider"><span>建廟籌備委員會 招募公告</span></div>
         <div class="intro-text">
-            為推動本府各項聖務發展，凝聚十方善信之力，弘揚神威，廣布福澤，特成立「委員會」，以協助本府推展各項聖務，共護帥府聖業，永續香火。<br>
-            誠邀十方善信大德，共發善心，同植福田，齊心協力，共襄盛舉。
-            <div class="intro-note">【委員會編制 任期：一年】</div>
-        </div>
-
-        <div class="card-grid">
-            <article class="role-card" id="card-hon_main" onclick="selectItem('hon_main')">
-                <div class="limit-tag" id="tag-hon_main">剩餘 <span id="rem-hon_main">1</span> 名</div>
-                <div class="role-title">主委</div>
-                <div class="role-price">功德金 50,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('hon_main', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-hon_main">0</span>
-                    <button class="qty-btn" onclick="updateQty('hon_main', 1); event.stopPropagation();">+</button>
-                </div>
-            </article>
-            
-            <article class="role-card" id="card-hon_vice" onclick="selectItem('hon_vice')">
-                <div class="limit-tag" id="tag-hon_vice">剩餘 <span id="rem-hon_vice">7</span> 名</div>
-                <div class="role-title">副主委</div>
-                <div class="role-price">功德金 36,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('hon_vice', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-hon_vice">0</span>
-                    <button class="qty-btn" onclick="updateQty('hon_vice', 1); event.stopPropagation();">+</button>
-                </div>
-            </article>
-            
-            <article class="role-card" onclick="selectItem('hon_com')">
-                <div class="limit-tag limit-tag-unlimited">名額不限</div>
-                <div class="role-title">委員</div>
-                <div class="role-price">功德金 25,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('hon_com', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-hon_com">0</span>
-                    <button class="qty-btn" onclick="updateQty('hon_com', 1); event.stopPropagation();">+</button>
-                </div>
-            </article>
-        </div>
-
-        <div class="benefits-box">
-            <div class="benefits-title">【委員會成員權益】</div>
-            <div class="benefit-item"><span class="icon">📜</span>芳名登錄於本府功德牆，永誌留存。</div>
-            <div class="benefit-item"><span class="icon">🙏</span>參與本府各項法會與科儀，享有優先登記之禮遇。</div>
-            <div class="benefit-item"><span class="icon">🏗️</span>未來建廟功德芳名，享有優先登錄。</div>
-            <div class="benefit-item"><span class="icon">🤝</span>每年參與委員聯誼暨交流餐會三次。</div>
-            <div class="benefit-item"><span class="icon">📅</span>芳名刊登於本府年曆首頁，並蒙煙島中壇元帥庇佑。</div>
-        </div>
-
-        <div class="section-divider"><span>建廟籌備委員會</span></div>
-        <div class="intro-text">
-            為推動本府未來建廟大業，使道場長存、香火鼎盛，特成立「建廟籌備委員會」。<br>
+            為推動本府未來建廟大業，使道場長存、香火鼎盛，<br>
+            特成立「建廟籌備委員會」。<br>
             廣邀十方善信大德發心護持，共襄盛舉 同植福田，眾志成城 共建聖堂。
-            <div class="intro-note">【建廟籌備委員會編制 任期：一年】</div>
+            <br><br>
+            <div class="intro-note">
+                【建廟籌備委員會編制】<br>
+                任期：一年<br>
+                每年舉辦委員聯誼暨會議三次，共同討論建廟規劃與未來發展方向。
+            </div>
         </div>
 
         <div class="card-grid">
-            <article class="role-card" id="card-bld_main" onclick="selectItem('bld_main')">
-                <div class="limit-tag" id="tag-bld_main">剩餘 <span id="rem-bld_main">1</span> 名</div>
+            <article class="role-card">
+                <div class="limit-tag">1名</div>
                 <div class="role-title">主委</div>
                 <div class="role-price">功德金 50,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('bld_main', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-bld_main">0</span>
-                    <button class="qty-btn" onclick="updateQty('bld_main', 1); event.stopPropagation();">+</button>
-                </div>
             </article>
             
-            <article class="role-card" id="card-bld_vice" onclick="selectItem('bld_vice')">
-                <div class="limit-tag" id="tag-bld_vice">剩餘 <span id="rem-bld_vice">10</span> 名</div>
+            <article class="role-card">
+                <div class="limit-tag">10名</div>
                 <div class="role-title">副主委</div>
                 <div class="role-price">功德金 36,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('bld_vice', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-bld_vice">0</span>
-                    <button class="qty-btn" onclick="updateQty('bld_vice', 1); event.stopPropagation();">+</button>
-                </div>
             </article>
 
-            <article class="role-card" onclick="selectItem('bld_merit')">
+            <article class="role-card">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">建廟功德金</div>
                 <div class="role-price">功德金 10,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('bld_merit', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-bld_merit">0</span>
-                    <button class="qty-btn" onclick="updateQty('bld_merit', 1); event.stopPropagation();">+</button>
-                </div>
             </article>
         </div>
 
         <div class="benefits-box">
             <div class="benefits-title">【建廟籌備委員會成員權益】</div>
-            <div class="benefit-item"><span class="icon">📖</span>芳名登錄於本府功德簿，永誌留存。</div>
-            <div class="benefit-item"><span class="icon">🙏</span>參與本府各項法會與科儀，享有優先登記權。</div>
-            <div class="benefit-item"><span class="icon">🏛️</span>建廟功德芳名，優先登錄。</div>
-            <div class="benefit-item"><span class="icon">🤝</span>參與委員聯誼暨餐會交流（每年三次會議共商建廟規劃）。</div>
-            <div class="benefit-item"><span class="icon">📅</span>芳名刊登於本府年曆首頁，並蒙煙島中壇元帥庇佑。</div>
+            <div class="benefit-item"><span class="icon">一、</span>芳名登錄於本府功德簿，永誌留存。</div>
+            <div class="benefit-item"><span class="icon">二、</span>參與本府各項法會與科儀，享有優先登記權。</div>
+            <div class="benefit-item"><span class="icon">三、</span>建廟功德芳名，優先登錄。</div>
+            <div class="benefit-item"><span class="icon">四、</span>參與委員聯誼暨餐會交流。</div>
+            <div class="benefit-item"><span class="icon">五、</span>芳名刊登於本府年曆首頁，並蒙煙島中壇元帥庇佑。</div>
             <hr class="benefit-divider">
-            <div class="benefit-item benefit-highlight">
-                <span class="icon">🌟</span>
-                <div style="flex: 1;">
-                    【建廟功德】：凡發心護持建廟者，待建廟完成後，功德芳名將留名於建廟功德牆，永誌紀念。<br>
-                    <a href="/fund" class="benefit-link-btn">前往建廟基金 ➔</a>
+            <div class="benefit-item benefit-highlight" style="flex-direction: column; text-align: center;">
+                <div style="margin-bottom: 10px; font-size: 1.5rem;">【建廟功德】 一念發心 功德無量</div>
+                <div style="font-weight: normal; font-size: 1.15rem; color: #fef0a5; line-height: 1.8;">
+                    眾志成城 共建聖堂 香火鼎盛 福澤四方<br>
+                    凡發心護持建廟者，待建廟完成後，功德芳名將留名於建廟功德牆，永誌紀念。
                 </div>
             </div>
         </div>
         
-        <div class="section-divider"><span>顧問團</span></div>
+        <div class="section-divider"><span>顧問團 招募公告</span></div>
         <div class="intro-text">
-            為護持本府聖業發展，凝聚十方善信之力，特設立顧問團。<br>
+            為護持本府聖業發展，凝聚十方善信之力，特設立 顧問團。<br>
             誠邀十方善信大德發心護持、隨喜贊助，<br>
-            共同護持帥府香火鼎盛，聖業長存。<br>
-            <div class="intro-note" style="line-height: 1.6;">
-                【顧問團編制 任期：一年】<br>
+            共同護持帥府香火鼎盛，聖業長存。<br><br>
+            <div class="intro-note">
+                【顧問團編制】<br>任期：一年<br>
                 ※ 顧問團為榮譽護持職，不參與本府行政事務與決策。
             </div>
         </div>
 
         <div class="card-grid">
-            <article class="role-card" id="card-adv_main" onclick="selectItem('adv_main')">
-                <div class="limit-tag" id="tag-adv_main">剩餘 <span id="rem-adv_main">1</span> 名</div>
+            <article class="role-card">
+                <div class="limit-tag">1名</div>
                 <div class="role-title">顧問主席</div>
                 <div class="role-price">功德金 50,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('adv_main', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-adv_main">0</span>
-                    <button class="qty-btn" onclick="updateQty('adv_main', 1); event.stopPropagation();">+</button>
-                </div>
             </article>
             
-            <article class="role-card" id="card-adv_vice" onclick="selectItem('adv_vice')">
-                <div class="limit-tag" id="tag-adv_vice">剩餘 <span id="rem-adv_vice">7</span> 名</div>
+            <article class="role-card">
+                <div class="limit-tag">7名</div>
                 <div class="role-title">顧問副主席</div>
                 <div class="role-price">功德金 36,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('adv_vice', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-adv_vice">0</span>
-                    <button class="qty-btn" onclick="updateQty('adv_vice', 1); event.stopPropagation();">+</button>
-                </div>
             </article>
             
-            <article class="role-card" onclick="selectItem('adv_member')">
+            <article class="role-card">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">顧問</div>
                 <div class="role-price">功德金 20,000元</div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="updateQty('adv_member', -1); event.stopPropagation();">-</button>
-                    <span class="qty-display" id="qty-adv_member">0</span>
-                    <button class="qty-btn" onclick="updateQty('adv_member', 1); event.stopPropagation();">+</button>
-                </div>
             </article>
         </div>
 
         <div class="benefits-box">
             <div class="benefits-title">【顧問團成員禮遇】</div>
-            <div class="benefit-item"><span class="icon">📜</span>芳名登錄本府功德簿，永誌留存。</div>
-            <div class="benefit-item"><span class="icon">🙏</span>參與本府法會與科儀，享有優先登記。</div>
-            <div class="benefit-item"><span class="icon">🏛️</span>未來建廟功德芳名，優先登錄。</div>
-            <div class="benefit-item"><span class="icon">📅</span>芳名刊登於本府年曆首頁。</div>
-            <div class="benefit-item"><span class="icon">✨</span>蒙煙島中壇元帥庇佑，福報綿長。</div>
+            <div class="benefit-item"><span class="icon">一、</span>芳名登錄本府功德簿，永誌留存。</div>
+            <div class="benefit-item"><span class="icon">二、</span>參與本府法會與科儀，享有優先登記。</div>
+            <div class="benefit-item"><span class="icon">三、</span>未來建廟功德芳名，優先登錄。</div>
+            <div class="benefit-item"><span class="icon">四、</span>芳名刊登於本府年曆首頁。</div>
+            <div class="benefit-item"><span class="icon">五、</span>蒙煙島中壇元帥庇佑，福報綿長。</div>
+        </div>
+
+        <div class="section-divider"><span>委員會組織公告</span></div>
+        <div class="intro-text">
+            為推動本府各項聖務發展，凝聚十方善信之力，<br>
+            弘揚神威，廣布福澤，特成立「委員會」，<br>
+            以協助本府推展各項聖務，共護帥府聖業，永續香火。<br>
+            誠邀十方善信大德，共發善心，同植福田，齊心協力，共襄盛舉。<br><br>
+            <div class="intro-note">
+                【委員會編制】<br>任期：一年<br>
+                委員會每年舉辦委員聯誼暨會議三次，共同研議本府未來發展方向，並協助推動各項聖務規劃。
+            </div>
+        </div>
+
+        <div class="card-grid">
+            <article class="role-card">
+                <div class="limit-tag">1名</div>
+                <div class="role-title">主委</div>
+                <div class="role-price">功德金 50,000元</div>
+            </article>
+            
+            <article class="role-card">
+                <div class="limit-tag">7名</div>
+                <div class="role-title">副主委</div>
+                <div class="role-price">功德金 36,000元</div>
+            </article>
+            
+            <article class="role-card">
+                <div class="limit-tag limit-tag-unlimited">名額不限</div>
+                <div class="role-title">委員</div>
+                <div class="role-price">功德金 25,000元</div>
+            </article>
+        </div>
+
+        <div class="benefits-box">
+            <div class="benefits-title">【委員會成員權益】</div>
+            <div class="benefit-item"><span class="icon">一、</span>芳名登錄於本府功德牆，永誌留存。</div>
+            <div class="benefit-item"><span class="icon">二、</span>參與本府各項法會與科儀，享有優先登記之禮遇。</div>
+            <div class="benefit-item"><span class="icon">三、</span>未來建廟功德芳名，享有優先登錄。</div>
+            <div class="benefit-item"><span class="icon">四、</span>每年參與委員聯誼暨交流餐會三次。</div>
+            <div class="benefit-item"><span class="icon">五、</span>芳名刊登於本府年曆首頁，並蒙煙島中壇元帥庇佑。</div>
         </div>
         
         <div class="blessing-text">
@@ -365,327 +285,17 @@
                 護持聖業 功德無量<br>
                 同心協力 福澤綿長<br>
                 香火鼎盛 澤被四方<br><br>
-                <span class="blessing-highlight">委員會匯款帳號</span><br>
-                103台灣新光商業銀行(北嘉義分行) 芭芭菸酒水專賣店 0666-10-948888-9<br><br><br>
-                <span class="blessing-sign">桃城 承天中承府 敬啟</span>
+                願 煙島中壇元帥庇佑<br>
+                闔家平安 福祿綿長 財源廣進 萬事順遂
             </p>
+            <span class="blessing-sign">桃城 承天中承府 敬啟</span>
+            <div class="disclaimer-text">※ 本府保留各項委員會成員資格審核及相關事項之最終決定權。</div>
         </div>
     </section>
 </div>
 
 <div class="checkout-pill">
-    <div class="total-price-wrapper">
-        總護持金額：<span class="total-price" id="total-amount">0</span> 元
-    </div>
-    <button class="btn-action" id="btn-open-form" onclick="openFormModal()">前往填寫資料</button>
+    <a href="https://zhongcheng.ycbot.cc/line/home" class="btn-action-large" target="_blank" rel="noopener noreferrer">點此前往護持報名</a>
 </div>
 
-<div id="fund-form-modal" class="modal-overlay">
-    <div class="modal-content">
-        <h3 class="modal-header">填寫護持資料</h3>
-        <form id="donation-form">
-            <div class="form-row">
-                <div class="form-group">
-                    <label>真實姓名 (用於疏文)</label>
-                    <input type="text" name="name" class="form-control" required placeholder="請填寫真實姓名">
-                </div>
-                <div class="form-group">
-                    <label>農曆生日 (YYYY/MM/DD)</label>
-                    <input type="text" name="lunarBirthday" class="form-control" required placeholder="例如: 1990/01/01" maxlength="10" data-mask="date">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>聯絡電話</label>
-                    <input type="tel" name="phone" class="form-control" required placeholder="09xx-xxx-xxx" maxlength="12" data-mask="phone">
-                </div>
-                <div class="form-group">
-                    <label>電子信箱</label>
-                    <input type="email" name="email" class="form-control" required placeholder="用於寄送通知">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>聯絡地址</label>
-                <input type="text" name="address" class="form-control" required placeholder="寄送感謝狀或收據">
-            </div>
-            <div class="form-group">
-                <label>匯款帳號後五碼</label>
-                <input type="text" name="last5" class="form-control" maxlength="5" required placeholder="請填寫您的帳號後 5 碼">
-            </div>
-            
-            <button type="submit" class="btn-action full-width">下一步：確認資料</button>
-            <button type="button" class="btn-action secondary full-width" onclick="closeModal('fund-form-modal')">取消</button>
-        </form>
-    </div>
-</div>
-
-<div id="confirm-modal" class="modal-overlay">
-    <div class="modal-content">
-        <h3 class="modal-header">確認護持資訊</h3>
-        <table class="summary-table">
-            <tr><td width="30%">姓名</td><td id="conf-name"></td></tr>
-            <tr><td>農曆生日</td><td id="conf-birth"></td></tr>
-            <tr><td>聯絡電話</td><td id="conf-phone"></td></tr>
-            <tr><td>護持項目</td><td id="conf-items"></td></tr>
-            <tr><td>總金額</td><td id="conf-total" class="summary-total"></td></tr>
-        </table>
-        <p class="danger-text">※ 資料送出後無法修改，請確認無誤。</p>
-        <button id="final-submit-btn" class="btn-action full-width">確認送出</button>
-        <button type="button" class="btn-action secondary full-width" onclick="backToEdit()">返回修改</button>
-    </div>
-</div>
-
-<div id="success-modal" class="modal-overlay">
-    <div class="modal-content" style="text-align:center;">
-        <div class="success-icon">🙏</div>
-        <h2 style="color:#C48945; margin-bottom: 5px;">功德無量</h2>
-        <p>您的委員會護持資料已成功送出！</p>
-        
-        <div class="success-box">
-            <p class="success-box-title">【委員會專屬匯款帳戶】</p>
-            <p><strong>銀行代碼：</strong>103 (臺灣新光銀行 北嘉義分行)</p>
-            <p><strong>銀行帳號：</strong>0666-10-948888-9</p>
-            <p><strong>戶名：</strong>芭芭菸酒水專賣店</p>
-            <p class="danger-text" style="text-align: left; margin-top: 10px;">請務必於 2 小時內完成匯款。</p>
-        </div>
-        
-        <button type="button" class="btn-action full-width" style="margin-top:0;" onclick="window.location.reload()">完成</button>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // === 0. 共用變數與商品設定 ===
-    const limits = { 'hon_main': 1, 'hon_vice': 7, 'bld_main': 1, 'bld_vice': 10, 'adv_main': 1, 'adv_vice': 7 };
-    window.remainData = { ...limits };
-
-    const items = {
-        'hon_main': { name: '[本府] 主委', price: 50000, qty: 0, isPos: true },
-        'hon_vice': { name: '[本府] 副主委', price: 36000, qty: 0, isPos: true },
-        'hon_com': { name: '[本府] 委員', price: 25000, qty: 0, isPos: true },
-        'bld_main': { name: '[建廟] 籌備主委', price: 50000, qty: 0, isPos: true },
-        'bld_vice': { name: '[建廟] 籌備副主委', price: 36000, qty: 0, isPos: true },
-        'bld_merit': { name: '[建廟] 建廟功德金', price: 10000, qty: 0, isPos: false },
-        'adv_main': { name: '[顧問團] 顧問主席', price: 50000, qty: 0, isPos: true },
-        'adv_vice': { name: '[顧問團] 顧問副主席', price: 36000, qty: 0, isPos: true },
-        'adv_member': { name: '[顧問團] 顧問', price: 20000, qty: 0, isPos: true } 
-    };
-
-    // DOM 快取
-    const domTotalAmt = document.getElementById('total-amount');
-    const formModal = document.getElementById('fund-form-modal');
-    const confirmModal = document.getElementById('confirm-modal');
-    const successModal = document.getElementById('success-modal');
-    const form = document.getElementById('donation-form');
-
-    // 初始化執行
-    initStatus();
-    initInputMasks();
-
-    // === 1. 取得最新名額狀態 ===
-    async function initStatus() {
-        try {
-            const res = await fetch('/api/committee/status');
-            const data = await res.json();
-            
-            Object.keys(limits).forEach(key => {
-                window.remainData[key] = data[key] ?? limits[key];
-                
-                // 強制額歸 0 (保留原有防呆邏輯)
-                if (['hon_main', 'bld_main', 'bld_vice'].includes(key)) window.remainData[key] = 0;
-
-                const remSpan = document.getElementById(`rem-${key}`);
-                if (remSpan) remSpan.innerText = window.remainData[key];
-                
-                // 若名額 <= 0 則鎖定卡片 UI
-                if (window.remainData[key] <= 0) {
-                    const card = document.getElementById(`card-${key}`);
-                    const tag = document.getElementById(`tag-${key}`);
-                    if (card) card.classList.add('sold-out');
-                    if (tag) tag.innerText = '名額已滿';
-                }
-            });
-        } catch(e) { 
-            console.warn("獲取名額狀態失敗，使用預設值", e); 
-        }
-    }
-
-    // === 2. 表單輸入遮罩 (Input Mask) ===
-    function initInputMasks() {
-        const applyMask = (selector, formatter) => {
-            const inputs = document.querySelectorAll(selector);
-            inputs.forEach(input => {
-                const processInput = (isComposing) => {
-                    if (isComposing) return;
-                    const originalValue = input.value;
-                    const v = originalValue.replace(/\D/g, ''); 
-                    const formattedValue = formatter(v);
-                    if (originalValue !== formattedValue) input.value = formattedValue;
-                };
-                input.addEventListener('input', (e) => processInput(e.isComposing));
-                input.addEventListener('compositionend', () => processInput(false));
-            });
-        };
-
-        // 日期 YYYY/MM/DD
-        applyMask('input[data-mask="date"]', (v) => {
-            if (v.length > 8) v = v.slice(0, 8);
-            if (v.length > 4) v = v.slice(0, 4) + '/' + v.slice(4);
-            if (v.length > 7) v = v.slice(0, 7) + '/' + v.slice(7);
-            return v;
-        });
-
-        // 電話 09XX-XXX-XXX
-        applyMask('input[data-mask="phone"]', (v) => {
-            if (v.length > 10) v = v.slice(0, 10);
-            if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
-            if (v.length > 8) v = v.slice(0, 8) + '-' + v.slice(8);
-            return v;
-        });
-    }
-
-    // === 3. 購物車邏輯 ===
-    window.updateQty = (key, change) => {
-        // 防呆：已售完的限量品阻擋增加
-        if (limits[key] && window.remainData[key] <= 0 && change > 0) return;
-
-        let newQty = Math.max(0, items[key].qty + change);
-        
-        // 職位型商品強制最高 1 個
-        if (items[key].isPos && newQty > 1) {
-            newQty = 1;
-            alert(`【${items[key].name}】每次結帳限購 1 名喔！`);
-        }
-
-        items[key].qty = newQty;
-        
-        const qtyDisplay = document.getElementById(`qty-${key}`);
-        if(qtyDisplay) qtyDisplay.innerText = newQty;
-        
-        const card = document.querySelector(`.role-card[onclick*="${key}"]`);
-        if (card) {
-            card.classList.toggle('selected', newQty > 0);
-        }
-        
-        calcTotal();
-    };
-
-    window.selectItem = (key) => { if(items[key].qty === 0) updateQty(key, 1); };
-
-    function calcTotal() {
-        const total = Object.values(items).reduce((sum, item) => sum + (item.price * item.qty), 0);
-        domTotalAmt.innerText = total.toLocaleString();
-    }
-
-    function getCleanTotal() {
-        return parseInt(domTotalAmt.innerText.replace(/,/g,''), 10) || 0;
-    }
-
-    // === 4. 表單與 Modal 流程控制 ===
-    window.openFormModal = async () => {
-        if (getCleanTotal() === 0) return alert('請先選擇欲護持的項目');
-
-        const btn = document.getElementById('btn-open-form');
-        const originalText = btn.innerText;
-        btn.disabled = true; btn.innerText = '讀取中...';
-
-        try {
-            const res = await fetch('/api/user/me');
-            const data = await res.json();
-            
-            if (!data.logged_in) {
-                alert('為了記錄您的功德並寄送感謝狀，請先進行 LINE 登入。');
-                return window.location.href = `/api/line/login?next=${encodeURIComponent('/committee')}`;
-            }
-            
-            const user = data.user || {};
-            if(!form.name.value) form.name.value = user.realName || '';
-            if(!form.phone.value) form.phone.value = user.phone || '';
-            if(!form.email.value) form.email.value = user.email || '';
-            if(!form.address.value) form.address.value = user.address || '';
-            if(!form.lunarBirthday.value) form.lunarBirthday.value = user.lunarBirthday || '';
-            
-            formModal.style.display = 'flex';
-        } catch(e) { 
-            console.error('載入會員資料失敗', e);
-            alert('系統連線異常，請稍後再試'); 
-        } finally {
-            btn.disabled = false; btn.innerText = originalText;
-        }
-    };
-
-    window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
-    window.backToEdit = () => { confirmModal.style.display = 'none'; formModal.style.display = 'flex'; };
-
-    // 表單第一步：顯示確認頁面
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        document.getElementById('conf-name').innerText = form.name.value;
-        document.getElementById('conf-birth').innerText = form.lunarBirthday.value;
-        document.getElementById('conf-phone').innerText = form.phone.value;
-        
-        const itemsHtml = Object.values(items)
-            .filter(item => item.qty > 0)
-            .map(item => `${item.name} x ${item.qty}`)
-            .join('<br>');
-            
-        document.getElementById('conf-items').innerHTML = itemsHtml;
-        document.getElementById('conf-total').innerText = domTotalAmt.innerText;
-        
-        formModal.style.display = 'none';
-        confirmModal.style.display = 'flex';
-    });
-
-    // 表單第二步：正式送出訂單
-    document.getElementById('final-submit-btn').onclick = async function() {
-        this.disabled = true; this.innerText = '處理中...';
-
-        const orderItems = Object.entries(items)
-            .filter(([_, item]) => item.qty > 0)
-            .map(([id, item]) => ({ name: item.name, price: item.price, qty: item.qty, id }));
-
-        const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-        const payload = {
-            orderType: 'committee',
-            name: form.name.value, 
-            phone: form.phone.value, 
-            address: form.address.value,
-            last5: form.last5.value, 
-            email: form.email.value, 
-            lunarBirthday: form.lunarBirthday.value,
-            items: orderItems,
-            total: getCleanTotal()
-        };
-
-        try {
-            const res = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfTokenMeta?.content || ''
-                },
-                body: JSON.stringify(payload)
-            });
-            
-            if (res.status === 401) {
-                alert('您的登入時效已過，請重新登入 LINE');
-                return window.location.href = `/api/line/login?next=${encodeURIComponent('/committee')}`;
-            }
-            
-            const result = await res.json();
-            if (result.success) {
-                confirmModal.style.display = 'none';
-                successModal.style.display = 'flex';
-            } else {
-                alert(`送出失敗: ${result.error || result.message || '未知錯誤'}`);
-                this.disabled = false; this.innerText = '確認送出';
-            }
-        } catch(e) { 
-            console.error('訂單送出失敗', e);
-            alert('連線錯誤，請檢查網路狀態'); 
-            this.disabled = false; this.innerText = '確認送出'; 
-        }
-    };
-});
-</script>
 {% endblock %}
