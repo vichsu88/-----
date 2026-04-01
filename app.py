@@ -13,7 +13,7 @@ from collections import defaultdict
 from email.mime.text import MIMEText
 from email.header import Header
 from functools import wraps
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import Flask, jsonify, render_template, request, session, redirect, url_for, Response
 from flask_cors import CORS
@@ -33,8 +33,13 @@ load_dotenv()
 app = Flask(__name__)
 
 # 安全性設定
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
 is_production = os.environ.get('RENDER') is not None
+_secret_key = os.environ.get('SECRET_KEY')
+if not _secret_key:
+    if is_production:
+        raise RuntimeError("SECRET_KEY 環境變數未設定，無法啟動生產環境")
+    _secret_key = 'dev-insecure-key-do-not-use-in-production'
+app.config['SECRET_KEY'] = _secret_key
 app.config['SESSION_COOKIE_SECURE'] = is_production
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -108,7 +113,7 @@ def user_login_required(f):
     return decorated_function
 
 def get_tw_now():
-    return datetime.utcnow() + timedelta(hours=8)
+    return datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
 
 def validate_real_name(name):
     if not name:
@@ -694,9 +699,9 @@ def line_callback():
                 'lineId': line_id,
                 'displayName': display_name,
                 'pictureUrl': picture_url,
-                'lastLoginAt': datetime.utcnow()
+                'lastLoginAt': datetime.now(timezone.utc).replace(tzinfo=None)
             },
-            '$setOnInsert': {'createdAt': datetime.utcnow()}},
+            '$setOnInsert': {'createdAt': datetime.now(timezone.utc).replace(tzinfo=None)}},
             upsert=True
         )
 
@@ -834,7 +839,7 @@ def create_pickup_reservation():
         "pickupType": pickup_type,
         "pickupDate": pickup_date,
         "clothes": clothes,
-        "createdAt": datetime.utcnow()
+        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
     }
     
     if db is not None:
@@ -1050,7 +1055,7 @@ def add_feedback():
         "category": data.get('category', []), 
         "content": data.get('content'),
         "agreed": True, 
-        "createdAt": datetime.utcnow(), 
+        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None), 
         "status": "pending", 
         "isMarked": False
     }
@@ -1103,7 +1108,7 @@ def approve_feedback(fid):
         return jsonify({"error": "No data"}), 404
     
     fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
-    db.feedback.update_one({'_id': oid}, {'$set': {'status': 'approved', 'feedbackId': fb_id, 'approvedAt': datetime.utcnow()}})
+    db.feedback.update_one({'_id': oid}, {'$set': {'status': 'approved', 'feedbackId': fb_id, 'approvedAt': datetime.now(timezone.utc).replace(tzinfo=None)}})
     
     user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
     email = user.get('email') or fb.get('email')
@@ -1125,7 +1130,7 @@ def ship_feedback(fid):
     if not fb:
         return jsonify({"error": "No data"}), 404
     
-    db.feedback.update_one({'_id': oid}, {'$set': {'status': 'sent', 'trackingNumber': tracking, 'sentAt': datetime.utcnow()}})
+    db.feedback.update_one({'_id': oid}, {'$set': {'status': 'sent', 'trackingNumber': tracking, 'sentAt': datetime.now(timezone.utc).replace(tzinfo=None)}})
     
     user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
     email = user.get('email') or fb.get('email')
@@ -1420,7 +1425,7 @@ def export_donations_txt():
 @app.route('/api/donations/cleanup-unpaid', methods=['DELETE'])
 @login_required
 def cleanup_unpaid_orders():
-    cutoff = datetime.utcnow() - timedelta(hours=76)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=76)
     cursor = db.orders.find({"status": "pending", "createdAt": {"$lt": cutoff}})
     for order in cursor:
         if order.get('customer', {}).get('email'):
@@ -1510,7 +1515,7 @@ def create_order():
         "shippingFee": data.get('shippingFee', 120)            
     }
     
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     deadline = now + timedelta(hours=2)
     
     order = {
@@ -1554,7 +1559,7 @@ def mark_donations_reported():
     if object_ids:
         db.orders.update_many(
             {"_id": {"$in": object_ids}},
-            {"$set": {"is_reported": True, "reportedAt": datetime.utcnow()}}
+            {"$set": {"is_reported": True, "reportedAt": datetime.now(timezone.utc).replace(tzinfo=None)}}
         )
     return jsonify({"success": True})
 
@@ -1655,7 +1660,7 @@ def get_orders():
 @app.route('/api/orders/cleanup-shipped', methods=['DELETE'])
 @login_required
 def cleanup_shipped_orders():
-    cutoff = datetime.utcnow() - timedelta(days=14)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=14)
     result = db.orders.delete_many({"status": "shipped", "shippedAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
@@ -1670,7 +1675,7 @@ def confirm_order_payment(oid):
     if not order: 
         return jsonify({"error": "No order"}), 404
         
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     db.orders.update_one({'_id': oid_obj}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}})
     cust = order['customer']
     
@@ -1754,7 +1759,7 @@ def add_product():
     new_product = {
         "name": data.get('name'), "category": data.get('category', '其他'),
         "series": data.get('series', ''),"seriesSort": int(data.get('seriesSort', 0)),"price": int(data.get('price', 0)),"description": data.get('description', ''), "image": data.get('image', ''), "isActive": data.get('isActive', True),
-        "isDonation": data.get('isDonation', False), "variants": data.get('variants', []), "createdAt": datetime.utcnow()
+        "isDonation": data.get('isDonation', False), "variants": data.get('variants', []), "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
     }
     db.products.insert_one(new_product)
     return jsonify({"success": True})
@@ -1808,7 +1813,7 @@ def add_announcement():
         "title": data['title'],
         "content": data['content'], 
         "isPinned": data.get('isPinned', False), 
-        "createdAt": datetime.utcnow()
+        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
     })
     return jsonify({"success": True})
 
@@ -1862,7 +1867,7 @@ def add_faq():
         
     db.faq.insert_one({
         "question": data['question'], "answer": data['answer'], "category": data['category'],
-        "isPinned": data.get('isPinned', False), "createdAt": datetime.utcnow()
+        "isPinned": data.get('isPinned', False), "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
     })
     return jsonify({"success": True})
 
@@ -1956,7 +1961,7 @@ def ship_order(oid):
     if not order: 
         return jsonify({"error": "No order"}), 404
         
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     db.orders.update_one({'_id': oid_obj}, {'$set': {
         'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 'trackingNumber': tracking_num
     }})
