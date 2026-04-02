@@ -79,18 +79,18 @@
 
     {# --- 定義導航連結巨集 (避免重複程式碼) --- #}
     {% macro nav_items() %}
-        <li><a href="{{ url_for('home') }}">首頁</a></li>
-        <li><a href="{{ url_for('services_page') }}">收驚問事</a></li>
-        <li><a href="{{ url_for('shop_page') }}">帥府周邊</a></li>
-        <li><a href="{{ url_for('feedback_page') }}">信徒回饋</a></li>
-        <li><a href="{{ url_for('fund_page') }}">建廟基金</a></li>
-        <li><a href="{{ url_for('faq_page') }}">常見問題</a></li>
+        <li><a href="{{ url_for('main.home') }}">首頁</a></li>
+        <li><a href="{{ url_for('main.services_page') }}">收驚問事</a></li>
+        <li><a href="{{ url_for('main.shop_page') }}">帥府周邊</a></li>
+        <li><a href="{{ url_for('main.feedback_page') }}">信徒回饋</a></li>
+        <li><a href="{{ url_for('main.fund_page') }}">建廟基金</a></li>
+        <li><a href="{{ url_for('main.faq_page') }}">常見問題</a></li>
         <li><a href="/profile">個人專區</a></li>
     {% endmacro %}
 
     <header class="main-header">
         <nav class="main-nav">
-            <a href="{{ url_for('home') }}" class="nav-logo" aria-label="承天中承府首頁">
+            <a href="{{ url_for('main.home') }}" class="nav-logo" aria-label="承天中承府首頁">
                 <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="承天中承府 Logo">
             </a>
 

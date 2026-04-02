@@ -231,7 +231,7 @@
         <div class="hero-nav">
             <a href="#gongtan" class="nav-anchor">🙌 現場問事</a>
             <a href="#clothes-process" class="nav-anchor">📦 寄回衣物</a>
-            <a href="{{ url_for('donation_page') }}" class="nav-anchor">🕯️ 線上捐香</a>
+            <a href="{{ url_for('main.donation_page') }}" class="nav-anchor">🕯️ 線上捐香</a>
         </div>
     </div>
 </header>
@@ -277,7 +277,7 @@
     <div class="marquee-wrapper">
         <div class="marquee-track" id="feedback-track"><div style="padding:20px;">載入中...</div></div>
     </div>
-    <div class="fb-link"><a href="{{ url_for('feedback_page') }}" style="color:#C48945; font-weight:bold; text-decoration:underline;">更多信徒回饋 &raquo;</a></div>
+    <div class="fb-link"><a href="{{ url_for('main.feedback_page') }}" style="color:#C48945; font-weight:bold; text-decoration:underline;">更多信徒回饋 &raquo;</a></div>
 </section>
 
 <section id="clothes-process" class="clothes-process-section">
@@ -322,7 +322,7 @@
             您的每一份護持，都將化作公壇的裊裊香煙。<br>
             元帥娘將於辦事時向元帥稟報您的心意。
         </p>
-        <a href="{{ url_for('donation_page') }}" class="btn-action">我要線上捐香</a>
+        <a href="{{ url_for('main.donation_page') }}" class="btn-action">我要線上捐香</a>
     </div>
 </section>
 
@@ -417,7 +417,7 @@
             </ol>
             <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
                 <p style="font-weight:bold; color:#333;">已收到完成通知，並準備好寄回嗎？</p>
-                <a href="{{ url_for('ship_clothes_page') }}" class="btn-action" style="text-decoration:none; display:inline-block; padding:12px 30px; border-radius:50px;">
+                <a href="{{ url_for('main.ship_clothes_page') }}" class="btn-action" style="text-decoration:none; display:inline-block; padding:12px 30px; border-radius:50px;">
                     📝 Step1:填寫衣物登記單
                 </a>
             </div>

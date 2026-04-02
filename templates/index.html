@@ -328,10 +328,10 @@
                 <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon1.png') }}" alt="承天中承府-問事收驚服務">
                 <div class="service-overlay">
                     <div class="service-buttons btn-grid-2x2">
-                        <a href="{{ url_for('services_page') }}" class="glow-btn">問事收驚</a>
-                        <a href="{{ url_for('ship_clothes_page') }}" class="glow-btn">衣物寄回</a>
-                        <a href="{{ url_for('donation_page') }}" class="glow-btn">線上捐香</a>
-                        <a href="{{ url_for('feedback_page') }}" class="glow-btn">信徒回饋</a>
+                        <a href="{{ url_for('main.services_page') }}" class="glow-btn">問事收驚</a>
+                        <a href="{{ url_for('main.ship_clothes_page') }}" class="glow-btn">衣物寄回</a>
+                        <a href="{{ url_for('main.donation_page') }}" class="glow-btn">線上捐香</a>
+                        <a href="{{ url_for('main.feedback_page') }}" class="glow-btn">信徒回饋</a>
                     </div>
                 </div>
             </div>
@@ -340,7 +340,7 @@
                 <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon2.png') }}" alt="承天中承府-結緣品與賣場">
                 <div class="service-overlay">
                     <div class="service-buttons">
-                        <a href="{{ url_for('shop_page') }}" class="glow-btn">帥府賣場</a>
+                        <a href="{{ url_for('main.shop_page') }}" class="glow-btn">帥府賣場</a>
                         <a href="{{ links['手工香賣場'] or '#' }}" class="glow-btn" target="_blank">賣貨便</a>
                     </div>
                 </div>
@@ -350,8 +350,8 @@
                 <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon3.png') }}" alt="承天中承府-建廟護持">
                 <div class="service-overlay">
                     <div class="service-buttons">
-                        <a href="{{ url_for('fund_page') }}" class="glow-btn">建廟護持</a>
-                        <a href="{{ url_for('committee_page') }}" class="glow-btn">委員會招募</a>
+                        <a href="{{ url_for('main.fund_page') }}" class="glow-btn">建廟護持</a>
+                        <a href="{{ url_for('main.committee_page') }}" class="glow-btn">委員會招募</a>
                     </div>
                 </div>
             </div>
