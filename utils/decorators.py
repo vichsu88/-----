@@ -8,7 +8,7 @@ def login_required(f):
         if 'admin_logged_in' not in session:
             if request.path.startswith('/api/'):
                 return jsonify({"error": "未授權，請先登入"}), 403
-            return redirect(url_for('admin_page'))
+            return redirect(url_for('auth.admin_page'))
         return f(*args, **kwargs)
     return decorated_function
 
