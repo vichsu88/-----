@@ -477,14 +477,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const sLabels = { pending: '待收款', paid: '已付款', shipped: '已出貨' };
-                const sColors = { pending: 'text-danger', paid: 'text-success', shipped: 'text-gray' };
+                const sPills = { pending: 'pill-pending', paid: 'pill-paid', shipped: 'pill-shipped' };
 
                 el.innerHTML = data.results.map(o => `
                     <div class="admin-list-item d-flex justify-between align-center">
                         <div class="flex-1">
                             <span class="badge-source">${o.source_label}</span>
                             <strong>${o.orderId}</strong>
-                            <span class="${sColors[o.status] || ''} fs-13">[${sLabels[o.status] || o.status}]</span><br>
+                            <span class="${sPills[o.status] || 'pill-inactive'}">${sLabels[o.status] || o.status}</span><br>
                             <span class="fs-14">${o.customer?.name || ''} / $${o.total} / ${o.createdAt}</span>
                         </div>
                         <button class="btn btn--grey" onclick='viewDonationDetail(${Core.safeStringify(o)})'>🔍</button>

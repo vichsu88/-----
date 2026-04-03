@@ -46,12 +46,16 @@ def enrich_feedback_for_admin(cursor):
         doc['has_received'] = (line_id in sent_set)
         doc['_id'] = str(doc['_id'])
 
-        if 'createdAt' in doc:
-            doc['createdAt'] = doc['createdAt'].strftime('%Y-%m-%d %H:%M:%S')
-        if 'approvedAt' in doc:
-            doc['approvedAt'] = doc['approvedAt'].strftime('%Y-%m-%d %H:%M')
-        if 'sentAt' in doc:
-            doc['sentAt'] = doc['sentAt'].strftime('%Y-%m-%d %H:%M')
+        for field, fmt in [('createdAt', '%Y-%m-%d %H:%M:%S'), ('approvedAt', '%Y-%m-%d %H:%M'), ('sentAt', '%Y-%m-%d %H:%M')]:
+            if field in doc:
+                val = doc[field]
+                if isinstance(val, str):
+                    pass  # already a string, keep as-is
+                else:
+                    try:
+                        doc[field] = val.strftime(fmt)
+                    except Exception:
+                        doc[field] = str(val) if val else ''
 
         results.append(doc)
     return results
@@ -95,7 +99,7 @@ def get_public_approved_feedback():
             'nickname': doc.get('nickname', '匿名'),
             'category': doc.get('category', []),
             'content': doc.get('content', ''),
-            'createdAt': doc['createdAt'].strftime('%Y-%m-%d') if 'createdAt' in doc else ''
+            'createdAt': (doc['createdAt'].strftime('%Y-%m-%d') if hasattr(doc.get('createdAt'), 'strftime') else str(doc.get('createdAt', ''))) if 'createdAt' in doc else ''
         })
     return jsonify(results)
 

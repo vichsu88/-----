@@ -6,175 +6,20 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>帥府後台管理系統</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        :root {
-            --main-brown: #C48945; --main-brown-hover: #a57136;
-            --sidebar-bg: #2c3e50; --bg-light: #f4f6f9;
-            --text-dark: #333; --text-gray: #666; --border-color: #ddd;
-            --danger: #dc3545; --success: #28a745; --info: #007bff; --secondary: #6c757d;
-        }
-        body { background-color: var(--bg-light); margin: 0; height: 100vh; overflow: hidden; display: flex; font-family: 'Microsoft JhengHei', sans-serif; color: var(--text-dark); }
-        h2, h3 { margin-top: 0; }
-
-        /* Utilities */
-        .d-none { display: none; } .d-flex { display: flex; } .flex-col { flex-direction: column; }
-        .flex-wrap { flex-wrap: wrap; } .justify-between { justify-content: space-between; }
-        .align-center { align-items: center; } .align-end { align-items: flex-end; }
-        .flex-1 { flex: 1; } .flex-2 { flex: 2; }
-        .gap-5 { gap: 5px; } .gap-10 { gap: 10px; } .gap-15 { gap: 15px; } .gap-20 { gap: 20px; } .gap-30 { gap: 30px; }
-        .text-right { text-align: right; } .text-center { text-align: center; }
-        .text-brown { color: var(--main-brown); } .text-danger { color: var(--danger); }
-        .text-gray { color: var(--text-gray); } .text-dark { color: var(--text-dark); }
-        .text-muted { color: #555; } .text-success { color: var(--success); }
-        .fw-bold { font-weight: bold; }
-        .fs-12 { font-size: 12px; } .fs-13 { font-size: 13px; } .fs-14 { font-size: 14px; }
-        .fs-16 { font-size: 16px; } .fs-18 { font-size: 18px; }
-        .lh-16 { line-height: 1.6; } .lh-18 { line-height: 1.8; }
-        .w-100 { width: 100%; } .w-120px { width: 120px; } .h-42px { height: 42px; }
-        .mt-0 { margin-top: 0; } .mt-5 { margin-top: 5px; } .mt-10 { margin-top: 10px; }
-        .mt-15 { margin-top: 15px; } .mt-20 { margin-top: 20px; } .mt-30 { margin-top: 30px; }
-        .mb-0 { margin-bottom: 0 !important; } .mb-5 { margin-bottom: 5px; } .mb-8 { margin-bottom: 8px; }
-        .mb-10 { margin-bottom: 10px; } .mb-15 { margin-bottom: 15px; } .mb-20 { margin-bottom: 20px; }
-        .my-5 { margin-top: 5px; margin-bottom: 5px; }
-        .p-5 { padding: 5px; } .p-10 { padding: 10px; } .p-12 { padding: 12px; } .p-20 { padding: 20px; }
-        .pre-wrap { white-space: pre-wrap; }
-
-        /* Login */
-        #login-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #eee; z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .login-box { background: #fff; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; }
-
-        /* Layout */
-        #admin-wrapper { display: flex; width: 100%; height: 100%; }
-        .sidebar-overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
-        .admin-sidebar { width: 260px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .sidebar-user-info { margin-top: 8px; font-size: 12px; color: #bdc3c7; }
-        .sidebar-user-info .role-badge { background: var(--main-brown); color: #fff; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 4px; }
-        .sidebar-nav { flex: 1; overflow-y: auto; padding-top: 10px; }
-        .nav-section { padding: 8px 20px 4px; font-size: 11px; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px; }
-        .nav-item { display: block; width: 100%; padding: 12px 20px; color: #bdc3c7; background: none; border: none; text-align: left; font-size: 15px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; }
-        .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
-        .nav-item.active { background: rgba(0,0,0,0.2); color: #fff; border-left-color: var(--main-brown); }
-        .admin-main { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg-light); position: relative; width: 100%; box-sizing: border-box; }
-        .page-title { margin-bottom: 20px; color: #333; border-bottom: 2px solid #E6BA67; padding-bottom: 10px; }
-
-        /* Tabs */
-        .tab-content { display: none; width: 100%; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .sub-tab-group { display: flex; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); }
-        .sub-tab-btn { flex: 1; padding: 12px; border: none; background: none; font-size: 15px; cursor: pointer; color: var(--text-gray); font-weight: bold; border-bottom: 4px solid transparent; transition: 0.3s; }
-        .sub-tab-btn.active { color: var(--main-brown); border-bottom-color: var(--main-brown); background: rgba(196, 137, 69, 0.05); }
-        .sub-tab-btn:hover { background: rgba(0,0,0,0.02); }
-
-        /* Components */
-        .card, .feedback-card, .admin-list-item { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
-        .admin-list-item { padding: 15px; }
-        .bank-card { flex: 1; padding: 15px; border-radius: 8px; }
-        .bank-card--shop { background: #f9f9f9; border: 1px solid #eee; }
-        .bank-card--fund { background: #fff5f5; border: 1px solid #ffcccc; }
-        .product-series-box { background: #f0f4f8; padding: 10px; border-radius: 5px; border: 1px dashed #ccc; }
-        .product-variant-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
-        .product-preview-img { max-height: 150px; display: none; border-radius: 5px; }
-
-        /* Component classes (extracted from JS) */
-        .product-card { display: flex; gap: 15px; align-items: center; }
-        .product-thumb { width: 80px; height: 80px; background: #eee; flex-shrink: 0; border-radius: 4px; overflow: hidden; }
-        .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .product-actions { display: flex; gap: 5px; flex-direction: column; }
-        .category-header { background: #eee; padding: 10px; border-radius: 5px; color: #555; }
-        .border-left-danger { border-left: 5px solid var(--danger); }
-        .border-left-success { border-left: 5px solid var(--success); }
-        .border-left-info { border-left: 5px solid var(--info); }
-        .border-left-warning { border-left: 5px solid #ffc107; }
-        .border-left-brown { border-left: 5px solid var(--main-brown); }
-        .badge-donation { background: var(--main-brown); color: #fff; padding: 2px 6px; font-size: 12px; border-radius: 4px; }
-        .badge-tag { background: var(--main-brown); color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 12px; }
-        .badge-stats { background: var(--secondary); color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; }
-        .badge-711 { color: var(--success); font-weight: bold; }
-        .badge-711-detail { background: var(--success); color: #fff; padding: 2px 5px; border-radius: 3px; }
-        .badge-sent { background: #dbeafe; color: var(--info); padding: 2px 8px; border-radius: 12px; font-size: 12px; }
-        .badge-received-warning { color: var(--danger); font-weight: bold; font-size: 13px; margin-left: 10px; }
-        .badge-pinned { color: red; }
-        .badge-source { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e9ecef; }
-        .badge-role { padding: 2px 8px; border-radius: 4px; font-size: 12px; color: #fff; }
-        .badge-role.super_admin { background: var(--danger); }
-        .badge-role.finance { background: var(--info); }
-        .badge-role.ops { background: var(--success); }
-        .fb-card-header { font-weight: bold; margin-bottom: 12px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        .fb-card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px; }
-        .fb-card-pending-bg { background: #fff5f5; }
-        .feedback-card--sent { border-left: 5px solid var(--info); background: #f0f0f0; cursor: pointer; }
-        .feedback-card--sent:hover { background: #e2e6ea; }
-        .detail-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-        .info-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 15px; }
-        .content-preview { background: #f9f9f9; padding: 12px; border-radius: 5px; margin-bottom: 15px; }
-        .card-meta { font-size: 12px; color: #888; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px; }
-        .card-actions { text-align: right; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; }
-        .alert-warning { background: #fff3cd; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ffeeba; display: flex; justify-content: space-between; align-items: center; }
-        .empty-state { padding: 20px; text-align: center; color: #999; }
-        .hr-dashed { margin: 20px 0; border: 0; border-top: 1px dashed #ccc; }
-        .links-row { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        .input-display { flex: 1; padding: 8px; border: 1px solid #ddd; background: #f9f9f9; }
-        .total-price { text-align: right; font-size: 18px; color: var(--main-brown); }
-        .text-reported { color: #155724; font-weight: bold; }
-        .text-unreported { color: #856404; font-weight: bold; }
-        .danger-zone { padding: 20px; border: 1px solid #ffcccc; background-color: #fffafb; border-radius: 8px; }
-        .danger-zone h3 { color: #d9534f; }
-        .receipt-editor-area { font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; min-height: 400px; white-space: pre; line-height: 1.5; }
-        .status-header { padding: 10px; border-radius: 5px; margin: 0 0 10px 0; color: white; }
-        .status-header.pending { background: var(--danger); }
-        .status-header.approved { background: var(--success); }
-        .status-header.sent { background: var(--info); }
-        .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .feedback-content-box { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: #555; background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 10px 0; word-break: break-all; }
-        .donation-toolbar { display: flex; gap: 10px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .filter-bar { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
-        .audit-row { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-        .audit-row:nth-child(odd) { background: #fafafa; }
-        .member-card { display: flex; gap: 15px; align-items: center; }
-        .member-avatar { width: 48px; height: 48px; border-radius: 50%; background: #eee; flex-shrink: 0; overflow: hidden; }
-        .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .badge-n { display: inline-flex; justify-content: center; align-items: center; background-color: var(--danger); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; font-weight: bold; margin-left: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-
-        /* Buttons */
-        .btn { padding: 6px 12px; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 14px; transition: 0.2s; display: inline-block; text-align: center; }
-        .btn:hover { opacity: 0.9; }
-        .btn--brown { background: var(--main-brown); } .btn--red { background: var(--danger); }
-        .btn--green { background: var(--success); } .btn--grey { background: var(--secondary); }
-        .btn--blue { background: var(--info); }
-        .btn-lg { padding: 10px 20px; font-size: 16px; } .btn-block { width: 100%; }
-
-        /* Forms */
-        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
-        .form-row { display: flex; gap: 10px; align-items: center; }
-        .checkbox-label { display: inline-flex; align-items: center; cursor: pointer; margin-right: 20px; }
-        .checkbox-label input { width: auto; margin: 0 10px 0 0; }
-        .readonly-input { background-color: #e9ecef; cursor: not-allowed; color: #555; }
-        .help-text { font-size: 13px; color: var(--text-gray); }
-
-        /* Modals */
-        .admin-modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
-        .admin-modal-overlay.is-visible { display: flex; }
-        .admin-modal-content { background: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal-close-btn { position: absolute; top: 15px; right: 15px; border: none; background: none; font-size: 24px; cursor: pointer; color: #999; }
-
-        /* Responsive */
-        @media (max-width: 992px) { .feedback-grid { grid-template-columns: 1fr; } }
-        @media (max-width: 768px) {
-            .admin-sidebar { position: fixed; left: -260px; height: 100%; z-index: 1000; }
-            .admin-sidebar.open { left: 0; }
-            #sidebar-toggle { display: block !important; position: fixed; top: 10px; left: 10px; z-index: 1001; background: var(--main-brown); color: white; padding: 10px; border-radius: 5px; border: none; }
-            .admin-main { padding: 60px 15px 15px 15px; }
-        }
-        #sidebar-toggle { display: none; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- 琉璃背景漸層裝飾球 -->
+    <div class="glass-bg-container">
+        <div class="glass-blob blob-1"></div>
+        <div class="glass-blob blob-2"></div>
+        <div class="glass-blob blob-3"></div>
+    </div>
+
     <!-- ===== 登入畫面 ===== -->
     <div id="login-wrapper">
-        <form id="login-form" class="login-box">
+        <form id="login-form" class="login-box glass-panel">
             <h2 class="text-brown">後台登入</h2>
             <input type="text" id="admin-username" placeholder="管理員帳號 (留空使用主密碼)" autocomplete="username">
             <input type="password" id="admin-password" placeholder="請輸入密碼" required autocomplete="current-password">
@@ -189,7 +34,7 @@
         <div id="sidebar-overlay" class="sidebar-overlay-bg" style="display:none;"></div>
 
         <div id="admin-wrapper">
-            <aside class="admin-sidebar" id="admin-sidebar">
+            <aside class="admin-sidebar glass-panel" id="admin-sidebar">
                 <div class="sidebar-header">
                     <h3 class="mb-0">承天中承府</h3>
                     <small>後台管理系統</small>
@@ -229,7 +74,7 @@
 
                 <!-- ===== Module 2: 站務作業中樞 ===== -->
                 <div id="tab-ops" class="tab-content">
-                    <div class="sub-tab-group">
+                    <div class="sub-tab-group glass-panel">
                         <button class="sub-tab-btn active" data-ops-tab="ops-print">🖨️ 文書列印排程</button>
                         <button class="sub-tab-btn" data-ops-tab="ops-ship">📦 出貨物流排程</button>
                         <button class="sub-tab-btn" data-ops-tab="ops-feedback">🎁 回饋寄送</button>
@@ -273,7 +118,7 @@
 
                 <!-- ===== Module 3: 綜合資料總管 ===== -->
                 <div id="tab-data" class="tab-content">
-                    <div class="sub-tab-group">
+                    <div class="sub-tab-group glass-panel">
                         <button class="sub-tab-btn active" data-data-tab="data-history">📋 歷史總表</button>
                         <button class="sub-tab-btn" data-data-tab="data-members">👥 會員資料</button>
                         <button class="sub-tab-btn" data-data-tab="data-feedback">💬 表單回饋</button>
@@ -318,7 +163,7 @@
 
                 <!-- ===== Module 4: 前台內容管理 ===== -->
                 <div id="tab-cms" class="tab-content">
-                    <div class="sub-tab-group">
+                    <div class="sub-tab-group glass-panel">
                         <button class="sub-tab-btn active" data-cms-tab="cms-products">🛍️ 商品</button>
                         <button class="sub-tab-btn" data-cms-tab="cms-announcements">📢 公告</button>
                         <button class="sub-tab-btn" data-cms-tab="cms-faq">❓ 問答</button>
@@ -377,7 +222,7 @@
 
                 <!-- ===== Module 5: 系統與權限管理 ===== -->
                 <div id="tab-system" class="tab-content">
-                    <div class="sub-tab-group">
+                    <div class="sub-tab-group glass-panel">
                         <button class="sub-tab-btn active" data-sys-tab="sys-users">👤 管理員帳號</button>
                         <button class="sub-tab-btn" data-sys-tab="sys-audit">📋 操作日誌</button>
                         <button class="sub-tab-btn" data-sys-tab="sys-receipt">🔧 單據工具</button>

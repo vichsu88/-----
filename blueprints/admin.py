@@ -30,10 +30,15 @@ def _serialize_doc(obj):
 
 
 def _tw_time(dt):
-    """UTC datetime → 台灣時間字串"""
-    if dt:
+    """UTC datetime → 台灣時間字串（相容 legacy 字串資料）"""
+    if not dt:
+        return ''
+    if isinstance(dt, str):
+        return dt
+    try:
         return (dt + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
-    return ''
+    except Exception:
+        return str(dt) if dt else ''
 
 
 _TYPE_LABELS = {
