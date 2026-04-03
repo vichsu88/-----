@@ -46,8 +46,8 @@
                     <button class="nav-item" data-tab="tab-ops" data-roles="super_admin,ops">🛠️ 站務作業中樞</button>
 
                     <div class="nav-section">資料管理</div>
-                    <button class="nav-item" data-tab="tab-data" data-roles="super_admin,finance">🗂️ 綜合資料總管</button>
-                    <button class="nav-item" data-tab="tab-cms" data-roles="super_admin,ops">📝 前台內容管理</button>
+                    <button class="nav-item" data-tab="tab-data" data-roles="super_admin,data,finance">🗂️ 綜合資料總管</button>
+                    <button class="nav-item" data-tab="tab-cms" data-roles="super_admin,cms,ops">📝 前台內容管理</button>
 
                     <div class="nav-section">系統</div>
                     <button class="nav-item" data-tab="tab-system" data-roles="super_admin">⚙️ 系統與權限</button>
@@ -62,11 +62,9 @@
 
                 <!-- ===== Module 1: 財務稽核中樞 ===== -->
                 <div id="tab-finance" class="tab-content">
-                    <div class="d-flex justify-between align-center mb-20">
+                    <div class="d-flex justify-between align-center mb-20 flex-wrap gap-10">
                         <span class="help-text">所有來源的待收款單據 (付款後將自動流向站務作業區)</span>
-                        <div class="d-flex gap-10">
-                            <button class="btn btn--grey" onclick="FinanceManager.refresh()">🔄 重新整理</button>
-                        </div>
+                        <button class="btn btn--grey" onclick="FinanceManager.refresh()">🔄 重新整理</button>
                     </div>
                     <div id="finance-summary" class="d-flex gap-10 flex-wrap mb-20"></div>
                     <div id="finance-pending-list">載入中...</div>
@@ -80,9 +78,9 @@
                         <button class="sub-tab-btn" data-ops-tab="ops-feedback">🎁 回饋寄送</button>
                     </div>
                     <div id="ops-print" class="ops-sub">
-                        <div class="d-flex justify-between align-center mb-15">
+                        <div class="d-flex justify-between align-center mb-15 flex-wrap gap-10">
                             <span class="help-text">已付款捐香 — 尚未列印紅紙</span>
-                            <div class="d-flex gap-10">
+                            <div class="d-flex gap-10 flex-wrap">
                                 <button class="btn btn--red" onclick="OpsManager.printRedPaper()">🖨️ 列印紅紙清單</button>
                                 <button class="btn btn--blue" onclick="OpsManager.batchMarkPrinted()">✅ 批次標記已列印</button>
                             </div>
@@ -90,47 +88,32 @@
                         <div id="print-queue-list">載入中...</div>
                     </div>
                     <div id="ops-ship" class="ops-sub" style="display:none;">
-                        <div class="d-flex justify-between align-center mb-15">
+                        <div class="d-flex justify-between align-center mb-15 flex-wrap gap-10">
                             <span class="help-text">已付款結緣品訂單 — 待出貨</span>
                             <button class="btn btn--grey" onclick="OpsManager.refreshShip()">🔄 重新整理</button>
                         </div>
                         <div id="ship-queue-list">載入中...</div>
-                        <h3 class="status-header sent mt-30">已出貨 (近 30 天)</h3>
-                        <div class="text-right mb-10"><button class="btn btn--red" onclick="OpsManager.cleanupShipped()">🗑️ 清除 14 天前舊單</button></div>
-                        <div id="shipped-list"></div>
                     </div>
                     <div id="ops-feedback" class="ops-sub" style="display:none;">
-                        <div class="feedback-grid">
-                            <div>
-                                <h3 class="status-header approved">待寄送小神衣 (已核准)</h3>
-                                <div id="ops-fb-approved-list"></div>
-                            </div>
-                            <div>
-                                <h3 class="status-header sent">已寄送 (歷史紀錄)</h3>
-                                <div class="text-right mb-10">
-                                    <button class="btn btn--blue" onclick="OpsManager.exportSentFeedback()">匯出名單</button>
-                                </div>
-                                <div id="ops-fb-sent-list"></div>
-                            </div>
-                        </div>
+                        <h3 class="status-header approved">待寄送小神衣 (已核准)</h3>
+                        <div id="ops-fb-approved-list"></div>
                     </div>
                 </div>
 
-                <!-- ===== Module 3: 綜合資料總管 ===== -->
+                <!-- ===== Module 3: 綜合資料總管 (整併回饋) ===== -->
                 <div id="tab-data" class="tab-content">
                     <div class="sub-tab-group glass-panel">
                         <button class="sub-tab-btn active" data-data-tab="data-history">📋 歷史總表</button>
                         <button class="sub-tab-btn" data-data-tab="data-members">👥 會員資料</button>
-                        <button class="sub-tab-btn" data-data-tab="data-feedback">💬 表單回饋</button>
                     </div>
                     <div id="data-history" class="data-sub">
                         <div class="filter-bar d-flex gap-10 flex-wrap align-end">
-                            <div><label class="fs-12">大項目</label><select id="hist-type" class="mb-0 w-120px"><option value="">全部</option><option value="shop">結緣品</option><option value="donation">捐香</option><option value="fund">建廟基金</option><option value="committee">委員會</option></select></div>
-                            <div><label class="fs-12">單號</label><input id="hist-id" class="mb-0" placeholder="ORD..." style="width:140px;"></div>
-                            <div><label class="fs-12">姓名</label><input id="hist-name" class="mb-0" placeholder="搜尋..." style="width:120px;"></div>
-                            <div><label class="fs-12">狀態</label><select id="hist-status" class="mb-0 w-120px"><option value="">全部</option><option value="pending">待收款</option><option value="paid">已付款</option><option value="shipped">已出貨</option></select></div>
-                            <div><label class="fs-12">開始日</label><input type="date" id="hist-start" class="mb-0"></div>
-                            <div><label class="fs-12">結束日</label><input type="date" id="hist-end" class="mb-0"></div>
+                            <div class="filter-item"><label class="fs-12">大項目</label><select id="hist-type" class="mb-0"><option value="">全部</option><option value="shop">結緣品</option><option value="donation">捐香</option><option value="fund">建廟基金</option><option value="committee">委員會</option><option value="feedback">回饋</option></select></div>
+                            <div class="filter-item"><label class="fs-12">單號</label><input id="hist-id" class="mb-0" placeholder="ORD / FB..."></div>
+                            <div class="filter-item"><label class="fs-12">姓名</label><input id="hist-name" class="mb-0" placeholder="搜尋..."></div>
+                            <div class="filter-item"><label class="fs-12">狀態</label><select id="hist-status" class="mb-0"><option value="">全部</option><option value="pending">待處理</option><option value="paid">已付款</option><option value="shipped">已出貨</option><option value="approved">已核准</option><option value="sent">已寄出</option></select></div>
+                            <div class="filter-item"><label class="fs-12">開始日</label><input type="date" id="hist-start" class="mb-0"></div>
+                            <div class="filter-item"><label class="fs-12">結束日</label><input type="date" id="hist-end" class="mb-0"></div>
                             <button class="btn btn--brown" onclick="DataManager.search()">🔍 搜尋</button>
                             <button class="btn btn--green" onclick="DataManager.exportCSV()">📥 匯出 CSV</button>
                         </div>
@@ -139,25 +122,14 @@
                         <div id="history-pagination" class="mt-15 d-flex justify-between align-center"></div>
                     </div>
                     <div id="data-members" class="data-sub" style="display:none;">
-                        <div class="d-flex justify-between align-center mb-15">
+                        <div class="d-flex justify-between align-center mb-15 flex-wrap gap-10">
                             <span class="help-text">系統中所有 LINE 註冊會員</span>
                             <button class="btn btn--grey" onclick="DataManager.refreshMembers()">🔄 重新整理</button>
                         </div>
-                        <div id="members-list">載入中...</div>
-                    </div>
-                    <div id="data-feedback" class="data-sub" style="display:none;">
-                        <div id="fb-stats-bar" class="mb-20 d-flex gap-10 align-center"></div>
-                        <div class="feedback-grid">
-                            <div>
-                                <h3 class="status-header pending">待審核 (寄信通知)</h3>
-                                <div id="fb-pending-list"></div>
-                            </div>
-                            <div>
-                                <h3 class="status-header approved">已刊登 / 待寄送</h3>
-                                <div class="text-right mb-10"><button class="btn btn--green" onclick="DataManager.exportFeedbackTxt()">匯出名單</button></div>
-                                <div id="fb-approved-list"></div>
-                            </div>
+                        <div class="d-flex gap-10 mb-15">
+                            <input type="text" id="member-search-input" placeholder="搜尋姓名 / Line ID..." class="mb-0 flex-1" oninput="DataManager.filterMembers()">
                         </div>
+                        <div id="members-list">載入中...</div>
                     </div>
                 </div>
 
@@ -175,7 +147,7 @@
                         <div id="products-list">載入中...</div>
                     </div>
                     <div id="cms-announcements" class="cms-sub" style="display:none;">
-                        <div class="d-flex justify-between mb-15"><h3>網站公告</h3><button id="add-announcement-btn" class="btn btn--brown">+ 新增公告</button></div>
+                        <div class="d-flex justify-between mb-15 flex-wrap gap-10"><h3>網站公告</h3><button id="add-announcement-btn" class="btn btn--brown">+ 新增公告</button></div>
                         <div id="announcements-list"></div>
                     </div>
                     <div id="cms-faq" class="cms-sub" style="display:none;">
@@ -228,14 +200,14 @@
                         <button class="sub-tab-btn" data-sys-tab="sys-receipt">🔧 單據工具</button>
                     </div>
                     <div id="sys-users" class="sys-sub">
-                        <div class="d-flex justify-between align-center mb-15">
+                        <div class="d-flex justify-between align-center mb-15 flex-wrap gap-10">
                             <span class="help-text">管理後台登入帳號與角色</span>
                             <button class="btn btn--brown" onclick="SystemManager.showCreateUser()">+ 新增管理員</button>
                         </div>
                         <div id="admin-users-list">載入中...</div>
                     </div>
                     <div id="sys-audit" class="sys-sub" style="display:none;">
-                        <div class="d-flex justify-between align-center mb-15">
+                        <div class="d-flex justify-between align-center mb-15 flex-wrap gap-10">
                             <span class="help-text">最近 200 筆操作紀錄</span>
                             <button class="btn btn--grey" onclick="SystemManager.refreshAudit()">🔄 重新整理</button>
                         </div>
@@ -245,7 +217,7 @@
                         <div class="card mb-20">
                             <h3 class="mt-0">🔍 萬能單據修改器</h3>
                             <p class="help-text">輸入單據編號查詢並以 JSON 格式編輯原始資料。</p>
-                            <div class="d-flex gap-10 mt-15">
+                            <div class="d-flex gap-10 mt-15 flex-wrap">
                                 <input type="text" id="receiptQueryInput" placeholder="請輸入單號" class="mb-0 flex-1">
                                 <button id="receiptQueryBtn" class="btn btn--brown">查詢</button>
                             </div>
@@ -257,7 +229,7 @@
                         <div class="danger-zone">
                             <h3>⚠️ 單據強制刪除</h3>
                             <p class="fs-14 text-gray">輸入完整單據編號。<strong>刪除後無法復原。</strong></p>
-                            <div class="d-flex gap-10 mt-15">
+                            <div class="d-flex gap-10 mt-15 flex-wrap">
                                 <input type="text" id="forceDeleteInput" placeholder="請輸入單號" class="mb-0 flex-1">
                                 <button id="forceDeleteBtn" class="btn btn--red fw-bold">確認刪除</button>
                             </div>

@@ -15,9 +15,9 @@ def login_required(f):
 
 
 def admin_required(roles=None):
-    """RBAC 角色權限裝飾器。
-    roles: 允許存取的角色列表，例如 ['super_admin', 'finance']。
-    roles=None 表示任何已登入管理員皆可存取。
+    """RBAC 角色權限裝飾器 — 支援陣列式權限。
+    roles: 允許存取的權限列表，例如 ['super_admin', 'finance']。
+    super_admin 永遠繞過檢查。
     """
     def decorator(f):
         @wraps(f)
@@ -27,9 +27,21 @@ def admin_required(roles=None):
                     return jsonify({"error": "未授權，請先登入"}), 403
                 return redirect(url_for('auth.admin_page'))
 
+            # 取得使用者權限陣列
+            permissions = session.get('admin_permissions', [])
+
+            # 向下相容：若 session 只有 role (字串)，轉為陣列
+            if not permissions:
+                legacy_role = session.get('admin_role', 'super_admin')
+                permissions = [legacy_role]
+
+            # super_admin 繞過所有檢查
+            if 'super_admin' in permissions:
+                return f(*args, **kwargs)
+
+            # 檢查是否擁有所需權限之一
             if roles:
-                user_role = session.get('admin_role', 'super_admin')
-                if user_role not in roles:
+                if not any(r in permissions for r in roles):
                     return jsonify({"error": "權限不足，您的角色無法執行此操作"}), 403
 
             return f(*args, **kwargs)

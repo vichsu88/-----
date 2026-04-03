@@ -118,6 +118,7 @@
     </div>
 </div>
 
+{# ===== 管理員帳號 Modal (RBAC 多權限 checkbox) ===== #}
 <div id="admin-user-modal" class="admin-modal-overlay">
     <div class="admin-modal-content">
         <button class="modal-close-btn">&times;</button>
@@ -125,13 +126,24 @@
         <form id="admin-user-form">
             <label>帳號</label><input type="text" name="username" required placeholder="例如：finance01" autocomplete="off">
             <label>密碼 (至少 6 字元)</label><input type="password" name="password" required minlength="6" autocomplete="new-password">
-            <label>角色</label>
-            <select name="role">
-                <option value="super_admin">SuperAdmin — 全部權限</option>
-                <option value="finance">Finance — 財務稽核 / 資料總管</option>
-                <option value="ops" selected>Ops — 站務作業 / 內容管理</option>
-            </select>
+            <label>權限設定 (可複選)</label>
+            <div class="perm-checkbox-group">
+                <label class="checkbox-label"><input type="checkbox" name="permissions" value="super_admin"> SuperAdmin — 全部權限</label>
+                <label class="checkbox-label"><input type="checkbox" name="permissions" value="finance"> Finance — 財務稽核</label>
+                <label class="checkbox-label"><input type="checkbox" name="permissions" value="ops"> Ops — 站務作業</label>
+                <label class="checkbox-label"><input type="checkbox" name="permissions" value="data"> Data — 資料總管</label>
+                <label class="checkbox-label"><input type="checkbox" name="permissions" value="cms"> CMS — 內容管理</label>
+            </div>
             <button type="submit" class="btn btn--brown w-100 mt-10">建立帳號</button>
         </form>
+    </div>
+</div>
+
+{# ===== 會員歷程 Modal ===== #}
+<div id="member-history-modal" class="admin-modal-overlay">
+    <div class="admin-modal-content">
+        <button class="modal-close-btn">&times;</button>
+        <h3 id="member-history-title">會員歷程</h3>
+        <div id="member-history-body" class="lh-18 text-dark"></div>
     </div>
 </div>

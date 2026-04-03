@@ -8,27 +8,26 @@
     --main-brown-hover: #a57136;
     --text-dark: #333;
     --text-gray: #666;
-    --danger: #ff4d4f; /* 調整為更柔和明亮的紅 */
-    --success: #52c41a; /* 調整為更柔和明亮的綠 */
-    --info: #1890ff;    /* 調整為更柔和明亮的藍 */
+    --danger: #ff4d4f;
+    --success: #52c41a;
+    --info: #1890ff;
     --secondary: #8c8c8c;
-    
+
     /* 琉璃特效變數 */
     --glass-bg: rgba(255, 255, 255, 0.65);
     --glass-border: rgba(255, 255, 255, 0.5);
-    --glass-shadow: 0 8px 32px 0 rgba(196, 137, 69, 0.08); /* 帶有微弱品牌棕色的陰影 */
+    --glass-shadow: 0 8px 32px 0 rgba(196, 137, 69, 0.08);
 }
 
 /* --- Base & Reset --- */
-body { 
-    margin: 0; 
-    height: 100vh; 
-    overflow: hidden; 
-    display: flex; 
-    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; 
-    color: var(--text-dark); 
-    /* 底色改為極淺的米白色，配合漸層球 */
-    background-color: #fcf9f5; 
+body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    color: var(--text-dark);
+    background-color: #fcf9f5;
 }
 h2, h3, h4 { margin-top: 0; color: #4b2c1c; }
 
@@ -44,7 +43,7 @@ h2, h3, h4 { margin-top: 0; color: #4b2c1c; }
 .glass-blob {
     position: absolute;
     border-radius: 50%;
-    filter: blur(80px); /* 產生光暈感 */
+    filter: blur(80px);
     opacity: 0.5;
     animation: float 15s infinite alternate ease-in-out;
 }
@@ -67,7 +66,7 @@ h2, h3, h4 { margin-top: 0; color: #4b2c1c; }
     box-shadow: var(--glass-shadow);
 }
 
-/* --- Utilities (保留原樣，確保 JS 正常運作) --- */
+/* --- Utilities --- */
 .d-none { display: none !important; }
 .d-flex { display: flex; }
 .flex-col { flex-direction: column; }
@@ -101,26 +100,25 @@ h2, h3, h4 { margin-top: 0; color: #4b2c1c; }
 #admin-wrapper { display: flex; width: 100%; height: 100%; padding: 15px; box-sizing: border-box; gap: 20px; }
 .sidebar-overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); z-index: 999; }
 
-/* Sidebar (改版為懸浮卡片風格) */
-.admin-sidebar { 
-    width: 250px; 
-    color: var(--text-dark); 
-    display: flex; 
-    flex-direction: column; 
-    flex-shrink: 0; 
-    transition: 0.3s; 
-    /* 讓側邊欄本身就是一個懸浮的琉璃卡片 */
-    height: calc(100vh - 30px); 
+/* Sidebar */
+.admin-sidebar {
+    width: 250px;
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: 0.3s;
+    height: calc(100vh - 30px);
 }
 .sidebar-header { padding: 30px 20px 20px 20px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
 .sidebar-nav { flex: 1; overflow-y: auto; padding-top: 15px; }
 
 /* 側邊欄按鈕設計 */
-.nav-item { 
-    display: block; width: calc(100% - 30px); margin: 5px auto; padding: 12px 20px; 
-    color: #665434; background: transparent; border: none; text-align: left; 
-    font-size: 16px; font-weight: bold; cursor: pointer; 
-    border-radius: 12px; transition: all 0.2s; 
+.nav-item {
+    display: block; width: calc(100% - 30px); margin: 5px auto; padding: 12px 20px;
+    color: #665434; background: transparent; border: none; text-align: left;
+    font-size: 16px; font-weight: bold; cursor: pointer;
+    border-radius: 12px; transition: all 0.2s;
 }
 .nav-item:hover { background: rgba(255, 255, 255, 0.5); color: var(--main-brown); transform: translateX(5px); }
 .nav-item.active { background: #fff; color: var(--main-brown); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
@@ -149,14 +147,14 @@ h2, h3, h4 { margin-top: 0; color: #4b2c1c; }
 }
 
 /* --- Components & Cards --- */
-/* JS 動態產生的卡片也套用琉璃感 */
-.card, .feedback-card, .admin-list-item { 
-    background: rgba(255, 255, 255, 0.55); 
+.card, .feedback-card, .admin-list-item {
+    background: rgba(255, 255, 255, 0.55);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    padding: 20px; border-radius: 16px; margin-bottom: 15px; 
-    border: 1px solid var(--glass-border); 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+    padding: 20px; border-radius: 16px; margin-bottom: 15px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     position: relative; transition: transform 0.2s;
+    word-break: break-word;
 }
 .feedback-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
 .admin-list-item { padding: 15px; }
@@ -175,7 +173,7 @@ h2, h3, h4 { margin-top: 0; color: #4b2c1c; }
 .product-actions { display: flex; gap: 8px; flex-direction: column; }
 .category-header { background: rgba(255,255,255,0.4); padding: 12px 15px; border-radius: 12px; color: #4b2c1c; margin-top: 25px; border-left: 4px solid var(--main-brown); }
 
-/* 左側邊框狀態指示 (優化為更柔和的顏色與圓角) */
+/* 左側邊框狀態指示 */
 .border-left-danger { border-left: 6px solid var(--danger); }
 .border-left-success { border-left: 6px solid var(--success); }
 .border-left-info { border-left: 6px solid var(--info); }
@@ -216,16 +214,15 @@ h2, h3, h4 { margin-top: 0; color: #4b2c1c; }
 .danger-zone { padding: 25px; background: rgba(255, 77, 79, 0.05); border: 1px solid rgba(255, 77, 79, 0.2); }
 .receipt-editor-area { font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; min-height: 400px; white-space: pre; line-height: 1.6; background: rgba(255,255,255,0.8); }
 
-/* --- Buttons (蘋果圓潤感) --- */
-.btn { 
-    padding: 8px 16px; border: none; border-radius: 12px; color: #fff; cursor: pointer; 
-    font-size: 14px; font-weight: bold; transition: all 0.3s ease; 
+/* --- Buttons --- */
+.btn {
+    padding: 8px 16px; border: none; border-radius: 12px; color: #fff; cursor: pointer;
+    font-size: 14px; font-weight: bold; transition: all 0.3s ease;
     display: inline-block; text-align: center; letter-spacing: 0.5px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 .btn:hover { opacity: 0.95; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
 .btn:active { transform: translateY(0); }
-/* 使用稍微漸層讓按鈕有立體感 */
 .btn--brown { background: linear-gradient(135deg, var(--main-brown), var(--main-brown-hover)); }
 .btn--red { background: linear-gradient(135deg, var(--danger), #d9363e); }
 .btn--green { background: linear-gradient(135deg, var(--success), #389e0d); }
@@ -234,16 +231,16 @@ h2, h3, h4 { margin-top: 0; color: #4b2c1c; }
 .btn-lg { padding: 12px 24px; font-size: 16px; border-radius: 14px; }
 .btn-block { width: 100%; }
 
-/* --- Forms (半透明毛玻璃輸入框) --- */
-input, select, textarea { 
-    width: 100%; padding: 12px 15px; margin-bottom: 15px; 
-    border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; box-sizing: border-box; 
+/* --- Forms --- */
+input, select, textarea {
+    width: 100%; padding: 12px 15px; margin-bottom: 15px;
+    border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; box-sizing: border-box;
     background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);
     transition: all 0.3s ease; color: var(--text-dark); font-family: inherit;
 }
-input:focus, select:focus, textarea:focus { 
-    outline: none; background: #fff; border-color: var(--main-brown); 
-    box-shadow: 0 0 0 3px rgba(196, 137, 69, 0.15); 
+input:focus, select:focus, textarea:focus {
+    outline: none; background: #fff; border-color: var(--main-brown);
+    box-shadow: 0 0 0 3px rgba(196, 137, 69, 0.15);
 }
 label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font-size: 14px; }
 .form-row { display: flex; gap: 15px; align-items: center; }
@@ -253,15 +250,23 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
 .readonly-input { background-color: rgba(0,0,0,0.03); cursor: not-allowed; color: #777; }
 .help-text { font-size: 13px; color: var(--text-gray); display: block; margin-bottom: 10px; }
 
-/* --- Modals (彈出視窗也套用琉璃感) --- */
+/* 權限 checkbox 群組 */
+.perm-checkbox-group {
+    display: flex; flex-direction: column; gap: 10px;
+    background: rgba(255,255,255,0.5); padding: 15px; border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.06); margin-bottom: 15px;
+}
+.perm-checkbox-group .checkbox-label { margin-right: 0; margin-bottom: 0; }
+
+/* --- Modals --- */
 .admin-modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 2000; justify-content: center; align-items: center; }
 .admin-modal-overlay.is-visible { display: flex; animation: fadeInModal 0.3s ease-out; }
 @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
 
-.admin-modal-content { 
+.admin-modal-content {
     background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    padding: 35px 30px; border-radius: 20px; width: 90%; max-width: 650px; max-height: 85vh; 
-    overflow-y: auto; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.15); 
+    padding: 35px 30px; border-radius: 20px; width: 90%; max-width: 650px; max-height: 85vh;
+    overflow-y: auto; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.15);
     border: 1px solid var(--glass-border);
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -281,21 +286,154 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
 /* --- Donation Toolbar --- */
 .donation-toolbar { display: flex; gap: 15px; flex-wrap: wrap; padding: 15px 20px; margin-bottom: 25px; align-items: center; }
 
+/* --- Filter bar --- */
+.filter-bar {
+    background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 18px; border-radius: 16px; margin-bottom: 20px;
+    border: 1px solid var(--glass-border); box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+.filter-item { display: flex; flex-direction: column; min-width: 100px; }
+.filter-item label { margin-bottom: 4px; }
+.filter-item input,
+.filter-item select { margin-bottom: 0; }
+
 /* --- Responsive --- */
 @media (max-width: 992px) { .feedback-grid { grid-template-columns: 1fr; } }
+
 @media (max-width: 768px) {
     #admin-wrapper { padding: 0; display: block; }
-    .glass-bg-container { display: none; } /* 手機板關閉背景球提升效能 */
+    .glass-bg-container { display: none; }
     body { background: #fdfaf6; overflow: auto; }
-    
+
     .admin-sidebar { position: fixed; left: -280px; top: 0; width: 260px; height: 100vh; z-index: 1000; margin: 0; border-radius: 0; border-right: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.95); }
     .admin-sidebar.open { left: 0; }
     #sidebar-toggle { display: block !important; position: fixed; top: 15px; left: 15px; z-index: 1001; background: var(--main-brown); color: white; padding: 10px 15px; border-radius: 8px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-weight: bold; }
-    .admin-main { padding: 70px 15px 30px 15px; overflow: visible; height: auto; }
-    
+    .admin-main { padding: 70px 12px 30px 12px; overflow: visible; height: auto; }
+
     .glass-panel { border-radius: 12px; padding: 15px; }
-    .sub-tab-group { overflow-x: auto; white-space: nowrap; border-radius: 12px; }
-    .sub-tab-btn { padding: 10px 15px; }
+    .sub-tab-group { overflow-x: auto; white-space: nowrap; border-radius: 12px; flex-wrap: nowrap; }
+    .sub-tab-btn { padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+
+    /* 頁面標題 */
+    .page-title { font-size: 20px; margin-bottom: 15px; }
+
+    /* Filter bar 手機版: 強制垂直排列 */
+    .filter-bar {
+        flex-direction: column !important;
+        padding: 12px;
+        gap: 8px !important;
+    }
+    .filter-bar .filter-item {
+        width: 100%;
+        min-width: unset;
+    }
+    .filter-bar .btn {
+        width: 100%;
+    }
+
+    /* Donation toolbar 手機版 */
+    .donation-toolbar {
+        flex-direction: column;
+        padding: 10px 12px;
+        gap: 8px;
+    }
+    .donation-toolbar .btn { width: 100%; }
+
+    /* form-row 手機版: 垂直排列 */
+    .form-row {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    .form-row input { width: 100%; }
+
+    /* d-flex 工具列手機版 */
+    .d-flex.gap-10.flex-wrap,
+    .d-flex.gap-20.flex-wrap {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* 按鈕行: 允許換行 */
+    .card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+    .card-actions .btn { font-size: 12px; padding: 6px 10px; }
+
+    /* Modal: 手機版 */
+    .admin-modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        padding: 20px 15px;
+        max-height: 90vh;
+        overflow-x: hidden;
+        border-radius: 16px;
+    }
+
+    /* 所有卡片/列表項: word-break */
+    .card, .feedback-card, .admin-list-item {
+        word-break: break-word;
+        padding: 12px;
+    }
+
+    /* 減少不必要的 margin */
+    .mb-20 { margin-bottom: 12px; }
+    .mb-15 { margin-bottom: 10px; }
+    .mt-20 { margin-top: 12px; }
+    .mt-30 { margin-top: 18px; }
+    .gap-20 { gap: 10px; }
+    .gap-15 { gap: 8px; }
+
+    /* 商品卡片: 手機直排 */
+    .product-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .product-thumb { width: 60px; height: 60px; }
+    .product-actions {
+        flex-direction: row;
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    /* 會員卡片 */
+    .member-card {
+        flex-wrap: wrap;
+    }
+
+    /* 表格區域: 可左右滾動 */
+    .receipt-editor-area { min-height: 250px; font-size: 12px; }
+
+    /* bank 卡片 */
+    .bank-card { padding: 12px; }
+    .d-flex.gap-20.flex-wrap .bank-card { width: 100%; flex: unset; }
+
+    /* links-row */
+    .links-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .links-row .input-display { width: 100%; }
+
+    /* feedback grid */
+    .feedback-grid { gap: 12px; }
+
+    /* 登入框 */
+    .login-box { width: 90%; padding: 30px 20px; }
+
+    /* 歷史總表: list item 垂直排列 */
+    .admin-list-item.d-flex {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .admin-list-item.d-flex .btn { align-self: flex-end; }
+
+    /* 危險區域 */
+    .danger-zone { padding: 15px; }
 }
 #sidebar-toggle { display: none; }
 
@@ -311,13 +449,6 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
 .nav-section {
     padding: 15px 20px 6px; font-size: 11px; color: #aaa;
     text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold;
-}
-
-/* Filter bar */
-.filter-bar {
-    background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    padding: 18px; border-radius: 16px; margin-bottom: 20px;
-    border: 1px solid var(--glass-border); box-shadow: 0 4px 15px rgba(0,0,0,0.03);
 }
 
 /* Audit log rows */
@@ -341,11 +472,13 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
     background: rgba(196, 137, 69, 0.12); color: var(--main-brown);
 }
 
-/* Badge: role */
-.badge-role { padding: 4px 12px; border-radius: 99px; font-size: 12px; color: #fff; font-weight: bold; }
+/* Badge: role (支援更多角色) */
+.badge-role { padding: 4px 12px; border-radius: 99px; font-size: 12px; color: #fff; font-weight: bold; display: inline-block; margin: 2px; }
 .badge-role.super_admin { background: linear-gradient(135deg, var(--danger), #d9363e); }
 .badge-role.finance { background: linear-gradient(135deg, var(--info), #096dd9); }
 .badge-role.ops { background: linear-gradient(135deg, var(--success), #389e0d); }
+.badge-role.data { background: linear-gradient(135deg, #722ed1, #531dab); }
+.badge-role.cms { background: linear-gradient(135deg, #faad14, #d48806); }
 
 /* Danger zone */
 .danger-zone {
@@ -354,7 +487,7 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
 }
 .danger-zone h3 { color: var(--danger); }
 
-/* Pill status badges (for JS-generated content) */
+/* Pill status badges */
 .pill-pending {
     display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: bold;
     background: rgba(250, 173, 20, 0.12); color: #d48806;

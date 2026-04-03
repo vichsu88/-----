@@ -41,11 +41,29 @@ def _tw_time(dt):
         return str(dt) if dt else ''
 
 
+def _get_sort_ts(dt):
+    """取得排序用 timestamp (float)，安全處理各種型別"""
+    if not dt:
+        return 0
+    if isinstance(dt, (int, float)):
+        return float(dt)
+    if isinstance(dt, datetime):
+        return dt.timestamp()
+    if isinstance(dt, str):
+        for fmt in ('%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d'):
+            try:
+                return datetime.strptime(dt[:len(fmt.replace('%', 'X'))], fmt).timestamp()
+            except Exception:
+                continue
+    return 0
+
+
 _TYPE_LABELS = {
     'shop': '🛍️ 結緣品',
     'donation': '🕯️ 捐香',
     'fund': '🏗️ 建廟基金',
-    'committee': '🏛️ 委員會'
+    'committee': '🏛️ 委員會',
+    'feedback': '💬 回饋'
 }
 
 
@@ -149,7 +167,7 @@ def get_ship_queue():
 @admin_bp.route('/api/admin/ops/shipped-list')
 @admin_required(roles=['super_admin', 'ops'])
 def get_shipped_list():
-    """已出貨歷史 (最近 30 天)"""
+    """已出貨歷史 (最近 30 天) — 保留 API 供歷史總表使用"""
     if db is None:
         return jsonify([])
 
@@ -170,69 +188,129 @@ def get_shipped_list():
 
 # =========================================================
 # Module 3: 🗂️ 綜合資料總管與 CRM (Master Data)
+# 整併 orders + feedback 到單一歷史總表
 # =========================================================
 
 @admin_bp.route('/api/admin/data/history')
-@admin_required(roles=['super_admin', 'finance'])
+@admin_required(roles=['super_admin', 'data', 'finance'])
 def get_data_history():
-    """萬用歷史總表：支援複合篩選 (項目/單號/姓名/狀態/日期)"""
+    """萬用歷史總表：整併 orders + feedback，支援複合篩選"""
     if db is None:
         return jsonify({"results": [], "total": 0})
 
-    query = {}
-
     order_type = request.args.get('type')
-    if order_type:
-        query['orderType'] = order_type
-
     order_id = request.args.get('orderId')
-    if order_id:
-        query['orderId'] = {"$regex": order_id.strip(), "$options": "i"}
-
     name = request.args.get('name')
-    if name:
-        query['customer.name'] = {"$regex": name.strip()}
-
     status = request.args.get('status')
-    if status:
-        query['status'] = status
-
     start = request.args.get('start')
     end = request.args.get('end')
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 50))
+    skip = (page - 1) * per_page
+
+    date_range = None
     if start and end:
         try:
-            query['createdAt'] = {
+            date_range = {
                 "$gte": datetime.strptime(start, '%Y-%m-%d'),
                 "$lt": datetime.strptime(end, '%Y-%m-%d') + timedelta(days=1)
             }
         except ValueError:
             pass
 
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 50))
-    skip = (page - 1) * per_page
+    all_results = []
+    total_orders = 0
+    total_feedback = 0
 
-    total = db.orders.count_documents(query)
-    cursor = db.orders.find(query).sort("createdAt", -1).skip(skip).limit(per_page)
+    # --- 查詢 Orders (type 非 feedback 時) ---
+    if order_type != 'feedback':
+        oq = {}
+        if order_type:
+            oq['orderType'] = order_type
+        if order_id:
+            oq['orderId'] = {"$regex": order_id.strip(), "$options": "i"}
+        if name:
+            oq['customer.name'] = {"$regex": name.strip()}
+        if status:
+            oq['status'] = status
+        if date_range:
+            oq['createdAt'] = date_range
 
-    results = []
-    for doc in cursor:
-        doc['_id'] = str(doc['_id'])
-        doc['createdAt'] = _tw_time(doc.get('createdAt'))
-        doc['source_label'] = _TYPE_LABELS.get(doc.get('orderType', ''), '未知')
-        if doc.get('paidAt'):
-            doc['paidAt'] = _tw_time(doc['paidAt'])
-        if doc.get('shippedAt'):
-            doc['shippedAt'] = _tw_time(doc['shippedAt'])
-        if doc.get('reportedAt'):
-            doc['reportedAt'] = _tw_time(doc['reportedAt'])
-        results.append(doc)
+        total_orders = db.orders.count_documents(oq)
+        for doc in db.orders.find(oq).sort("createdAt", -1).limit(skip + per_page):
+            sort_ts = _get_sort_ts(doc.get('createdAt'))
+            doc['_id'] = str(doc['_id'])
+            doc['createdAt'] = _tw_time(doc.get('createdAt'))
+            doc['source_label'] = _TYPE_LABELS.get(doc.get('orderType', ''), '未知')
+            doc['_docType'] = 'order'
+            doc['_sortTs'] = sort_ts
+            if doc.get('paidAt'):
+                doc['paidAt'] = _tw_time(doc['paidAt'])
+            if doc.get('shippedAt'):
+                doc['shippedAt'] = _tw_time(doc['shippedAt'])
+            if doc.get('reportedAt'):
+                doc['reportedAt'] = _tw_time(doc['reportedAt'])
+            all_results.append(doc)
 
-    return jsonify({"results": results, "total": total, "page": page, "per_page": per_page})
+    # --- 查詢 Feedback (type 為空或 feedback 時) ---
+    if not order_type or order_type == 'feedback':
+        fq = {}
+        if order_id:
+            fq['feedbackId'] = {"$regex": order_id.strip(), "$options": "i"}
+        if name:
+            fq['nickname'] = {"$regex": name.strip()}
+        if status:
+            fq['status'] = status
+        if date_range:
+            fq['createdAt'] = date_range
+
+        total_feedback = db.feedback.count_documents(fq)
+        for doc in db.feedback.find(fq).sort("createdAt", -1).limit(skip + per_page):
+            sort_ts = _get_sort_ts(doc.get('createdAt'))
+            fb = {
+                '_id': str(doc['_id']),
+                'orderId': doc.get('feedbackId', ''),
+                'feedbackId': doc.get('feedbackId', ''),
+                'orderType': 'feedback',
+                'status': doc.get('status', ''),
+                'customer': {'name': doc.get('nickname', '匿名')},
+                'items': [],
+                'total': 0,
+                'createdAt': _tw_time(doc.get('createdAt')),
+                'source_label': '💬 回饋',
+                '_docType': 'feedback',
+                '_sortTs': sort_ts,
+                # 保留原始回饋欄位供 detail modal 使用
+                'nickname': doc.get('nickname', ''),
+                'content': doc.get('content', ''),
+                'category': doc.get('category', []),
+                'realName': doc.get('realName', ''),
+                'phone': doc.get('phone', ''),
+                'address': doc.get('address', ''),
+                'lineId': doc.get('lineId', ''),
+            }
+            if doc.get('approvedAt'):
+                fb['approvedAt'] = _tw_time(doc.get('approvedAt'))
+            if doc.get('sentAt'):
+                fb['sentAt'] = _tw_time(doc.get('sentAt'))
+            if doc.get('trackingNumber'):
+                fb['trackingNumber'] = doc['trackingNumber']
+            all_results.append(fb)
+
+    # 合併排序 (依建立時間降冪)
+    all_results.sort(key=lambda x: x.get('_sortTs', 0), reverse=True)
+
+    # 清除排序暫存欄位並分頁
+    total = total_orders + total_feedback
+    page_results = all_results[skip:skip + per_page]
+    for r in page_results:
+        r.pop('_sortTs', None)
+
+    return jsonify({"results": page_results, "total": total, "page": page, "per_page": per_page})
 
 
 @admin_bp.route('/api/admin/data/export-csv')
-@admin_required(roles=['super_admin', 'finance'])
+@admin_required(roles=['super_admin', 'data', 'finance'])
 def export_data_csv():
     """匯出歷史資料為 CSV (所見即所得)"""
     if db is None:
@@ -291,29 +369,72 @@ def export_data_csv():
 
 
 @admin_bp.route('/api/admin/data/members')
-@admin_required(roles=['super_admin', 'finance'])
+@admin_required(roles=['super_admin', 'data', 'finance'])
 def get_data_members():
-    """會員資料庫"""
+    """會員資料庫 — 加上 try-except 保護"""
     if db is None:
         return jsonify([])
 
     cursor = db.users.find({}).sort("lastLoginAt", -1)
     results = []
     for user in cursor:
-        user['_id'] = str(user['_id'])
-        user['lastLoginAt'] = _tw_time(user.get('lastLoginAt'))
-        user['createdAt'] = _tw_time(user.get('createdAt'))
-        # 統計每位會員的訂單數
-        line_id = user.get('lineId')
-        if line_id:
-            user['orderCount'] = db.orders.count_documents({"lineId": line_id})
-            user['feedbackCount'] = db.feedback.count_documents({"lineId": line_id})
-        results.append(user)
+        try:
+            user['_id'] = str(user['_id'])
+            user['lastLoginAt'] = _tw_time(user.get('lastLoginAt'))
+            user['createdAt'] = _tw_time(user.get('createdAt'))
+            line_id = user.get('lineId')
+            if line_id:
+                user['orderCount'] = db.orders.count_documents({"lineId": line_id})
+                user['feedbackCount'] = db.feedback.count_documents({"lineId": line_id})
+            else:
+                user['orderCount'] = 0
+                user['feedbackCount'] = 0
+            results.append(user)
+        except Exception:
+            # 跳過有問題的 record，不讓整個 API 炸掉
+            user['_id'] = str(user.get('_id', ''))
+            user['lastLoginAt'] = str(user.get('lastLoginAt', ''))
+            user['createdAt'] = str(user.get('createdAt', ''))
+            user['orderCount'] = 0
+            user['feedbackCount'] = 0
+            results.append(user)
     return jsonify(results)
 
 
+@admin_bp.route('/api/admin/data/member/<line_id>/history')
+@admin_required(roles=['super_admin', 'data', 'finance'])
+def get_member_history(line_id):
+    """會員互動歷程：該會員所有 orders + feedback"""
+    if db is None:
+        return jsonify({"orders": [], "feedback": []})
+
+    orders = []
+    for doc in db.orders.find({"lineId": line_id}).sort("createdAt", -1).limit(200):
+        doc['_id'] = str(doc['_id'])
+        doc['createdAt'] = _tw_time(doc.get('createdAt'))
+        doc['source_label'] = _TYPE_LABELS.get(doc.get('orderType', ''), '未知')
+        if doc.get('paidAt'):
+            doc['paidAt'] = _tw_time(doc['paidAt'])
+        orders.append(doc)
+
+    feedback = []
+    for doc in db.feedback.find({"lineId": line_id}).sort("createdAt", -1).limit(200):
+        doc['_id'] = str(doc['_id'])
+        doc['createdAt'] = _tw_time(doc.get('createdAt'))
+        if doc.get('approvedAt'):
+            doc['approvedAt'] = _tw_time(doc['approvedAt'])
+        if doc.get('sentAt'):
+            doc['sentAt'] = _tw_time(doc['sentAt'])
+        feedback.append(doc)
+
+    return jsonify({
+        "orders": _serialize_doc(orders),
+        "feedback": _serialize_doc(feedback)
+    })
+
+
 # =========================================================
-# Module 5: ⚙️ 系統與權限管理 (System & RBAC)
+# Module 5: ⚙️ 系統與權限管理 (System & RBAC — 陣列式權限)
 # =========================================================
 
 @admin_bp.route('/api/admin/system/users', methods=['GET'])
@@ -328,6 +449,10 @@ def list_admin_users():
     for user in cursor:
         user['_id'] = str(user['_id'])
         user['createdAt'] = _tw_time(user.get('createdAt'))
+        # 向下相容：若無 permissions 欄位，從 role 推導
+        if 'permissions' not in user:
+            legacy_role = user.get('role', 'ops')
+            user['permissions'] = ['super_admin'] if legacy_role == 'super_admin' else [legacy_role]
         results.append(user)
     return jsonify(results)
 
@@ -335,11 +460,15 @@ def list_admin_users():
 @admin_bp.route('/api/admin/system/users', methods=['POST'])
 @admin_required(roles=['super_admin'])
 def create_admin_user():
-    """建立新管理員帳號"""
+    """建立新管理員帳號 — 接收陣列式權限"""
     data = request.get_json()
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()
-    role = data.get('role', 'ops')
+    permissions = data.get('permissions', [])
+
+    # 向下相容：若前端仍傳 role 字串
+    if not permissions and data.get('role'):
+        permissions = [data['role']]
 
     if not username or not password:
         return jsonify({"error": "帳號和密碼不可為空"}), 400
@@ -347,9 +476,13 @@ def create_admin_user():
     if len(password) < 6:
         return jsonify({"error": "密碼長度至少 6 字元"}), 400
 
-    valid_roles = ['super_admin', 'finance', 'ops']
-    if role not in valid_roles:
-        return jsonify({"error": f"角色必須為 {', '.join(valid_roles)} 之一"}), 400
+    valid_perms = ['super_admin', 'finance', 'ops', 'data', 'cms']
+    for p in permissions:
+        if p not in valid_perms:
+            return jsonify({"error": f"無效的權限: {p}"}), 400
+
+    if not permissions:
+        return jsonify({"error": "請至少選擇一個權限"}), 400
 
     if db.admin_users.find_one({"username": username}):
         return jsonify({"error": "此帳號已存在"}), 400
@@ -357,12 +490,13 @@ def create_admin_user():
     db.admin_users.insert_one({
         "username": username,
         "password_hash": generate_password_hash(password),
-        "role": role,
+        "permissions": permissions,
+        "role": 'super_admin' if 'super_admin' in permissions else permissions[0],
         "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
     })
 
     admin_name = session.get('admin_username', 'admin')
-    write_audit_log(admin_name, '新增管理員帳號', username, f'角色: {role}')
+    write_audit_log(admin_name, '新增管理員帳號', username, f'權限: {", ".join(permissions)}')
     return jsonify({"success": True, "message": f"已建立帳號 {username}"})
 
 

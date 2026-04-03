@@ -55,11 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (this.adminContent) this.adminContent.style.display = 'none';
         },
 
-        showAdminContent(role) {
+        showAdminContent(permissions) {
             if (this.loginWrapper) this.loginWrapper.style.display = 'none';
             if (this.adminContent) {
                 this.adminContent.style.display = 'block';
-                this.applyRoleVisibility(role);
+                this.applyRoleVisibility(permissions);
                 if (!this.adminContent.dataset.initialized) {
                     const first = document.querySelector('.nav-item:not([style*="display: none"])');
                     if (first) first.click();
@@ -68,10 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        applyRoleVisibility(role) {
+        /** RBAC: permissions 為陣列, super_admin 可看全部 */
+        applyRoleVisibility(permissions) {
+            const perms = Array.isArray(permissions) ? permissions : [permissions];
+            const isSuperAdmin = perms.includes('super_admin');
             document.querySelectorAll('.nav-item[data-roles]').forEach(item => {
                 const allowed = item.dataset.roles.split(',');
-                item.style.display = allowed.includes(role) ? '' : 'none';
+                const visible = isSuperAdmin || perms.some(p => allowed.includes(p));
+                item.style.display = visible ? '' : 'none';
             });
         },
 
@@ -107,8 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }},
                 { attr: 'data-data-tab', cls: 'data-sub', actions: {
                     'data-history': () => DataManager.search(),
-                    'data-members': () => DataManager.loadMembers(),
-                    'data-feedback': () => DataManager.loadFeedbackReview()
+                    'data-members': () => DataManager.loadMembers()
                 }},
                 { attr: 'data-cms-tab', cls: 'cms-sub', actions: {
                     'cms-products': () => CMSManager.loadProducts(),
@@ -168,20 +171,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       3. 身份驗證 (Auth)
+       3. 身份驗證 (Auth) — RBAC 陣列式權限
        ========================================= */
     const Auth = {
-        role: 'super_admin',
+        permissions: ['super_admin'],
         username: 'admin',
 
         async checkSession() {
             try {
                 const data = await fetch('/api/session_check').then(r => r.json());
                 if (data.logged_in) {
-                    this.role = data.role || 'super_admin';
+                    this.permissions = data.permissions || [data.role || 'super_admin'];
                     this.username = data.username || 'admin';
                     this.updateSidebarInfo();
-                    UI.showAdminContent(this.role);
+                    UI.showAdminContent(this.permissions);
                 } else {
                     UI.showLogin();
                 }
@@ -191,8 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSidebarInfo() {
             const el = document.getElementById('sidebar-user-info');
             if (!el) return;
-            const labels = { super_admin: 'SuperAdmin', finance: 'Finance', ops: 'Ops' };
-            el.innerHTML = `${this.username} <span class="role-badge">${labels[this.role] || this.role}</span>`;
+            const labels = { super_admin: 'SuperAdmin', finance: 'Finance', ops: 'Ops', data: 'Data', cms: 'CMS' };
+            const badges = this.permissions.map(p => `<span class="role-badge">${labels[p] || p}</span>`).join(' ');
+            el.innerHTML = `${this.username} ${badges}`;
         },
 
         async login(username, password) {
@@ -227,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logout-btn')?.addEventListener('click', () => Auth.logout());
 
     /* =========================================
-       4. 💰 財務稽核中樞 (FinanceManager)
+       4. 財務稽核中樞 (FinanceManager)
        ========================================= */
     const FinanceManager = {
         async refresh() {
@@ -287,7 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       5. 🛠️ 站務作業中樞 (OpsManager)
+       5. 站務作業中樞 (OpsManager)
+       — 移除已出貨列表 / 已寄送回饋區塊
+       — printRedPaper: 無地址欄, 加統計
        ========================================= */
     const OpsManager = {
         printQueueData: [],
@@ -310,29 +316,46 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) { el.innerHTML = '<p class="text-danger">載入失敗</p>'; }
         },
 
+        /** 列印紅紙: 僅 姓名/香品/數量, 末尾加統計 */
         printRedPaper() {
             if (!this.printQueueData.length) return alert('目前無待列印資料');
             const pw = window.open('', '_blank');
             let rows = '';
+            const summaryMap = {};
             this.printQueueData.forEach(o => {
                 (o.items || []).forEach(item => {
-                    rows += `<tr><td>${o.customer?.name || ''}</td><td>${item.name}</td><td>${item.qty}</td><td>${o.customer?.address || ''}</td></tr>`;
+                    rows += `<tr><td>${o.customer?.name || ''}</td><td>${item.name}</td><td>${item.qty}</td></tr>`;
+                    summaryMap[item.name] = (summaryMap[item.name] || 0) + (item.qty || 0);
                 });
             });
+            let summaryRows = '';
+            for (const [name, qty] of Object.entries(summaryMap)) {
+                summaryRows += `<tr><td>${name}</td><td>${qty}</td></tr>`;
+            }
             pw.document.write(`
                 <html><head><title>公壇手工香信徒捐香登記表</title>
                 <style>
                     body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; padding: 20px; background: white; color: #000; }
                     .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
-                    table { width: 100%; border-collapse: collapse; font-size: 16px; }
+                    table { width: 100%; border-collapse: collapse; font-size: 16px; margin-bottom: 30px; }
                     th, td { border: 1px solid #000; padding: 12px 10px; text-align: left; vertical-align: middle; }
+                    .summary { margin-top: 30px; }
+                    .summary .header { font-size: 20px; }
+                    .summary table { width: 60%; margin: 0 auto; }
                     @media print { @page { margin: 1cm; } }
                 </style></head><body>
                 <div class="header">公壇手工香信徒捐香登記表</div>
                 <table>
-                    <thead><tr><th width="15%">姓名</th><th width="25%">香品</th><th width="10%">數量</th><th width="50%">地址</th></tr></thead>
+                    <thead><tr><th width="25%">姓名</th><th width="50%">香品</th><th width="25%">數量</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
+                <div class="summary">
+                    <div class="header">香品數量統計</div>
+                    <table>
+                        <thead><tr><th>香品名稱</th><th>總數量</th></tr></thead>
+                        <tbody>${summaryRows}</tbody>
+                    </table>
+                </div>
                 <script>setTimeout(() => window.print(), 500);<\/script>
                 </body></html>
             `);
@@ -372,43 +395,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `).join('') : '<p class="empty-state">🎉 無待出貨訂單</p>';
             } catch (e) { el.innerHTML = '<p class="text-danger">載入失敗</p>'; }
-            this.loadShippedList();
-        },
-
-        async loadShippedList() {
-            const el = document.getElementById('shipped-list');
-            if (!el) return;
-            try {
-                const orders = await Core.apiFetch('/api/admin/ops/shipped-list');
-                el.innerHTML = orders.length ? orders.map(o => `
-                    <div class="feedback-card border-left-info">
-                        <div class="d-flex justify-between"><b>${o.orderId}</b><small>出貨: ${o.shippedAt}</small></div>
-                        <div>${o.customer?.name || ''} / ${o.customer?.phone || ''} / $${o.total}</div>
-                        ${o.trackingNumber ? `<div class="fs-13 text-gray">物流: ${o.trackingNumber}</div>` : ''}
-                    </div>
-                `).join('') : '<p class="empty-state">近 30 天無出貨紀錄</p>';
-            } catch (e) {}
         },
 
         refreshShip() { this.loadShipQueue(); },
 
-        cleanupShipped() {
-            Core.confirmAction('刪除 14 天前舊單？', async () => {
-                await Core.apiFetch('/api/orders/cleanup-shipped', { method: 'DELETE' });
-                this.loadShippedList();
-            });
-        },
-
+        /** 回饋寄送: 僅載入已核准 (待寄送), 不再顯示已寄送清單 */
         async loadFeedbackGifts() {
             const aEl = document.getElementById('ops-fb-approved-list');
-            const sEl = document.getElementById('ops-fb-sent-list');
             if (!aEl) return;
             try {
-                const [approved, sent] = await Promise.all([
-                    Core.apiFetch('/api/feedback/status/approved'),
-                    Core.apiFetch('/api/feedback/status/sent')
-                ]);
-
+                const approved = await Core.apiFetch('/api/feedback/status/approved');
                 aEl.innerHTML = approved.length ? approved.map(i => `
                     <div class="feedback-card border-left-success">
                         <div class="d-flex justify-between align-center detail-header">
@@ -426,31 +422,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 `).join('') : '<p class="empty-state">無待寄送</p>';
-
-                if (sEl) sEl.innerHTML = sent.length ? sent.map(i => `
-                    <div class="feedback-card feedback-card--sent" onclick='viewFbDetail(${Core.safeStringify(i)})'>
-                        <div class="d-flex justify-between align-center">
-                            <span class="fs-16 fw-bold text-dark">${i.nickname}</span>
-                            <span class="badge-sent">${i.feedbackId || ''}</span>
-                        </div>
-                        <div class="text-right fs-12 text-gray mt-5">寄出: ${i.sentAt || '未知'}</div>
-                    </div>
-                `).join('') : '<p class="empty-state">無歷史紀錄</p>';
             } catch (e) { aEl.innerHTML = '<p class="text-danger">載入失敗</p>'; }
-        },
-
-        exportSentFeedback() {
-            fetch('/api/feedback/export-sent-txt', { method: 'POST', headers: { 'X-CSRFToken': Core.getCsrfToken() } })
-                .then(r => { if (r.status === 404) { alert('無資料'); throw new Error('no data'); } return r.blob(); })
-                .then(blob => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `已寄送名單_${new Date().toISOString().slice(0, 10)}.txt`; a.click(); })
-                .catch(() => {});
         }
     };
 
     /* =========================================
-       6. 🗂️ 綜合資料總管 (DataManager)
+       6. 綜合資料總管 (DataManager)
+       — 歷史總表整併 feedback
+       — 移除獨立回饋子頁
+       — 新增會員搜尋 / 會員歷程
        ========================================= */
     const DataManager = {
+        membersCache: [],
+
         async search(page = 1) {
             const el = document.getElementById('history-results');
             const infoEl = document.getElementById('history-info');
@@ -476,20 +460,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const sLabels = { pending: '待收款', paid: '已付款', shipped: '已出貨' };
-                const sPills = { pending: 'pill-pending', paid: 'pill-paid', shipped: 'pill-shipped' };
+                const sLabels = { pending: '待收款', paid: '已付款', shipped: '已出貨', approved: '已核准', sent: '已寄出' };
+                const sPills = { pending: 'pill-pending', paid: 'pill-paid', shipped: 'pill-shipped', approved: 'pill-success', sent: 'pill-shipped' };
 
-                el.innerHTML = data.results.map(o => `
+                el.innerHTML = data.results.map(o => {
+                    const isFeedback = o._docType === 'feedback';
+                    const detailFn = isFeedback ? 'viewFbDetail' : (o.orderType === 'shop' ? 'viewOrderDetails' : 'viewDonationDetail');
+                    return `
                     <div class="admin-list-item d-flex justify-between align-center">
                         <div class="flex-1">
                             <span class="badge-source">${o.source_label}</span>
                             <strong>${o.orderId}</strong>
                             <span class="${sPills[o.status] || 'pill-inactive'}">${sLabels[o.status] || o.status}</span><br>
-                            <span class="fs-14">${o.customer?.name || ''} / $${o.total} / ${o.createdAt}</span>
+                            <span class="fs-14">${o.customer?.name || o.realName || ''} / ${isFeedback ? (o.nickname || '') : '$' + o.total} / ${o.createdAt}</span>
                         </div>
-                        <button class="btn btn--grey" onclick='viewDonationDetail(${Core.safeStringify(o)})'>🔍</button>
-                    </div>
-                `).join('');
+                        <button class="btn btn--grey" onclick='${detailFn}(${Core.safeStringify(o)})'>🔍</button>
+                    </div>`;
+                }).join('');
 
                 if (pagEl) {
                     const totalPages = Math.ceil(data.total / data.per_page);
@@ -518,85 +505,96 @@ document.addEventListener('DOMContentLoaded', () => {
             el.innerHTML = '載入中...';
             try {
                 const list = await Core.apiFetch('/api/admin/data/members');
-                el.innerHTML = list.length ? list.map(m => `
-                    <div class="admin-list-item member-card">
-                        <div class="member-avatar">${m.pictureUrl ? `<img src="${m.pictureUrl}">` : ''}</div>
-                        <div class="flex-1">
-                            <strong>${m.displayName || '未知'}</strong>
-                            ${m.realName ? `<span class="text-gray fs-13">(${m.realName})</span>` : ''}<br>
-                            <span class="fs-13 text-gray">
-                                訂單: ${m.orderCount || 0} | 回饋: ${m.feedbackCount || 0} |
-                                最後登入: ${m.lastLoginAt || '未知'}
-                            </span>
-                        </div>
-                    </div>
-                `).join('') : '<p class="empty-state">無會員資料</p>';
+                this.membersCache = list;
+                this.renderMembers(list);
             } catch (e) { el.innerHTML = '<p class="text-danger">載入失敗</p>'; }
+        },
+
+        renderMembers(list) {
+            const el = document.getElementById('members-list');
+            if (!el) return;
+            el.innerHTML = list.length ? list.map(m => `
+                <div class="admin-list-item member-card" style="cursor:pointer;" onclick="DataManager.viewMemberHistory('${m.lineId || ''}', '${(m.displayName || '').replace(/'/g, "\\'")}')">
+                    <div class="member-avatar">${m.pictureUrl ? `<img src="${m.pictureUrl}">` : ''}</div>
+                    <div class="flex-1">
+                        <strong>${m.displayName || '未知'}</strong>
+                        ${m.realName ? `<span class="text-gray fs-13">(${m.realName})</span>` : ''}<br>
+                        <span class="fs-13 text-gray">
+                            訂單: ${m.orderCount || 0} | 回饋: ${m.feedbackCount || 0} |
+                            最後登入: ${m.lastLoginAt || '未知'}
+                        </span>
+                    </div>
+                </div>
+            `).join('') : '<p class="empty-state">無會員資料</p>';
+        },
+
+        filterMembers() {
+            const q = (document.getElementById('member-search-input')?.value || '').trim().toLowerCase();
+            if (!q) { this.renderMembers(this.membersCache); return; }
+            const filtered = this.membersCache.filter(m =>
+                (m.displayName || '').toLowerCase().includes(q) ||
+                (m.realName || '').toLowerCase().includes(q) ||
+                (m.lineId || '').toLowerCase().includes(q)
+            );
+            this.renderMembers(filtered);
         },
 
         refreshMembers() { this.loadMembers(); },
 
-        async loadFeedbackReview() {
-            const pEl = document.getElementById('fb-pending-list');
-            const aEl = document.getElementById('fb-approved-list');
-            const sEl = document.getElementById('fb-stats-bar');
-            if (!pEl) return;
+        /** 會員歷程 Modal */
+        async viewMemberHistory(lineId, displayName) {
+            if (!lineId) return;
+            const titleEl = document.getElementById('member-history-title');
+            const bodyEl = document.getElementById('member-history-body');
+            if (!bodyEl) return;
+            if (titleEl) titleEl.textContent = `${displayName} 的歷程`;
+            bodyEl.innerHTML = '載入中...';
+            UI.openModal('member-history-modal');
+
             try {
-                const [pending, approved] = await Promise.all([
-                    Core.apiFetch('/api/feedback/status/pending'),
-                    Core.apiFetch('/api/feedback/status/approved')
-                ]);
+                const data = await Core.apiFetch(`/api/admin/data/member/${lineId}/history`);
+                let html = '';
 
-                if (sEl) sEl.innerHTML = `
-                    <span class="badge-stats">待審: ${pending.length} | 已刊: ${approved.length}</span>
-                    <button class="btn btn--brown" onclick="printFeedbackList()">匯出回饋</button>
-                `;
+                if (data.orders && data.orders.length) {
+                    html += '<h4 class="text-brown mt-0">🛒 訂單紀錄</h4>';
+                    html += data.orders.map(o => `
+                        <div class="admin-list-item mb-10">
+                            <div class="d-flex justify-between align-center">
+                                <strong>${o.orderId || ''}</strong>
+                                <span class="fs-12 text-gray">${o.createdAt || ''}</span>
+                            </div>
+                            <div class="fs-13 text-gray">${(o.items || []).map(i => i.name + ' x' + i.qty).join('、') || '無明細'}</div>
+                            <div class="text-right fs-14 text-brown fw-bold">$${o.total || 0}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    html += '<p class="text-gray">無訂單紀錄</p>';
+                }
 
-                pEl.innerHTML = pending.length ? pending.map(i => `
-                    <div class="feedback-card border-left-danger">
-                        <div class="fb-card-header">
-                            👤 ${i.nickname}
-                            ${i.has_received ? ' <span class="badge-received-warning">[⚠️ 已領取過]</span>' : ''}
+                if (data.feedback && data.feedback.length) {
+                    html += '<h4 class="text-brown mt-20">💬 回饋紀錄</h4>';
+                    html += data.feedback.map(fb => `
+                        <div class="admin-list-item mb-10">
+                            <div class="d-flex justify-between align-center">
+                                <strong>${fb.feedbackId || fb.nickname || ''}</strong>
+                                <span class="fs-12 text-gray">${fb.createdAt || ''}</span>
+                            </div>
+                            <div class="fs-13 text-muted content-preview">${(fb.content || '').substring(0, 80)}${(fb.content || '').length > 80 ? '...' : ''}</div>
                         </div>
-                        <div class="content-preview"><div class="pre-wrap text-muted">${i.content}</div></div>
-                        <div class="text-right">
-                            <button class="btn btn--grey" onclick='editFb(${Core.safeStringify(i)})'>編輯</button>
-                            <button class="btn btn--green" onclick="approveFb('${i._id}')">✅ 核准</button>
-                            <button class="btn btn--red" onclick="delFb('${i._id}')">🗑️ 刪除</button>
-                        </div>
-                    </div>
-                `).join('') : '<p class="empty-state">無待審核</p>';
+                    `).join('');
+                } else {
+                    html += '<p class="text-gray mt-20">無回饋紀錄</p>';
+                }
 
-                if (aEl) aEl.innerHTML = approved.length ? approved.map(i => `
-                    <div class="feedback-card border-left-success">
-                        <div class="d-flex justify-between align-center detail-header">
-                            <strong>${i.feedbackId || '無'}</strong>
-                            <span class="fs-13 text-gray">${i.approvedAt || ''}</span>
-                        </div>
-                        <div class="mb-15 lh-18">
-                            <strong>${i.realName}</strong> (農曆: ${i.lunarBirthday || '未提供'})
-                            ${i.has_received ? ' <span class="badge-received-warning">[⚠️ 已領取過]</span>' : ''}<br>
-                            <span class="text-gray fs-14">📍 ${i.address}</span>
-                        </div>
-                        <div class="fb-card-footer">
-                            <button class="btn btn--grey" onclick='viewFbDetail(${Core.safeStringify(i)})'>📖 查看</button>
-                            <button class="btn btn--blue" onclick="shipGift('${i._id}')">🎁 寄出</button>
-                        </div>
-                    </div>
-                `).join('') : '<p class="empty-state">無</p>';
-            } catch (e) { pEl.innerHTML = '<p class="text-danger">載入失敗</p>'; }
-        },
-
-        exportFeedbackTxt() {
-            fetch('/api/feedback/export-txt', { method: 'POST', headers: { 'X-CSRFToken': Core.getCsrfToken() } })
-                .then(r => { if (r.status === 404) { alert('無資料'); throw new Error('no data'); } return r.blob(); })
-                .then(blob => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '回饋寄送名單.txt'; a.click(); })
-                .catch(() => {});
+                bodyEl.innerHTML = html || '<p class="empty-state">無任何紀錄</p>';
+            } catch (e) {
+                bodyEl.innerHTML = '<p class="text-danger">載入失敗</p>';
+            }
         }
     };
 
     /* =========================================
-       7. 📝 前台內容管理 — 商品 (ProductManager)
+       7. 前台內容管理 — 商品 (ProductManager)
        ========================================= */
     const ProductManager = {
         listEl: document.getElementById('products-list'),
@@ -726,7 +724,6 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const products = await Core.apiFetch('/api/products');
 
-                // Populate series datalist
                 const seriesSet = new Set(products.filter(p => p.series).map(p => p.series));
                 const datalist = document.getElementById('series-list');
                 if (datalist) datalist.innerHTML = [...seriesSet].map(s => `<option value="${s}">`).join('');
@@ -799,7 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ProductManager.init();
 
     /* =========================================
-       8. 📝 前台內容管理 — 公告與問答 (ContentManager)
+       8. 前台內容管理 — 公告與問答 (ContentManager)
        ========================================= */
     const ContentManager = {
         async fetchAnnouncements() {
@@ -834,7 +831,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       9. 📝 前台內容管理 — 設定 (SettingsManager)
+       9. 前台內容管理 — 設定 (SettingsManager)
        ========================================= */
     const SettingsManager = {
         async fetchLinks() {
@@ -884,7 +881,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
-       11. ⚙️ 系統與權限管理 (SystemManager)
+       11. 系統與權限管理 (SystemManager)
+       — 顯示 permissions 陣列 badge
        ========================================= */
     const SystemManager = {
         async loadUsers() {
@@ -893,23 +891,29 @@ document.addEventListener('DOMContentLoaded', () => {
             el.innerHTML = '載入中...';
             try {
                 const users = await Core.apiFetch('/api/admin/system/users');
-                const labels = { super_admin: 'SuperAdmin', finance: 'Finance', ops: 'Ops' };
-                el.innerHTML = users.length ? users.map(u => `
+                const labels = { super_admin: 'SuperAdmin', finance: 'Finance', ops: 'Ops', data: 'Data', cms: 'CMS' };
+                el.innerHTML = users.length ? users.map(u => {
+                    const perms = u.permissions || [u.role || 'ops'];
+                    const badges = perms.map(p => `<span class="badge-role ${p}">${labels[p] || p}</span>`).join(' ');
+                    return `
                     <div class="admin-list-item d-flex justify-between align-center">
                         <div>
-                            <strong>${u.username}</strong>
-                            <span class="badge-role ${u.role}">${labels[u.role] || u.role}</span><br>
+                            <strong>${u.username}</strong> ${badges}<br>
                             <small class="text-gray">建立於 ${u.createdAt || '未知'}</small>
                         </div>
                         <button class="btn btn--red" onclick="SystemManager.deleteUser('${u._id}', '${u.username}')">刪除</button>
-                    </div>
-                `).join('') : '<p class="empty-state">尚未建立管理員帳號</p>';
+                    </div>`;
+                }).join('') : '<p class="empty-state">尚未建立管理員帳號</p>';
             } catch (e) { el.innerHTML = '<p class="text-danger">載入失敗 (需 SuperAdmin 權限)</p>'; }
         },
 
         showCreateUser() {
             const form = document.getElementById('admin-user-form');
-            if (form) form.reset();
+            if (form) {
+                form.reset();
+                // 清除所有 checkbox
+                form.querySelectorAll('input[name="permissions"]').forEach(cb => cb.checked = false);
+            }
             UI.openModal('admin-user-modal');
         },
 
@@ -1123,17 +1127,20 @@ document.addEventListener('DOMContentLoaded', () => {
         ContentManager.fetchFaqs();
     };
 
-    // 管理員帳號建立
+    // 管理員帳號建立 — 改用 checkbox 群組取得 permissions 陣列
     const adminUserForm = document.getElementById('admin-user-form');
     if (adminUserForm) {
         adminUserForm.onsubmit = async (e) => {
             e.preventDefault();
+            const checkedPerms = Array.from(adminUserForm.querySelectorAll('input[name="permissions"]:checked'))
+                .map(cb => cb.value);
+            if (checkedPerms.length === 0) return alert('請至少選擇一個權限');
             await Core.apiFetch('/api/admin/system/users', {
                 method: 'POST',
                 body: JSON.stringify({
                     username: adminUserForm.username.value.trim(),
                     password: adminUserForm.password.value,
-                    role: adminUserForm.role.value
+                    permissions: checkedPerms
                 })
             });
             UI.closeModal('admin-user-modal');
@@ -1145,7 +1152,6 @@ document.addEventListener('DOMContentLoaded', () => {
        14. HTML 內聯事件全域綁定 (Global Bindings)
        ========================================= */
 
-    // 曝露 Manager 到 window，供 HTML onclick 呼叫
     window.FinanceManager = FinanceManager;
     window.OpsManager = OpsManager;
     window.DataManager = DataManager;
@@ -1228,12 +1234,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 回饋管理 ---
     window.approveFb = (id) => Core.confirmAction('確認核准？(將寄信通知)', async () => {
         await Core.apiFetch(`/api/feedback/${id}/approve`, { method: 'PUT' });
-        if (document.getElementById('tab-data')?.classList.contains('active')) DataManager.loadFeedbackReview();
+        DataManager.search();
     });
 
     window.delFb = (id) => Core.confirmAction('確認刪除？(將寄信通知)', async () => {
         await Core.apiFetch(`/api/feedback/${id}`, { method: 'DELETE' });
-        if (document.getElementById('tab-data')?.classList.contains('active')) DataManager.loadFeedbackReview();
+        DataManager.search();
     });
 
     window.shipGift = async (id) => {
@@ -1242,7 +1248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await Core.apiFetch(`/api/feedback/${id}/ship`, { method: 'PUT', body: JSON.stringify({ trackingNumber: track }) });
             alert('已標記寄送並通知！');
             if (document.getElementById('tab-ops')?.classList.contains('active')) OpsManager.loadFeedbackGifts();
-            if (document.getElementById('tab-data')?.classList.contains('active')) DataManager.loadFeedbackReview();
+            if (document.getElementById('tab-data')?.classList.contains('active')) DataManager.search();
         }
     };
 
@@ -1250,12 +1256,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('feedback-edit-form');
         if (!form) return;
         form.feedbackId.value = item._id;
-        form.realName.value = item.realName;
-        form.nickname.value = item.nickname;
-        form.content.value = item.content;
-        form.phone.value = item.phone;
-        form.address.value = item.address;
-        form.category.value = Array.isArray(item.category) ? item.category[0] : item.category;
+        form.realName.value = item.realName || '';
+        form.nickname.value = item.nickname || '';
+        form.content.value = item.content || '';
+        form.phone.value = item.phone || '';
+        form.address.value = item.address || '';
+        form.category.value = Array.isArray(item.category) ? item.category[0] : (item.category || '');
 
         form.onsubmit = async (e) => {
             e.preventDefault();
@@ -1269,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             await Core.apiFetch(`/api/feedback/${form.feedbackId.value}`, { method: 'PUT', body: JSON.stringify(data) });
             UI.closeModal('feedback-edit-modal');
-            DataManager.loadFeedbackReview();
+            DataManager.search();
         };
         UI.openModal('feedback-edit-modal');
     };
@@ -1283,17 +1289,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         body.innerHTML = `
             <div class="detail-header">
-                <p><strong>編號：</strong> ${item.feedbackId || '無'}</p>${statusHtml}
+                <p><strong>編號：</strong> ${item.feedbackId || item.orderId || '無'}</p>${statusHtml}
             </div>
-            <p><strong>真實姓名：</strong> ${item.realName}</p>
-            <p><strong>暱稱：</strong> ${item.nickname}</p>
+            <p><strong>真實姓名：</strong> ${item.realName || ''}</p>
+            <p><strong>暱稱：</strong> ${item.nickname || ''}</p>
             <p><strong>農曆生日：</strong> ${item.lunarBirthday || '未提供'}</p>
-            <p><strong>電話：</strong> ${item.phone}</p>
-            <p><strong>地址：</strong> ${item.address}</p>
-            <p><strong>分類：</strong> ${Array.isArray(item.category) ? item.category.join(', ') : item.category}</p>
+            <p><strong>電話：</strong> ${item.phone || ''}</p>
+            <p><strong>地址：</strong> ${item.address || ''}</p>
+            <p><strong>分類：</strong> ${Array.isArray(item.category) ? item.category.join(', ') : (item.category || '')}</p>
             <div class="info-box">
                 <strong class="text-brown">回饋內容：</strong><br>
-                <div class="pre-wrap mt-10">${item.content}</div>
+                <div class="pre-wrap mt-10">${item.content || ''}</div>
             </div>
         `;
         UI.openModal('feedback-detail-modal');

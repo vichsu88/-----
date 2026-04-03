@@ -102,8 +102,20 @@ def line_callback():
 
 
 # =========================================
-# 後台管理員登入 (RBAC 多帳號系統)
+# 後台管理員登入 (RBAC 多帳號系統 — 陣列式權限)
 # =========================================
+
+def _resolve_permissions(admin_user):
+    """從 DB 文件解析權限陣列 (相容舊版 role 字串)"""
+    perms = admin_user.get('permissions', [])
+    if perms:
+        return perms
+    # 向下相容：舊資料只有 role 字串
+    legacy_role = admin_user.get('role', 'ops')
+    if legacy_role == 'super_admin':
+        return ['super_admin']
+    return [legacy_role]
+
 
 @auth_bp.route('/admin')
 def admin_page():
@@ -113,10 +125,15 @@ def admin_page():
 @auth_bp.route('/api/session_check', methods=['GET'])
 def session_check():
     if session.get('admin_logged_in'):
+        permissions = session.get('admin_permissions', [])
+        if not permissions:
+            legacy = session.get('admin_role', 'super_admin')
+            permissions = [legacy]
         return jsonify({
             "logged_in": True,
             "username": session.get('admin_username', 'admin'),
-            "role": session.get('admin_role', 'super_admin')
+            "role": session.get('admin_role', 'super_admin'),
+            "permissions": permissions
         })
     return jsonify({"logged_in": False})
 
@@ -133,16 +150,19 @@ def api_login():
     if username and db is not None:
         admin_user = db.admin_users.find_one({"username": username})
         if admin_user and check_password_hash(admin_user['password_hash'], password):
+            permissions = _resolve_permissions(admin_user)
             session['admin_logged_in'] = True
             session['admin_username'] = admin_user['username']
-            session['admin_role'] = admin_user.get('role', 'ops')
+            session['admin_role'] = 'super_admin' if 'super_admin' in permissions else (permissions[0] if permissions else 'ops')
+            session['admin_permissions'] = permissions
             session.permanent = True
             write_audit_log(admin_user['username'], '登入系統')
             return jsonify({
                 "success": True,
                 "message": "登入成功",
                 "username": admin_user['username'],
-                "role": admin_user['role']
+                "role": session['admin_role'],
+                "permissions": permissions
             })
 
     # 方式二：環境變數密碼 (向下相容，視為 super_admin)
@@ -151,13 +171,15 @@ def api_login():
         session['admin_logged_in'] = True
         session['admin_username'] = 'admin'
         session['admin_role'] = 'super_admin'
+        session['admin_permissions'] = ['super_admin']
         session.permanent = True
         write_audit_log('admin', '登入系統 (主密碼)')
         return jsonify({
             "success": True,
             "message": "登入成功",
             "username": "admin",
-            "role": "super_admin"
+            "role": "super_admin",
+            "permissions": ["super_admin"]
         })
 
     return jsonify({"success": False, "message": "帳號或密碼錯誤"}), 401
@@ -170,4 +192,5 @@ def api_logout():
     session.pop('admin_logged_in', None)
     session.pop('admin_username', None)
     session.pop('admin_role', None)
+    session.pop('admin_permissions', None)
     return jsonify({"success": True})
