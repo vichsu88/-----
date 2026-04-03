@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request, session, Response, current_app
 
-from database import db
+from database import db, write_audit_log
 from utils.decorators import login_required, user_login_required
 from utils.helpers import get_object_id
 from utils.email import send_email, generate_feedback_email_html
@@ -137,6 +137,7 @@ def approve_feedback(fid):
         'feedbackId': fb_id,
         'approvedAt': datetime.now(timezone.utc).replace(tzinfo=None)
     }})
+    write_audit_log(session.get('admin_username', 'admin'), '核准回饋', fb_id)
 
     user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
     email = user.get('email') or fb.get('email')
@@ -169,6 +170,7 @@ def ship_feedback(fid):
         'trackingNumber': tracking,
         'sentAt': datetime.now(timezone.utc).replace(tzinfo=None)
     }})
+    write_audit_log(session.get('admin_username', 'admin'), '寄出回饋禮', fb.get('feedbackId', fid), tracking)
 
     user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
     email = user.get('email') or fb.get('email')
@@ -206,6 +208,7 @@ def delete_feedback(fid):
             is_html=True
         )
 
+    write_audit_log(session.get('admin_username', 'admin'), '刪除回饋', fb.get('feedbackId', fid) if fb else fid)
     db.feedback.delete_one({'_id': oid})
     return jsonify({"success": True})
 

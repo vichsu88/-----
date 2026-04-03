@@ -8,98 +8,53 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         :root {
-            --main-brown: #C48945;
-            --main-brown-hover: #a57136;
-            --sidebar-bg: #2c3e50;
-            --bg-light: #f4f6f9;
-            --text-dark: #333;
-            --text-gray: #666;
-            --border-color: #ddd;
-            --danger: #dc3545;
-            --success: #28a745;
-            --info: #007bff;
-            --secondary: #6c757d;
+            --main-brown: #C48945; --main-brown-hover: #a57136;
+            --sidebar-bg: #2c3e50; --bg-light: #f4f6f9;
+            --text-dark: #333; --text-gray: #666; --border-color: #ddd;
+            --danger: #dc3545; --success: #28a745; --info: #007bff; --secondary: #6c757d;
         }
-
-        /* --- Base & Reset --- */
         body { background-color: var(--bg-light); margin: 0; height: 100vh; overflow: hidden; display: flex; font-family: 'Microsoft JhengHei', sans-serif; color: var(--text-dark); }
         h2, h3 { margin-top: 0; }
 
-        /* --- Utilities --- */
-        .d-none { display: none; }
-        .d-flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .flex-wrap { flex-wrap: wrap; }
-        .justify-between { justify-content: space-between; }
-        .align-center { align-items: center; }
-        .align-end { align-items: flex-end; }
-        .flex-1 { flex: 1; }
-        .flex-2 { flex: 2; }
-
-        .gap-5 { gap: 5px; }
-        .gap-10 { gap: 10px; }
-        .gap-15 { gap: 15px; }
-        .gap-20 { gap: 20px; }
-        .gap-30 { gap: 30px; }
-
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .text-brown { color: var(--main-brown); }
-        .text-danger { color: var(--danger); }
-        .text-gray { color: var(--text-gray); }
-        .text-dark { color: var(--text-dark); }
-        .text-muted { color: #555; }
-        .text-success { color: var(--success); }
+        /* Utilities */
+        .d-none { display: none; } .d-flex { display: flex; } .flex-col { flex-direction: column; }
+        .flex-wrap { flex-wrap: wrap; } .justify-between { justify-content: space-between; }
+        .align-center { align-items: center; } .align-end { align-items: flex-end; }
+        .flex-1 { flex: 1; } .flex-2 { flex: 2; }
+        .gap-5 { gap: 5px; } .gap-10 { gap: 10px; } .gap-15 { gap: 15px; } .gap-20 { gap: 20px; } .gap-30 { gap: 30px; }
+        .text-right { text-align: right; } .text-center { text-align: center; }
+        .text-brown { color: var(--main-brown); } .text-danger { color: var(--danger); }
+        .text-gray { color: var(--text-gray); } .text-dark { color: var(--text-dark); }
+        .text-muted { color: #555; } .text-success { color: var(--success); }
         .fw-bold { font-weight: bold; }
-
-        .fs-12 { font-size: 12px; }
-        .fs-13 { font-size: 13px; }
-        .fs-14 { font-size: 14px; }
-        .fs-16 { font-size: 16px; }
-        .fs-18 { font-size: 18px; }
-        .lh-16 { line-height: 1.6; }
-        .lh-18 { line-height: 1.8; }
-
-        .w-100 { width: 100%; }
-        .w-120px { width: 120px; }
-        .h-42px { height: 42px; }
-
-        .mt-0 { margin-top: 0; }
-        .mt-5 { margin-top: 5px; }
-        .mt-10 { margin-top: 10px; }
-        .mt-15 { margin-top: 15px; }
-        .mt-20 { margin-top: 20px; }
-        .mt-30 { margin-top: 30px; }
-        .mb-0 { margin-bottom: 0 !important; }
-        .mb-5 { margin-bottom: 5px; }
-        .mb-8 { margin-bottom: 8px; }
-        .mb-10 { margin-bottom: 10px; }
-        .mb-15 { margin-bottom: 15px; }
-        .mb-20 { margin-bottom: 20px; }
+        .fs-12 { font-size: 12px; } .fs-13 { font-size: 13px; } .fs-14 { font-size: 14px; }
+        .fs-16 { font-size: 16px; } .fs-18 { font-size: 18px; }
+        .lh-16 { line-height: 1.6; } .lh-18 { line-height: 1.8; }
+        .w-100 { width: 100%; } .w-120px { width: 120px; } .h-42px { height: 42px; }
+        .mt-0 { margin-top: 0; } .mt-5 { margin-top: 5px; } .mt-10 { margin-top: 10px; }
+        .mt-15 { margin-top: 15px; } .mt-20 { margin-top: 20px; } .mt-30 { margin-top: 30px; }
+        .mb-0 { margin-bottom: 0 !important; } .mb-5 { margin-bottom: 5px; } .mb-8 { margin-bottom: 8px; }
+        .mb-10 { margin-bottom: 10px; } .mb-15 { margin-bottom: 15px; } .mb-20 { margin-bottom: 20px; }
         .my-5 { margin-top: 5px; margin-bottom: 5px; }
+        .p-5 { padding: 5px; } .p-10 { padding: 10px; } .p-12 { padding: 12px; } .p-20 { padding: 20px; }
+        .pre-wrap { white-space: pre-wrap; }
 
-        .p-5 { padding: 5px; }
-        .p-10 { padding: 10px; }
-        .p-12 { padding: 12px; }
-        .p-20 { padding: 20px; }
-
-        /* --- Layout: Login --- */
+        /* Login */
         #login-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #eee; z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .login-box { background: #fff; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; }
+        .login-box { background: #fff; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; }
 
-        /* --- Layout: Admin Wrapper --- */
+        /* Layout */
         #admin-wrapper { display: flex; width: 100%; height: 100%; }
         .sidebar-overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
-
-        /* Sidebar */
-        .admin-sidebar { width: 250px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
+        .admin-sidebar { width: 260px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .sidebar-nav { flex: 1; overflow-y: auto; padding-top: 20px; }
-        .nav-item { display: block; width: 100%; padding: 15px 20px; color: #bdc3c7; background: none; border: none; text-align: left; font-size: 16px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; }
+        .sidebar-user-info { margin-top: 8px; font-size: 12px; color: #bdc3c7; }
+        .sidebar-user-info .role-badge { background: var(--main-brown); color: #fff; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 4px; }
+        .sidebar-nav { flex: 1; overflow-y: auto; padding-top: 10px; }
+        .nav-section { padding: 8px 20px 4px; font-size: 11px; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-item { display: block; width: 100%; padding: 12px 20px; color: #bdc3c7; background: none; border: none; text-align: left; font-size: 15px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .nav-item.active { background: rgba(0,0,0,0.2); color: #fff; border-left-color: var(--main-brown); }
-
-        /* Main Content */
         .admin-main { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg-light); position: relative; width: 100%; box-sizing: border-box; }
         .page-title { margin-bottom: 20px; color: #333; border-bottom: 2px solid #E6BA67; padding-bottom: 10px; }
 
@@ -107,28 +62,14 @@
         .tab-content { display: none; width: 100%; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Sub-tabs */
         .sub-tab-group { display: flex; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); }
-        .sub-tab-btn { flex: 1; padding: 15px; border: none; background: none; font-size: 16px; cursor: pointer; color: var(--text-gray); font-weight: bold; border-bottom: 4px solid transparent; transition: 0.3s; }
+        .sub-tab-btn { flex: 1; padding: 12px; border: none; background: none; font-size: 15px; cursor: pointer; color: var(--text-gray); font-weight: bold; border-bottom: 4px solid transparent; transition: 0.3s; }
         .sub-tab-btn.active { color: var(--main-brown); border-bottom-color: var(--main-brown); background: rgba(196, 137, 69, 0.05); }
         .sub-tab-btn:hover { background: rgba(0,0,0,0.02); }
 
-        /* 側邊欄通知標籤 */
-        .badge-n {
-            display: inline-flex; justify-content: center; align-items: center;
-            background-color: var(--danger); color: white; border-radius: 50%;
-            width: 20px; height: 20px; font-size: 12px; font-weight: bold;
-            margin-left: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        /* --- Components --- */
-        /* Cards */
+        /* Components */
         .card, .feedback-card, .admin-list-item { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
         .admin-list-item { padding: 15px; }
-        .admin-list-item-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-
-        /* Bank & Product Specific Cards */
         .bank-card { flex: 1; padding: 15px; border-radius: 8px; }
         .bank-card--shop { background: #f9f9f9; border: 1px solid #eee; }
         .bank-card--fund { background: #fff5f5; border: 1px solid #ffcccc; }
@@ -136,7 +77,7 @@
         .product-variant-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
         .product-preview-img { max-height: 150px; display: none; border-radius: 5px; }
 
-        /* Step 1: 從 admin.js 行內樣式抽取的 CSS 元件類別 */
+        /* Component classes (extracted from JS) */
         .product-card { display: flex; gap: 15px; align-items: center; }
         .product-thumb { width: 80px; height: 80px; background: #eee; flex-shrink: 0; border-radius: 4px; overflow: hidden; }
         .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -155,6 +96,11 @@
         .badge-sent { background: #dbeafe; color: var(--info); padding: 2px 8px; border-radius: 12px; font-size: 12px; }
         .badge-received-warning { color: var(--danger); font-weight: bold; font-size: 13px; margin-left: 10px; }
         .badge-pinned { color: red; }
+        .badge-source { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e9ecef; }
+        .badge-role { padding: 2px 8px; border-radius: 4px; font-size: 12px; color: #fff; }
+        .badge-role.super_admin { background: var(--danger); }
+        .badge-role.finance { background: var(--info); }
+        .badge-role.ops { background: var(--success); }
         .fb-card-header { font-weight: bold; margin-bottom: 12px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
         .fb-card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px; }
         .fb-card-pending-bg { background: #fff5f5; }
@@ -173,28 +119,36 @@
         .total-price { text-align: right; font-size: 18px; color: var(--main-brown); }
         .text-reported { color: #155724; font-weight: bold; }
         .text-unreported { color: #856404; font-weight: bold; }
-
-        /* Step 3 & 4: 單據管理區域 */
         .danger-zone { padding: 20px; border: 1px solid #ffcccc; background-color: #fffafb; border-radius: 8px; }
         .danger-zone h3 { color: #d9534f; }
         .receipt-editor-area { font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; min-height: 400px; white-space: pre; line-height: 1.5; }
+        .status-header { padding: 10px; border-radius: 5px; margin: 0 0 10px 0; color: white; }
+        .status-header.pending { background: var(--danger); }
+        .status-header.approved { background: var(--success); }
+        .status-header.sent { background: var(--info); }
+        .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .feedback-content-box { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: #555; background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 10px 0; word-break: break-all; }
+        .donation-toolbar { display: flex; gap: 10px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .filter-bar { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .audit-row { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .audit-row:nth-child(odd) { background: #fafafa; }
+        .member-card { display: flex; gap: 15px; align-items: center; }
+        .member-avatar { width: 48px; height: 48px; border-radius: 50%; background: #eee; flex-shrink: 0; overflow: hidden; }
+        .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .badge-n { display: inline-flex; justify-content: center; align-items: center; background-color: var(--danger); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; font-weight: bold; margin-left: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
         /* Buttons */
         .btn { padding: 6px 12px; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 14px; transition: 0.2s; display: inline-block; text-align: center; }
         .btn:hover { opacity: 0.9; }
-        .btn--brown { background: var(--main-brown); }
-        .btn--red { background: var(--danger); }
-        .btn--green { background: var(--success); }
-        .btn--grey { background: var(--secondary); }
+        .btn--brown { background: var(--main-brown); } .btn--red { background: var(--danger); }
+        .btn--green { background: var(--success); } .btn--grey { background: var(--secondary); }
         .btn--blue { background: var(--info); }
-        .btn-lg { padding: 10px 20px; font-size: 16px; }
-        .btn-block { width: 100%; }
+        .btn-lg { padding: 10px 20px; font-size: 16px; } .btn-block { width: 100%; }
 
         /* Forms */
         input, select, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; }
         label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
         .form-row { display: flex; gap: 10px; align-items: center; }
-        .form-row input { margin-bottom: 0; }
         .checkbox-label { display: inline-flex; align-items: center; cursor: pointer; margin-right: 20px; }
         .checkbox-label input { width: auto; margin: 0 10px 0 0; }
         .readonly-input { background-color: #e9ecef; cursor: not-allowed; color: #555; }
@@ -206,23 +160,10 @@
         .admin-modal-content { background: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal-close-btn { position: absolute; top: 15px; right: 15px; border: none; background: none; font-size: 24px; cursor: pointer; color: #999; }
 
-        /* Feedback Specific */
-        .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .status-header { padding: 10px; border-radius: 5px; margin: 0 0 10px 0; color: white; }
-        .status-header.pending { background: var(--danger); }
-        .status-header.approved { background: var(--success); }
-        .status-header.sent { background: var(--info); }
-        .feedback-content-box { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: #555; background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 10px 0; word-break: break-all; }
-        .feedback-content-box.expanded { -webkit-line-clamp: unset; }
-        .show-more-btn { color: var(--main-brown); background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; font-weight: bold; text-decoration: underline; }
-
-        /* Donation Toolbar */
-        .donation-toolbar { display: flex; gap: 10px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-
         /* Responsive */
         @media (max-width: 992px) { .feedback-grid { grid-template-columns: 1fr; } }
         @media (max-width: 768px) {
-            .admin-sidebar { position: fixed; left: -250px; height: 100%; z-index: 1000; }
+            .admin-sidebar { position: fixed; left: -260px; height: 100%; z-index: 1000; }
             .admin-sidebar.open { left: 0; }
             #sidebar-toggle { display: block !important; position: fixed; top: 10px; left: 10px; z-index: 1001; background: var(--main-brown); color: white; padding: 10px; border-radius: 5px; border: none; }
             .admin-main { padding: 60px 15px 15px 15px; }
@@ -231,15 +172,18 @@
     </style>
 </head>
 <body>
+    <!-- ===== 登入畫面 ===== -->
     <div id="login-wrapper">
         <form id="login-form" class="login-box">
             <h2 class="text-brown">後台登入</h2>
-            <input type="password" id="admin-password" placeholder="請輸入管理員密碼" required>
+            <input type="text" id="admin-username" placeholder="管理員帳號 (留空使用主密碼)" autocomplete="username">
+            <input type="password" id="admin-password" placeholder="請輸入密碼" required autocomplete="current-password">
             <button type="submit" class="btn btn--brown btn-block p-12">登入系統</button>
             <p id="login-error" class="text-danger mt-10 fs-14"></p>
         </form>
     </div>
 
+    <!-- ===== 管理介面 ===== -->
     <div id="admin-content" style="display:none;">
         <button id="sidebar-toggle">☰ 選單</button>
         <div id="sidebar-overlay" class="sidebar-overlay-bg" style="display:none;"></div>
@@ -249,16 +193,19 @@
                 <div class="sidebar-header">
                     <h3 class="mb-0">承天中承府</h3>
                     <small>後台管理系統</small>
+                    <div class="sidebar-user-info" id="sidebar-user-info"></div>
                 </div>
                 <nav class="sidebar-nav">
-                    <button class="nav-item active" data-tab="tab-products">🛍️ 商品管理</button>
-                    <button class="nav-item" data-tab="tab-donations">🙏 捐贈管理 <span id="badge-donations" class="badge-n d-none">N</span></button>
-                    <button class="nav-item" data-tab="tab-orders">📦 一般訂單 <span id="badge-orders" class="badge-n d-none">N</span></button>
-                    <button class="nav-item" data-tab="tab-feedback">💬 信徒回饋</button>
-                    <button class="nav-item" data-tab="tab-fund">📊 基金與公告</button>
-                    <button class="nav-item" data-tab="tab-qa">❓ 常見問答</button>
-                    <button class="nav-item" data-tab="tab-links">🔗 連結與設定</button>
-                    <button class="nav-item" data-tab="tab-receipts">⚙️ 單據管理</button>
+                    <div class="nav-section">工作流程</div>
+                    <button class="nav-item" data-tab="tab-finance" data-roles="super_admin,finance">💰 財務稽核中樞</button>
+                    <button class="nav-item" data-tab="tab-ops" data-roles="super_admin,ops">🛠️ 站務作業中樞</button>
+
+                    <div class="nav-section">資料管理</div>
+                    <button class="nav-item" data-tab="tab-data" data-roles="super_admin,finance">🗂️ 綜合資料總管</button>
+                    <button class="nav-item" data-tab="tab-cms" data-roles="super_admin,ops">📝 前台內容管理</button>
+
+                    <div class="nav-section">系統</div>
+                    <button class="nav-item" data-tab="tab-system" data-roles="super_admin">⚙️ 系統與權限</button>
                 </nav>
                 <div class="p-20">
                     <button id="logout-btn" class="btn btn--red btn-block">登出</button>
@@ -266,170 +213,209 @@
             </aside>
 
             <main class="admin-main">
-                <h2 id="page-title-display" class="page-title">商品管理</h2>
+                <h2 id="page-title-display" class="page-title">財務稽核中樞</h2>
 
-                <div id="tab-products" class="tab-content active">
-                    <div class="text-right mb-20">
-                        <button id="add-product-btn" class="btn btn--brown btn-lg">+ 新增商品</button>
-                    </div>
-                    <div id="products-list">載入中...</div>
-                </div>
-
-                <div id="tab-donations" class="tab-content">
-                    <div class="sub-tab-group">
-                        <button class="sub-tab-btn active" onclick="switchDonationTab('incense')">🕯️ 捐香 (日常)</button>
-                        <button class="sub-tab-btn" onclick="switchDonationTab('fund')">🏗️ 建廟 (基金)</button>
-                        <button class="sub-tab-btn" onclick="switchDonationTab('committee')">🏛️ 委員會</button>
-                    </div>
-
-                    <div id="subtab-incense">
-                        <div class="donation-toolbar">
-                            <div class="d-flex align-center gap-10">
-                                <label class="mb-0">篩選：</label>
-                                <select id="incense-report-filter" class="mb-0 w-120px" onchange="fetchDonations('donation')">
-                                    <option value="0">未稟告</option>
-                                    <option value="1">已稟告</option>
-                                    <option value="">全部</option>
-                                </select>
-                            </div>
-                            <div class="flex-1 text-right">
-                                <button class="btn btn--red" onclick="printRedPaper()">🖨️ 列印紅紙清單</button>
-                            </div>
-                        </div>
-                        <div id="incense-list"></div>
-                    </div>
-
-                    <div id="subtab-fund" style="display:none;">
-                        <div class="donation-toolbar">
-                            <button class="btn btn--green" onclick="exportDonationList('fund')">📋 匯出清單</button>
-                        </div>
-                        <div id="fund-list"></div>
-                    </div>
-
-                    <div id="subtab-committee" style="display:none;">
-                        <div class="donation-toolbar d-flex justify-between align-center">
-                            <span class="text-gray fw-bold">🏛️ 委員會護持名單審核與管理</span>
-                            <button class="btn btn--green" onclick="exportDonationList('committee')">📋 匯出清單</button>
-                        </div>
-                        <div id="committee-list"></div>
-                    </div>
-                </div>
-
-                <div id="tab-orders" class="tab-content">
+                <!-- ===== Module 1: 財務稽核中樞 ===== -->
+                <div id="tab-finance" class="tab-content">
                     <div class="d-flex justify-between align-center mb-20">
-                        <span class="help-text">※ 僅顯示一般商品訂單</span>
-                        <button class="btn btn--grey" onclick="fetchOrders()">🔄 重新整理</button>
+                        <span class="help-text">所有來源的待收款單據 (付款後將自動流向站務作業區)</span>
+                        <div class="d-flex gap-10">
+                            <button class="btn btn--grey" onclick="FinanceManager.refresh()">🔄 重新整理</button>
+                        </div>
                     </div>
-                    <div id="orders-list"></div>
+                    <div id="finance-summary" class="d-flex gap-10 flex-wrap mb-20"></div>
+                    <div id="finance-pending-list">載入中...</div>
                 </div>
 
-                <div id="tab-feedback" class="tab-content">
-                    <div id="fb-stats-bar" class="mb-20 d-flex gap-10 align-center"></div>
-
-                    <div class="feedback-grid">
-                        <div>
-                            <h3 class="status-header pending">1. 待審核 (寄信通知)</h3>
-                            <div id="fb-pending-list"></div>
-                        </div>
-                        <div>
-                            <h3 class="status-header approved">2. 已刊登 / 待寄送</h3>
-                            <div class="text-right mb-10">
-                                <button class="btn btn--green" onclick="exportFeedbackTxt()">匯出名單</button>
+                <!-- ===== Module 2: 站務作業中樞 ===== -->
+                <div id="tab-ops" class="tab-content">
+                    <div class="sub-tab-group">
+                        <button class="sub-tab-btn active" data-ops-tab="ops-print">🖨️ 文書列印排程</button>
+                        <button class="sub-tab-btn" data-ops-tab="ops-ship">📦 出貨物流排程</button>
+                        <button class="sub-tab-btn" data-ops-tab="ops-feedback">🎁 回饋寄送</button>
+                    </div>
+                    <div id="ops-print" class="ops-sub">
+                        <div class="d-flex justify-between align-center mb-15">
+                            <span class="help-text">已付款捐香 — 尚未列印紅紙</span>
+                            <div class="d-flex gap-10">
+                                <button class="btn btn--red" onclick="OpsManager.printRedPaper()">🖨️ 列印紅紙清單</button>
+                                <button class="btn btn--blue" onclick="OpsManager.batchMarkPrinted()">✅ 批次標記已列印</button>
                             </div>
-                            <div id="fb-approved-list"></div>
                         </div>
+                        <div id="print-queue-list">載入中...</div>
                     </div>
-                    <div class="mt-30">
-                        <h3 class="status-header sent">3. 已寄送 (歷史紀錄)</h3>
-                        <div class="text-right mb-10">
-                            <button class="btn btn--blue" onclick="exportSentFeedbackTxt()">匯出名單</button>
+                    <div id="ops-ship" class="ops-sub" style="display:none;">
+                        <div class="d-flex justify-between align-center mb-15">
+                            <span class="help-text">已付款結緣品訂單 — 待出貨</span>
+                            <button class="btn btn--grey" onclick="OpsManager.refreshShip()">🔄 重新整理</button>
                         </div>
-                        <div id="fb-sent-list"></div>
+                        <div id="ship-queue-list">載入中...</div>
+                        <h3 class="status-header sent mt-30">已出貨 (近 30 天)</h3>
+                        <div class="text-right mb-10"><button class="btn btn--red" onclick="OpsManager.cleanupShipped()">🗑️ 清除 14 天前舊單</button></div>
+                        <div id="shipped-list"></div>
                     </div>
-                </div>
-
-                <div id="tab-fund" class="tab-content">
-                    <div class="card">
-                        <h3>建廟基金設定</h3>
-                        <form id="fund-form" class="d-flex gap-10 align-end flex-wrap">
-                            <div class="flex-1">
-                                <label>目標金額</label>
-                                <input type="number" id="fund-goal" value="10000000">
+                    <div id="ops-feedback" class="ops-sub" style="display:none;">
+                        <div class="feedback-grid">
+                            <div>
+                                <h3 class="status-header approved">待寄送小神衣 (已核准)</h3>
+                                <div id="ops-fb-approved-list"></div>
                             </div>
-                            <div class="flex-1">
-                                <label>目前金額 <small class="text-danger" style="font-weight:normal;">(系統自動加總，無法手動修改)</small></label>
-                                <input type="number" id="fund-current" value="0" class="readonly-input" readonly>
-                            </div>
-                            <button type="submit" class="btn btn--brown mb-15 h-42px">更新設定</button>
-                        </form>
-                    </div>
-                    <div class="d-flex justify-between mt-30 mb-15">
-                        <h3>網站公告</h3>
-                        <button id="add-announcement-btn" class="btn btn--brown">+ 新增公告</button>
-                    </div>
-                    <div id="announcements-list"></div>
-                </div>
-
-                <div id="tab-qa" class="tab-content">
-                    <div class="text-right mb-20">
-                        <button id="add-faq-btn" class="btn btn--brown">+ 新增問答</button>
-                    </div>
-                    <div id="faq-list"></div>
-                </div>
-
-                <div id="tab-links" class="tab-content">
-                    <div class="feedback-grid">
-                        <div class="card">
-                            <h3 class="mt-0">🔗 外部連結設定</h3>
-                            <div id="links-list"></div>
-                        </div>
-                        <div class="card">
-                            <h3 class="mt-0">🏦 匯款帳號設定</h3>
-                            <p class="help-text">設定不同用途的收款帳號，系統將自動帶入對應信件中。</p>
-
-                            <form id="bank-form">
-                                <div class="d-flex gap-20 flex-wrap">
-                                    <div class="bank-card bank-card--shop">
-                                        <h4 class="mt-0 text-brown">賣場/捐香</h4>
-                                        <label>銀行代碼</label><input type="text" name="shop_bankCode" placeholder="808">
-                                        <label>銀行名稱</label><input type="text" name="shop_bankName" placeholder="玉山銀行">
-                                        <label>帳號</label><input type="text" name="shop_account" placeholder="帳號...">
-                                    </div>
-
-                                    <div class="bank-card bank-card--fund">
-                                        <h4 class="mt-0 text-danger">建廟基金</h4>
-                                        <label>銀行代碼</label><input type="text" name="fund_bankCode" placeholder="103">
-                                        <label>銀行名稱</label><input type="text" name="fund_bankName" placeholder="新光銀行">
-                                        <label>帳號</label><input type="text" name="fund_account" placeholder="帳號...">
-                                    </div>
+                            <div>
+                                <h3 class="status-header sent">已寄送 (歷史紀錄)</h3>
+                                <div class="text-right mb-10">
+                                    <button class="btn btn--blue" onclick="OpsManager.exportSentFeedback()">匯出名單</button>
                                 </div>
-                                <button type="submit" class="btn btn--brown btn-block mt-20">儲存所有匯款設定</button>
+                                <div id="ops-fb-sent-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Module 3: 綜合資料總管 ===== -->
+                <div id="tab-data" class="tab-content">
+                    <div class="sub-tab-group">
+                        <button class="sub-tab-btn active" data-data-tab="data-history">📋 歷史總表</button>
+                        <button class="sub-tab-btn" data-data-tab="data-members">👥 會員資料</button>
+                        <button class="sub-tab-btn" data-data-tab="data-feedback">💬 表單回饋</button>
+                    </div>
+                    <div id="data-history" class="data-sub">
+                        <div class="filter-bar d-flex gap-10 flex-wrap align-end">
+                            <div><label class="fs-12">大項目</label><select id="hist-type" class="mb-0 w-120px"><option value="">全部</option><option value="shop">結緣品</option><option value="donation">捐香</option><option value="fund">建廟基金</option><option value="committee">委員會</option></select></div>
+                            <div><label class="fs-12">單號</label><input id="hist-id" class="mb-0" placeholder="ORD..." style="width:140px;"></div>
+                            <div><label class="fs-12">姓名</label><input id="hist-name" class="mb-0" placeholder="搜尋..." style="width:120px;"></div>
+                            <div><label class="fs-12">狀態</label><select id="hist-status" class="mb-0 w-120px"><option value="">全部</option><option value="pending">待收款</option><option value="paid">已付款</option><option value="shipped">已出貨</option></select></div>
+                            <div><label class="fs-12">開始日</label><input type="date" id="hist-start" class="mb-0"></div>
+                            <div><label class="fs-12">結束日</label><input type="date" id="hist-end" class="mb-0"></div>
+                            <button class="btn btn--brown" onclick="DataManager.search()">🔍 搜尋</button>
+                            <button class="btn btn--green" onclick="DataManager.exportCSV()">📥 匯出 CSV</button>
+                        </div>
+                        <div id="history-info" class="mt-10 mb-10 fs-14 text-gray"></div>
+                        <div id="history-results"></div>
+                        <div id="history-pagination" class="mt-15 d-flex justify-between align-center"></div>
+                    </div>
+                    <div id="data-members" class="data-sub" style="display:none;">
+                        <div class="d-flex justify-between align-center mb-15">
+                            <span class="help-text">系統中所有 LINE 註冊會員</span>
+                            <button class="btn btn--grey" onclick="DataManager.refreshMembers()">🔄 重新整理</button>
+                        </div>
+                        <div id="members-list">載入中...</div>
+                    </div>
+                    <div id="data-feedback" class="data-sub" style="display:none;">
+                        <div id="fb-stats-bar" class="mb-20 d-flex gap-10 align-center"></div>
+                        <div class="feedback-grid">
+                            <div>
+                                <h3 class="status-header pending">待審核 (寄信通知)</h3>
+                                <div id="fb-pending-list"></div>
+                            </div>
+                            <div>
+                                <h3 class="status-header approved">已刊登 / 待寄送</h3>
+                                <div class="text-right mb-10"><button class="btn btn--green" onclick="DataManager.exportFeedbackTxt()">匯出名單</button></div>
+                                <div id="fb-approved-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Module 4: 前台內容管理 ===== -->
+                <div id="tab-cms" class="tab-content">
+                    <div class="sub-tab-group">
+                        <button class="sub-tab-btn active" data-cms-tab="cms-products">🛍️ 商品</button>
+                        <button class="sub-tab-btn" data-cms-tab="cms-announcements">📢 公告</button>
+                        <button class="sub-tab-btn" data-cms-tab="cms-faq">❓ 問答</button>
+                        <button class="sub-tab-btn" data-cms-tab="cms-fund">📊 基金</button>
+                        <button class="sub-tab-btn" data-cms-tab="cms-settings">🔗 設定</button>
+                    </div>
+                    <div id="cms-products" class="cms-sub">
+                        <div class="text-right mb-20"><button id="add-product-btn" class="btn btn--brown btn-lg">+ 新增商品</button></div>
+                        <div id="products-list">載入中...</div>
+                    </div>
+                    <div id="cms-announcements" class="cms-sub" style="display:none;">
+                        <div class="d-flex justify-between mb-15"><h3>網站公告</h3><button id="add-announcement-btn" class="btn btn--brown">+ 新增公告</button></div>
+                        <div id="announcements-list"></div>
+                    </div>
+                    <div id="cms-faq" class="cms-sub" style="display:none;">
+                        <div class="text-right mb-20"><button id="add-faq-btn" class="btn btn--brown">+ 新增問答</button></div>
+                        <div id="faq-list"></div>
+                    </div>
+                    <div id="cms-fund" class="cms-sub" style="display:none;">
+                        <div class="card">
+                            <h3>建廟基金設定</h3>
+                            <form id="fund-form" class="d-flex gap-10 align-end flex-wrap">
+                                <div class="flex-1"><label>目標金額</label><input type="number" id="fund-goal" value="10000000"></div>
+                                <div class="flex-1"><label>目前金額 <small class="text-danger" style="font-weight:normal;">(系統自動加總)</small></label><input type="number" id="fund-current" value="0" class="readonly-input" readonly></div>
+                                <button type="submit" class="btn btn--brown mb-15 h-42px">更新設定</button>
                             </form>
                         </div>
                     </div>
-                </div>
-
-                <!-- Step 3 & 4: 單據管理分頁 -->
-                <div id="tab-receipts" class="tab-content">
-                    <div class="card mb-20">
-                        <h3 class="mt-0">🔍 萬能單據修改器</h3>
-                        <p class="help-text">輸入單據編號 (如 ORD2026...、FB2026...)，可直接查詢並以 JSON 格式編輯原始資料。</p>
-                        <div class="d-flex gap-10 mt-15">
-                            <input type="text" id="receiptQueryInput" placeholder="請輸入單號" class="mb-0 flex-1">
-                            <button id="receiptQueryBtn" class="btn btn--brown">查詢</button>
-                        </div>
-                        <div id="receipt-editor-wrapper" class="d-none mt-15">
-                            <textarea id="receipt-json-editor" class="receipt-editor-area w-100"></textarea>
-                            <button id="receiptSaveBtn" class="btn btn--green btn-block mt-10 p-12 fs-16">💾 儲存修改</button>
+                    <div id="cms-settings" class="cms-sub" style="display:none;">
+                        <div class="feedback-grid">
+                            <div class="card"><h3 class="mt-0">🔗 外部連結設定</h3><div id="links-list"></div></div>
+                            <div class="card">
+                                <h3 class="mt-0">🏦 匯款帳號設定</h3>
+                                <p class="help-text">設定不同用途的收款帳號。</p>
+                                <form id="bank-form">
+                                    <div class="d-flex gap-20 flex-wrap">
+                                        <div class="bank-card bank-card--shop">
+                                            <h4 class="mt-0 text-brown">賣場/捐香</h4>
+                                            <label>銀行代碼</label><input type="text" name="shop_bankCode" placeholder="808">
+                                            <label>銀行名稱</label><input type="text" name="shop_bankName" placeholder="玉山銀行">
+                                            <label>帳號</label><input type="text" name="shop_account" placeholder="帳號...">
+                                        </div>
+                                        <div class="bank-card bank-card--fund">
+                                            <h4 class="mt-0 text-danger">建廟基金</h4>
+                                            <label>銀行代碼</label><input type="text" name="fund_bankCode" placeholder="103">
+                                            <label>銀行名稱</label><input type="text" name="fund_bankName" placeholder="新光銀行">
+                                            <label>帳號</label><input type="text" name="fund_account" placeholder="帳號...">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn--brown btn-block mt-20">儲存所有匯款設定</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="danger-zone">
-                        <h3>⚠️ 單據強制刪除</h3>
-                        <p class="fs-14 text-gray">請輸入完整的單據編號 (如 FND2026...、FB2026...)。<br><strong>注意：刪除後資料將從資料庫徹底抹除，無法復原。</strong></p>
-                        <div class="d-flex gap-10 mt-15">
-                            <input type="text" id="forceDeleteInput" placeholder="請輸入單號" class="mb-0 flex-1">
-                            <button id="forceDeleteBtn" class="btn btn--red fw-bold">確認刪除</button>
+                <!-- ===== Module 5: 系統與權限管理 ===== -->
+                <div id="tab-system" class="tab-content">
+                    <div class="sub-tab-group">
+                        <button class="sub-tab-btn active" data-sys-tab="sys-users">👤 管理員帳號</button>
+                        <button class="sub-tab-btn" data-sys-tab="sys-audit">📋 操作日誌</button>
+                        <button class="sub-tab-btn" data-sys-tab="sys-receipt">🔧 單據工具</button>
+                    </div>
+                    <div id="sys-users" class="sys-sub">
+                        <div class="d-flex justify-between align-center mb-15">
+                            <span class="help-text">管理後台登入帳號與角色</span>
+                            <button class="btn btn--brown" onclick="SystemManager.showCreateUser()">+ 新增管理員</button>
+                        </div>
+                        <div id="admin-users-list">載入中...</div>
+                    </div>
+                    <div id="sys-audit" class="sys-sub" style="display:none;">
+                        <div class="d-flex justify-between align-center mb-15">
+                            <span class="help-text">最近 200 筆操作紀錄</span>
+                            <button class="btn btn--grey" onclick="SystemManager.refreshAudit()">🔄 重新整理</button>
+                        </div>
+                        <div id="audit-log-list">載入中...</div>
+                    </div>
+                    <div id="sys-receipt" class="sys-sub" style="display:none;">
+                        <div class="card mb-20">
+                            <h3 class="mt-0">🔍 萬能單據修改器</h3>
+                            <p class="help-text">輸入單據編號查詢並以 JSON 格式編輯原始資料。</p>
+                            <div class="d-flex gap-10 mt-15">
+                                <input type="text" id="receiptQueryInput" placeholder="請輸入單號" class="mb-0 flex-1">
+                                <button id="receiptQueryBtn" class="btn btn--brown">查詢</button>
+                            </div>
+                            <div id="receipt-editor-wrapper" class="d-none mt-15">
+                                <textarea id="receipt-json-editor" class="receipt-editor-area w-100"></textarea>
+                                <button id="receiptSaveBtn" class="btn btn--green btn-block mt-10 p-12 fs-16">💾 儲存修改</button>
+                            </div>
+                        </div>
+                        <div class="danger-zone">
+                            <h3>⚠️ 單據強制刪除</h3>
+                            <p class="fs-14 text-gray">輸入完整單據編號。<strong>刪除後無法復原。</strong></p>
+                            <div class="d-flex gap-10 mt-15">
+                                <input type="text" id="forceDeleteInput" placeholder="請輸入單號" class="mb-0 flex-1">
+                                <button id="forceDeleteBtn" class="btn btn--red fw-bold">確認刪除</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -439,7 +425,6 @@
     </div>
 
     {% include 'admin/_modals.html' %}
-
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>

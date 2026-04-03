@@ -6,11 +6,15 @@ import requests
 from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
-from database import db
+from database import db, write_audit_log
 from extensions import csrf, limiter
 
 auth_bp = Blueprint('auth', __name__)
 
+
+# =========================================
+# LINE OAuth 登入 (前台使用者)
+# =========================================
 
 @auth_bp.route('/api/line/login')
 def line_login():
@@ -97,6 +101,10 @@ def line_callback():
     return redirect(next_url)
 
 
+# =========================================
+# 後台管理員登入 (RBAC 多帳號系統)
+# =========================================
+
 @auth_bp.route('/admin')
 def admin_page():
     return render_template('admin.html')
@@ -104,23 +112,62 @@ def admin_page():
 
 @auth_bp.route('/api/session_check', methods=['GET'])
 def session_check():
-    return jsonify({"logged_in": session.get('admin_logged_in', False)})
+    if session.get('admin_logged_in'):
+        return jsonify({
+            "logged_in": True,
+            "username": session.get('admin_username', 'admin'),
+            "role": session.get('admin_role', 'super_admin')
+        })
+    return jsonify({"logged_in": False})
 
 
 @csrf.exempt
 @auth_bp.route('/api/login', methods=['POST'])
 @limiter.limit("5 per minute")
 def api_login():
-    password = request.json.get('password')
+    data = request.json or {}
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+
+    # 方式一：多帳號系統 — 查詢 AdminUser collection
+    if username and db is not None:
+        admin_user = db.admin_users.find_one({"username": username})
+        if admin_user and check_password_hash(admin_user['password_hash'], password):
+            session['admin_logged_in'] = True
+            session['admin_username'] = admin_user['username']
+            session['admin_role'] = admin_user.get('role', 'ops')
+            session.permanent = True
+            write_audit_log(admin_user['username'], '登入系統')
+            return jsonify({
+                "success": True,
+                "message": "登入成功",
+                "username": admin_user['username'],
+                "role": admin_user['role']
+            })
+
+    # 方式二：環境變數密碼 (向下相容，視為 super_admin)
     admin_hash = current_app.config['ADMIN_PASSWORD_HASH']
     if admin_hash and check_password_hash(admin_hash, password):
         session['admin_logged_in'] = True
+        session['admin_username'] = 'admin'
+        session['admin_role'] = 'super_admin'
         session.permanent = True
-        return jsonify({"success": True, "message": "登入成功"})
-    return jsonify({"success": False, "message": "密碼錯誤"}), 401
+        write_audit_log('admin', '登入系統 (主密碼)')
+        return jsonify({
+            "success": True,
+            "message": "登入成功",
+            "username": "admin",
+            "role": "super_admin"
+        })
+
+    return jsonify({"success": False, "message": "帳號或密碼錯誤"}), 401
 
 
 @auth_bp.route('/api/logout', methods=['POST'])
 def api_logout():
+    username = session.get('admin_username', 'unknown')
+    write_audit_log(username, '登出系統')
     session.pop('admin_logged_in', None)
+    session.pop('admin_username', None)
+    session.pop('admin_role', None)
     return jsonify({"success": True})
