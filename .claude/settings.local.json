@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \":*)",
+      "Bash(gh pr:*)",
+      "Bash(where gh:*)",
+      "Bash(winget list:*)",
+      "Bash(grep -rn captcha_answer /c/Users/jonse/OneDrive/文件/承天中承府/ --include=*.py)",
+      "Bash(grep -rn \"captcha_answer\\\\|/api/captcha\" /c/Users/jonse/OneDrive/文件/承天中承府/ --include=*.py --include=*.html --include=*.js)",
+      "Bash(grep -rn \"url_for\\(''''[a-z_]*''''\\)\" *.html)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(grep -E \"\\\\.\\(py|html|js|txt\\)$\")"
+    ]
+  }
+}

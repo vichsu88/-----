@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request, session, Response, current_app
 
-from database import db
+from database import db, write_audit_log
 from extensions import csrf
 from utils.decorators import login_required, user_login_required
 from utils.helpers import get_object_id, validate_real_name, mask_name
@@ -279,6 +279,7 @@ def mark_donations_reported():
             {"_id": {"$in": object_ids}},
             {"$set": {"is_reported": True, "reportedAt": datetime.now(timezone.utc).replace(tzinfo=None)}}
         )
+        write_audit_log(session.get('admin_username', 'admin'), '標記已稟告', '', f'{len(object_ids)} 筆')
     return jsonify({"success": True})
 
 
@@ -315,6 +316,7 @@ def confirm_order_payment(oid):
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     db.orders.update_one({'_id': oid_obj}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}})
+    write_audit_log(session.get('admin_username', 'admin'), '確認收款', order.get('orderId', oid), f"${order.get('total', 0)}")
     cust = order['customer']
 
     if order.get('orderType') in ['donation', 'fund', 'committee']:
@@ -389,6 +391,7 @@ def delete_order(oid):
         send_email(order['customer']['email'], subject, body,
                    current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'])
 
+    write_audit_log(session.get('admin_username', 'admin'), '刪除訂單', order.get('orderId', oid) if order else oid)
     db.orders.delete_one({'_id': oid_obj})
     return jsonify({"success": True})
 
@@ -410,6 +413,7 @@ def ship_order(oid):
     db.orders.update_one({'_id': oid_obj}, {'$set': {
         'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 'trackingNumber': tracking_num
     }})
+    write_audit_log(session.get('admin_username', 'admin'), '出貨', order.get('orderId', oid), tracking_num)
     cust = order['customer']
     email_subject = f"【承天中承府】訂單出貨通知 ({order['orderId']})"
     email_html = generate_shop_email_html(order, 'shipped', tracking_num, db=db)
