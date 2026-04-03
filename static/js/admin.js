@@ -5,35 +5,34 @@ document.addEventListener('DOMContentLoaded', () => {
        ========================================= */
     const Core = {
         getCsrfToken: () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-        
+
         async apiFetch(url, options = {}) {
-            const headers = { 
-                'Content-Type': 'application/json', 
-                'X-CSRFToken': this.getCsrfToken(), 
-                ...(options.headers || {}) 
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCsrfToken(),
+                ...(options.headers || {})
             };
             try {
                 const response = await fetch(url, { ...options, credentials: 'include', headers });
                 if (!response.ok) throw new Error((await response.text()) || `Error: ${response.status}`);
                 const contentType = response.headers.get('content-type');
                 return contentType?.includes('json') ? response.json() : response.text();
-            } catch (error) { 
-                console.error('API Fetch Error:', error); 
+            } catch (error) {
+                console.error('API Fetch Error:', error);
                 try {
                     const errObj = JSON.parse(error.message);
                     alert(errObj.message || '發生錯誤');
                 } catch(e) {
-                    alert('操作失敗，請檢查網路或權限'); 
+                    alert('操作失敗，請檢查網路或權限');
                 }
-                throw error; 
+                throw error;
             }
         },
 
         confirmAction(message, actionCallback) {
             if (confirm(message)) actionCallback();
         },
-        
-        // 工具：安全地序列化資料至 HTML 屬性
+
         safeStringify(obj) {
             return JSON.stringify(obj).replace(/'/g, "&apos;");
         }
@@ -73,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         setupNavigation() {
-            // 使用策略模式 (Object Map) 優化 If-Else 鏈
             const tabActions = {
                 'tab-products': () => ProductManager.fetchList(),
                 'tab-donations': () => window.switchDonationTab('incense'),
@@ -81,7 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'tab-feedback': () => FeedbackManager.fetchList(),
                 'tab-fund': () => { SettingsManager.fetchFund(); ContentManager.fetchAnnouncements(); },
                 'tab-qa': () => ContentManager.fetchFaqs(),
-                'tab-links': () => { SettingsManager.fetchLinks(); SettingsManager.fetchBankInfo(); }
+                'tab-links': () => { SettingsManager.fetchLinks(); SettingsManager.fetchBankInfo(); },
+                'tab-receipts': () => {}
             };
 
             const navItems = document.querySelectorAll('.nav-item');
@@ -89,18 +88,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             navItems.forEach(btn => {
                 btn.addEventListener('click', () => {
-                    // UI 切換
                     navItems.forEach(el => el.classList.remove('active'));
                     tabContents.forEach(el => el.classList.remove('active'));
-                    
+
                     btn.classList.add('active');
                     const tabId = btn.dataset.tab;
                     document.getElementById(tabId)?.classList.add('active');
                     if (this.pageTitleDisplay) this.pageTitleDisplay.textContent = btn.innerText;
-                    
+
                     if (window.innerWidth <= 768) this.toggleSidebar(false);
 
-                    // 執行對應的資料載入
                     if(tabActions[tabId]) tabActions[tabId]();
                 });
             });
@@ -119,9 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setupModals() {
             document.querySelectorAll('.admin-modal-overlay').forEach(m => {
-                m.addEventListener('click', (e) => { 
+                m.addEventListener('click', (e) => {
                     if(e.target === m || e.target.classList.contains('modal-close-btn')) {
-                        m.classList.remove('is-visible'); 
+                        m.classList.remove('is-visible');
                     }
                 });
             });
@@ -139,20 +136,20 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const data = await fetch('/api/session_check').then(res => res.json());
                 data.logged_in ? UI.showAdminContent() : UI.showLogin();
-            } catch(e) { 
-                UI.showLogin(); 
+            } catch(e) {
+                UI.showLogin();
             }
         },
-        
+
         async login(password) {
             try {
-                const res = await fetch('/api/login', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ password }) 
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
                 });
                 const data = await res.json();
-                if (data.success) location.reload(); 
+                if (data.success) location.reload();
                 else {
                     const errEl = document.getElementById('login-error');
                     if(errEl) errEl.textContent = '密碼錯誤';
@@ -161,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         async logout() {
-            await Core.apiFetch('/api/logout', { method: 'POST' }); 
+            await Core.apiFetch('/api/logout', { method: 'POST' });
             location.reload();
         }
     };
@@ -193,13 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if(addProdBtn) addProdBtn.onclick = () => this.showModal();
             if(this.form) this.form.onsubmit = this.saveProduct.bind(this);
 
-            // 使用事件委派優化按鈕點擊效能
             if(this.listEl) {
                 this.listEl.addEventListener('click', (e) => {
                     if (e.target.classList.contains('del-prod')) {
                         Core.confirmAction('刪除？', async () => {
-                            await Core.apiFetch(`/api/products/${e.target.dataset.id}`, {method:'DELETE'}); 
-                            this.fetchList(); 
+                            await Core.apiFetch(`/api/products/${e.target.dataset.id}`, {method:'DELETE'});
+                            this.fetchList();
                         });
                     } else if (e.target.classList.contains('edit-prod')) {
                         this.showModal(JSON.parse(e.target.dataset.data));
@@ -224,12 +220,12 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('upload_preset', 'temple_upload');
 
             const submitBtn = document.querySelector('#product-form button[type="submit"]');
-            
+
             try {
-                if(submitBtn) { 
+                if(submitBtn) {
                     submitBtn.dataset.originalText = submitBtn.textContent;
-                    submitBtn.textContent = '圖片上傳中...'; 
-                    submitBtn.disabled = true; 
+                    submitBtn.textContent = '圖片上傳中...';
+                    submitBtn.disabled = true;
                     submitBtn.style.opacity = '0.7';
                 }
 
@@ -239,16 +235,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if(data.secure_url) {
-                    this.imgHidden.value = data.secure_url; 
+                    this.imgHidden.value = data.secure_url;
                 } else {
                     alert('圖片上傳失敗');
                 }
             } catch (err) {
                 alert('圖片上傳發生錯誤');
             } finally {
-                if(submitBtn) { 
-                    submitBtn.textContent = submitBtn.dataset.originalText || '儲存商品'; 
-                    submitBtn.disabled = false; 
+                if(submitBtn) {
+                    submitBtn.textContent = submitBtn.dataset.originalText || '儲存商品';
+                    submitBtn.disabled = false;
                     submitBtn.style.opacity = '1';
                 }
             }
@@ -259,18 +255,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'variant-row d-flex gap-10 mt-10';
             div.innerHTML = `
-                <input type="text" placeholder="規格名稱" class="var-name mb-0" value="${name}" style="flex:2;">
-                <input type="number" placeholder="價格" class="var-price mb-0" value="${price}" style="flex:1;">
-                <button type="button" class="btn btn--red remove-var-btn" style="padding:8px 12px;">×</button>
+                <input type="text" placeholder="規格名稱" class="var-name mb-0 flex-2">
+                <input type="number" placeholder="價格" class="var-price mb-0 flex-1">
+                <button type="button" class="btn btn--red remove-var-btn p-10">×</button>
             `;
             div.querySelector('.remove-var-btn').onclick = () => div.remove();
             this.variantsContainer.appendChild(div);
         },
 
         showModal(p = null) {
-            this.form.reset(); 
-            this.variantsContainer.innerHTML = ''; 
-            this.imgPreview.style.display = 'none'; 
+            this.form.reset();
+            this.variantsContainer.innerHTML = '';
+            this.imgPreview.style.display = 'none';
             this.imgHidden.value = '';
             this.form.seriesSort.value = 10;
 
@@ -286,11 +282,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.form.isDonation.checked = p.isDonation || false;
                 this.form.series.value = p.series || '';
                 this.form.seriesSort.value = p.seriesSort || 0;
-                
-                if (p.image) { 
-                    this.imgPreview.src = p.image; 
-                    this.imgPreview.style.display = 'block'; 
-                    this.imgHidden.value = p.image; 
+
+                if (p.image) {
+                    this.imgPreview.src = p.image;
+                    this.imgPreview.style.display = 'block';
+                    this.imgHidden.value = p.image;
                 }
                 if (p.variants?.length > 0) {
                     p.variants.forEach(v => this.addVariantRow(v.name, v.price));
@@ -316,24 +312,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 let html = '';
                 for (const [cat, items] of Object.entries(groups)) {
-                    html += `<h3 style="background:#eee; padding:10px; border-radius:5px; color:#555;">📂 ${cat}</h3>`;
+                    html += `<h3 class="category-header">📂 ${cat}</h3>`;
                     html += items.map(p => {
-                        const varsHtml = p.variants?.length > 0 
+                        const varsHtml = p.variants?.length > 0
                             ? p.variants.map(v => `<small>${v.name}: $${v.price}</small>`).join(' | ')
                             : `<small>單價: $${p.price}</small>`;
 
                         return `
-                        <div class="feedback-card" style="display:flex; gap:15px; align-items:center;">
-                            <div style="width:80px; height:80px; background:#eee; flex-shrink:0; border-radius:4px; overflow:hidden;">
-                                ${p.image ? `<img src="${p.image}" style="width:100%; height:100%; object-fit:cover;">` : ''}
+                        <div class="feedback-card product-card">
+                            <div class="product-thumb">
+                                ${p.image ? `<img src="${p.image}">` : ''}
                             </div>
-                            <div style="flex:1;">
-                                ${p.isDonation ? '<span style="background:#C48945; color:#fff; padding:2px 6px; font-size:12px; border-radius:4px;">捐贈項目</span>' : ''}
-                                <h4 style="margin:5px 0;">${p.name}</h4>
-                                <div style="color:#555;">${varsHtml}</div>
-                                <small style="color:${p.isActive?'green':'red'}">${p.isActive?'● 上架中':'● 已下架'}</small>
+                            <div class="flex-1">
+                                ${p.isDonation ? '<span class="badge-donation">捐贈項目</span>' : ''}
+                                <h4 class="my-5">${p.name}</h4>
+                                <div class="text-muted">${varsHtml}</div>
+                                <small class="${p.isActive ? 'text-success' : 'text-danger'}">${p.isActive ? '● 上架中' : '● 已下架'}</small>
                             </div>
-                            <div style="display:flex; gap:5px; flex-direction:column;">
+                            <div class="product-actions">
                                 <button class="btn btn--brown edit-prod" data-data='${Core.safeStringify(p)}'>編輯</button>
                                 <button class="btn btn--red del-prod" data-id="${p._id}">刪除</button>
                             </div>
@@ -341,8 +337,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }).join('');
                 }
                 this.listEl.innerHTML = html || '<p>目前無商品</p>';
-            } catch(e) { 
-                this.listEl.innerHTML = '載入失敗'; 
+            } catch(e) {
+                this.listEl.innerHTML = '載入失敗';
             }
         },
 
@@ -369,11 +365,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 variants: variants,
                 price: variants[0].price
             };
-            
+
             const id = this.form.productId.value;
-            await Core.apiFetch(id ? `/api/products/${id}` : '/api/products', { 
-                method: id ? 'PUT' : 'POST', 
-                body: JSON.stringify(data) 
+            await Core.apiFetch(id ? `/api/products/${id}` : '/api/products', {
+                method: id ? 'PUT' : 'POST',
+                body: JSON.stringify(data)
             });
             UI.closeModal('product-modal');
             this.fetchList();
@@ -388,11 +384,10 @@ document.addEventListener('DOMContentLoaded', () => {
         async fetchList() {
             const listEl = document.getElementById('orders-list');
             if(!listEl) return;
-            
+
             try {
                 const orders = await Core.apiFetch('/api/orders');
-                
-                // 一次迴圈完成三種狀態的分類，提升效能
+
                 const categorizedOrders = orders.reduce((acc, o) => {
                     if (['pending', 'paid', 'shipped'].includes(o.status)) {
                         acc[o.status].push(o);
@@ -401,19 +396,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, { pending: [], paid: [], shipped: [] });
 
                 listEl.innerHTML = `
-                    <div style="display:flex; flex-direction:column; gap:30px;">
+                    <div class="d-flex flex-col gap-30">
                         <div>
-                            <h3 style="background:#dc3545; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">1. 未付款 (${categorizedOrders.pending.length})</h3>
-                            ${categorizedOrders.pending.length ? categorizedOrders.pending.map(o => this.renderCard(o, 'pending')).join('') : '<p style="padding:10px;">無</p>'}
+                            <h3 class="status-header pending">1. 未付款 (${categorizedOrders.pending.length})</h3>
+                            ${categorizedOrders.pending.length ? categorizedOrders.pending.map(o => this.renderCard(o, 'pending')).join('') : '<p class="p-10">無</p>'}
                         </div>
                         <div>
-                            <h3 style="background:#28a745; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">2. 待出貨 (${categorizedOrders.paid.length})</h3>
-                            ${categorizedOrders.paid.length ? categorizedOrders.paid.map(o => this.renderCard(o, 'toship')).join('') : '<p style="padding:10px;">無</p>'}
+                            <h3 class="status-header approved">2. 待出貨 (${categorizedOrders.paid.length})</h3>
+                            ${categorizedOrders.paid.length ? categorizedOrders.paid.map(o => this.renderCard(o, 'toship')).join('') : '<p class="p-10">無</p>'}
                         </div>
                         <div>
-                            <h3 style="background:#007bff; color:white; padding:10px; border-radius:5px; margin:0 0 10px 0;">3. 已出貨 (${categorizedOrders.shipped.length})</h3>
-                            <div style="text-align:right;"><button class="btn btn--red" onclick="cleanupShipped()">🗑️ 清除舊單</button></div>
-                            ${categorizedOrders.shipped.length ? categorizedOrders.shipped.map(o => this.renderCard(o, 'shipped')).join('') : '<p style="padding:10px;">無</p>'}
+                            <h3 class="status-header sent">3. 已出貨 (${categorizedOrders.shipped.length})</h3>
+                            <div class="text-right"><button class="btn btn--red" onclick="cleanupShipped()">🗑️ 清除舊單</button></div>
+                            ${categorizedOrders.shipped.length ? categorizedOrders.shipped.map(o => this.renderCard(o, 'shipped')).join('') : '<p class="p-10">無</p>'}
                         </div>
                     </div>
                 `;
@@ -425,24 +420,24 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         renderCard(o, type) {
-            let btns = `<button class="btn btn--grey" onclick='viewOrderDetails(${Core.safeStringify(o)})'>🔍 查看詳情</button>`; 
+            let btns = `<button class="btn btn--grey" onclick='viewOrderDetails(${Core.safeStringify(o)})'>🔍 查看詳情</button>`;
             if(type === 'pending') {
                 btns += `<button class="btn btn--green" onclick="confirmOrder('${o._id}', '${o.orderId}')">✅ 確認收款</button>
                          <button class="btn btn--red" onclick="delOrder('${o._id}', 'shop')">刪除</button>`;
             } else if(type === 'toship') {
                 btns += `<button class="btn btn--blue" onclick="shipOrder('${o._id}')">🚚 出貨</button>`;
             }
-            const borderColor = type === 'pending' ? '#dc3545' : (type === 'toship' ? '#28a745' : '#007bff');
-            
+            const borderClass = type === 'pending' ? 'border-left-danger' : (type === 'toship' ? 'border-left-success' : 'border-left-info');
+
             return `
-            <div class="feedback-card" style="border-left:5px solid ${borderColor};">
-                <div style="display:flex; justify-content:space-between;"><b>${o.orderId}</b> <small>${o.createdAt}</small></div>
+            <div class="feedback-card ${borderClass}">
+                <div class="d-flex justify-between"><b>${o.orderId}</b> <small>${o.createdAt}</small></div>
                 <div>
-                    ${o.customer.shippingMethod === '711' ? '<span style="color:#28a745; font-weight:bold;">[7-11]</span>' : ''}
+                    ${o.customer.shippingMethod === '711' ? '<span class="badge-711">[7-11]</span>' : ''}
                     ${o.customer.name} / ${o.customer.phone} / $${o.total}
                 </div>
-                <div style="color:#666;">${o.items.map(i => `${i.name} x${i.qty}`).join(', ')}</div>
-                <div style="text-align:right; margin-top:10px;">${btns}</div>
+                <div class="text-gray">${o.items.map(i => `${i.name} x${i.qty}`).join(', ')}</div>
+                <div class="text-right mt-10">${btns}</div>
             </div>`;
         }
     };
@@ -456,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const approvedList = document.getElementById('fb-approved-list');
             const sentList = document.getElementById('fb-sent-list');
             if(!pendingList) return;
-            
+
             const [pending, approved, sent] = await Promise.all([
                 Core.apiFetch('/api/feedback/status/pending'),
                 Core.apiFetch('/api/feedback/status/approved'),
@@ -466,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const statsDiv = document.getElementById('fb-stats-bar');
             if(statsDiv) {
                 statsDiv.innerHTML = `
-                    <span style="background:#6c757d; color:white; padding:8px 15px; border-radius:20px; font-weight:bold;">
+                    <span class="badge-stats">
                         總回饋數: ${pending.length + approved.length + sent.length} 筆
                     </span>
                     <button class="btn btn--brown" onclick="printFeedbackList()">匯出回饋</button>
@@ -474,14 +469,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             pendingList.innerHTML = pending.length ? pending.map(i => `
-                <div class="feedback-card" style="border-left:5px solid #dc3545;">
-                    <div style="font-weight:bold; margin-bottom:12px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-                        👤 暱稱：${i.nickname} ${i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : ''}
+                <div class="feedback-card border-left-danger">
+                    <div class="fb-card-header">
+                        👤 暱稱：${i.nickname} ${i.has_received ? '<span class="badge-received-warning">[⚠️ 已領取過小神衣]</span>' : ''}
                     </div>
-                    <div style="background:#f9f9f9; padding:12px; border-radius:5px; margin-bottom:15px;">
-                        <div class="pre-wrap" style="color:#444;">${i.content}</div>
+                    <div class="content-preview">
+                        <div class="pre-wrap text-muted">${i.content}</div>
                     </div>
-                    <div style="text-align:right;">
+                    <div class="text-right">
                         <button class="btn btn--grey" onclick='editFb(${Core.safeStringify(i)})'>編輯</button>
                         <button class="btn btn--green" onclick="approveFb('${i._id}')">✅ 核准 (寄信)</button>
                         <button class="btn btn--red" onclick="delFb('${i._id}')">🗑️ 刪除</button>
@@ -489,31 +484,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`).join('') : '<p>無</p>';
 
             if(approvedList) approvedList.innerHTML = approved.length ? approved.map(i => `
-                <div class="feedback-card" style="border-left:5px solid #28a745;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                <div class="feedback-card border-left-success">
+                    <div class="d-flex justify-between align-center detail-header">
                         <strong>編號: ${i.feedbackId || '無'}</strong>
-                        <span style="color:#888; font-size:13px;">${i.approvedAt || ''}</span>
+                        <span class="fs-13 text-gray">${i.approvedAt || ''}</span>
                     </div>
-                    <div style="margin-bottom: 15px; line-height: 1.8;">
-                        <strong>${i.realName}</strong> (農曆生日: ${i.lunarBirthday || '未提供'}) 
-                        ${i.has_received ? '<span style="color:#dc3545; font-weight:bold; font-size:13px; margin-left:10px;">[⚠️ 已領取過小神衣]</span>' : ''}<br>
-                        <span style="color:#666; font-size:14px;">📍 ${i.address}</span>
+                    <div class="mb-15 lh-18">
+                        <strong>${i.realName}</strong> (農曆生日: ${i.lunarBirthday || '未提供'})
+                        ${i.has_received ? '<span class="badge-received-warning">[⚠️ 已領取過小神衣]</span>' : ''}<br>
+                        <span class="text-gray fs-14">📍 ${i.address}</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px;">
+                    <div class="fb-card-footer">
                         <button class="btn btn--grey" onclick='viewFbDetail(${Core.safeStringify(i)})'>📖 查看回饋內容</button>
                         <button class="btn btn--blue" onclick="shipGift('${i._id}')">🎁 填寫物流並寄出</button>
                     </div>
                 </div>`).join('') : '<p>無</p>';
-                
+
             if(sentList) sentList.innerHTML = sent.length ? sent.map(i => `
-                <div class="feedback-card" style="border-left:5px solid #007bff; background:#f0f0f0; cursor:pointer;" 
-                     onmouseover="this.style.background='#e2e6ea'" onmouseout="this.style.background='#f0f0f0'"
+                <div class="feedback-card feedback-card--sent"
                      onclick='viewFbDetail(${Core.safeStringify(i)})'>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:16px; font-weight:bold; color:#333;">${i.nickname}</span>
-                        <span style="background:#dbeafe; color:#007bff; padding:2px 8px; border-radius:12px; font-size:12px;">${i.feedbackId || '無編號'}</span>
+                    <div class="d-flex justify-between align-center">
+                        <span class="fs-16 fw-bold text-dark">${i.nickname}</span>
+                        <span class="badge-sent">${i.feedbackId || '無編號'}</span>
                     </div>
-                    <div style="text-align:right; font-size:12px; color:#888; margin-top:5px;">
+                    <div class="text-right fs-12 text-gray mt-5">
                         寄出日: ${i.sentAt || '未知'} (點擊查看詳情)
                     </div>
                 </div>`).join('') : '<p>無</p>';
@@ -528,9 +522,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const links = await Core.apiFetch('/api/links');
             const el = document.getElementById('links-list');
             if(el) el.innerHTML = links.map(l => `
-                <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
-                    <b>${l.name}</b> 
-                    <input value="${l.url}" readonly style="flex:1; padding:8px; border:1px solid #ddd; background:#f9f9f9;"> 
+                <div class="links-row">
+                    <b>${l.name}</b>
+                    <input value="${l.url}" readonly class="input-display mb-0">
                     <button class="btn btn--brown" onclick="updLink('${l._id}', '${l.url}')">修改</button>
                 </div>`).join('');
         },
@@ -564,9 +558,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById('announcements-list');
             if(el) el.innerHTML = data.map(a => `
                 <div class="feedback-card">
-                    <div><small>${a.date}</small> <b>${a.title}</b> ${a.isPinned?'<span style="color:red">[置頂]</span>':''}</div>
-                    <div class="pre-wrap" style="margin:10px 0;">${a.content}</div>
-                    <div style="text-align:right;">
+                    <div><small>${a.date}</small> <b>${a.title}</b> ${a.isPinned ? '<span class="badge-pinned">[置頂]</span>' : ''}</div>
+                    <div class="pre-wrap my-5">${a.content}</div>
+                    <div class="text-right">
                         <button class="btn btn--brown" onclick='editAnn(${Core.safeStringify(a)})'>編輯</button>
                         <button class="btn btn--red" onclick="delAnn('${a._id}')">刪除</button>
                     </div>
@@ -578,9 +572,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById('faq-list');
             if(el) el.innerHTML = faqs.map(f => `
                 <div class="feedback-card">
-                    <div><span style="background:#C48945; color:#fff; padding:2px 5px; border-radius:4px; font-size:12px;">${f.category}</span> ${f.isPinned?'<span style="color:red">[置頂]</span>':''} <b>${f.question}</b></div>
-                    <div class="pre-wrap" style="margin:10px 0; color:#555;">${f.answer}</div>
-                    <div style="text-align:right">
+                    <div><span class="badge-tag">${f.category}</span> ${f.isPinned ? '<span class="badge-pinned">[置頂]</span>' : ''} <b>${f.question}</b></div>
+                    <div class="pre-wrap my-5 text-muted">${f.answer}</div>
+                    <div class="text-right">
                         <button class="btn btn--brown" onclick='editFaq(${Core.safeStringify(f)})'>編輯</button>
                         <button class="btn btn--red" onclick="delFaq('${f._id}')">刪除</button>
                     </div>
@@ -617,11 +611,9 @@ document.addEventListener('DOMContentLoaded', () => {
     /* =========================================
        8. 導出所有 HTML 內聯事件綁定 (Global Bindings)
        ========================================= */
-       
-    // ▼▼▼ 背景更新通知標籤的函式 ▼▼▼
+
     window.updateNotificationBadges = async () => {
         try {
-            // Promise.all 並行請求提升網路效率
             const [orders, donations] = await Promise.all([
                 Core.apiFetch('/api/orders'),
                 Core.apiFetch('/api/donations/admin')
@@ -653,12 +645,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.switchDonationTab = (type) => {
         document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
         if(window.event?.target?.classList) window.event.target.classList.add('active');
-        
+
         ['incense', 'fund', 'committee'].forEach(tab => {
             const el = document.getElementById(`subtab-${tab}`);
             if(el) el.style.display = type === tab ? 'block' : 'none';
         });
-        
+
         window.fetchDonations(type);
     };
 
@@ -666,25 +658,25 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/donations/export-txt', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': Core.getCsrfToken() 
+                    'X-CSRFToken': Core.getCsrfToken()
                 },
                 body: JSON.stringify({ type: type })
             });
-            
+
             if (res.status === 404) return alert('目前無資料可供匯出');
             if (!res.ok) throw new Error('匯出失敗');
-            
+
             const blob = await res.blob();
-            const a = document.createElement('a'); 
-            a.href = URL.createObjectURL(blob); 
-            
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+
             let typeName = type === 'fund' ? '建廟基金' : (type === 'committee' ? '委員會' : '日常捐香');
-            a.download = `${typeName}名單_${new Date().toISOString().slice(0,10)}.txt`; 
+            a.download = `${typeName}名單_${new Date().toISOString().slice(0,10)}.txt`;
             a.click();
-        } catch(e) { 
-            alert('匯出發生錯誤，請檢查網路或系統狀態'); 
+        } catch(e) {
+            alert('匯出發生錯誤，請檢查網路或系統狀態');
         }
     };
 
@@ -698,10 +690,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const containerMap = { 'donation': 'incense-list', 'fund': 'fund-list', 'committee': 'committee-list' };
         const container = document.getElementById(containerMap[type]);
         if(!container) return;
-        
+
         container.innerHTML = '<p>載入中...</p>';
         let url = `/api/donations/admin?type=${type}`;
-        
+
         if (type === 'donation') {
             const filterEl = document.getElementById('incense-report-filter');
             if (filterEl && filterEl.value !== '') url += `&reported=${filterEl.value}`;
@@ -709,15 +701,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const orders = await Core.apiFetch(url);
-            
-            // 一次過濾分群提升效率
+
             const grouped = orders.reduce((acc, o) => {
                 if (o.status === 'pending' || o.status === 'paid') acc[o.status].push(o);
                 return acc;
             }, { pending: [], paid: [] });
 
             if (type === 'donation') renderIncenseList(grouped.pending, grouped.paid, container);
-            else renderFundList(grouped.pending, grouped.paid, container, type); 
+            else renderFundList(grouped.pending, grouped.paid, container, type);
 
             if (window.updateNotificationBadges) window.updateNotificationBadges();
 
@@ -739,19 +730,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const itemsStr = o.items.map(i => `${i.name} x${i.qty}`).join('、');
 
         body.innerHTML = `
-            <div style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px;">
-                <p style="margin:0 0 5px 0;"><strong>單號：</strong> ${o.orderId}</p>
-                <p style="margin:0;"><strong>送出日期：</strong> ${o.createdAt}</p>
+            <div class="detail-header">
+                <p class="mb-5"><strong>單號：</strong> ${o.orderId}</p>
+                <p class="mb-0"><strong>送出日期：</strong> ${o.createdAt}</p>
             </div>
             <p><strong>姓名：</strong> ${o.customer.name}</p>
             <p><strong>電話：</strong> ${o.customer.phone || '無'}</p>
             <p><strong>農曆生日：</strong> ${o.customer.lunarBirthday || '未提供'}</p>
             <p><strong>地址：</strong> ${o.customer.address || '無'}</p>
             <p><strong>匯款後五碼：</strong> ${o.customer.last5 || '無'}</p>
-            <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #ddd; margin-top:15px;">
-                <strong style="color:#C48945;">護持內容：</strong>
-                <p style="margin:5px 0;">${itemsStr}</p>
-                <strong style="color:#C48945; font-size: 18px;">總金額：$${o.total}</strong>
+            <div class="info-box">
+                <strong class="text-brown">護持內容：</strong>
+                <p class="my-5">${itemsStr}</p>
+                <strong class="text-brown fs-18">總金額：$${o.total}</strong>
             </div>
         `;
         modal.classList.add('is-visible');
@@ -763,11 +754,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const printWindow = window.open('', '_blank');
         let itemsHtml = '';
-        
+
         orders.forEach((o) => {
             const name = o.customer.name || '';
             const address = o.customer.address || '';
-            
+
             o.items.forEach(item => {
                 itemsHtml += `
                     <tr>
@@ -829,20 +820,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST', body: JSON.stringify({ ids: window.currentIncenseIds })
                 });
                 alert('更新成功！');
-                window.fetchDonations('donation'); 
+                window.fetchDonations('donation');
             } catch(e) { alert('更新失敗'); }
         });
     };
 
     // --- Orders ---
     window.fetchOrders = () => OrderManager.fetchList();
-    
+
     window.viewOrderDetails = (o) => {
         const modalBody = document.getElementById('order-detail-body');
         if(!modalBody) return;
-        
-        const deliveryInfo = o.customer.shippingMethod === '711' 
-            ? `<p><b>取貨:</b> <span style="background:#28a745; color:#fff; padding:2px 5px; border-radius:3px;">7-11</span> ${o.customer.storeInfo || '未抓到門市資料'}</p>`
+
+        const deliveryInfo = o.customer.shippingMethod === '711'
+            ? `<p><b>取貨:</b> <span class="badge-711-detail">7-11</span> ${o.customer.storeInfo || '未抓到門市資料'}</p>`
             : `<p><b>地址:</b> ${o.customer.address}</p>`;
 
         modalBody.innerHTML = `
@@ -851,46 +842,46 @@ document.addEventListener('DOMContentLoaded', () => {
             <h4>客戶資料</h4>
             <p><b>姓名:</b> ${o.customer.name}</p>
             <p><b>電話:</b> ${o.customer.phone}</p>
-            ${deliveryInfo}            
+            ${deliveryInfo}
             <p><b>Email:</b> ${o.customer.email}</p>
             <p><b>匯款後五碼:</b> ${o.customer.last5}</p><hr>
             <h4>訂單內容</h4>
             <ul>${o.items.map(i => `<li>${i.name} (${i.variantName||i.variant||'標準'}) x${i.qty} - $${i.price*i.qty}</li>`).join('')}</ul>
-            <p style="text-align:right; font-size:18px; color:#C48945;"><b>總金額: $${o.total}</b></p>
+            <p class="total-price"><b>總金額: $${o.total}</b></p>
             ${o.trackingNumber ? `<hr><p><b>物流單號:</b> ${o.trackingNumber}</p>` : ''}
         `;
         UI.openModal('order-detail-modal');
     };
 
-    window.confirmOrder = (id, orderId) => { 
-        Core.confirmAction(`確認收款訂單編號：${orderId}，將回信待出貨？`, async () => { 
-            await Core.apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'}); 
-            OrderManager.fetchList(); 
-        }); 
+    window.confirmOrder = (id, orderId) => {
+        Core.confirmAction(`確認收款訂單編號：${orderId}，將回信待出貨？`, async () => {
+            await Core.apiFetch(`/api/orders/${id}/confirm`, {method:'PUT'});
+            OrderManager.fetchList();
+        });
     };
 
     window.shipOrder = async (id) => {
         const trackNum = prompt("請輸入物流單號 (寄送出貨通知信)：");
-        if(trackNum) { 
+        if(trackNum) {
             await Core.apiFetch(`/api/orders/${id}/ship`, { method:'PUT', body: JSON.stringify({trackingNumber: trackNum}) });
-            alert("已出貨並通知！"); 
+            alert("已出貨並通知！");
             OrderManager.fetchList();
         }
     };
 
-    window.cleanupShipped = () => { 
-        Core.confirmAction('刪除14天前舊單？', async () => { 
-            await Core.apiFetch('/api/orders/cleanup-shipped', {method:'DELETE'}); 
-            OrderManager.fetchList(); 
-        }); 
+    window.cleanupShipped = () => {
+        Core.confirmAction('刪除14天前舊單？', async () => {
+            await Core.apiFetch('/api/orders/cleanup-shipped', {method:'DELETE'});
+            OrderManager.fetchList();
+        });
     };
 
-    window.delOrder = (id, type) => { 
-        Core.confirmAction('確定刪除？系統將自動寄送「取消通知信」給客戶。', async () => { 
-            await Core.apiFetch(`/api/orders/${id}`, {method:'DELETE'}); 
-            if(['donation', 'fund', 'committee'].includes(type)) window.fetchDonations(type); 
+    window.delOrder = (id, type) => {
+        Core.confirmAction('確定刪除？系統將自動寄送「取消通知信」給客戶。', async () => {
+            await Core.apiFetch(`/api/orders/${id}`, {method:'DELETE'});
+            if(['donation', 'fund', 'committee'].includes(type)) window.fetchDonations(type);
             else OrderManager.fetchList();
-        }); 
+        });
     };
 
     // --- Feedback ---
@@ -929,7 +920,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.nickname.value = item.nickname; form.content.value = item.content;
         form.phone.value = item.phone; form.address.value = item.address;
         form.category.value = Array.isArray(item.category) ? item.category[0] : item.category;
-        
+
         form.onsubmit = async (e) => {
             e.preventDefault();
             const data = {
@@ -945,22 +936,22 @@ document.addEventListener('DOMContentLoaded', () => {
     window.viewFbDetail = (item) => {
         const body = document.getElementById('feedback-detail-body');
         if(!body) return;
-        
-        const statusHtml = item.status === 'sent' 
+
+        const statusHtml = item.status === 'sent'
             ? `<p><strong>寄出時間：</strong> ${item.sentAt || '未知'}</p><p><strong>物流單號：</strong> ${item.trackingNumber || '無'}</p>`
             : `<p><strong>核准時間：</strong> ${item.approvedAt || '未知'}</p>`;
-        
+
         body.innerHTML = `
-            <div style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px;">
+            <div class="detail-header">
                 <p><strong>編號：</strong> ${item.feedbackId || '無'}</p>${statusHtml}
             </div>
             <p><strong>真實姓名：</strong> ${item.realName}</p><p><strong>暱稱：</strong> ${item.nickname}</p>
             <p><strong>農曆生日：</strong> ${item.lunarBirthday || '未提供'}</p>
             <p><strong>電話：</strong> ${item.phone}</p><p><strong>地址：</strong> ${item.address}</p>
             <p><strong>分類：</strong> ${Array.isArray(item.category) ? item.category.join(', ') : item.category}</p>
-            <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #ddd; margin-top:15px;">
-                <strong style="color:#C48945;">回饋內容：</strong><br>
-                <div class="pre-wrap" style="margin-top:10px;">${item.content}</div>
+            <div class="info-box">
+                <strong class="text-brown">回饋內容：</strong><br>
+                <div class="pre-wrap mt-10">${item.content}</div>
             </div>
         `;
         UI.openModal('feedback-detail-modal');
@@ -968,7 +959,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.printFeedbackList = async () => {
         const [approved, sent] = await Promise.all([Core.apiFetch('/api/feedback/status/approved'), Core.apiFetch('/api/feedback/status/sent')]);
-        const allCandidates = [...approved, ...sent]; 
+        const allCandidates = [...approved, ...sent];
         if (allCandidates.length === 0) return alert('目前沒有符合資格的名單');
 
         const printWindow = window.open('', '_blank');
@@ -1010,25 +1001,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById(formId);
         const btn = document.getElementById(btnId);
         if(!form || !btn) return;
-        
+
         btn.onclick = () => {
-            form.reset(); 
+            form.reset();
             const titleEl = document.getElementById(titleId);
             if(titleEl) titleEl.textContent = newTitle;
-            
+
             if(form.announcementId) form.announcementId.value = '';
             if(form.faqId) form.faqId.value = '';
             UI.openModal(modalId);
         };
         window[`edit${titleId === 'ann-modal-title' ? 'Ann' : 'Faq'}`] = (data) => {
-            form.reset(); 
+            form.reset();
             const titleEl = document.getElementById(titleId);
             if(titleEl) titleEl.textContent = `編輯${newTitle.replace('新增', '')}`;
-            
+
             populateFn(form, data); UI.openModal(modalId);
         };
     };
-    
+
     setupFormModal('add-announcement-btn', 'announcement-modal', 'ann-modal-title', '新增公告', 'announcement-form', (form, a) => {
         form.announcementId.value = a._id; form.date.value = a.date; form.title.value = a.title; form.content.value = a.content; form.isPinned.checked = a.isPinned;
     });
@@ -1063,66 +1054,66 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '';
 
         if (pending.length > 0) {
-            html += `<h3 style="background:#dc3545; color:white; padding:10px; border-radius:5px; margin-bottom:10px;">⚠️ 待收款審核 (${pending.length})</h3>`;
+            html += `<h3 class="status-header pending">⚠️ 待收款審核 (${pending.length})</h3>`;
             html += pending.map(o => `
-                <div class="feedback-card" style="border-left:5px solid #dc3545; background:#fff5f5;">
-                    <div style="font-size:12px; color:#888; border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px;">單號: ${o.orderId} | 送出日期: ${o.createdAt}</div>
-                    <div><strong>${o.customer.name}</strong> / <span style="color:#555;">${o.items.map(i => `${i.name} x${i.qty}`).join('、')}</span> / <span style="color:#dc3545; font-weight:bold;">未收款 ($${o.total})</span></div>
-                    <div style="text-align:right; margin-top:10px; padding-top:10px; border-top:1px dashed #ccc;">
+                <div class="feedback-card border-left-danger fb-card-pending-bg">
+                    <div class="card-meta">單號: ${o.orderId} | 送出日期: ${o.createdAt}</div>
+                    <div><strong>${o.customer.name}</strong> / <span class="text-muted">${o.items.map(i => `${i.name} x${i.qty}`).join('、')}</span> / <span class="text-danger fw-bold">未收款 ($${o.total})</span></div>
+                    <div class="card-actions">
                         <button class="btn btn--grey" onclick='viewDonationDetail(${Core.safeStringify(o)})'>🔍 查看完整內容</button>
                         <button class="btn btn--green" onclick="confirmDonation('${o._id}', 'donation')">✅ 已收款</button>
                         <button class="btn btn--red" onclick="delOrder('${o._id}', 'donation')">🗑️ 刪除</button>
                     </div>
                 </div>`).join('');
-            html += `<hr style="margin:20px 0; border:0; border-top:1px dashed #ccc;">`;
+            html += `<hr class="hr-dashed">`;
         }
-        
+
         if (isUnreportedView && paid.length > 0) {
-            html += `<div style="background:#fff3cd; padding:10px; margin-bottom:15px; border-radius:5px; border:1px solid #ffeeba; display:flex; justify-content:space-between; align-items:center;">
+            html += `<div class="alert-warning">
                 <span>⚠️ 共 <strong>${paid.length}</strong> 筆未稟告資料</span><button class="btn btn--blue" onclick="markAllReported()">✅ 將本頁標記為已稟告</button></div>`;
         }
 
-        if (paid.length === 0 && pending.length === 0) return container.innerHTML = '<p style="padding:20px; text-align:center; color:#999;">查無資料</p>';
+        if (paid.length === 0 && pending.length === 0) return container.innerHTML = '<p class="empty-state">查無資料</p>';
 
         html += paid.map(o => `
-            <div class="feedback-card" style="border-left:5px solid ${o.is_reported ? '#28a745' : '#ffc107'};">
-                <div style="font-size:12px; color:#888; border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px;">單號: ${o.orderId} | 送出日期: ${o.createdAt}</div>
-                <div><strong>${o.customer.name}</strong> / <span style="color:#555;">${o.items.map(i => `${i.name} x${i.qty}`).join('、')}</span> / <span style="font-weight:bold; color:${o.is_reported ? '#155724' : '#856404'};">${o.is_reported ? '已稟告' : '未稟告'}</span></div>
-                <div style="text-align:right; margin-top:10px;"><button class="btn btn--grey" onclick='viewDonationDetail(${Core.safeStringify(o)})'>🔍 查看完整內容</button></div>
+            <div class="feedback-card ${o.is_reported ? 'border-left-success' : 'border-left-warning'}">
+                <div class="card-meta">單號: ${o.orderId} | 送出日期: ${o.createdAt}</div>
+                <div><strong>${o.customer.name}</strong> / <span class="text-muted">${o.items.map(i => `${i.name} x${i.qty}`).join('、')}</span> / <span class="${o.is_reported ? 'text-reported' : 'text-unreported'}">${o.is_reported ? '已稟告' : '未稟告'}</span></div>
+                <div class="text-right mt-10"><button class="btn btn--grey" onclick='viewDonationDetail(${Core.safeStringify(o)})'>🔍 查看完整內容</button></div>
             </div>`).join('');
-        
+
         container.innerHTML = html;
     }
 
     function renderFundList(pending, paid, container, orderType = 'fund') {
         let html = '';
         if (pending.length > 0) {
-            html += `<h3 style="background:#dc3545; color:white; padding:10px; border-radius:5px; margin-bottom:10px;">⚠️ 待收款審核 (${pending.length})</h3>`;
+            html += `<h3 class="status-header pending">⚠️ 待收款審核 (${pending.length})</h3>`;
             html += pending.map(o => `
-                <div class="feedback-card" style="border-left:5px solid #dc3545; background:#fff5f5;">
-                    <div style="font-size:12px; color:#888; border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px;">單號: ${o.orderId} | 送出日期: ${o.createdAt}</div>
-                    <div><strong>${o.customer.name}</strong> / <span style="color:#555;">${o.items.map(i => i.name).join('、')}</span> / <span style="color:#dc3545; font-weight:bold;">金額: $${o.total}</span></div>
-                    <div style="text-align:right; margin-top:10px; padding-top:10px; border-top:1px dashed #ccc;">
+                <div class="feedback-card border-left-danger fb-card-pending-bg">
+                    <div class="card-meta">單號: ${o.orderId} | 送出日期: ${o.createdAt}</div>
+                    <div><strong>${o.customer.name}</strong> / <span class="text-muted">${o.items.map(i => i.name).join('、')}</span> / <span class="text-danger fw-bold">金額: $${o.total}</span></div>
+                    <div class="card-actions">
                         <button class="btn btn--grey" onclick='viewDonationDetail(${Core.safeStringify(o)})'>🔍 查看完整內容</button>
                         <button class="btn btn--green" onclick="confirmDonation('${o._id}', '${orderType}')">✅ 已收款</button>
                         <button class="btn btn--red" onclick="delOrder('${o._id}', '${orderType}')">🗑️ 刪除</button>
                     </div>
                 </div>`).join('');
-            html += `<hr style="margin:20px 0; border:0; border-top:1px dashed #ccc;">`;
+            html += `<hr class="hr-dashed">`;
         }
 
         if (paid.length > 0) {
             html += paid.map(o => {
-                const amountDisplay = orderType === 'committee' ? '' : ` / <span style="color:#C48945; font-weight:bold;">金額: $${o.total}</span>`;
+                const amountDisplay = orderType === 'committee' ? '' : ` / <span class="text-brown fw-bold">金額: $${o.total}</span>`;
                 return `
-                <div class="feedback-card" style="border-left:5px solid #C48945;">
-                    <div style="font-size:12px; color:#888; border-bottom:1px solid #eee; padding-bottom:8px; margin-bottom:8px;">單號: ${o.orderId} | 送出日期: ${o.createdAt}</div>
-                    <div><strong>${o.customer.name}</strong> / <span style="color:#555;">${o.items.map(i => i.name).join('、')}</span>${amountDisplay}</div>
-                    <div style="text-align:right; margin-top:10px;"><button class="btn btn--grey" onclick='viewDonationDetail(${Core.safeStringify(o)})'>🔍 查看完整內容</button></div>
+                <div class="feedback-card border-left-brown">
+                    <div class="card-meta">單號: ${o.orderId} | 送出日期: ${o.createdAt}</div>
+                    <div><strong>${o.customer.name}</strong> / <span class="text-muted">${o.items.map(i => i.name).join('、')}</span>${amountDisplay}</div>
+                    <div class="text-right mt-10"><button class="btn btn--grey" onclick='viewDonationDetail(${Core.safeStringify(o)})'>🔍 查看完整內容</button></div>
                 </div>`
             }).join('');
         } else if (pending.length === 0) {
-            html += '<p style="padding:20px; text-align:center; color:#999;">查無資料</p>';
+            html += '<p class="empty-state">查無資料</p>';
         }
         container.innerHTML = html;
     }
@@ -1141,7 +1132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async handleDelete() {
             const receiptId = this.input.value.trim();
-            
+
             if (!receiptId) {
                 alert('請先輸入要刪除的單據編號！');
                 return;
@@ -1158,9 +1149,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (result && result.success) {
                         alert(result.message);
-                        this.input.value = ''; 
-                        
-                        // 順便刷新一下目前的列表資料
+                        this.input.value = '';
+
                         if (document.getElementById('tab-orders')?.classList.contains('active')) OrderManager.fetchList();
                         if (document.getElementById('tab-donations')?.classList.contains('active')) window.fetchDonations();
                         if (document.getElementById('tab-feedback')?.classList.contains('active')) FeedbackManager.fetchList();
@@ -1176,10 +1166,80 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     };
-    
+
+    /* =========================================
+       11. 萬能單據修改器 (Receipt Manager)
+       ========================================= */
+    const ReceiptManager = {
+        queryInput: document.getElementById('receiptQueryInput'),
+        queryBtn: document.getElementById('receiptQueryBtn'),
+        saveBtn: document.getElementById('receiptSaveBtn'),
+        editor: document.getElementById('receipt-json-editor'),
+        wrapper: document.getElementById('receipt-editor-wrapper'),
+        currentReceiptId: null,
+
+        init() {
+            if (!this.queryBtn || !this.queryInput) return;
+            this.queryBtn.addEventListener('click', () => this.handleQuery());
+            this.queryInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); this.handleQuery(); }
+            });
+            if (this.saveBtn) this.saveBtn.addEventListener('click', () => this.handleSave());
+        },
+
+        async handleQuery() {
+            const receiptId = this.queryInput.value.trim();
+            if (!receiptId) return alert('請輸入單據編號');
+
+            this.queryBtn.disabled = true;
+            this.queryBtn.textContent = '查詢中...';
+
+            try {
+                const data = await Core.apiFetch(`/api/admin/receipt/${receiptId}`);
+                this.currentReceiptId = receiptId;
+                this.editor.value = JSON.stringify(data, null, 4);
+                this.wrapper.classList.remove('d-none');
+            } catch (error) {
+                this.wrapper.classList.add('d-none');
+                this.currentReceiptId = null;
+            } finally {
+                this.queryBtn.disabled = false;
+                this.queryBtn.textContent = '查詢';
+            }
+        },
+
+        async handleSave() {
+            if (!this.currentReceiptId) return alert('請先查詢單據');
+
+            let parsed;
+            try {
+                parsed = JSON.parse(this.editor.value);
+            } catch (e) {
+                return alert('JSON 格式錯誤，請檢查語法。\n\n' + e.message);
+            }
+
+            this.saveBtn.disabled = true;
+            this.saveBtn.textContent = '儲存中...';
+
+            try {
+                const result = await Core.apiFetch(`/api/admin/receipt/${this.currentReceiptId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(parsed)
+                });
+                alert(result.message || '儲存成功');
+                this.handleQuery();
+            } catch (error) {
+                console.error('儲存失敗:', error);
+            } finally {
+                this.saveBtn.disabled = false;
+                this.saveBtn.textContent = '💾 儲存修改';
+            }
+        }
+    };
 
     // 啟動流程
     UI.init();
     Auth.checkSession();
-    ForceDeleteManager.init(); // 啟動強制刪除監聽
+    ForceDeleteManager.init();
+    ReceiptManager.init();
 });

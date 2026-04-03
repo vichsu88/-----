@@ -7,10 +7,10 @@
     <title>帥府後台管理系統</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        :root { 
-            --main-brown: #C48945; 
+        :root {
+            --main-brown: #C48945;
             --main-brown-hover: #a57136;
-            --sidebar-bg: #2c3e50; 
+            --sidebar-bg: #2c3e50;
             --bg-light: #f4f6f9;
             --text-dark: #333;
             --text-gray: #666;
@@ -20,13 +20,13 @@
             --info: #007bff;
             --secondary: #6c757d;
         }
-        
+
         /* --- Base & Reset --- */
         body { background-color: var(--bg-light); margin: 0; height: 100vh; overflow: hidden; display: flex; font-family: 'Microsoft JhengHei', sans-serif; color: var(--text-dark); }
         h2, h3 { margin-top: 0; }
-        
-        /* --- Utilities (新增共用類別以取代行內樣式) --- */
-        .d-none { display: none; } 
+
+        /* --- Utilities --- */
+        .d-none { display: none; }
         .d-flex { display: flex; }
         .flex-col { flex-direction: column; }
         .flex-wrap { flex-wrap: wrap; }
@@ -35,40 +35,54 @@
         .align-end { align-items: flex-end; }
         .flex-1 { flex: 1; }
         .flex-2 { flex: 2; }
-        
+
+        .gap-5 { gap: 5px; }
         .gap-10 { gap: 10px; }
+        .gap-15 { gap: 15px; }
         .gap-20 { gap: 20px; }
-        
+        .gap-30 { gap: 30px; }
+
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .text-brown { color: var(--main-brown); }
         .text-danger { color: var(--danger); }
         .text-gray { color: var(--text-gray); }
         .text-dark { color: var(--text-dark); }
+        .text-muted { color: #555; }
+        .text-success { color: var(--success); }
         .fw-bold { font-weight: bold; }
-        
+
+        .fs-12 { font-size: 12px; }
+        .fs-13 { font-size: 13px; }
         .fs-14 { font-size: 14px; }
         .fs-16 { font-size: 16px; }
+        .fs-18 { font-size: 18px; }
         .lh-16 { line-height: 1.6; }
         .lh-18 { line-height: 1.8; }
-        
+
         .w-100 { width: 100%; }
         .w-120px { width: 120px; }
         .h-42px { height: 42px; }
-        
+
         .mt-0 { margin-top: 0; }
+        .mt-5 { margin-top: 5px; }
         .mt-10 { margin-top: 10px; }
+        .mt-15 { margin-top: 15px; }
         .mt-20 { margin-top: 20px; }
         .mt-30 { margin-top: 30px; }
         .mb-0 { margin-bottom: 0 !important; }
+        .mb-5 { margin-bottom: 5px; }
+        .mb-8 { margin-bottom: 8px; }
         .mb-10 { margin-bottom: 10px; }
         .mb-15 { margin-bottom: 15px; }
         .mb-20 { margin-bottom: 20px; }
-        
+        .my-5 { margin-top: 5px; margin-bottom: 5px; }
+
         .p-5 { padding: 5px; }
+        .p-10 { padding: 10px; }
         .p-12 { padding: 12px; }
         .p-20 { padding: 20px; }
-        
+
         /* --- Layout: Login --- */
         #login-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #eee; z-index: 9999; display: flex; justify-content: center; align-items: center; }
         .login-box { background: #fff; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; }
@@ -76,7 +90,7 @@
         /* --- Layout: Admin Wrapper --- */
         #admin-wrapper { display: flex; width: 100%; height: 100%; }
         .sidebar-overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
-        
+
         /* Sidebar */
         .admin-sidebar { width: 250px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -84,42 +98,36 @@
         .nav-item { display: block; width: 100%; padding: 15px 20px; color: #bdc3c7; background: none; border: none; text-align: left; font-size: 16px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .nav-item.active { background: rgba(0,0,0,0.2); color: #fff; border-left-color: var(--main-brown); }
-        
+
         /* Main Content */
         .admin-main { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg-light); position: relative; width: 100%; box-sizing: border-box; }
         .page-title { margin-bottom: 20px; color: #333; border-bottom: 2px solid #E6BA67; padding-bottom: 10px; }
-        
+
         /* Tabs */
         .tab-content { display: none; width: 100%; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
+
         /* Sub-tabs */
         .sub-tab-group { display: flex; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); }
         .sub-tab-btn { flex: 1; padding: 15px; border: none; background: none; font-size: 16px; cursor: pointer; color: var(--text-gray); font-weight: bold; border-bottom: 4px solid transparent; transition: 0.3s; }
         .sub-tab-btn.active { color: var(--main-brown); border-bottom-color: var(--main-brown); background: rgba(196, 137, 69, 0.05); }
         .sub-tab-btn:hover { background: rgba(0,0,0,0.02); }
-        /* 側邊欄通知標籤 (紅底白字 N) */
+
+        /* 側邊欄通知標籤 */
         .badge-n {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            background-color: var(--danger);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-left: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: inline-flex; justify-content: center; align-items: center;
+            background-color: var(--danger); color: white; border-radius: 50%;
+            width: 20px; height: 20px; font-size: 12px; font-weight: bold;
+            margin-left: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
+
         /* --- Components --- */
         /* Cards */
         .card, .feedback-card, .admin-list-item { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
         .admin-list-item { padding: 15px; }
         .admin-list-item-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-        
+
         /* Bank & Product Specific Cards */
         .bank-card { flex: 1; padding: 15px; border-radius: 8px; }
         .bank-card--shop { background: #f9f9f9; border: 1px solid #eee; }
@@ -127,6 +135,49 @@
         .product-series-box { background: #f0f4f8; padding: 10px; border-radius: 5px; border: 1px dashed #ccc; }
         .product-variant-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
         .product-preview-img { max-height: 150px; display: none; border-radius: 5px; }
+
+        /* Step 1: 從 admin.js 行內樣式抽取的 CSS 元件類別 */
+        .product-card { display: flex; gap: 15px; align-items: center; }
+        .product-thumb { width: 80px; height: 80px; background: #eee; flex-shrink: 0; border-radius: 4px; overflow: hidden; }
+        .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .product-actions { display: flex; gap: 5px; flex-direction: column; }
+        .category-header { background: #eee; padding: 10px; border-radius: 5px; color: #555; }
+        .border-left-danger { border-left: 5px solid var(--danger); }
+        .border-left-success { border-left: 5px solid var(--success); }
+        .border-left-info { border-left: 5px solid var(--info); }
+        .border-left-warning { border-left: 5px solid #ffc107; }
+        .border-left-brown { border-left: 5px solid var(--main-brown); }
+        .badge-donation { background: var(--main-brown); color: #fff; padding: 2px 6px; font-size: 12px; border-radius: 4px; }
+        .badge-tag { background: var(--main-brown); color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 12px; }
+        .badge-stats { background: var(--secondary); color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; }
+        .badge-711 { color: var(--success); font-weight: bold; }
+        .badge-711-detail { background: var(--success); color: #fff; padding: 2px 5px; border-radius: 3px; }
+        .badge-sent { background: #dbeafe; color: var(--info); padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        .badge-received-warning { color: var(--danger); font-weight: bold; font-size: 13px; margin-left: 10px; }
+        .badge-pinned { color: red; }
+        .fb-card-header { font-weight: bold; margin-bottom: 12px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .fb-card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px; }
+        .fb-card-pending-bg { background: #fff5f5; }
+        .feedback-card--sent { border-left: 5px solid var(--info); background: #f0f0f0; cursor: pointer; }
+        .feedback-card--sent:hover { background: #e2e6ea; }
+        .detail-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        .info-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 15px; }
+        .content-preview { background: #f9f9f9; padding: 12px; border-radius: 5px; margin-bottom: 15px; }
+        .card-meta { font-size: 12px; color: #888; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px; }
+        .card-actions { text-align: right; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; }
+        .alert-warning { background: #fff3cd; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ffeeba; display: flex; justify-content: space-between; align-items: center; }
+        .empty-state { padding: 20px; text-align: center; color: #999; }
+        .hr-dashed { margin: 20px 0; border: 0; border-top: 1px dashed #ccc; }
+        .links-row { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .input-display { flex: 1; padding: 8px; border: 1px solid #ddd; background: #f9f9f9; }
+        .total-price { text-align: right; font-size: 18px; color: var(--main-brown); }
+        .text-reported { color: #155724; font-weight: bold; }
+        .text-unreported { color: #856404; font-weight: bold; }
+
+        /* Step 3 & 4: 單據管理區域 */
+        .danger-zone { padding: 20px; border: 1px solid #ffcccc; background-color: #fffafb; border-radius: 8px; }
+        .danger-zone h3 { color: #d9534f; }
+        .receipt-editor-area { font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; min-height: 400px; white-space: pre; line-height: 1.5; }
 
         /* Buttons */
         .btn { padding: 6px 12px; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 14px; transition: 0.2s; display: inline-block; text-align: center; }
@@ -192,7 +243,7 @@
     <div id="admin-content" style="display:none;">
         <button id="sidebar-toggle">☰ 選單</button>
         <div id="sidebar-overlay" class="sidebar-overlay-bg" style="display:none;"></div>
-        
+
         <div id="admin-wrapper">
             <aside class="admin-sidebar" id="admin-sidebar">
                 <div class="sidebar-header">
@@ -207,6 +258,7 @@
                     <button class="nav-item" data-tab="tab-fund">📊 基金與公告</button>
                     <button class="nav-item" data-tab="tab-qa">❓ 常見問答</button>
                     <button class="nav-item" data-tab="tab-links">🔗 連結與設定</button>
+                    <button class="nav-item" data-tab="tab-receipts">⚙️ 單據管理</button>
                 </nav>
                 <div class="p-20">
                     <button id="logout-btn" class="btn btn--red btn-block">登出</button>
@@ -334,7 +386,7 @@
                         <div class="card">
                             <h3 class="mt-0">🏦 匯款帳號設定</h3>
                             <p class="help-text">設定不同用途的收款帳號，系統將自動帶入對應信件中。</p>
-                            
+
                             <form id="bank-form">
                                 <div class="d-flex gap-20 flex-wrap">
                                     <div class="bank-card bank-card--shop">
@@ -356,146 +408,37 @@
                         </div>
                     </div>
                 </div>
-                <div class="admin-card" style="margin-top: 20px; padding: 20px; border: 1px solid #ffcccc; background-color: #fffafb; border-radius: 8px;">
-                    <h3 style="color: #d9534f;">⚠️ 單據強制刪除</h3>
-                    <p style="color: #666; font-size: 14px;">請輸入完整的單據編號 (如 FND2026...、FB2026...)。<br><strong>注意：刪除後資料將從資料庫徹底抹除，無法復原。</strong></p>
-                    
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <input type="text" id="forceDeleteInput" placeholder="請輸入單號" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <button id="forceDeleteBtn" style="background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                            確認刪除
-                        </button>
+
+                <!-- Step 3 & 4: 單據管理分頁 -->
+                <div id="tab-receipts" class="tab-content">
+                    <div class="card mb-20">
+                        <h3 class="mt-0">🔍 萬能單據修改器</h3>
+                        <p class="help-text">輸入單據編號 (如 ORD2026...、FB2026...)，可直接查詢並以 JSON 格式編輯原始資料。</p>
+                        <div class="d-flex gap-10 mt-15">
+                            <input type="text" id="receiptQueryInput" placeholder="請輸入單號" class="mb-0 flex-1">
+                            <button id="receiptQueryBtn" class="btn btn--brown">查詢</button>
+                        </div>
+                        <div id="receipt-editor-wrapper" class="d-none mt-15">
+                            <textarea id="receipt-json-editor" class="receipt-editor-area w-100"></textarea>
+                            <button id="receiptSaveBtn" class="btn btn--green btn-block mt-10 p-12 fs-16">💾 儲存修改</button>
+                        </div>
+                    </div>
+
+                    <div class="danger-zone">
+                        <h3>⚠️ 單據強制刪除</h3>
+                        <p class="fs-14 text-gray">請輸入完整的單據編號 (如 FND2026...、FB2026...)。<br><strong>注意：刪除後資料將從資料庫徹底抹除，無法復原。</strong></p>
+                        <div class="d-flex gap-10 mt-15">
+                            <input type="text" id="forceDeleteInput" placeholder="請輸入單號" class="mb-0 flex-1">
+                            <button id="forceDeleteBtn" class="btn btn--red fw-bold">確認刪除</button>
+                        </div>
                     </div>
                 </div>
+
             </main>
         </div>
     </div>
 
-    <div id="product-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h3 id="product-modal-title">新增/編輯商品</h3>
-            <form id="product-form">
-                <input type="hidden" name="productId">
-                <label>分類</label>
-                <select name="category">
-                    <option value="手工香品">手工香品</option>
-                    <option value="保養品">保養品</option>
-                    <option value="元帥娘愛用">元帥娘愛用</option>
-                    <option value="健康茶品">健康茶品</option>
-                    <option value="其他">其他</option>
-                </select>
-                
-                <div class="product-series-box d-flex gap-10 mb-15">
-                    <div class="flex-2">
-                        <label class="help-text">系列名稱 (選填)</label>
-                        <input type="text" name="series" placeholder="例如：招財系列" list="series-list" class="mb-0">
-                        <datalist id="series-list"></datalist>
-                    </div>
-                    <div class="flex-1">
-                        <label class="help-text">系列排序 (數字)</label>
-                        <input type="number" name="seriesSort" placeholder="1, 3, 5..." class="mb-0">
-                    </div>
-                </div>
-
-                <label>商品名稱</label><input type="text" name="name" required>
-                <label>商品描述</label><textarea name="description" rows="3"></textarea>
-                <label>商品圖片</label>
-                <input type="file" id="product-image-input" accept="image/*">
-                <input type="hidden" name="image">
-                <img id="preview-image" class="product-preview-img mt-10">
-                
-                <div class="product-variant-box mt-20">
-                    <label class="text-brown">規格與價格設定</label>
-                    <div id="variants-container"></div>
-                    <button type="button" id="add-variant-btn" class="btn btn--grey w-100 mt-10 p-5">+ 新增規格</button>
-                </div>
-
-                <div class="mt-20 d-flex gap-20">
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="isActive" checked> 上架中
-                    </label>
-                    <label class="checkbox-label text-brown">
-                        <input type="checkbox" name="isDonation"> 🙏 開放捐贈 (Donation)
-                    </label>
-                </div>
-                <button type="submit" class="btn btn--brown w-100 mt-20 p-12 fs-16">儲存商品</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="order-detail-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h3>訂單詳細資料</h3>
-            <div id="order-detail-body" class="fs-16 lh-16 text-dark"></div>
-        </div>
-    </div>
-
-    <div id="announcement-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h3 id="ann-modal-title">新增公告</h3>
-            <form id="announcement-form">
-                <input type="hidden" name="announcementId"> 
-                <label>日期 (YYYY/MM/DD)</label><input type="text" name="date" required>
-                <label>標題</label><input type="text" name="title" required>
-                <label>內文</label><textarea name="content" rows="5" required></textarea>
-                <label class="checkbox-label"><input type="checkbox" name="isPinned"> 置頂顯示</label>
-                <button type="submit" class="btn btn--brown w-100 mt-10">發布</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="faq-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h3 id="faq-modal-title">新增問答</h3>
-            <form id="faq-form">
-                <input type="hidden" name="faqId"> 
-                <label>問題</label><input type="text" name="question" required>
-                <label>回答</label><textarea name="answer" rows="5" required></textarea>
-                <label>分類</label>
-                <div id="faq-modal-category-btns" class="mb-10"></div>
-                <input type="text" name="other_category" placeholder="輸入新分類或選擇上方">
-                <label class="checkbox-label"><input type="checkbox" name="isPinned"> 置頂</label>
-                <button type="submit" class="btn btn--brown w-100">儲存</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="feedback-edit-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h3>編輯回饋內容</h3>
-            <form id="feedback-edit-form">
-                <input type="hidden" name="feedbackId">
-                <label>真實姓名</label><input type="text" name="realName">
-                <label>顯示暱稱</label><input type="text" name="nickname">
-                <label>分類</label><input type="text" name="category">
-                <label>內容</label><textarea name="content" rows="5"></textarea>
-                <label>電話</label><input type="text" name="phone">
-                <label>地址</label><input type="text" name="address">
-                <button type="submit" class="btn btn--brown w-100">儲存修改</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="feedback-detail-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h3>回饋詳細資料</h3>
-            <div id="feedback-detail-body" class="lh-18 text-dark"></div>
-        </div>
-    </div>
-
-    <div id="donation-detail-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h3>詳細資料</h3>
-            <div id="donation-detail-body" class="fs-16 lh-16 text-dark"></div>
-        </div>
-    </div>
+    {% include 'admin/_modals.html' %}
 
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>

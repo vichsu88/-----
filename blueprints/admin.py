@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from bson import ObjectId
 from flask import Blueprint, jsonify, request
 
 from database import db
@@ -62,6 +65,68 @@ def get_public_bank_info():
         "bankName": settings.get('bankName', defaults[usage]['name']),
         "account": settings.get('account', defaults[usage]['account'])
     })
+
+
+@admin_bp.route('/api/admin/receipt/<receipt_id>', methods=['GET'])
+@login_required
+def query_receipt(receipt_id):
+    """Step 4: 萬能單據查詢 — 依單號前綴路由至對應 collection"""
+    if db is None:
+        return jsonify({"error": "資料庫未連線"}), 500
+
+    clean_id = receipt_id.strip().upper()
+
+    if clean_id.startswith('FB'):
+        doc = db.feedback.find_one({"feedbackId": clean_id})
+    elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
+        doc = db.orders.find_one({"orderId": clean_id})
+    else:
+        return jsonify({"error": f"無法識別的單號格式：{clean_id}"}), 400
+
+    if not doc:
+        return jsonify({"error": f"找不到單號：{clean_id}"}), 404
+
+    # 序列化 ObjectId 與 datetime 為 JSON 安全字串
+    def serialize(obj):
+        if isinstance(obj, dict):
+            return {k: serialize(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [serialize(v) for v in obj]
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return obj
+
+    return jsonify(serialize(doc))
+
+
+@admin_bp.route('/api/admin/receipt/<receipt_id>', methods=['PUT'])
+@login_required
+def update_receipt(receipt_id):
+    """Step 4: 萬能單據修改 — 以 $set 安全更新，保護 _id"""
+    if db is None:
+        return jsonify({"error": "資料庫未連線"}), 500
+
+    clean_id = receipt_id.strip().upper()
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "未收到 JSON 資料"}), 400
+
+    # 移除 _id 防止 MongoDB 報錯
+    data.pop('_id', None)
+
+    if clean_id.startswith('FB'):
+        result = db.feedback.update_one({"feedbackId": clean_id}, {"$set": data})
+    elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
+        result = db.orders.update_one({"orderId": clean_id}, {"$set": data})
+    else:
+        return jsonify({"error": f"無法識別的單號格式：{clean_id}"}), 400
+
+    if result.matched_count == 0:
+        return jsonify({"error": f"找不到單號：{clean_id}"}), 404
+
+    return jsonify({"success": True, "message": f"單據 {clean_id} 已更新成功"})
 
 
 @admin_bp.route('/api/admin/receipt/<receipt_id>', methods=['DELETE'])
