@@ -371,7 +371,7 @@ def export_data_csv():
 @admin_bp.route('/api/admin/data/members')
 @admin_required(roles=['super_admin', 'data', 'finance'])
 def get_data_members():
-    """會員資料庫 — 加上 try-except 保護"""
+    """會員資料庫 — 加上 try-except 保護與 _serialize_doc 全面淨化"""
     if db is None:
         return jsonify([])
 
@@ -379,9 +379,12 @@ def get_data_members():
     results = []
     for user in cursor:
         try:
+            # 1. 處理需要特製格式的欄位
             user['_id'] = str(user['_id'])
             user['lastLoginAt'] = _tw_time(user.get('lastLoginAt'))
             user['createdAt'] = _tw_time(user.get('createdAt'))
+            
+            # 2. 計算訂單與回饋數
             line_id = user.get('lineId')
             if line_id:
                 user['orderCount'] = db.orders.count_documents({"lineId": line_id})
@@ -389,15 +392,25 @@ def get_data_members():
             else:
                 user['orderCount'] = 0
                 user['feedbackCount'] = 0
-            results.append(user)
-        except Exception:
-            # 跳過有問題的 record，不讓整個 API 炸掉
-            user['_id'] = str(user.get('_id', ''))
-            user['lastLoginAt'] = str(user.get('lastLoginAt', ''))
-            user['createdAt'] = str(user.get('createdAt', ''))
-            user['orderCount'] = 0
-            user['feedbackCount'] = 0
-            results.append(user)
+                
+            # 🛡️ 3. 關鍵防護：用 _serialize_doc 清理整包 user，確保沒有漏網之魚的 ObjectId/datetime
+            results.append(_serialize_doc(user))
+            
+        except Exception as e:
+            print(f"[會員列表載入錯誤] 無法解析用戶: {e}") # 讓後端終端機印出真實錯誤，方便未來除錯
+            
+            # 🛡️ 4. Except 的真安全網：出錯時，給一個「全新且絕對乾淨」的字典，不要直接 append 原本的 user
+            safe_user = {
+                '_id': str(user.get('_id', '')),
+                'displayName': user.get('displayName', '解析異常戶'),
+                'lineId': user.get('lineId', ''),
+                'lastLoginAt': str(user.get('lastLoginAt', '')),
+                'createdAt': str(user.get('createdAt', '')),
+                'orderCount': 0,
+                'feedbackCount': 0
+            }
+            results.append(safe_user)
+
     return jsonify(results)
 
 
