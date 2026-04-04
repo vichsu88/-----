@@ -107,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { attr: 'data-ops-tab', cls: 'ops-sub', actions: {
                     'ops-print': () => OpsManager.loadPrintQueue(),
                     'ops-ship': () => OpsManager.loadShipQueue(),
+                    'ops-feedback-review': () => OpsManager.loadFeedbackReview(), // 新增這行
                     'ops-feedback': () => OpsManager.loadFeedbackGifts()
                 }},
                 { attr: 'data-data-tab', cls: 'data-sub', actions: {
@@ -297,7 +298,49 @@ document.addEventListener('DOMContentLoaded', () => {
        ========================================= */
     const OpsManager = {
         printQueueData: [],
-
+        // 請將這段貼在 OpsManager 裡面：
+async loadFeedbackReview() {
+    const rEl = document.getElementById('ops-fb-review-list');
+    if (!rEl) return;
+    rEl.innerHTML = '載入中...';
+    try {
+        const pendingList = await Core.apiFetch('/api/feedback/status/pending');
+        if (!pendingList.length) {
+            rEl.innerHTML = '<p class="empty-state">🎉 目前無待審核的回饋</p>';
+            return;
+        }
+        
+        // 這裡就是你想要的「全部展開顯示」卡片設計
+        rEl.innerHTML = pendingList.map(i => `
+            <div class="feedback-card border-left-warning mb-20" style="background-color: #faf8f5;">
+                <div class="d-flex justify-between align-center border-bottom pb-10 mb-10">
+                    <strong class="text-brown">🕒 投稿時間：${i.createdAt}</strong>
+                    <span class="badge-tag">${Array.isArray(i.category) ? i.category.join(', ') : (i.category || '未分類')}</span>
+                </div>
+                <div class="d-flex flex-wrap gap-20 mb-10 fs-15">
+                    <div style="flex: 1; min-width: 200px;">
+                        <p class="mb-5"><strong>真實姓名：</strong> ${i.realName || '未提供'}</p>
+                        <p class="mb-5"><strong>電話：</strong> ${i.phone || '未提供'}</p>
+                        <p class="mb-0"><strong>地址：</strong> ${i.address || '未提供'}</p>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <p class="mb-5"><strong>前台顯示暱稱：</strong> ${i.nickname || '未提供'}</p>
+                        <p class="mb-0"><strong>農曆生日：</strong> ${i.lunarBirthday || '未提供'}</p>
+                    </div>
+                </div>
+                <div class="info-box bg-white p-15 mt-10" style="border: 1px dashed #d4c5b9; border-radius: 8px;">
+                    <strong class="text-brown fs-16">💬 回饋內容：</strong>
+                    <div class="pre-wrap mt-10 fs-16 lh-18">${i.content || ''}</div>
+                </div>
+                <div class="fb-card-footer mt-15 d-flex justify-end gap-10">
+                    <button class="btn btn--grey" onclick='editFb(${Core.safeStringify(i)})'>✏️ 修改</button>
+                    <button class="btn btn--green" onclick="approveFb('${i._id}')">✅ 核准刊登</button>
+                    <button class="btn btn--red" onclick="delFb('${i._id}')">🗑️ 刪除拒絕</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) { rEl.innerHTML = '<p class="text-danger">載入失敗</p>'; }
+},
         async loadPrintQueue() {
             const el = document.getElementById('print-queue-list');
             if (!el) return;
@@ -1232,15 +1275,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- 回饋管理 ---
-    window.approveFb = (id) => Core.confirmAction('確認核准？(將寄信通知)', async () => {
-        await Core.apiFetch(`/api/feedback/${id}/approve`, { method: 'PUT' });
-        DataManager.search();
-    });
-
-    window.delFb = (id) => Core.confirmAction('確認刪除？(將寄信通知)', async () => {
-        await Core.apiFetch(`/api/feedback/${id}`, { method: 'DELETE' });
-        DataManager.search();
-    });
+    window.approveFb = (id) => Core.confirmAction('確認核准？(將寄信通知信徒)', async () => {
+    await Core.apiFetch(`/api/feedback/${id}/approve`, { method: 'PUT' });
+    // 智慧刷新：如果在歷史總表就重整總表，如果在回饋審核就重整審核表
+    if (document.getElementById('ops-feedback-review')?.style.display !== 'none') OpsManager.loadFeedbackReview();
+    if (document.getElementById('tab-data')?.classList.contains('active')) DataManager.search();
+});
+    window.delFb = (id) => Core.confirmAction('確認刪除？(將寄出婉拒通知信)', async () => {
+    await Core.apiFetch(`/api/feedback/${id}`, { method: 'DELETE' });
+    if (document.getElementById('ops-feedback-review')?.style.display !== 'none') OpsManager.loadFeedbackReview();
+    if (document.getElementById('tab-data')?.classList.contains('active')) DataManager.search();
+});
 
     window.shipGift = async (id) => {
         const track = prompt('請輸入小神衣物流單號：');
@@ -1253,32 +1298,35 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.editFb = (item) => {
-        const form = document.getElementById('feedback-edit-form');
-        if (!form) return;
-        form.feedbackId.value = item._id;
-        form.realName.value = item.realName || '';
-        form.nickname.value = item.nickname || '';
-        form.content.value = item.content || '';
-        form.phone.value = item.phone || '';
-        form.address.value = item.address || '';
-        form.category.value = Array.isArray(item.category) ? item.category[0] : (item.category || '');
+    const form = document.getElementById('feedback-edit-form');
+    if (!form) return;
+    form.feedbackId.value = item._id;
+    form.realName.value = item.realName || '';
+    form.nickname.value = item.nickname || '';
+    form.content.value = item.content || '';
+    form.phone.value = item.phone || '';
+    form.address.value = item.address || '';
+    form.category.value = Array.isArray(item.category) ? item.category[0] : (item.category || '');
 
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const data = {
-                realName: form.realName.value,
-                nickname: form.nickname.value,
-                category: [form.category.value],
-                content: form.content.value,
-                phone: form.phone.value,
-                address: form.address.value
-            };
-            await Core.apiFetch(`/api/feedback/${form.feedbackId.value}`, { method: 'PUT', body: JSON.stringify(data) });
-            UI.closeModal('feedback-edit-modal');
-            DataManager.search();
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const data = {
+            realName: form.realName.value,
+            nickname: form.nickname.value,
+            category: [form.category.value],
+            content: form.content.value,
+            phone: form.phone.value,
+            address: form.address.value
         };
-        UI.openModal('feedback-edit-modal');
+        await Core.apiFetch(`/api/feedback/${form.feedbackId.value}`, { method: 'PUT', body: JSON.stringify(data) });
+        UI.closeModal('feedback-edit-modal');
+        
+        // 儲存後智慧刷新
+        if (document.getElementById('ops-feedback-review')?.style.display !== 'none') OpsManager.loadFeedbackReview();
+        if (document.getElementById('tab-data')?.classList.contains('active')) DataManager.search();
     };
+    UI.openModal('feedback-edit-modal');
+};
 
     window.viewFbDetail = (item) => {
         const body = document.getElementById('feedback-detail-body');

@@ -70,13 +70,14 @@
                     <div id="finance-pending-list">載入中...</div>
                 </div>
 
-                <!-- ===== Module 2: 站務作業中樞 ===== -->
                 <div id="tab-ops" class="tab-content">
                     <div class="sub-tab-group glass-panel">
-                        <button class="sub-tab-btn active" data-ops-tab="ops-print">🖨️ 文書列印排程</button>
-                        <button class="sub-tab-btn" data-ops-tab="ops-ship">📦 出貨物流排程</button>
-                        <button class="sub-tab-btn" data-ops-tab="ops-feedback">🎁 回饋寄送</button>
+                        <button class="sub-tab-btn active" data-ops-tab="ops-print">🖨️ 捐香列印</button>
+                        <button class="sub-tab-btn" data-ops-tab="ops-ship">📦 待出貨明細</button>
+                        <button class="sub-tab-btn" data-ops-tab="ops-feedback-review">📝 回饋審核</button>
+                        <button class="sub-tab-btn" data-ops-tab="ops-feedback">🎁 待寄小神衣</button>
                     </div>
+                    
                     <div id="ops-print" class="ops-sub">
                         <div class="d-flex justify-between align-center mb-15 flex-wrap gap-10">
                             <span class="help-text">已付款捐香 — 尚未列印紅紙</span>
@@ -87,6 +88,7 @@
                         </div>
                         <div id="print-queue-list">載入中...</div>
                     </div>
+                    
                     <div id="ops-ship" class="ops-sub" style="display:none;">
                         <div class="d-flex justify-between align-center mb-15 flex-wrap gap-10">
                             <span class="help-text">已付款結緣品訂單 — 待出貨</span>
@@ -94,6 +96,15 @@
                         </div>
                         <div id="ship-queue-list">載入中...</div>
                     </div>
+                    
+                    <div id="ops-feedback-review" class="ops-sub" style="display:none;">
+                        <div class="d-flex justify-between align-center mb-15 flex-wrap gap-10">
+                            <span class="help-text">信徒新送出的回饋，請確認內容後核准刊登</span>
+                            <button class="btn btn--grey" onclick="OpsManager.loadFeedbackReview()">🔄 重新整理</button>
+                        </div>
+                        <div id="ops-fb-review-list">載入中...</div>
+                    </div>
+
                     <div id="ops-feedback" class="ops-sub" style="display:none;">
                         <h3 class="status-header approved">待寄送小神衣 (已核准)</h3>
                         <div id="ops-fb-approved-list"></div>
