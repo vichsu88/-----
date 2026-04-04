@@ -241,6 +241,16 @@
                         <label>真實姓名 <span class="text-danger">*</span></label>
                         <input type="text" name="realName" required>
                     </div>
+                    <div class="form-row">
+                    <div class="form-group">
+                        <label>性別</label>
+                        <select name="gender" class="form-control">
+                            <option value="">請選擇性別</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                </div>
                     <div class="form-group">
                         <label>暱稱 (公開顯示) <span class="text-danger">*</span></label>
                         <input type="text" name="nickname" required>
@@ -402,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 els.profileForm.address.value = u.address || '';
                 els.profileForm.lunarBirthday.value = u.lunarBirthday || '';
                 els.profileForm.birthTime.value = u.birthTime || '吉時';
-
+                els.profileForm.gender.value = u.gender || '';
                 // 處理小神衣狀態
                 if (u.has_received_gift) {
                     els.giftBadge.textContent = '🎁 小神衣：已領取';
@@ -445,7 +455,8 @@ document.addEventListener('DOMContentLoaded', () => {
             email: els.profileForm.email.value.trim(),
             address: els.profileForm.address.value.trim(),
             lunarBirthday: els.profileForm.lunarBirthday.value.trim(),
-            birthTime: els.profileForm.birthTime.value
+            birthTime: els.profileForm.birthTime.value,
+            gender: els.profileForm.gender.value
         };
 
         try {

@@ -55,6 +55,23 @@ def update_user_profile():
     line_id = session.get('user_line_id')
 
     is_valid, error_msg = validate_real_name(data.get('realName', '').strip())
+    update_data = {
+        "realName": data.get('realName', '').strip(),
+        "nickname": data.get('nickname', '').strip(),
+        "phone": data.get('phone', '').strip(),
+        "email": data.get('email', '').strip(),
+        "address": data.get('address', '').strip(),
+        "lunarBirthday": data.get('lunarBirthday', '').strip(),
+        "birthTime": data.get('birthTime', '吉時'),
+        # 💡 新增：接收並更新性別資料
+        "gender": data.get('gender', ''),
+        "updatedAt": datetime.now(timezone.utc).replace(tzinfo=None)
+    }
+
+    db.users.update_one(
+        {"lineId": line_id},
+        {"$set": update_data}
+    )
     if not is_valid:
         return jsonify({"error": error_msg}), 400
 
