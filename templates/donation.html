@@ -565,14 +565,28 @@
                 return; 
             }
 
-            grid.innerHTML = products.map(p => `
+            grid.innerHTML = products.map(p => {
+                // 💡 新增：處理規格下拉選單
+                let variantHtml = '';
+                let displayPrice = p.price;
+                if (p.variants && p.variants.length > 0) {
+                    displayPrice = p.variants[0].price; // 預設顯示第一個規格的價格
+                    variantHtml = `
+                        <select id="variant-${p._id}" class="form-control" style="margin-bottom:10px; padding:5px; text-align:center; color: var(--divine-brown); border-color: rgba(218, 165, 32, 0.5);" onchange="changeVariant('${p._id}')">
+                            ${p.variants.map(v => `<option value="${v.name}" data-price="${v.price}">${v.name} ($${v.price})</option>`).join('')}
+                        </select>
+                    `;
+                }
+
+                return `
                 <div class="donation-card" id="card-${p._id}">
                     <img src="${p.image || '/static/images/common/default_product.png'}" 
                          class="d-img" loading="lazy" 
                          onerror="this.src='/static/images/common/default_product.png'" alt="${p.name}">
                     <div class="d-info">
                         <div class="d-title">${p.name}</div>
-                        <div class="d-price">護持金 NT$ ${p.price}</div>
+                        ${variantHtml}
+                        <div class="d-price" id="price-${p._id}">護持金 NT$ ${displayPrice}</div>
                         <div class="qty-control">
                             <button type="button" class="qty-btn" onclick="changeQty('${p._id}', -1)">-</button>
                             <span class="qty-display" id="qty-${p._id}">0</span>
@@ -580,18 +594,53 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         } catch(e) { 
             console.error('Load products failed', e); 
         }
     }
+    window.changeVariant = (id) => {
+        const select = document.getElementById(`variant-${id}`);
+        const priceDisplay = document.getElementById(`price-${id}`);
+        if (!select || !priceDisplay) return;
+
+        const selectedOption = select.options[select.selectedIndex];
+        const newPrice = parseFloat(selectedOption.dataset.price);
+        const newVariantName = selectedOption.value;
+
+        // 更新卡片上的價格顯示
+        priceDisplay.textContent = `護持金 NT$ ${newPrice}`;
+
+        // 如果這個項目已經在購物車(清單)裡，同步更新購物車裡的價格和規格，並重算總計
+        if (selectedItems[id]) {
+            selectedItems[id].price = newPrice;
+            selectedItems[id].variantName = newVariantName;
+            updateSummary();
+        }
+    };
 
     window.changeQty = (id, delta) => {
         const p = products.find(x => x._id === id);
         if(!p) return;
         
         if(!selectedItems[id]) {
-            selectedItems[id] = { id: p._id, name: p.name, price: p.price, qty: 0 };
+            // 💡 新增：加入時，檢查是否有規格選單，如果有就抓取當下選中的價格和名稱
+            let currentPrice = p.price;
+            let currentVariantName = null;
+            const select = document.getElementById(`variant-${id}`);
+            if (select) {
+                const option = select.options[select.selectedIndex];
+                currentPrice = parseFloat(option.dataset.price);
+                currentVariantName = option.value;
+            }
+
+            selectedItems[id] = { 
+                id: p._id, 
+                name: p.name, 
+                price: currentPrice, 
+                qty: 0,
+                variantName: currentVariantName // 存入規格名稱
+            };
         }
         
         selectedItems[id].qty = Math.max(0, selectedItems[id].qty + delta);
@@ -617,9 +666,11 @@
         }
         
         section.classList.remove('d-none');
-        document.getElementById('summary-body').innerHTML = items.map(item => 
-            `<tr><td>${item.name}</td><td>${item.qty}</td><td>$${item.price * item.qty}</td></tr>`
-        ).join('');
+        document.getElementById('summary-body').innerHTML = items.map(item => {
+            // 💡 新增：如果該項目有規格，將其串接在名字後方
+            const vStr = item.variantName ? ` <span style="font-size:0.85em; color:#888;">[${item.variantName}]</span>` : '';
+            return `<tr><td>${item.name}${vStr}</td><td>${item.qty}</td><td>$${item.price * item.qty}</td></tr>`;
+        }).join('');
         
         const total = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
         document.getElementById('summary-total').textContent = total;

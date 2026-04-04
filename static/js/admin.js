@@ -1238,7 +1238,10 @@ async loadFeedbackReview() {
     window.viewDonationDetail = (o) => {
         const body = document.getElementById('donation-detail-body');
         if (!body) return;
-        const itemsStr = (o.items || []).map(i => `${i.name} x${i.qty}`).join('、');
+        const itemsStr = (o.items || []).map(i => {
+        const vStr = i.variantName ? ` <span class="text-gray">[${i.variantName}]</span>` : '';
+        return `${i.name}${vStr} x${i.qty}`;
+    }).join('、');
         
         // 💡 新增：處理歷程區塊
         let historyHtml = '<hr><div class="info-box mt-15"><strong class="text-brown">⏳ 處理歷程：</strong><div class="mt-5 fs-14 lh-18">';

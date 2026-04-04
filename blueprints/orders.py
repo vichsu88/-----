@@ -117,7 +117,8 @@ def export_donations_txt():
     idx = 1
     for doc in orders:
         cust = doc.get('customer', {})
-        items_str = "、".join([f"{i['name']}x{i['qty']}" for i in doc.get('items', [])])
+        # 加上規格名稱的判斷
+        items_str = "、".join([f"{i.get('name', '')}{'['+i.get('variantName', '')+']' if i.get('variantName') else ''}x{i.get('qty', 1)}" for i in doc.get('items', [])])
         paid_date = doc.get('updatedAt').strftime('%Y/%m/%d') if doc.get('updatedAt') else ''
 
         si.write(f"【{idx}】\n")

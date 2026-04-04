@@ -359,7 +359,8 @@ def export_data_csv():
 
     for doc in cursor:
         cust = doc.get('customer', {})
-        items_str = '；'.join([f"{i.get('name', '')}x{i.get('qty', 1)}" for i in doc.get('items', [])])
+        # 加上規格名稱的判斷
+        items_str = '；'.join([f"{i.get('name', '')}{'('+i.get('variantName', '')+')' if i.get('variantName') else ''}x{i.get('qty', 1)}" for i in doc.get('items', [])])
         row = [
             doc.get('orderId', ''),
             _TYPE_LABELS.get(doc.get('orderType', ''), ''),
