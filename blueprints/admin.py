@@ -375,45 +375,52 @@ def export_data_csv():
 @admin_bp.route('/api/admin/data/members')
 @admin_required(roles=['super_admin', 'data', 'finance'])
 def get_data_members():
-    """會員資料庫 — 雙層防護網版本"""
+    """會員資料庫 — 效能極致優化版 (解決 OOM 問題)"""
     if db is None:
         return jsonify([])
 
-    # 🛡️ 大範圍防護：將資料庫查詢與迴圈整個包起來
     try:
-        cursor = db.users.find({}).sort("lastLoginAt", -1)
+        # 🚀 秘訣 1：一次性向資料庫要「所有人的訂單總數」字典，極度省 RAM 且神速
+        order_counts = {}
+        for item in db.orders.aggregate([{"$group": {"_id": "$lineId", "count": {"$sum": 1}}}]):
+            if item.get("_id"):
+                order_counts[item["_id"]] = item["count"]
+
+        # 🚀 秘訣 2：一次性向資料庫要「所有人的回饋總數」字典
+        feedback_counts = {}
+        for item in db.feedback.aggregate([{"$group": {"_id": "$lineId", "count": {"$sum": 1}}}]):
+            if item.get("_id"):
+                feedback_counts[item["_id"]] = item["count"]
+
+        # 🚀 秘訣 3：記憶體瘦身 (Projection)
+        # 只抓前台真的需要的欄位，不要把不相干的資料庫欄位拉進 RAM。
+        # 同時設定 limit(3000) 當作安全閥，避免未來會員破萬時 RAM 又爆掉。
+        projection = {
+            "displayName": 1, "lineId": 1, "lastLoginAt": 1, 
+            "createdAt": 1, "pictureUrl": 1, "realName": 1
+        }
+        cursor = db.users.find({}, projection).sort("lastLoginAt", -1).limit(3000)
+        
         results = []
         for user in cursor:
-            try:
-                user['_id'] = str(user['_id'])
-                user['lastLoginAt'] = _tw_time(user.get('lastLoginAt'))
-                user['createdAt'] = _tw_time(user.get('createdAt'))
-                
-                line_id = user.get('lineId')
-                if line_id:
-                    user['orderCount'] = db.orders.count_documents({"lineId": line_id})
-                    user['feedbackCount'] = db.feedback.count_documents({"lineId": line_id})
-                else:
-                    user['orderCount'] = 0
-                    user['feedbackCount'] = 0
-                    
-                results.append(_serialize_doc(user))
-                
-            except Exception as e:
-                # 這裡抓的是「單筆會員」的解析錯誤
-                print(f"[單筆解析錯誤] 跳過異常戶: {e}")
-                safe_user = {
-                    '_id': str(user.get('_id', '')),
-                    'displayName': user.get('displayName', '解析異常戶'),
-                    'lineId': user.get('lineId', ''),
-                    'lastLoginAt': str(user.get('lastLoginAt', '')),
-                    'createdAt': str(user.get('createdAt', '')),
-                    'orderCount': 0,
-                    'feedbackCount': 0
-                }
-                results.append(safe_user)
+            user['_id'] = str(user['_id'])
+            user['lastLoginAt'] = _tw_time(user.get('lastLoginAt'))
+            user['createdAt'] = _tw_time(user.get('createdAt'))
+            
+            # 從剛剛算好的總表字典裡快速取值 (O(1) 速度)，完全不用再連線資料庫
+            line_id = user.get('lineId')
+            user['orderCount'] = order_counts.get(line_id, 0)
+            user['feedbackCount'] = feedback_counts.get(line_id, 0)
+            
+            results.append(_serialize_doc(user))
 
         return jsonify(results)
+
+    except Exception as e:
+        import traceback
+        error_msg = traceback.format_exc()
+        print(f"[嚴重崩潰] 會員列表無法載入:\n{error_msg}")
+        return jsonify({"error": f"資料庫查詢錯誤: {str(e)}"}), 500
 
     except Exception as e:
         # 🛡️ 如果是一開始的 cursor 迭代或連線就當機，會被這裡接住
