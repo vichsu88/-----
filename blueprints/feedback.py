@@ -72,6 +72,9 @@ def add_feedback():
     if not data.get('agreed'):
         return jsonify({"error": "必須勾選同意條款"}), 400
 
+    # 🚀 快照核心邏輯：在送出瞬間，立刻去 users 表把當下最新的個資抓出來
+    user_info = db.users.find_one({"lineId": line_id}) or {}
+
     new_feedback = {
         "lineId": line_id,
         "nickname": data.get('nickname'),
@@ -80,7 +83,14 @@ def add_feedback():
         "agreed": True,
         "createdAt": datetime.now(timezone.utc).replace(tzinfo=None),
         "status": "pending",
-        "isMarked": False
+        "isMarked": False,
+        
+        # 🛡️ 寫入快照：實實在在地把個資存進這筆回饋單裡
+        "realName": user_info.get('realName', ''),
+        "phone": user_info.get('phone', ''),
+        "address": user_info.get('address', ''),
+        "email": user_info.get('email', ''),
+        "lunarBirthday": user_info.get('lunarBirthday', '')
     }
     db.feedback.insert_one(new_feedback)
     return jsonify({"success": True, "message": "回饋已送出"})

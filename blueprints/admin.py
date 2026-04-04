@@ -265,7 +265,12 @@ def get_data_history():
         if order_id:
             fq['feedbackId'] = {"$regex": order_id.strip(), "$options": "i"}
         if name:
-            fq['nickname'] = {"$regex": name.strip()}
+            # 支援同時搜尋「真實姓名」與「暱稱」，且不分大小寫
+            name_regex = {"$regex": name.strip(), "$options": "i"}
+            fq['$or'] = [
+                {'nickname': name_regex},
+                {'realName': name_regex}
+            ]
         if status:
             fq['status'] = status
         if date_range:
@@ -725,3 +730,35 @@ def debug_connection():
     except Exception as e:
         status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
     return jsonify(status)
+# =========================================================
+# 臨時工具：歷史回饋單快照修復
+# =========================================================
+@admin_bp.route('/api/admin/data/fix-feedback-snapshots', methods=['POST'])
+@admin_required(roles=['super_admin'])
+def fix_feedback_snapshots():
+    """一次性歷史資料修復：把舊回饋單補上會員個資快照"""
+    if db is None:
+        return jsonify({"error": "資料庫未連線"}), 500
+
+    updated_count = 0
+    # 找出所有「還沒有 realName 欄位」或「realName 為空」的舊回饋單
+    cursor = db.feedback.find({"$or": [{"realName": {"$exists": False}}, {"realName": ""}]})
+    
+    for fb in cursor:
+        line_id = fb.get('lineId')
+        if line_id:
+            user_info = db.users.find_one({"lineId": line_id})
+            if user_info:
+                db.feedback.update_one(
+                    {"_id": fb['_id']},
+                    {"$set": {
+                        "realName": user_info.get('realName', ''),
+                        "phone": user_info.get('phone', ''),
+                        "address": user_info.get('address', ''),
+                        "email": user_info.get('email', ''),
+                        "lunarBirthday": user_info.get('lunarBirthday', '')
+                    }}
+                )
+                updated_count += 1
+
+    return jsonify({"success": True, "message": f"太棒了！已成功為 {updated_count} 筆歷史回饋單補上資料快照！"})
