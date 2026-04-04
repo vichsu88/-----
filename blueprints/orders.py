@@ -272,6 +272,12 @@ def mark_donations_reported():
     ids = data.get('ids', [])
     if not ids:
         return jsonify({"success": False, "message": "無選取訂單"})
+    if object_ids:
+        admin_user = session.get('admin_username', 'admin') # 取得當下操作員
+        db.orders.update_many(
+            {"_id": {"$in": object_ids}},
+            {"$set": {"is_reported": True, "reportedAt": datetime.now(timezone.utc).replace(tzinfo=None), "reportedBy": admin_user}}
+        )
 
     object_ids = [get_object_id(i) for i in ids if get_object_id(i)]
     if object_ids:
@@ -306,6 +312,9 @@ def cleanup_shipped_orders():
 @orders_bp.route('/api/orders/<oid>/confirm', methods=['PUT'])
 @login_required
 def confirm_order_payment(oid):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
+    db.orders.update_one({'_id': oid_obj}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now, 'paidBy': admin_user}})
     oid_obj = get_object_id(oid)
     if not oid_obj:
         return jsonify({"error": "無效的 ID 格式"}), 400
@@ -399,6 +408,11 @@ def delete_order(oid):
 @orders_bp.route('/api/orders/<oid>/ship', methods=['PUT'])
 @login_required
 def ship_order(oid):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
+    db.orders.update_one({'_id': oid_obj}, {'$set': {
+        'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 'trackingNumber': tracking_num, 'shippedBy': admin_user
+    }})
     oid_obj = get_object_id(oid)
     if not oid_obj:
         return jsonify({"error": "無效的 ID 格式"}), 400

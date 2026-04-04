@@ -250,10 +250,13 @@ def get_data_history():
             doc['_sortTs'] = sort_ts
             if doc.get('paidAt'):
                 doc['paidAt'] = _tw_time(doc['paidAt'])
+                doc['paidBy'] = doc.get('paidBy', '') # 新增這行
             if doc.get('shippedAt'):
                 doc['shippedAt'] = _tw_time(doc['shippedAt'])
+                doc['shippedBy'] = doc.get('shippedBy', '')
             if doc.get('reportedAt'):
                 doc['reportedAt'] = _tw_time(doc['reportedAt'])
+                doc['reportedBy'] = doc.get('reportedBy', '')
             all_results.append(doc)
 
     # --- 查詢 Feedback (type 為空或 feedback 時) ---
@@ -295,8 +298,10 @@ def get_data_history():
             }
             if doc.get('approvedAt'):
                 fb['approvedAt'] = _tw_time(doc.get('approvedAt'))
+                fb['approvedBy'] = doc.get('approvedBy', '')
             if doc.get('sentAt'):
                 fb['sentAt'] = _tw_time(doc.get('sentAt'))
+                fb['sentBy'] = doc.get('sentBy', '')
             if doc.get('trackingNumber'):
                 fb['trackingNumber'] = doc['trackingNumber']
             all_results.append(fb)
@@ -446,6 +451,7 @@ def get_member_history(line_id):
         doc['source_label'] = _TYPE_LABELS.get(doc.get('orderType', ''), '未知')
         if doc.get('paidAt'):
             doc['paidAt'] = _tw_time(doc['paidAt'])
+            doc['paidBy'] = doc.get('paidBy', '') # 新增這行
         orders.append(doc)
 
     feedback = []

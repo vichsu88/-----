@@ -128,6 +128,14 @@ def get_sent_feedback():
 @feedback_bp.route('/api/feedback/<fid>/approve', methods=['PUT'])
 @login_required
 def approve_feedback(fid):
+    fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
+    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
+    db.feedback.update_one({'_id': oid}, {'$set': {
+        'status': 'approved',
+        'feedbackId': fb_id,
+        'approvedAt': datetime.now(timezone.utc).replace(tzinfo=None),
+        'approvedBy': admin_user
+    }})
     oid = get_object_id(fid)
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
@@ -160,6 +168,13 @@ def approve_feedback(fid):
 @feedback_bp.route('/api/feedback/<fid>/ship', methods=['PUT'])
 @login_required
 def ship_feedback(fid):
+    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
+    db.feedback.update_one({'_id': oid}, {'$set': {
+        'status': 'sent',
+        'trackingNumber': tracking,
+        'sentAt': datetime.now(timezone.utc).replace(tzinfo=None),
+        'sentBy': admin_user
+    }})
     oid = get_object_id(fid)
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400

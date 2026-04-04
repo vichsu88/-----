@@ -442,21 +442,25 @@ async loadFeedbackReview() {
 
         refreshShip() { this.loadShipQueue(); },
 
-        /** 回饋寄送: 僅載入已核准 (待寄送), 不再顯示已寄送清單 */
+        /** 回饋寄送: 僅載入已核准，且「從未領取過」的名單 */
         async loadFeedbackGifts() {
             const aEl = document.getElementById('ops-fb-approved-list');
             if (!aEl) return;
             try {
                 const approved = await Core.apiFetch('/api/feedback/status/approved');
-                aEl.innerHTML = approved.length ? approved.map(i => `
+                
+                // 💎 終極防呆過濾器：只要這個人曾經有過 sent 的紀錄 (has_received === true)，
+                // 就算他的新回饋是 approved，也直接從待寄清單中神隱！
+                const toShip = approved.filter(i => !i.has_received);
+                
+                aEl.innerHTML = toShip.length ? toShip.map(i => `
                     <div class="feedback-card border-left-success">
                         <div class="d-flex justify-between align-center detail-header">
                             <strong>${i.feedbackId || '無編號'}</strong>
                             <span class="fs-13 text-gray">${i.approvedAt || ''}</span>
                         </div>
                         <div class="mb-15 lh-18">
-                            <strong>${i.realName}</strong>
-                            ${i.has_received ? ' <span class="badge-received-warning">[⚠️ 已領取過]</span>' : ''}<br>
+                            <strong>${i.realName}</strong><br>
                             <span class="text-gray fs-14">📍 ${i.address}</span>
                         </div>
                         <div class="fb-card-footer">
@@ -464,7 +468,7 @@ async loadFeedbackReview() {
                             <button class="btn btn--blue" onclick="shipGift('${i._id}')">🎁 寄出</button>
                         </div>
                     </div>
-                `).join('') : '<p class="empty-state">無待寄送</p>';
+                `).join('') : '<p class="empty-state">🎉 目前無待寄送名單</p>';
             } catch (e) { aEl.innerHTML = '<p class="text-danger">載入失敗</p>'; }
         }
     };
@@ -509,12 +513,17 @@ async loadFeedbackReview() {
                 el.innerHTML = data.results.map(o => {
                     const isFeedback = o._docType === 'feedback';
                     const detailFn = isFeedback ? 'viewFbDetail' : (o.orderType === 'shop' ? 'viewOrderDetails' : 'viewDonationDetail');
+                    
+                    // 💡 修正：如果單據是回饋且狀態為 pending，強制顯示為「待審核」
+                    let statusLabel = sLabels[o.status] || o.status;
+                    if (isFeedback && o.status === 'pending') statusLabel = '待審核';
+
                     return `
                     <div class="admin-list-item d-flex justify-between align-center">
                         <div class="flex-1">
                             <span class="badge-source">${o.source_label}</span>
                             <strong>${o.orderId}</strong>
-                            <span class="${sPills[o.status] || 'pill-inactive'}">${sLabels[o.status] || o.status}</span><br>
+                            <span class="${sPills[o.status] || 'pill-inactive'}">${statusLabel}</span><br>
                             <span class="fs-14">${o.customer?.name || o.realName || ''} / ${isFeedback ? (o.nickname || '') : '$' + o.total} / ${o.createdAt}</span>
                         </div>
                         <button class="btn btn--grey" onclick='${detailFn}(${Core.safeStringify(o)})'>🔍</button>
@@ -1226,11 +1235,18 @@ async loadFeedbackReview() {
         }
     };
 
-    // --- 查看詳情 Modal ---
     window.viewDonationDetail = (o) => {
         const body = document.getElementById('donation-detail-body');
         if (!body) return;
         const itemsStr = (o.items || []).map(i => `${i.name} x${i.qty}`).join('、');
+        
+        // 💡 新增：處理歷程區塊
+        let historyHtml = '<hr><div class="info-box mt-15"><strong class="text-brown">⏳ 處理歷程：</strong><div class="mt-5 fs-14 lh-18">';
+        historyHtml += `🔹 <b>單據建立：</b> ${o.createdAt}<br>`;
+        if (o.paidAt) historyHtml += `🔹 <b>確認收款：</b> ${o.paidAt} <span class="text-gray">(${o.paidBy || '系統或早期紀錄'})</span><br>`;
+        if (o.reportedAt) historyHtml += `🔹 <b>稟告完成：</b> ${o.reportedAt} <span class="text-gray">(${o.reportedBy || '系統或早期紀錄'})</span><br>`;
+        historyHtml += '</div></div>';
+
         body.innerHTML = `
             <div class="detail-header">
                 <p class="mb-5"><strong>單號：</strong> ${o.orderId}</p>
@@ -1241,11 +1257,12 @@ async loadFeedbackReview() {
             <p><strong>農曆生日：</strong> ${o.customer?.lunarBirthday || '未提供'}</p>
             <p><strong>地址：</strong> ${o.customer?.address || '無'}</p>
             <p><strong>匯款後五碼：</strong> ${o.customer?.last5 || '無'}</p>
-            <div class="info-box">
+            <div class="info-box mb-15">
                 <strong class="text-brown">護持內容：</strong>
                 <p class="my-5">${itemsStr}</p>
                 <strong class="text-brown fs-18">總金額：$${o.total}</strong>
             </div>
+            ${historyHtml}
         `;
         UI.openModal('donation-detail-modal');
     };
@@ -1256,6 +1273,13 @@ async loadFeedbackReview() {
         const deliveryInfo = o.customer?.shippingMethod === '711'
             ? `<p><b>取貨:</b> <span class="badge-711-detail">7-11</span> ${o.customer?.storeInfo || '未抓到門市資料'}</p>`
             : `<p><b>地址:</b> ${o.customer?.address || ''}</p>`;
+
+        // 💡 新增：處理歷程區塊
+        let historyHtml = '<hr><div class="info-box mt-15"><strong class="text-brown">⏳ 處理歷程：</strong><div class="mt-5 fs-14 lh-18">';
+        historyHtml += `🔹 <b>單據建立：</b> ${o.createdAt}<br>`;
+        if (o.paidAt) historyHtml += `🔹 <b>確認收款：</b> ${o.paidAt} <span class="text-gray">(${o.paidBy || '系統或早期紀錄'})</span><br>`;
+        if (o.shippedAt) historyHtml += `🔹 <b>出貨完成：</b> ${o.shippedAt} <span class="text-gray">(${o.shippedBy || '系統或早期紀錄'})</span><br>`;
+        historyHtml += '</div></div>';
 
         body.innerHTML = `
             <p><b>訂單編號:</b> ${o.orderId}</p>
@@ -1270,6 +1294,7 @@ async loadFeedbackReview() {
             <ul>${(o.items || []).map(i => `<li>${i.name} (${i.variantName || i.variant || '標準'}) x${i.qty} - $${i.price * i.qty}</li>`).join('')}</ul>
             <p class="total-price"><b>總金額: $${o.total}</b></p>
             ${o.trackingNumber ? `<hr><p><b>物流單號:</b> ${o.trackingNumber}</p>` : ''}
+            ${historyHtml}
         `;
         UI.openModal('order-detail-modal');
     };
@@ -1331,13 +1356,20 @@ async loadFeedbackReview() {
     window.viewFbDetail = (item) => {
         const body = document.getElementById('feedback-detail-body');
         if (!body) return;
-        const statusHtml = item.status === 'sent'
-            ? `<p><strong>寄出時間：</strong> ${item.sentAt || '未知'}</p><p><strong>物流單號：</strong> ${item.trackingNumber || '無'}</p>`
-            : `<p><strong>核准時間：</strong> ${item.approvedAt || '未知'}</p>`;
+        
+        // 💡 新增：處理歷程區塊
+        let historyHtml = '<hr><div class="info-box mt-15"><strong class="text-brown">⏳ 處理歷程：</strong><div class="mt-5 fs-14 lh-18">';
+        historyHtml += `🔹 <b>回饋送出：</b> ${item.createdAt}<br>`;
+        if (item.approvedAt) historyHtml += `🔹 <b>核准刊登：</b> ${item.approvedAt} <span class="text-gray">(${item.approvedBy || '系統或早期紀錄'})</span><br>`;
+        if (item.sentAt) historyHtml += `🔹 <b>寄出小神衣：</b> ${item.sentAt} <span class="text-gray">(${item.sentBy || '系統或早期紀錄'})</span><br>`;
+        historyHtml += '</div></div>';
+
+        let statusText = item.status === 'sent' ? '已寄出' : (item.status === 'approved' ? '已核准' : '待審核');
 
         body.innerHTML = `
             <div class="detail-header">
-                <p><strong>編號：</strong> ${item.feedbackId || item.orderId || '無'}</p>${statusHtml}
+                <p class="mb-5"><strong>編號：</strong> ${item.feedbackId || item.orderId || '無'}</p>
+                <p class="mb-0"><strong>狀態：</strong> ${statusText}</p>
             </div>
             <p><strong>真實姓名：</strong> ${item.realName || ''}</p>
             <p><strong>暱稱：</strong> ${item.nickname || ''}</p>
@@ -1349,6 +1381,7 @@ async loadFeedbackReview() {
                 <strong class="text-brown">回饋內容：</strong><br>
                 <div class="pre-wrap mt-10">${item.content || ''}</div>
             </div>
+            ${historyHtml}
         `;
         UI.openModal('feedback-detail-modal');
     };
