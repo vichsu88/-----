@@ -266,30 +266,6 @@ def create_order():
     return jsonify({"success": True, "orderId": order_id})
 
 
-@orders_bp.route('/api/donations/mark-reported', methods=['POST'])
-@login_required
-def mark_donations_reported():
-    data = request.get_json()
-    ids = data.get('ids', [])
-    if not ids:
-        return jsonify({"success": False, "message": "無選取訂單"})
-    if object_ids:
-        admin_user = session.get('admin_username', 'admin') # 取得當下操作員
-        db.orders.update_many(
-            {"_id": {"$in": object_ids}},
-            {"$set": {"is_reported": True, "reportedAt": datetime.now(timezone.utc).replace(tzinfo=None), "reportedBy": admin_user}}
-        )
-
-    object_ids = [get_object_id(i) for i in ids if get_object_id(i)]
-    if object_ids:
-        db.orders.update_many(
-            {"_id": {"$in": object_ids}},
-            {"$set": {"is_reported": True, "reportedAt": datetime.now(timezone.utc).replace(tzinfo=None)}}
-        )
-        write_audit_log(session.get('admin_username', 'admin'), '標記已稟告', '', f'{len(object_ids)} 筆')
-    return jsonify({"success": True})
-
-
 @orders_bp.route('/api/orders', methods=['GET'])
 @login_required
 def get_orders():
@@ -313,9 +289,6 @@ def cleanup_shipped_orders():
 @orders_bp.route('/api/orders/<oid>/confirm', methods=['PUT'])
 @login_required
 def confirm_order_payment(oid):
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
-    db.orders.update_one({'_id': oid_obj}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now, 'paidBy': admin_user}})
     oid_obj = get_object_id(oid)
     if not oid_obj:
         return jsonify({"error": "無效的 ID 格式"}), 400
@@ -325,8 +298,15 @@ def confirm_order_payment(oid):
         return jsonify({"error": "No order"}), 404
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    db.orders.update_one({'_id': oid_obj}, {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now}})
-    write_audit_log(session.get('admin_username', 'admin'), '確認收款', order.get('orderId', oid), f"${order.get('total', 0)}")
+    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
+
+    # ✅ 變數都準備好後，才執行更新
+    db.orders.update_one(
+        {'_id': oid_obj}, 
+        {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now, 'paidBy': admin_user}}
+    )
+
+    write_audit_log(admin_user, '確認收款', order.get('orderId', oid), f"${order.get('total', 0)}")
     cust = order['customer']
 
     if order.get('orderType') in ['donation', 'fund', 'committee']:
@@ -342,7 +322,6 @@ def confirm_order_payment(oid):
                    current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'],
                    is_html=True)
     return jsonify({"success": True})
-
 
 @orders_bp.route('/api/orders/<oid>/resend-email', methods=['POST'])
 @login_required
@@ -405,30 +384,34 @@ def delete_order(oid):
     db.orders.delete_one({'_id': oid_obj})
     return jsonify({"success": True})
 
-
 @orders_bp.route('/api/orders/<oid>/ship', methods=['PUT'])
 @login_required
 def ship_order(oid):
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
-    db.orders.update_one({'_id': oid_obj}, {'$set': {
-        'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 'trackingNumber': tracking_num, 'shippedBy': admin_user
-    }})
     oid_obj = get_object_id(oid)
     if not oid_obj:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
     data = request.get_json() or {}
     tracking_num = data.get('trackingNumber', '').strip()
+
     order = db.orders.find_one({'_id': oid_obj})
     if not order:
         return jsonify({"error": "No order"}), 404
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    db.orders.update_one({'_id': oid_obj}, {'$set': {
-        'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 'trackingNumber': tracking_num
-    }})
-    write_audit_log(session.get('admin_username', 'admin'), '出貨', order.get('orderId', oid), tracking_num)
+    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
+
+    # ✅ 變數都準備好後，才執行更新
+    db.orders.update_one(
+        {'_id': oid_obj}, 
+        {'$set': {
+            'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 
+            'trackingNumber': tracking_num, 'shippedBy': admin_user
+        }}
+    )
+
+    write_audit_log(admin_user, '出貨', order.get('orderId', oid), tracking_num)
+
     cust = order['customer']
     email_subject = f"【承天中承府】訂單出貨通知 ({order['orderId']})"
     email_html = generate_shop_email_html(order, 'shipped', tracking_num, db=db)
