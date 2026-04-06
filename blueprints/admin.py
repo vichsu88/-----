@@ -322,6 +322,46 @@ def get_data_history():
 
     return jsonify({"results": page_results, "total": total, "page": page, "per_page": per_page})
 
+@admin_bp.route('/api/donations/mark-reported', methods=['POST'])
+@admin_required(roles=['super_admin', 'ops'])
+def mark_donations_reported():
+    """批次標記捐香訂單為已稟告"""
+    if db is None:
+        return jsonify({"error": "資料庫未連線"}), 500
+
+    data = request.get_json()
+    if not data or 'ids' not in data:
+        return jsonify({"error": "未提供要標記的資料"}), 400
+
+    ids = data.get('ids', [])
+    if not ids:
+        return jsonify({"error": "未提供訂單 ID"}), 400
+
+    # 將字串 ID 轉換為 MongoDB 的 ObjectId
+    object_ids = []
+    for id_str in ids:
+        oid = get_object_id(id_str)
+        if oid:
+            object_ids.append(oid)
+
+    if not object_ids:
+        return jsonify({"error": "無效的訂單 ID"}), 400
+
+    admin_name = session.get('admin_username', 'admin')
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    # 執行批次更新
+    result = db.orders.update_many(
+        {"_id": {"$in": object_ids}},
+        {"$set": {
+            "is_reported": True,
+            "reportedAt": now,
+            "reportedBy": admin_name
+        }}
+    )
+
+    write_audit_log(admin_name, '批次標記已稟告', f'共 {result.modified_count} 筆')
+    return jsonify({"success": True, "message": f"已成功標記 {result.modified_count} 筆訂單為已稟告"})
 
 @admin_bp.route('/api/admin/data/export-csv')
 @admin_required(roles=['super_admin', 'data', 'finance'])
