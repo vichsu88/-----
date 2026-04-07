@@ -138,29 +138,30 @@ def get_sent_feedback():
 @feedback_bp.route('/api/feedback/<fid>/approve', methods=['PUT'])
 @login_required
 def approve_feedback(fid):
-    fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
-    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
-    db.feedback.update_one({'_id': oid}, {'$set': {
-        'status': 'approved',
-        'feedbackId': fb_id,
-        'approvedAt': datetime.now(timezone.utc).replace(tzinfo=None),
-        'approvedBy': admin_user
-    }})
     oid = get_object_id(fid)
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
+        
     fb = db.feedback.find_one({'_id': oid})
     if not fb:
         return jsonify({"error": "No data"}), 404
 
+    # 準備好所有變數
     fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
+
+    # ✅ 變數都準備好後，才執行更新
     db.feedback.update_one({'_id': oid}, {'$set': {
         'status': 'approved',
         'feedbackId': fb_id,
-        'approvedAt': datetime.now(timezone.utc).replace(tzinfo=None)
+        'approvedAt': now,
+        'approvedBy': admin_user
     }})
-    write_audit_log(session.get('admin_username', 'admin'), '核准回饋', fb_id)
+    
+    write_audit_log(admin_user, '核准回饋', fb_id)
 
+    # 寄信通知
     user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
     email = user.get('email') or fb.get('email')
     if email:
@@ -178,29 +179,32 @@ def approve_feedback(fid):
 @feedback_bp.route('/api/feedback/<fid>/ship', methods=['PUT'])
 @login_required
 def ship_feedback(fid):
-    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
-    db.feedback.update_one({'_id': oid}, {'$set': {
-        'status': 'sent',
-        'trackingNumber': tracking,
-        'sentAt': datetime.now(timezone.utc).replace(tzinfo=None),
-        'sentBy': admin_user
-    }})
     oid = get_object_id(fid)
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
+        
     data = request.get_json()
     tracking = data.get('trackingNumber', '')
+    
     fb = db.feedback.find_one({'_id': oid})
     if not fb:
         return jsonify({"error": "No data"}), 404
 
+    # 準備好所有變數
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    admin_user = session.get('admin_username', 'admin') # 取得當下操作員
+
+    # ✅ 變數都準備好後，才執行更新
     db.feedback.update_one({'_id': oid}, {'$set': {
         'status': 'sent',
         'trackingNumber': tracking,
-        'sentAt': datetime.now(timezone.utc).replace(tzinfo=None)
+        'sentAt': now,
+        'sentBy': admin_user
     }})
-    write_audit_log(session.get('admin_username', 'admin'), '寄出回饋禮', fb.get('feedbackId', fid), tracking)
+    
+    write_audit_log(admin_user, '寄出回饋禮', fb.get('feedbackId', fid), tracking)
 
+    # 寄信通知
     user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
     email = user.get('email') or fb.get('email')
     if email:
