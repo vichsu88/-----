@@ -398,20 +398,22 @@ def ship_order(oid):
     if not order:
         return jsonify({"error": "No order"}), 404
 
+    # 準備好所有變數
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
 
     # ✅ 變數都準備好後，才執行更新
-    db.orders.update_one(
-        {'_id': oid_obj}, 
-        {'$set': {
-            'status': 'shipped', 'updatedAt': now, 'shippedAt': now, 
-            'trackingNumber': tracking_num, 'shippedBy': admin_user
-        }}
-    )
+    db.orders.update_one({'_id': oid_obj}, {'$set': {
+        'status': 'shipped', 
+        'updatedAt': now, 
+        'shippedAt': now, 
+        'trackingNumber': tracking_num, 
+        'shippedBy': admin_user
+    }})
 
     write_audit_log(admin_user, '出貨', order.get('orderId', oid), tracking_num)
 
+    # 寄信通知
     cust = order['customer']
     email_subject = f"【承天中承府】訂單出貨通知 ({order['orderId']})"
     email_html = generate_shop_email_html(order, 'shipped', tracking_num, db=db)
