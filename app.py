@@ -4,7 +4,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
-
+import psutil
 import database
 from extensions import csrf, limiter
 
@@ -12,7 +12,18 @@ from extensions import csrf, limiter
 def create_app():
     load_dotenv()
     app = Flask(__name__)
-
+# =========================================
+    # 🌟 新增：記憶體監控 (依據 Claude 的建議)
+    # =========================================
+    @app.before_request
+    def log_memory():
+        process = psutil.Process(os.getpid())
+        mem = process.memory_info().rss / 1024 / 1024
+        # 建議印出所有請求的記憶體，這樣你才知道平常消耗多少，超過 400MB 加上警告符號
+        if mem > 400:
+            print(f"⚠️ [記憶體警告] 目前用量: {mem:.0f} MB", flush=True)
+        else:
+            print(f"📊 [記憶體監控] 目前用量: {mem:.0f} MB", flush=True)
     # =========================================
     # 1. 安全性設定
     # =========================================
