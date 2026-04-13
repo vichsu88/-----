@@ -1,4 +1,5 @@
 import json
+import smtplib
 import threading
 import urllib.request
 import urllib.error
@@ -11,56 +12,46 @@ from utils.helpers import get_tw_now
 # 寄信核心功能 (SendGrid API)
 # =========================================
 
-def send_email_task(to_email, subject, body, is_html):
-    print(f"--- 準備透過 SMTP 寄信給: {to_email} ---")
-    
-    # 從環境變數讀取 SMTP 設定
+def send_email_task(to_email, subject, body, is_html, **kwargs):
+    # 從環境變數讀取 Namecheap SMTP 設定
     mail_server = os.environ.get('MAIL_SERVER', 'mail.privateemail.com')
     mail_port = int(os.environ.get('MAIL_PORT', 465))
     mail_sender = os.environ.get('MAIL_USERNAME')
     mail_password = os.environ.get('MAIL_PASSWORD')
 
     if not mail_sender or not mail_password:
-        print("❌ 錯誤: MAIL_USERNAME 或 MAIL_PASSWORD 未設定")
+        print("❌ 錯誤: SMTP 帳號或密碼未設定")
         return
 
-    # 建立郵件物件
     msg = MIMEMultipart()
     msg['From'] = mail_sender
     msg['To'] = to_email
     msg['Subject'] = subject
-    
-    # 判斷是 HTML 還是純文字
     msg.attach(MIMEText(body, 'html' if is_html else 'plain', 'utf-8'))
 
     try:
-        # 連線到 SMTP 伺服器
         if mail_port == 465:
             server = smtplib.SMTP_SSL(mail_server, mail_port)
         else:
             server = smtplib.SMTP(mail_server, mail_port)
             server.starttls()
             
-        # 登入並寄信
         server.login(mail_sender, mail_password)
         server.send_message(msg)
         server.quit()
-        print(f"✅ SMTP 寄信成功!")
+        print(f"✅ Namecheap SMTP 寄信成功!")
     except Exception as e:
-        print(f"❌ SMTP 寄信發生錯誤: {str(e)}")
-
-
-# 使用 **kwargs 來吸收舊程式碼傳進來的 sendgrid_api_key 等多餘參數
-def send_email(to_email, subject, body, is_html=False, **kwargs):
+        print(f"❌ SMTP 寄信出錯: {str(e)}")
+        
+def send_email(to_email, subject, body, sendgrid_api_key=None, mail_sender=None, is_html=False):
     if not to_email:
         return
+    # 這裡保留舊的參數名稱是為了不改動其他呼叫此函數的地方
     thread = threading.Thread(
         target=send_email_task,
         args=(to_email, subject, body, is_html)
     )
     thread.start()
-
-
 # =========================================
 # 銀行資訊（從 DB 讀取）
 # =========================================
