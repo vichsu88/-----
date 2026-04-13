@@ -11,53 +11,52 @@ from utils.helpers import get_tw_now
 # 寄信核心功能 (SendGrid API)
 # =========================================
 
-def send_email_task(to_email, subject, body, is_html, sendgrid_api_key, mail_sender):
-    print(f"--- 準備寄信給: {to_email} ---")
-    if not sendgrid_api_key or not mail_sender:
-        print("❌ 錯誤: SENDGRID_API_KEY 或 MAIL_USERNAME 未設定")
+def send_email_task(to_email, subject, body, is_html):
+    print(f"--- 準備透過 SMTP 寄信給: {to_email} ---")
+    
+    # 從環境變數讀取 SMTP 設定
+    mail_server = os.environ.get('MAIL_SERVER', 'mail.privateemail.com')
+    mail_port = int(os.environ.get('MAIL_PORT', 465))
+    mail_sender = os.environ.get('MAIL_USERNAME')
+    mail_password = os.environ.get('MAIL_PASSWORD')
+
+    if not mail_sender or not mail_password:
+        print("❌ 錯誤: MAIL_USERNAME 或 MAIL_PASSWORD 未設定")
         return
 
-    url = "https://api.sendgrid.com/v3/mail/send"
-    payload = {
-        "personalizations": [{"to": [{"email": to_email}]}],
-        "from": {"email": mail_sender},
-        "subject": subject,
-        "content": [{
-            "type": "text/html" if is_html else "text/plain",
-            "value": body
-        }]
-    }
-    headers = {
-        "Authorization": f"Bearer {sendgrid_api_key}",
-        "Content-Type": "application/json"
-    }
+    # 建立郵件物件
+    msg = MIMEMultipart()
+    msg['From'] = mail_sender
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    
+    # 判斷是 HTML 還是純文字
+    msg.attach(MIMEText(body, 'html' if is_html else 'plain', 'utf-8'))
 
     try:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode('utf-8'),
-            headers=headers,
-            method='POST'
-        )
-        with urllib.request.urlopen(req) as response:
-            print(f"✅ SendGrid 寄信成功! Status: {response.status}")
-    except urllib.error.HTTPError as e:
-        error_body = "無法讀取內容"
-        try:
-            error_body = e.read().decode('utf-8')
-        except Exception:
-            pass
-        print(f"❌ SendGrid API 錯誤 ({e.code}): {error_body}")
+        # 連線到 SMTP 伺服器
+        if mail_port == 465:
+            server = smtplib.SMTP_SSL(mail_server, mail_port)
+        else:
+            server = smtplib.SMTP(mail_server, mail_port)
+            server.starttls()
+            
+        # 登入並寄信
+        server.login(mail_sender, mail_password)
+        server.send_message(msg)
+        server.quit()
+        print(f"✅ SMTP 寄信成功!")
     except Exception as e:
-        print(f"❌ 寄信發生未知例外錯誤: {str(e)}")
+        print(f"❌ SMTP 寄信發生錯誤: {str(e)}")
 
 
-def send_email(to_email, subject, body, sendgrid_api_key, mail_sender, is_html=False):
+# 使用 **kwargs 來吸收舊程式碼傳進來的 sendgrid_api_key 等多餘參數
+def send_email(to_email, subject, body, is_html=False, **kwargs):
     if not to_email:
         return
     thread = threading.Thread(
         target=send_email_task,
-        args=(to_email, subject, body, is_html, sendgrid_api_key, mail_sender)
+        args=(to_email, subject, body, is_html)
     )
     thread.start()
 
