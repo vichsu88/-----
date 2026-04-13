@@ -1,10 +1,12 @@
+import os  # 新增這行
 import json
 import smtplib
 import threading
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta
-
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from utils.helpers import get_tw_now
 
 
