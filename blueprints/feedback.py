@@ -100,7 +100,7 @@ def add_feedback():
 def get_public_approved_feedback():
     if db is None:
         return jsonify([])
-    cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", -1)
+    cursor = db.feedback.find({"status": {"$in": ["approved", "sent"]}}).sort("approvedAt", -1)
     results = []
     for doc in cursor:
         results.append({
