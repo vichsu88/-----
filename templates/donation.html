@@ -124,9 +124,12 @@
         -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
     }
     .marquee-content { 
-        position: absolute; width: 100%; 
-        animation: scrollUp 25s linear infinite; 
-        will-change: transform; /* GPU加速，讓捲動更順暢 */
+        position: absolute; 
+        top: 0;
+        left: 0;
+        width: 100%; 
+        animation: scrollUp linear infinite; 
+        will-change: transform; 
     }
     .marquee-container:hover .marquee-content { animation-play-state: paused; }
     .donor-item { 
@@ -134,7 +137,11 @@
         border-bottom: 1px dashed rgba(255, 215, 0, 0.2); font-size: 1.15rem; color: #ffebcd;
     }
     .donor-item span:first-child { font-weight: bold; color: #FFF8D6; }
-    @keyframes scrollUp { 0% { transform: translateY(100%); } 100% { transform: translateY(-200%); } }
+    
+    @keyframes scrollUp { 
+        0% { transform: translateY(0); } 
+        100% { transform: translateY(-50%); } 
+    }
 
     /* === 流金動態按鈕 === */
     .cta-container { margin: 40px 0; }
@@ -462,6 +469,7 @@
     // ==========================================================================
     async function loadMarquee() {
         try {
+            // 維持原本的 API 呼叫，不加 ?type=all
             const res = await fetch('/api/donations/public');
             const data = await res.json();
             const list = document.getElementById('honor-list');
@@ -474,15 +482,41 @@
                 return; 
             }
             
-            const html = data.map(d => `
+            // 確保跑馬燈的資料量足夠 (太少會留白)
+            let displayData = [...data];
+            while(displayData.length < 6) {
+                displayData = displayData.concat(data);
+            }
+            
+            // 💡 修正 1：跑馬燈的 HTML 應該用補齊後的 `displayData` 來 map，這樣才會生出足夠的條目
+            const marqueeHtml = displayData.map(d => `
                 <div class="donor-item">
                     <span class="donor-name">${d.name}</span>
                     <span>${d.items}</span>
                 </div>
             `).join('');
             
-            list.innerHTML = html + html; 
-            fullList.innerHTML = html;
+            // 將跑馬燈塞入兩份相同的 HTML，達成 0% -> -50% 無縫循環
+            list.innerHTML = marqueeHtml + marqueeHtml; 
+            
+            // 💡 修正 2：聖旨卷軸內的完整名錄不需要重複，直接顯示最原始的 `data` 即可
+            fullList.innerHTML = data.map(d => `
+                <div class="donor-item">
+                    <span class="donor-name">${d.name}</span>
+                    <span>${d.items}</span>
+                </div>
+            `).join('');
+            
+            // 💡 修正 3：移除下方多餘的覆蓋程式碼 (原本這裡有 list.innerHTML = html + html; fullList.innerHTML = html;)
+
+            // 4. 動態計算速度：不要寫死秒數！
+            // 假設我們希望「每 1 筆資料」花 3 秒鐘的時間滑過畫面
+            const speedPerItem = 3; 
+            // 我們的動畫只會移動一半的高度(50%)，所以移動的總筆數就是 displayData.length
+            const totalDuration = displayData.length * speedPerItem;
+
+            // 將計算好的秒數賦予給動畫，這樣不管資料有 10 筆還是 1000 筆，捲動速度都永遠均勻一致
+            list.style.animationDuration = `${totalDuration}s`;
         } catch (e) {
             console.error('芳名錄載入失敗', e);
             document.getElementById('honor-list').innerHTML = '<div class="text-center" style="padding:20px; color:#fcf6ba;">載入失敗</div>';

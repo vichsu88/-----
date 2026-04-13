@@ -1,4 +1,4 @@
-import os  # 新增這行
+import os 
 import json
 import smtplib
 import threading
