@@ -1,8 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-
+from utils.line_bot import send_admin_notification
 from flask import Blueprint, jsonify, request, session
-
 from database import db
 from utils.decorators import user_login_required
 from utils.helpers import get_tw_now, get_object_id, mask_name
@@ -50,6 +49,25 @@ def create_pickup_reservation():
 
     if db is not None:
         db.pickups.insert_one(new_reservation)
+        # 👇👇👇 從這裡開始是新增的推播邏輯 👇👇👇
+        try:
+            cloth_count = len(clothes)
+            notify_msg = (
+                f"🔔 收到一筆新的寄衣服預約！\n"
+                f"-------------------\n"
+                f"📍 方式：{pickup_type}\n"
+                f"📅 日期：{pickup_date}\n"
+                f"👕 件數：共 {cloth_count} 件\n"
+                f"-------------------\n"
+                f"請記得到後台確認喔！"
+            )
+            send_admin_notification(notify_msg)
+        except Exception as e:
+            # 即使推播失敗，也不要影響使用者預約成功的流程
+            print(f"推播執行發生錯誤: {e}")
+        # 👆👆👆 新增結束 👆👆👆
+
+        return jsonify({"success": True, "message": "預約成功"})
         return jsonify({"success": True, "message": "預約成功"})
 
     return jsonify({"error": "資料庫連線失敗"}), 500

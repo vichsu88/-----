@@ -1,8 +1,28 @@
 import re
+import os
 from datetime import datetime, timedelta, timezone
 from bson import ObjectId
 from bson.errors import InvalidId
+from linebot import LineBotApi
+from linebot.models import TextSendMessage
 
+# 初始化 LINE Bot API (請確保你的環境變數有設定)
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+
+def send_line_notification(to_line_id, message_text):
+    """
+    發送 LINE 訊息給指定的 user_id
+    """
+    try:
+        line_bot_api.push_message(
+            to_line_id,
+            TextSendMessage(text=message_text)
+        )
+        return True
+    except Exception as e:
+        print(f"LINE 推播失敗: {e}")
+        return False
 
 def get_tw_now():
     return datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
