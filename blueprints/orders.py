@@ -1,13 +1,10 @@
 import io
 import random
-import os
-from linebot import LineBotApi
-from linebot.models import TextSendMessage
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-
+from utils.line_bot import send_admin_notification
 from flask import Blueprint, jsonify, request, session, Response, current_app
-from utils.line_bot import send_line_notification
+
 from database import db, write_audit_log
 from extensions import csrf
 from utils.decorators import login_required, user_login_required
@@ -21,18 +18,7 @@ from utils.email import (
 
 orders_bp = Blueprint('orders', __name__)
 
-@your_bp.route('/api/shipclothes/submit', methods=['POST'])
-def submit_shipclothes():
-    # ... 1. 處理資料與存入資料庫 ...
-    
-    # 2. 準備給管理員的訊息
-    admin_line_id = "你的_LINE_USER_ID" # 填寫你自己的 LINE User ID
-    notify_msg = f"🔔 收到一筆新的寄衣服預約！\n預約人：{data['name']}\n日期：{data['date']}"
-    
-    # 3. 發送推播
-    send_line_notification(admin_line_id, notify_msg)
-    
-    return jsonify({"success": True, "message": "表單已送出"})
+
 @orders_bp.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
     if db is None:

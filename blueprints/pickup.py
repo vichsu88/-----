@@ -68,7 +68,6 @@ def create_pickup_reservation():
         # 👆👆👆 新增結束 👆👆👆
 
         return jsonify({"success": True, "message": "預約成功"})
-        return jsonify({"success": True, "message": "預約成功"})
 
     return jsonify({"error": "資料庫連線失敗"}), 500
 
