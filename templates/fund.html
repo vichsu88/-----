@@ -4,368 +4,1001 @@
 
 {% block content %}
 <style>
-    /* ==========================================================================
-       1. 核心變數與全域設定 (Optimized)
-       ========================================================================== */
-    :root {
-        --royal-bg-dark: #1a0505;
-        --royal-bg-red: #4a0e0e;
-        --royal-gold-light: #fcf6ba;
-        --royal-gold-main: #bf953f;
-        --royal-gold-dark: #8a6e2f;
-        --royal-text-light: #fdfbf7;
-        --glass-bg: rgba(40, 10, 10, 0.65);
-        --glass-border: rgba(255, 215, 0, 0.3);
-        --transition-base: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    }
+/* =============================================
+   承天中承府 — 建廟基金 v2
+   精緻深色系
+   ============================================= */
+:root {
+    --bg-deep: #0c0303;
+    --bg-dark: #1a0808;
+    --bg-card: rgba(30, 10, 10, 0.7);
+    --bg-card-hover: rgba(60, 15, 15, 0.8);
+    --gold: #c49a45;
+    --gold-bright: #e8c66a;
+    --gold-pale: #fcf6ba;
+    --gold-dark: #8a6e2f;
+    --gold-glow: rgba(196, 154, 69, 0.3);
+    --gold-border: rgba(196, 154, 69, 0.25);
+    --gold-border-strong: rgba(196, 154, 69, 0.5);
+    --crimson: #8B0000;
+    --crimson-deep: #4a0e0e;
+    --text-light: #fdfbf7;
+    --text-dim: #bbb;
+    --text-muted: #888;
+    --font-display: 'LXGW WenKai TC', '標楷體', serif;
+    --font-body: 'LXGW WenKai TC', 'Noto Serif TC', 'Georgia', serif;
+    --font-ui: 'LXGW WenKai TC', 'Noto Sans TC', sans-serif;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-base: 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
 
-    .fund-page-wrapper {
-        background: var(--royal-bg-dark) radial-gradient(circle at 50% 20%, var(--royal-bg-red), var(--royal-bg-dark) 90%);
-        font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
-        color: var(--royal-text-light);
-        min-height: 100vh;
-        overflow-x: hidden;
-    }
+button, input, .btn-action, .qty-btn, .form-control {
+    font-family: var(--font-ui) !important;
+}
 
-    .section-container {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 80px 20px;
-        text-align: center;
-        position: relative;
-        z-index: 2;
-    }
+.fund-page {
+    background: var(--bg-deep);
+    color: var(--text-light);
+    font-family: var(--font-body);
+    line-height: 1.8;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
 
-    /* === 標題元件 === */
-    .section-title-fund {
-        font-size: clamp(2rem, 5vw, 3rem);
-        margin-bottom: 40px;
-        font-weight: 900;
-        letter-spacing: 2px;
-        background: linear-gradient(to bottom, #fcf6ba 0%, #bf953f 40%, #b38728 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 2px 0px rgba(0,0,0,0.5));
-        display: inline-block;
-    }
-    .section-title-fund::after {
-        content: ''; 
-        display: block; 
-        width: 60px; 
-        height: 3px;
-        background: linear-gradient(90deg, transparent, var(--royal-gold-main), transparent);
-        margin: 15px auto 0;
-    }
+/* subtle radial ambient */
+.fund-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 15%, rgba(90, 20, 20, 0.35) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+}
+.fund-page > * { position: relative; z-index: 1; }
 
-    /* ==========================================================================
-       2. 各區塊樣式 (Sections)
-       ========================================================================== */
-    /* === 2-1. Hero === */
-    .fund-hero {
-        position: relative;
-        height: 90vh;
-        min-height: 650px;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.3), var(--royal-bg-dark)),
-                    url('{{ url_for("static", filename="images/pages/index/fund_banner.png") }}') no-repeat center center/cover;
-        display: flex;
+/* === Section Utility === */
+.fund-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 24px;
+}
+
+.section-title {
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4.5vw, 2.8rem);
+    font-weight: 900;
+    letter-spacing: 3px;
+    margin-bottom: 45px;
+    background: linear-gradient(to bottom, var(--gold-pale) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(0,0,0,0.4));
+    display: block;
+}
+.section-title::after {
+    content: '';
+    display: block;
+    width: 55px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 14px auto 0;
+}
+
+/* =============================================
+   1. HERO — SVG 進度環
+   ============================================= */
+.fund-hero {
+    position: relative;
+    min-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 20px;
+    background:
+        linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, var(--bg-deep) 95%),
+        url('{{ url_for("static", filename="images/pages/index/fund_banner.png") }}') no-repeat center center / cover;
+}
+
+/* SVG 進度環容器 */
+.progress-ring-wrap {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin-bottom: 40px;
+}
+
+.progress-ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 10;
+}
+
+.ring-progress {
+    fill: none;
+    stroke: url(#goldGradient);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 754; /* 2 * PI * 120 */
+    stroke-dashoffset: 754;
+    transition: stroke-dashoffset 2s var(--ease-out);
+    filter: drop-shadow(0 0 8px rgba(196, 154, 69, 0.5));
+}
+
+/* 裝飾外環 */
+.ring-deco {
+    fill: none;
+    stroke: rgba(196, 154, 69, 0.15);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 8;
+}
+
+@keyframes ring-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.ring-deco-rotate {
+    animation: ring-rotate 40s linear infinite;
+    transform-origin: center;
+}
+
+/* 中心文字 */
+.ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.ring-percent {
+    font-family: var(--font-ui);
+    font-size: 3.2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff 0%, var(--gold-bright) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+}
+.ring-label {
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin-top: 4px;
+}
+.ring-detail {
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    text-align: center;
+    line-height: 1.6;
+    opacity: 0.8;
+}
+
+.hero-headline {
+    text-align: center;
+}
+.hero-headline h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    color: #fff;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    margin: 0 0 12px;
+    letter-spacing: 4px;
+}
+.hero-headline p {
+    font-size: 1.2rem;
+    color: var(--gold-pale);
+    letter-spacing: 3px;
+}
+
+/* =============================================
+   2. 建廟緣起 — 影片 + 引言
+   ============================================= */
+.origin-section {
+    border-top: 1px solid var(--gold-border);
+}
+
+.origin-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+    max-width: 920px;
+    margin: 0 auto;
+}
+
+.origin-intro {
+    text-align: center;
+    padding: 0 10px;
+}
+.origin-intro .lead {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    line-height: 2.2;
+    color: var(--text-dim);
+}
+.origin-intro .lead em {
+    font-style: normal;
+    color: var(--gold-bright);
+    font-weight: 700;
+}
+.origin-intro .play-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+.origin-intro .play-hint .triangle {
+    display: inline-block;
+    width: 0; height: 0;
+    border-left: 8px solid var(--gold);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+}
+
+.video-frame {
+    position: relative;
+    padding-bottom: 56.25%;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--gold-border-strong);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+.video-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* =============================================
+   3. 未來願景 — 垂直時間軸
+   ============================================= */
+.vision-section {
+    border-top: 1px solid var(--gold-border);
+}
+
+.timeline {
+    position: relative;
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+/* 中央金線 */
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, var(--gold), var(--gold), transparent);
+    transform: translateX(-50%);
+}
+
+.timeline-node {
+    display: flex;
+    align-items: flex-start;
+    gap: 40px;
+    margin-bottom: 60px;
+    position: relative;
+}
+.timeline-node:last-child { margin-bottom: 0; }
+
+/* 奇偶交替 */
+.timeline-node:nth-child(odd) {
+    flex-direction: row;
+}
+.timeline-node:nth-child(even) {
+    flex-direction: row-reverse;
+}
+
+.timeline-img {
+    flex: 1;
+    min-width: 0;
+}
+.timeline-img img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--gold-border);
+    transition: transform 0.6s ease, border-color 0.3s;
+}
+.timeline-node:hover .timeline-img img {
+    transform: scale(1.03);
+    border-color: var(--gold);
+}
+
+.timeline-content {
+    flex: 1;
+    min-width: 0;
+    padding-top: 10px;
+}
+.timeline-content h3 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--gold-bright);
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--gold-border);
+    letter-spacing: 1px;
+}
+.timeline-content p {
+    font-size: 1.05rem;
+    line-height: 2;
+    color: var(--text-dim);
+}
+
+/* 中心圓點 */
+.timeline-dot {
+    position: absolute;
+    left: 50%;
+    top: 20px;
+    width: 16px;
+    height: 16px;
+    background: var(--gold);
+    border: 3px solid var(--bg-deep);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    box-shadow: 0 0 12px var(--gold-glow);
+    transition: transform 0.3s ease, box-shadow 0.3s;
+}
+.timeline-node:hover .timeline-dot {
+    transform: translateX(-50%) scale(1.3);
+    box-shadow: 0 0 20px var(--gold-glow);
+}
+
+/* =============================================
+   4. 芳名錄
+   ============================================= */
+.honor-section {
+    border-top: 1px solid var(--gold-border);
+}
+
+.honor-scroll-box {
+    max-width: 880px;
+    margin: 0 auto 40px;
+    background: var(--crimson);
+    border: 4px solid var(--gold);
+    border-radius: 6px;
+    padding: 24px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+    position: relative;
+}
+
+/* 捲軸左右軸 */
+.honor-scroll-box::before,
+.honor-scroll-box::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 106%;
+    background: linear-gradient(90deg, #5e0000, var(--gold-dark), #5e0000);
+    top: -3%;
+    border-radius: 4px;
+    z-index: 2;
+}
+.honor-scroll-box::before { left: -12px; }
+.honor-scroll-box::after { right: -12px; }
+
+.honor-heading {
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    color: var(--gold-pale);
+    margin-bottom: 18px;
+    letter-spacing: 3px;
+}
+
+.marquee-viewport {
+    height: 280px;
+    overflow: hidden;
+    position: relative;
+    mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+}
+
+.marquee-track {
+    will-change: transform;
+}
+
+/* hover 暫停 */
+.marquee-viewport:hover .marquee-track {
+    animation-play-state: paused !important;
+}
+
+.donor-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px dotted rgba(255, 215, 0, 0.12);
+    color: #ffebcd;
+    font-size: 0.98rem;
+}
+.donor-name {
+    font-weight: 700;
+    color: var(--gold-pale);
+    min-width: 90px;
+}
+.donor-items {
+    text-align: right;
+    color: #ddd;
+    flex: 1;
+}
+
+.honor-btn-row {
+    text-align: center;
+    margin-top: 18px;
+}
+
+/* =============================================
+   5. 捐款區
+   ============================================= */
+.donate-section {
+    border-top: 1px solid var(--gold-border);
+}
+
+/* 流程步驟 */
+.process-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    max-width: 900px;
+    margin: 0 auto 55px;
+    position: relative;
+    list-style: none;
+    padding: 0;
+}
+
+.process-bar::before {
+    content: '';
+    position: absolute;
+    top: 36px;
+    left: 12%;
+    right: 12%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold-border-strong), var(--gold-border-strong), transparent);
+}
+
+.process-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.step-circle {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    background: radial-gradient(circle at 35% 35%, var(--crimson-deep), var(--bg-deep));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.6rem;
+    transition: var(--transition-base);
+}
+.process-step:hover .step-circle {
+    background: var(--gold);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--gold-glow);
+}
+
+.step-label {
+    display: block;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--gold-bright);
+    margin-bottom: 4px;
+}
+.step-desc {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* 捐款卡片 */
+.donate-cards {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+}
+
+.donate-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid var(--gold-border);
+    border-radius: 16px;
+    padding: 30px 22px 26px;
+    width: 280px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+.donate-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 60%, rgba(196,154,69,0.06) 100%);
+    pointer-events: none;
+}
+.donate-card:hover,
+.donate-card.selected {
+    background: var(--bg-card-hover);
+    border-color: var(--gold);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5), 0 0 15px var(--gold-glow);
+}
+
+/* SVG 圖示 */
+.card-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+}
+
+.donate-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--text-light);
+    margin: 0 0 8px;
+    letter-spacing: 2px;
+}
+.donate-card .card-price {
+    font-family: var(--font-ui);
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--gold-bright);
+    margin-bottom: 18px;
+}
+
+.qty-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+}
+.qty-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gold-dark);
+    background: transparent;
+    color: var(--gold-bright);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.qty-btn:hover {
+    background: var(--gold);
+    color: var(--bg-deep);
+    border-color: var(--gold);
+}
+.qty-num {
+    font-family: var(--font-ui);
+    font-size: 1.4rem;
+    font-weight: 900;
+    min-width: 28px;
+    text-align: center;
+}
+
+.donate-total {
+    text-align: center;
+    font-family: var(--font-ui);
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: var(--gold-bright);
+    margin-bottom: 28px;
+    letter-spacing: 1px;
+}
+
+/* 按鈕 */
+.btn-gold {
+    display: inline-block;
+    padding: 15px 40px;
+    font-family: var(--font-ui);
+    font-size: 1.15rem;
+    font-weight: 900;
+    border-radius: 50px;
+    border: none;
+    background: linear-gradient(to bottom, var(--gold-pale), var(--gold), var(--gold-dark));
+    color: #2b0808;
+    cursor: pointer;
+    transition: var(--transition-base);
+    box-shadow: 0 5px 18px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 1px;
+}
+.btn-gold:hover:not(:disabled) {
+    transform: scale(1.03);
+    filter: brightness(1.1);
+}
+.btn-gold:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.btn-gold::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+    transform: skewX(-20deg);
+    animation: btn-sheen 4.5s infinite;
+}
+@keyframes btn-sheen {
+    0% { left: -100%; }
+    15% { left: 200%; }
+    100% { left: 200%; }
+}
+
+.btn-gold-outline {
+    background: transparent;
+    border: 1.5px solid var(--gold);
+    color: var(--gold-bright);
+    box-shadow: none;
+    padding: 10px 28px;
+    font-size: 1rem;
+}
+.btn-gold-outline::after { display: none; }
+.btn-gold-outline:hover:not(:disabled) {
+    background: var(--gold);
+    color: var(--bg-deep);
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.15);
+    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: none;
+}
+.btn-secondary::after { display: none; }
+.btn-secondary:hover { background: rgba(255,255,255,0.25); }
+
+.btn-center { text-align: center; }
+
+/* =============================================
+   6. 委員會 Banner
+   ============================================= */
+.committee-cta {
+    max-width: 900px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, rgba(139,0,0,0.7), rgba(60,0,0,0.85));
+    border: 2px solid var(--gold);
+    border-radius: 16px;
+    padding: 50px 35px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+}
+.committee-cta::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    background: radial-gradient(circle at 30% 30%, rgba(196,154,69,0.08) 0%, transparent 60%);
+    pointer-events: none;
+}
+.committee-cta h3 {
+    font-family: var(--font-display);
+    font-size: 1.9rem;
+    color: var(--gold-pale);
+    margin: 0 0 14px;
+    letter-spacing: 2px;
+}
+.committee-cta p {
+    font-size: 1.08rem;
+    color: var(--text-dim);
+    line-height: 2;
+    margin-bottom: 28px;
+}
+.committee-cta .hl { color: var(--gold-bright); font-weight: 700; }
+
+/* =============================================
+   7. Modals
+   ============================================= */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.modal-box {
+    background: var(--text-light);
+    color: #333;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 3px solid var(--gold);
+    border-radius: 14px;
+    padding: 30px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+.modal-heading {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--crimson);
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+}
+
+.form-group { margin-bottom: 14px; text-align: left; }
+.form-group label {
+    display: block;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: #444;
+}
+.form-control {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px rgba(196,154,69,0.2);
+}
+
+.emotional-hint {
+    background: #fff8ee;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    border-left: 4px solid var(--crimson);
+    margin-bottom: 18px;
+    color: #555;
+    line-height: 1.7;
+}
+
+.modal-btn-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+/* 聖旨捲軸 modal */
+.scroll-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+}
+.scroll-rod-top, .scroll-rod-bottom {
+    height: 32px;
+    background: linear-gradient(to bottom, var(--gold-pale), var(--gold), var(--gold-dark));
+    border-radius: 14px;
+    position: relative;
+    z-index: 3;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.scroll-parchment {
+    background: var(--crimson);
+    padding: 0 24px;
+    max-height: 0;
+    opacity: 0;
+    overflow-y: auto;
+    border-inline: 4px solid var(--gold);
+    transition: max-height 1s ease, opacity 0.5s;
+}
+.scroll-wrap.unrolled .scroll-parchment {
+    max-height: 60vh;
+    opacity: 1;
+    padding: 28px 24px;
+}
+.scroll-close-btn {
+    position: absolute;
+    top: -18px;
+    right: -18px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--crimson-deep);
+    border: 2px solid var(--gold);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.scroll-close-btn:hover { background: var(--gold); color: var(--bg-deep); }
+
+/* =============================================
+   8. Animations
+   ============================================= */
+@keyframes seamlessScroll {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+}
+
+/* =============================================
+   9. RWD
+   ============================================= */
+@media (min-width: 768px) {
+    .form-row { display: flex; gap: 14px; }
+    .form-row .form-group { flex: 1; }
+}
+
+@media (max-width: 768px) {
+    .fund-hero { min-height: 70vh; }
+    .progress-ring-wrap { width: 220px; height: 220px; }
+    .ring-percent { font-size: 2.5rem; }
+
+    /* timeline 改單欄 */
+    .timeline::before { left: 20px; }
+    .timeline-node,
+    .timeline-node:nth-child(even) {
         flex-direction: column;
-        justify-content: center;
+        padding-left: 50px;
+    }
+    .timeline-dot {
+        left: 20px;
+        top: 10px;
+    }
+    .timeline-img img { height: 200px; }
+
+    .process-bar {
+        flex-direction: column;
+        gap: 28px;
         align-items: center;
     }
+    .process-bar::before { display: none; }
 
-    .chart-container {
-        position: relative;
-        width: 300px;
-        height: 300px;
-        border-radius: 50%;
-        box-shadow: 0 0 20px var(--royal-gold-dark), 0 0 60px rgba(191, 149, 63, 0.2);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 40px;
-        animation: float 6s ease-in-out infinite;
-        background: rgba(255,255,255,0.05); /* 預設底色 */
-    }
+    .donate-card { width: 100%; max-width: 320px; }
 
-    .chart-inner {
-        width: 260px;
-        height: 260px;
-        background: radial-gradient(circle, #2b0808 0%, #000 100%);
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 2;
-    }
+    .honor-scroll-box::before,
+    .honor-scroll-box::after { display: none; }
 
-    .chart-percent { 
-        font-size: 3.5rem; 
-        font-weight: bold; 
-        background: linear-gradient(135deg, #fff 0%, #ffd700 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .chart-label { font-size: 1.1rem; color: #aaa; letter-spacing: 1px; }
-    .chart-details { margin-top: 10px; font-size: 14px; opacity: 0.8; line-height: 1.6; }
-    
-    .hero-text h1 { font-size: clamp(2.2rem, 5vw, 4rem); color: #fff; text-shadow: 0 4px 15px rgba(0,0,0,0.8); margin: 0; }
-    .hero-text p { font-size: 1.3rem; margin-top: 15px; color: var(--royal-gold-light); letter-spacing: 3px; }
-
-    /* === 2-2. 影片 === */
-    .video-wrapper {
-        position: relative;
-        padding-bottom: 56.25%;
-        max-width: 900px;
-        margin: 0 auto;
-        border: 2px solid var(--royal-gold-dark);
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-    }
-    .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0; }
-
-    /* === 2-3. 願景 === */
-    .vision-grid { display: grid; grid-template-columns: 1fr; gap: 60px; padding: 20px 0; }
-    .vision-item {
-        display: flex;
-        flex-direction: column;
-        gap: 30px;
-        background: linear-gradient(145deg, rgba(30, 10, 10, 0.8), rgba(10, 0, 0, 0.9));
-        border: 1px solid rgba(191, 149, 63, 0.1);
-        padding: 30px;
-        border-radius: 20px;
-        transition: var(--transition-base);
-    }
-    .vision-item:hover { transform: translateY(-5px); border-color: var(--royal-gold-main); }
-    .vision-img-box { width: 100%; height: 300px; overflow: hidden; border-radius: 10px; border: 1px solid var(--royal-gold-dark); }
-    .vision-img-box img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease; }
-    .vision-item:hover .vision-img-box img { transform: scale(1.05); }
-    .vision-content h3 { color: var(--royal-gold-main); font-size: 1.8rem; margin-bottom: 15px; border-bottom: 1px solid rgba(191, 149, 63, 0.3); padding-bottom: 10px; }
-    .vision-content p { font-size: 1.1rem; line-height: 1.8; color: #ccc; text-align: justify; }
-
-    /* === 2-4. 芳名錄與捐款 === */
-    .donation-section { border-top: 1px solid rgba(191, 149, 63, 0.2); padding: 80px 20px; }
-    
-    .honor-roll-section {
-        max-width: 900px; margin: 0 auto 60px; background-color: #8B0000;
-        border: 4px solid var(--royal-gold-main); border-radius: 4px; padding: 25px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative;
-    }
-    /* 捲軸裝飾 */
-    .honor-roll-section::before, .honor-roll-section::after {
-        content: ''; position: absolute; width: 26px; height: 106%;
-        background: linear-gradient(90deg, #5e0000, #b38728, #5e0000);
-        top: -3%; border-radius: 4px;
-    }
-    .honor-roll-section::before { left: -13px; }
-    .honor-roll-section::after { right: -13px; }
-
-    .marquee-container { 
-        height: 300px; overflow: hidden; position: relative; 
-        mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
-        -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
-    }
-    .marquee-scroll-wrapper { will-change: transform; }
-    
-    .donor-item {
-        display: flex; justify-content: space-between; padding: 15px 20px;
-        border-bottom: 1px dotted rgba(255,215,0,0.15); color: #ffebcd;
-    }
-    .donor-name { font-weight: bold; color: var(--royal-gold-light); min-width: 100px; }
-    .donor-items { text-align: right; color: #ddd; flex: 1; }
-
-    /* 流程圖 */
-    .process-steps {
-        display: flex; justify-content: space-between; margin: 0 auto 60px;
-        list-style: none; position: relative; max-width: 950px; padding: 0;
-    }
-    .process-steps::before {
-        content: ''; position: absolute; top: 40px; left: 10%; right: 10%;
-        height: 2px; background: rgba(191, 149, 63, 0.3); z-index: 0;
-    }
-    .step-item { flex: 1; text-align: center; position: relative; z-index: 1; }
-    .step-icon-box {
-        width: 80px; height: 80px; margin: 0 auto 20px;
-        background: radial-gradient(circle at 30% 30%, #751010, #000);
-        border: 2px solid var(--royal-gold-main); border-radius: 50%;
-        display: flex; justify-content: center; align-items: center; font-size: 30px;
-        transition: var(--transition-base);
-    }
-    .step-item:hover .step-icon-box { background: var(--royal-gold-main); transform: scale(1.1); box-shadow: 0 0 20px var(--royal-gold-main); }
-    .step-title { color: var(--royal-gold-main); font-weight: bold; display: block; margin-bottom: 5px; }
-    .step-desc { color: #aaa; font-size: 0.9rem; display: block; line-height: 1.4; }
-
-    /* 捐款卡片 */
-    .donation-options { display: flex; justify-content: center; gap: 25px; flex-wrap: wrap; margin-bottom: 40px; }
-    .donate-card {
-        background: rgba(30, 30, 30, 0.4); backdrop-filter: blur(8px);
-        border: 1px solid var(--glass-border); border-radius: 15px; 
-        padding: 30px 20px; width: 280px; transition: var(--transition-base); cursor: pointer;
-    }
-    .donate-card:hover, .donate-card.selected {
-        background: linear-gradient(135deg, #8B0000 0%, #4a0000 100%);
-        border-color: var(--royal-gold-main); transform: translateY(-8px);
-        box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-    }
-    .donate-card h3 { font-size: 1.5rem; margin: 10px 0; }
-    .donate-card .price { font-size: 1.8rem; font-weight: bold; color: var(--royal-gold-main); margin-bottom: 20px; }
-    
-    .qty-control { display: flex; justify-content: center; align-items: center; gap: 15px; }
-    .qty-btn {
-        width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--royal-gold-dark);
-        background: transparent; color: var(--royal-gold-main); cursor: pointer;
-    }
-    .qty-btn:hover { background: var(--royal-gold-main); color: #000; }
-    .qty-display { width: 30px; font-size: 1.4rem; font-weight: bold; }
-
-    .donation-total { font-size: 1.8rem; font-weight: bold; color: var(--royal-gold-main); margin-bottom: 30px; }
-
-    /* 按鈕樣式 */
-    .btn-action {
-        display: inline-block; width: 100%; max-width: 350px; padding: 16px;
-        font-size: 1.2rem; font-weight: bold; border-radius: 50px; border: none;
-        background: linear-gradient(to bottom, #fcf6ba, #bf953f, #8a6e2f);
-        color: #2b0808; cursor: pointer; transition: var(--transition-base);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.4); position: relative; overflow: hidden;
-    }
-    .btn-action:hover:not(:disabled) { transform: scale(1.03); filter: brightness(1.1); }
-    .btn-action:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-action::after {
-        content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-        transform: skewX(-20deg); animation: sheen 4s infinite;
-    }
-    .btn-secondary { background: #bbb; color: #333; margin-top: 10px; }
-    .btn-secondary::after { display: none; }
-
-    /* === 2-5. 委員會 Banner === */
-    .committee-banner {
-        background: linear-gradient(135deg, #8B0000CC, #3c0000E6); 
-        border: 2px solid var(--royal-gold-main); border-radius: 15px; padding: 50px 30px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; overflow: hidden;
-    }
-    .committee-bg-icon { position: absolute; font-size: 120px; opacity: 0.08; pointer-events: none; }
-    .committee-bg-icon.left { top: -20px; left: -20px; }
-    .committee-bg-icon.right { bottom: -20px; right: -20px; }
-    .text-highlight { color: var(--royal-gold-main); }
-
-    /* ==========================================================================
-       3. 彈出視窗 (Modals) - Optimized for UX
-       ========================================================================== */
-    .modal-overlay {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 2000;
-        justify-content: center; align-items: center; padding: 20px;
-    }
-    .modal-content {
-        background: #fdfbf7; color: #333; width: 100%; max-width: 600px; max-height: 90vh; 
-        overflow-y: auto; border: 4px solid var(--royal-gold-main); border-radius: 15px; 
-        padding: 30px; box-shadow: 0 0 40px rgba(0,0,0,0.5);
-    }
-    .modal-header { font-size: 1.5rem; font-weight: bold; color: #8B0000; border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 20px; }
-    
-    .form-group { margin-bottom: 15px; text-align: left; }
-    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-    .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-    .emotional-text { background: #fff5e6; padding: 15px; border-radius: 8px; font-size: 14px; border-left: 4px solid #8B0000; margin-bottom: 20px; }
-
-    /* 聖旨卷軸 */
-    .scroll-wrapper { position: relative; width: 100%; max-width: 600px; }
-    .scroll-content {
-        background-color: #8B0000; padding: 0 25px; max-height: 0; opacity: 0; overflow-y: auto;
-        border-inline: 4px solid var(--royal-gold-main); transition: max-height 1s ease, opacity 0.5s;
-    }
-    .unrolled .scroll-content { max-height: 60vh; opacity: 1; padding: 30px 25px; }
-    .scroll-top-axis, .scroll-bottom-axis {
-        height: 35px; background: linear-gradient(to bottom, #fcf6ba, #bf953f, #8a6e2f);
-        border-radius: 15px; position: relative; z-index: 3; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
-
-    /* ==========================================================================
-       4. 動畫 (Animations)
-       ========================================================================== */
-    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-    @keyframes sheen { 0% { left: -100%; } 15% { left: 200%; } 100% { left: 200%; } }
-    @keyframes seamlessScroll { 0% { transform: translateY(0); } 100% { transform: translateY(-50%); } }
-
-    /* RWD */
-    @media (min-width: 768px) {
-        .vision-item { flex-direction: row; align-items: center; }
-        .vision-item:nth-child(even) { flex-direction: row-reverse; }
-        .vision-img-box { flex: 1; height: 350px; }
-        .vision-content { flex: 1; }
-        .form-row { display: flex; gap: 15px; }
-    }
-    @media (max-width: 768px) {
-        .process-steps { flex-direction: column; gap: 30px; align-items: center; }
-        .process-steps::before { display: none; }
-        .honor-roll-section::before, .honor-roll-section::after { display: none; }
-        .chart-container { width: 240px; height: 240px; }
-        .chart-inner { width: 210px; height: 210px; }
-    }
+    .committee-cta { padding: 35px 22px; }
+    .committee-cta h3 { font-size: 1.5rem; }
+}
 </style>
 
-<div class="fund-page-wrapper">
+<div class="fund-page">
+
     <header class="fund-hero">
-        <div class="chart-container" id="fund-chart">
-            <div class="chart-inner">
-                <span class="chart-percent" id="percent-text">0%</span>
-                <span class="chart-label">目前進度</span>
-                <div class="chart-details">
+        <div class="progress-ring-wrap">
+            <svg class="progress-ring-svg" viewBox="0 0 260 260">
+                <defs>
+                    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fcf6ba"/>
+                        <stop offset="50%" stop-color="#e8c66a"/>
+                        <stop offset="100%" stop-color="#bf953f"/>
+                    </linearGradient>
+                </defs>
+                <circle class="ring-deco ring-deco-rotate" cx="130" cy="130" r="127"/>
+                <circle class="ring-bg" cx="130" cy="130" r="120"/>
+                <circle class="ring-progress" id="ring-arc" cx="130" cy="130" r="120"/>
+                <circle class="ring-deco" cx="130" cy="130" r="112" stroke-dasharray="2 6"/>
+            </svg>
+            <div class="ring-center">
+                <span class="ring-percent" id="percent-text">0%</span>
+                <span class="ring-label">目前進度</span>
+                <div class="ring-detail">
                     目標：<span id="goal-text">讀取中...</span><br>
                     已募：<span id="current-text">讀取中...</span>
                 </div>
             </div>
         </div>
-        <div class="hero-text">
+        <div class="hero-headline">
             <h1>一磚一瓦，共建聖殿</h1>
-            <p>桃城承天中承府 建廟基金募集中</p>
+            <p>桃城承天中承府　建廟基金募集中</p>
         </div>
     </header>
 
-    <section class="section-container">
-        <h2 class="section-title-fund">建廟緣起</h2>
-        <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/pqMRa8OWBvM" title="建廟影片" allowfullscreen></iframe>        
+    <section class="fund-section origin-section">
+        <h2 class="section-title">建廟緣起</h2>
+        <div class="origin-layout">
+            <div class="origin-intro">
+                <p class="lead">
+                    十年來，承天中承府承蒙<em>煙島中壇元帥</em>神威護佑，<br>
+                    為無數善信收驚解惑、消災祈福。<br>
+                    元帥娘與元帥的相遇，是一段跨越人神的感人因緣——<br>
+                    在這支影片中，元帥娘將親口訴說這段故事。
+                </p>
+                <div class="play-hint">
+                    <span class="triangle"></span>
+                    點擊播放，聆聽建廟緣起
+                </div>
+            </div>
+            <div class="video-frame">
+                <iframe src="https://www.youtube.com/embed/pqMRa8OWBvM" title="建廟影片" allowfullscreen></iframe>
+            </div>
         </div>
     </section>
 
-    <section class="section-container">
-        <h2 class="section-title-fund">未來願景</h2>
-        <div class="vision-grid">
-            <article class="vision-item">
-                <div class="vision-img-box">
-                    <img src="{{ url_for('static', filename='images/pages/index/fund1.png') }}" alt="願景1">
+    <section class="fund-section vision-section">
+        <h2 class="section-title">未來願景</h2>
+        <div class="timeline">
+            <article class="timeline-node">
+                <div class="timeline-dot"></div>
+                <div class="timeline-img">
+                    <img src="{{ url_for('static', filename='images/pages/index/fund1.png') }}" alt="願景1" loading="lazy">
                 </div>
-                <div class="vision-content">
+                <div class="timeline-content">
                     <h3>緣起：小空間裡的大慈悲</h3>
                     <p>十年來，桃城承天中承府承蒙元帥神威，為無數信徒收驚解惑。然而空間已不足以容納日益增長的善信與香火。</p>
                 </div>
             </article>
-            <article class="vision-item">
-                <div class="vision-img-box">
-                    <img src="{{ url_for('static', filename='images/pages/index/fund2.png') }}" alt="願景2">
+
+            <article class="timeline-node">
+                <div class="timeline-dot"></div>
+                <div class="timeline-img">
+                    <img src="{{ url_for('static', filename='images/pages/index/fund2.png') }}" alt="願景2" loading="lazy">
                 </div>
-                <div class="vision-content">
+                <div class="timeline-content">
                     <h3>責任：我們需要一個更穩定的家</h3>
                     <p>看見信徒在烈日下等待收驚的汗水，看見法會時大家擠在狹窄過道的虔誠。建廟，已是刻不容緩的使命。</p>
                 </div>
             </article>
-            <article class="vision-item">
-                <div class="vision-img-box">
-                    <img src="{{ url_for('static', filename='images/pages/index/fund3.png') }}" alt="願景3">
+
+            <article class="timeline-node">
+                <div class="timeline-dot"></div>
+                <div class="timeline-img">
+                    <img src="{{ url_for('static', filename='images/pages/index/fund3.png') }}" alt="願景3" loading="lazy">
                 </div>
-                <div class="vision-content">
+                <div class="timeline-content">
                     <h3>藍圖：不只是一座廟</h3>
                     <p>未來的帥府將是莊嚴的文化基地，傳承信仰精神，提供信眾心靈平靜的歸宿。</p>
                 </div>
             </article>
-            <article class="vision-item">
-                <div class="vision-img-box">
-                    <img src="{{ url_for('static', filename='images/pages/index/fund4.png') }}" alt="願景4">
+
+            <article class="timeline-node">
+                <div class="timeline-dot"></div>
+                <div class="timeline-img">
+                    <img src="{{ url_for('static', filename='images/pages/index/fund4.png') }}" alt="願景4" loading="lazy">
                 </div>
-                <div class="vision-content">
+                <div class="timeline-content">
                     <h3>邀請：萬丈高樓，起於您的一份心意</h3>
                     <p>您捐獻的一磚一瓦，都將刻畫在歷史中。誠摯邀請您成為建廟功德主，種下萬世流芳的福田。</p>
                 </div>
@@ -373,108 +1006,131 @@
         </div>
     </section>
 
-    <section class="donation-section" id="donate">
-        <div class="section-container" style="padding-top:0;">
-            <div class="honor-roll-section">
-                <div class="honor-title" style="font-size:1.8rem; text-align:center; color:var(--royal-gold-light); margin-bottom:20px;">捐贈芳名錄</div>
-                <div class="marquee-container">
-                    <div class="marquee-scroll-wrapper" id="honor-list">
-                        <div style="padding:40px; text-align:center;">正在從資料庫讀取善信名單...</div>
-                    </div>
+    <section class="fund-section honor-section" id="donate">
+        <h2 class="section-title">捐贈芳名錄</h2>
+        <div class="honor-scroll-box">
+            <div class="honor-heading">功德芳名</div>
+            <div class="marquee-viewport">
+                <div class="marquee-track" id="honor-list">
+                    <div style="padding:40px; text-align:center;">正在從資料庫讀取善信名單...</div>
                 </div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn-action" style="padding: 10px 25px; font-size: 1rem; width: auto;" onclick="ModalLogic.openScroll()">📜 展開完整芳名錄</button>
+            </div>
+            <div class="honor-btn-row">
+                <button class="btn-gold-outline" onclick="ModalLogic.openScroll()">📜 展開完整芳名錄</button>
+            </div>
+        </div>
+
+        <h2 class="section-title">立即護持</h2>
+        <p style="text-align:center; margin-bottom:50px; font-size:1.1rem; color:var(--text-muted);">
+            您的每一份心意，都將化作莊嚴廟宇的一部分。
+        </p>
+
+        <ol class="process-bar">
+            <li class="process-step">
+                <div class="step-circle">🙏</div>
+                <span class="step-label">選擇項目</span>
+                <span class="step-desc">挑選欲護持的磚瓦或項目</span>
+            </li>
+            <li class="process-step">
+                <div class="step-circle">✍️</div>
+                <span class="step-label">填寫疏文</span>
+                <span class="step-desc">確認稟奏姓名與生辰</span>
+            </li>
+            <li class="process-step">
+                <div class="step-circle">💰</div>
+                <span class="step-label">完成匯款</span>
+                <span class="step-desc">103 新光銀行 (北嘉義)<br>0666509711333 曾凡禎</span>
+            </li>
+            <li class="process-step">
+                <div class="step-circle">💮</div>
+                <span class="step-label">功德圓滿</span>
+                <span class="step-desc">確認後正式列入名錄</span>
+            </li>
+        </ol>
+
+        <div class="donate-cards" id="item-cards">
+            <div class="donate-card" data-key="suixi">
+                <svg class="card-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="32" cy="32" r="30" stroke="var(--gold-border-strong)" stroke-width="1"/>
+                    <path d="M20 42h24v4H20zM22 36h20v5H22zM24 30h16v5H24zM28 24h8v5H28z" fill="var(--gold)" opacity="0.7"/>
+                    <path d="M32 18l-2 6h4l-2-6z" fill="var(--gold-bright)"/>
+                </svg>
+                <h3>隨喜助建</h3>
+                <div class="card-price">NT$ 100</div>
+                <div class="qty-row">
+                    <button class="qty-btn" onclick="Cart.update('suixi', -1, event)">−</button>
+                    <span class="qty-num" id="qty-suixi">0</span>
+                    <button class="qty-btn" onclick="Cart.update('suixi', 1, event)">＋</button>
                 </div>
             </div>
 
-            <h2 class="section-title-fund">立即護持</h2>
-            <p style="margin-bottom:50px; font-size:1.2rem; color: #aaa;">您的每一份心意，都將化作莊嚴廟宇的一部份。</p>
-            
-            <ol class="process-steps">
-                <li class="step-item">
-                    <div class="step-icon-box">🙏</div>
-                    <span class="step-title">Step 1：選擇項目</span>
-                    <span class="step-desc">挑選欲護持的磚瓦或項目</span>
-                </li>
-                <li class="step-item">
-                    <div class="step-icon-box">✍️</div>
-                    <span class="step-title">Step 2：填寫疏文</span>
-                    <span class="step-desc">確認用於稟奏的姓名與生辰</span>
-                </li>
-                <li class="step-item">
-                    <div class="step-icon-box">💰</div>
-                    <span class="step-title">Step 3：完成匯款</span>
-                    <span class="step-desc">103新光銀行 (北嘉義)<br>0666509711333 曾凡禎</span>
-                </li>
-                <li class="step-item">
-                    <div class="step-icon-box">💮</div>
-                    <span class="step-title">Step 4：功德圓滿</span>
-                    <span class="step-desc">確認款項後將正式列入名錄</span>
-                </li>
-            </ol>
-
-            <div class="donation-options" id="item-cards">
-                <div class="donate-card" data-key="suixi">
-                    <h3>隨喜助建</h3>
-                    <div class="price">NT$ 100</div>
-                    <div class="qty-control">
-                        <button class="qty-btn" onclick="Cart.update('suixi', -1, event)">-</button>
-                        <span class="qty-display" id="qty-suixi">0</span>
-                        <button class="qty-btn" onclick="Cart.update('suixi', 1, event)">+</button>
-                    </div>
-                </div>
-                <div class="donate-card" data-key="tile">
-                    <h3>建廟瓦片</h3>
-                    <div class="price">NT$ 600</div>
-                    <div class="qty-control">
-                        <button class="qty-btn" onclick="Cart.update('tile', -1, event)">-</button>
-                        <span class="qty-display" id="qty-tile">0</span>
-                        <button class="qty-btn" onclick="Cart.update('tile', 1, event)">+</button>
-                    </div>
-                </div>
-                <div class="donate-card" data-key="pillar">
-                    <h3>龍柱認捐</h3>
-                    <div class="price">NT$ 10,000</div>
-                    <div class="qty-control">
-                        <button class="qty-btn" onclick="Cart.update('pillar', -1, event)">-</button>
-                        <span class="qty-display" id="qty-pillar">0</span>
-                        <button class="qty-btn" onclick="Cart.update('pillar', 1, event)">+</button>
-                    </div>
+            <div class="donate-card" data-key="tile">
+                <svg class="card-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="32" cy="32" r="30" stroke="var(--gold-border-strong)" stroke-width="1"/>
+                    <path d="M14 38 l18-14 l18 14" stroke="var(--gold)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <path d="M16 38 l16-12 l16 12v8H16z" fill="var(--gold)" opacity="0.25"/>
+                    <rect x="28" y="36" width="8" height="10" rx="1" fill="var(--gold)" opacity="0.5"/>
+                </svg>
+                <h3>建廟瓦片</h3>
+                <div class="card-price">NT$ 600</div>
+                <div class="qty-row">
+                    <button class="qty-btn" onclick="Cart.update('tile', -1, event)">−</button>
+                    <span class="qty-num" id="qty-tile">0</span>
+                    <button class="qty-btn" onclick="Cart.update('tile', 1, event)">＋</button>
                 </div>
             </div>
 
-            <div class="donation-total">
-                總護持金額：NT$ <span id="total-amount">0</span>
+            <div class="donate-card" data-key="pillar">
+                <svg class="card-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="32" cy="32" r="30" stroke="var(--gold-border-strong)" stroke-width="1"/>
+                    <rect x="28" y="16" width="8" height="36" rx="3" fill="var(--gold)" opacity="0.6"/>
+                    <path d="M26 18 c2-4 4-2 6-5 c2 3 4 1 6 5" stroke="var(--gold-bright)" stroke-width="1.5" fill="none"/>
+                    <path d="M26 28 c3-3 5 0 6-3 c1 3 3 0 6 3" stroke="var(--gold-bright)" stroke-width="1.2" fill="none"/>
+                    <rect x="24" y="50" width="16" height="4" rx="1" fill="var(--gold)" opacity="0.4"/>
+                    <rect x="26" y="14" width="12" height="3" rx="1" fill="var(--gold-bright)" opacity="0.5"/>
+                </svg>
+                <h3>龍柱認捐</h3>
+                <div class="card-price">NT$ 10,000</div>
+                <div class="qty-row">
+                    <button class="qty-btn" onclick="Cart.update('pillar', -1, event)">−</button>
+                    <span class="qty-num" id="qty-pillar">0</span>
+                    <button class="qty-btn" onclick="Cart.update('pillar', 1, event)">＋</button>
+                </div>
             </div>
-            
-            <button class="btn-action" id="btn-next-step" onclick="Cart.submitInitial()">前往填寫資料</button>
+        </div>
+
+        <div class="donate-total">
+            總護持金額：NT$ <span id="total-amount">0</span>
+        </div>
+
+        <div class="btn-center">
+            <button class="btn-gold" id="btn-next-step" onclick="Cart.submitInitial()">前往填寫資料</button>
         </div>
     </section>
 
-    <section class="section-container">
-        <div class="committee-banner">
-            <div class="committee-bg-icon left">🏛️</div>
-            <div class="committee-bg-icon right">📜</div>
-            <h3 style="color:var(--royal-gold-light); font-size:2rem; margin-bottom:15px;">想要更深度參與聖業？</h3>
-            <p style="font-size:1.1rem; line-height:1.8; margin-bottom:30px;">
-                誠摯邀請加入<strong class="text-highlight">「委員會」</strong>或<strong class="text-highlight">「顧問團」</strong>。<br>
+    <section class="fund-section">
+        <div class="committee-cta">
+            <h3>想要更深度參與聖業？</h3>
+            <p>
+                誠摯邀請加入<strong class="hl">「委員會」</strong>或<strong class="hl">「顧問團」</strong>，<br>
                 享有芳名錄刊登首頁等專屬禮遇，共創萬世聖業！
             </p>
-            <a href="{{ url_for('main.committee_page') }}" class="btn-action" style="width:auto; padding-inline:40px;">👉 了解委員會專屬禮遇</a>
+            <a href="{{ url_for('main.committee_page') }}" class="btn-gold" style="text-decoration:none;">了解委員會專屬禮遇</a>
         </div>
     </section>
+
 </div>
 
 <div id="fund-form-modal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">填寫護持資料</div>
-        <div class="emotional-text">感恩您的發心！您的一磚一瓦將向元帥稟奏疏文，庇佑您閤家平安。</div>
+    <div class="modal-box">
+        <div class="modal-heading">填寫護持資料</div>
+        <div class="emotional-hint">感恩您的發心！您的一磚一瓦將向元帥稟奏疏文，庇佑您闔家平安。</div>
         <form id="donation-form">
             <div class="form-row">
                 <div class="form-group">
                     <label>真實姓名</label>
                     <input type="text" name="name" class="form-control" required placeholder="限一位姓名">
-                    <small style="color:#d32f2f;">※ 僅限填寫一位姓名，勿填全家、空格等。</small>
+                    <small style="color:#d32f2f; font-size:0.8rem;">※ 僅限填寫一位真實姓名</small>
                 </div>
                 <div class="form-group">
                     <label>農曆生日 (YYYY/MM/DD)</label>
@@ -497,86 +1153,84 @@
             </div>
             <div class="form-group">
                 <label>匯款帳號後五碼</label>
-                <input type="text" name="last5" class="form-control" maxlength="5" required placeholder="請填寫帳號後5碼">
+                <input type="text" name="last5" class="form-control" maxlength="5" required placeholder="請填寫帳號後 5 碼">
             </div>
-            <button type="submit" class="btn-action">下一步：確認資料</button>
-            <button type="button" class="btn-action btn-secondary" onclick="ModalLogic.close('fund-form-modal')">取消</button>
+            <div class="modal-btn-row">
+                <button type="submit" class="btn-gold" style="width:100%;">下一步：確認資料</button>
+                <button type="button" class="btn-gold btn-secondary" style="width:100%;" onclick="ModalLogic.close('fund-form-modal')">取消</button>
+            </div>
         </form>
     </div>
 </div>
 
 <div id="confirm-modal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">請確認護持資訊</div>
+    <div class="modal-box">
+        <div class="modal-heading">請確認護持資訊</div>
         <table style="width:100%; text-align:left; border-collapse:collapse; line-height:2.5;">
             <tr style="border-bottom:1px solid #eee;"><td>姓名</td><td id="conf-name"></td></tr>
             <tr style="border-bottom:1px solid #eee;"><td>護持項目</td><td id="conf-items"></td></tr>
-            <tr style="border-bottom:1px solid #eee;"><td>總金額</td><td id="conf-total" style="color:#C48945; font-weight:bold;"></td></tr>
+            <tr style="border-bottom:1px solid #eee;"><td>總金額</td><td id="conf-total" style="color:var(--gold); font-weight:bold;"></td></tr>
         </table>
-        <p style="color:red; margin-top:15px;">※ 資料送出後無法修改，請確認無誤。</p>
-        <button id="final-submit-btn" class="btn-action" style="margin-top:20px;">確認送出</button>
-        <button class="btn-action btn-secondary" onclick="ModalLogic.backToEdit()">返回修改</button>
+        <p style="color:red; margin-top:15px; font-size:0.95rem;">※ 資料送出後無法修改，請確認無誤。</p>
+        <div class="modal-btn-row">
+            <button id="final-submit-btn" class="btn-gold" style="width:100%;">確認送出</button>
+            <button class="btn-gold btn-secondary" style="width:100%;" onclick="ModalLogic.backToEdit()">返回修改</button>
+        </div>
     </div>
 </div>
 
 <div id="success-modal" class="modal-overlay">
-    <div class="modal-content" style="text-align:center;">
-        <div style="font-size:3rem;">🙏</div>
-        <h2 style="color:#C48945;">功德無量</h2>
+    <div class="modal-box" style="text-align:center;">
+        <div style="font-size:3rem; margin-bottom:8px;">🙏</div>
+        <h2 style="color:var(--gold); margin:0 0 10px;">功德無量</h2>
         <p>感謝您的護持！請於 2 小時內完成匯款。</p>
-        <div style="background:#e3f2fd; padding:15px; border-radius:8px; margin:20px 0; text-align:left;">
-            <p><strong>銀行：</strong>103 新光銀行 (北嘉義)</p>
-            <p><strong>帳號：</strong>0666509711333 (曾凡禎)</p>
+        <div style="background:#f0f7ff; padding:16px; border-radius:8px; margin:18px 0; text-align:left; line-height:2;">
+            <p style="margin:0;"><strong>銀行：</strong>103 新光銀行 (北嘉義)</p>
+            <p style="margin:0;"><strong>帳號：</strong>0666509711333 (曾凡禎)</p>
         </div>
-        <button class="btn-action" onclick="location.reload()">完成</button>
+        <button class="btn-gold" style="width:100%;" onclick="location.reload()">完成</button>
     </div>
 </div>
 
 <div id="scroll-modal-overlay" class="modal-overlay" onclick="ModalLogic.closeScroll(event)">
-    <div class="scroll-wrapper" id="scroll-wrapper" onclick="event.stopPropagation()">
-        <button style="position:absolute; top:-20px; right:-20px; width:40px; height:40px; border-radius:50%; background:#4a0e0e; border:2px solid var(--royal-gold-main); color:#fff; cursor:pointer; z-index:10;" onclick="ModalLogic.closeScroll()">✖</button>
-        <div class="scroll-top-axis"></div>
-        <div class="scroll-content" id="full-honor-list">
+    <div class="scroll-wrap" id="scroll-wrapper" onclick="event.stopPropagation()">
+        <button class="scroll-close-btn" onclick="ModalLogic.closeScroll()">✕</button>
+        <div class="scroll-rod-top"></div>
+        <div class="scroll-parchment" id="full-honor-list">
             <div style="padding:40px; text-align:center; color:#fff;">正在展開名錄...</div>
         </div>
-        <div class="scroll-bottom-axis"></div>
+        <div class="scroll-rod-bottom"></div>
     </div>
 </div>
 
 <script>
-/**
- * 承天中承府 - 建廟基金模組化 Script
- */
 const GlobalConfig = {
     items: {
-        'suixi': { name: '隨喜助建', price: 100, qty: 0 },
-        'tile': { name: '建廟瓦片', price: 600, qty: 0 },
-        'pillar': { name: '龍柱認捐', price: 10000, qty: 0 }
+        suixi:  { name: '隨喜助建', price: 100,   qty: 0 },
+        tile:   { name: '建廟瓦片', price: 600,   qty: 0 },
+        pillar: { name: '龍柱認捐', price: 10000, qty: 0 }
     }
 };
 
-// 購物車邏輯
+/* === Cart === */
 const Cart = {
-    update(key, change, e) {
-        if(e) e.stopPropagation();
+    update(key, delta, e) {
+        if (e) e.stopPropagation();
         const item = GlobalConfig.items[key];
-        item.qty = Math.max(0, item.qty + change);
-        
-        // UI 更新
+        item.qty = Math.max(0, item.qty + delta);
         document.getElementById(`qty-${key}`).innerText = item.qty;
-        const card = document.querySelector(`.donate-card[data-key="${key}"]`);
-        card.classList.toggle('selected', item.qty > 0);
-        
+        document.querySelector(`.donate-card[data-key="${key}"]`)
+            .classList.toggle('selected', item.qty > 0);
         this.calcTotal();
     },
-    
     calcTotal() {
-        const total = Object.values(GlobalConfig.items).reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
-        document.getElementById('total-amount').innerText = total.toLocaleString();
+        const t = Object.values(GlobalConfig.items)
+            .reduce((s, i) => s + i.price * i.qty, 0);
+        document.getElementById('total-amount').innerText = t.toLocaleString();
     },
-
     async submitInitial() {
-        const total = Object.values(GlobalConfig.items).reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
+        const total = Object.values(GlobalConfig.items)
+            .reduce((s, i) => s + i.price * i.qty, 0);
         if (total <= 0) return alert('請先選擇欲護持的項目');
 
         const btn = document.getElementById('btn-next-step');
@@ -586,14 +1240,11 @@ const Cart = {
         try {
             const res = await fetch('/api/user/me');
             const data = await res.json();
-
             if (!data.logged_in) {
                 alert('請先進行 LINE 登入，以便紀錄功德。');
                 window.location.href = `/api/line/login?next=${encodeURIComponent('/fund')}`;
                 return;
             }
-
-            // 預填資料
             const form = document.getElementById('donation-form');
             const u = data.user || {};
             form.name.value = u.realName || '';
@@ -601,7 +1252,6 @@ const Cart = {
             form.email.value = u.email || '';
             form.address.value = u.address || '';
             form.lunarBirthday.value = u.lunarBirthday || '';
-
             ModalLogic.open('fund-form-modal');
         } catch (e) {
             alert('系統連線異常');
@@ -612,11 +1262,11 @@ const Cart = {
     }
 };
 
-// 彈出視窗控制
+/* === Modals === */
 const ModalLogic = {
     open(id) {
         document.getElementById(id).style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // 鎖定滾動
+        document.body.style.overflow = 'hidden';
     },
     close(id) {
         document.getElementById(id).style.display = 'none';
@@ -627,102 +1277,108 @@ const ModalLogic = {
         this.open('fund-form-modal');
     },
     openScroll() {
-        const overlay = document.getElementById('scroll-modal-overlay');
-        overlay.style.display = 'flex';
+        document.getElementById('scroll-modal-overlay').style.display = 'flex';
         setTimeout(() => document.getElementById('scroll-wrapper').classList.add('unrolled'), 50);
     },
-    closeScroll() {
+    closeScroll(e) {
+        if (e && e.target !== document.getElementById('scroll-modal-overlay')) return;
         document.getElementById('scroll-wrapper').classList.remove('unrolled');
         setTimeout(() => document.getElementById('scroll-modal-overlay').style.display = 'none', 600);
     }
 };
 
-// 初始化
+/* === Init === */
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // 1. 進度條初始化
+
+    /* 1. 進度環 */
     (async () => {
         try {
             const res = await fetch('/api/fund-settings');
             const data = await res.json();
             const goal = data.goal_amount || 10000000;
             const current = data.current_amount || 0;
-            const percent = Math.min(Math.round((current / goal) * 100), 100);
+            const pct = Math.min(Math.round((current / goal) * 100), 100);
 
             document.getElementById('goal-text').textContent = `$${goal.toLocaleString()}`;
             document.getElementById('current-text').textContent = `$${current.toLocaleString()}`;
-            document.getElementById('percent-text').textContent = `${percent}%`;
 
-            const chart = document.getElementById('fund-chart');
-            chart.style.background = `conic-gradient(#ffd700 0%, #bf953f ${percent}%, rgba(255,255,255,0.1) ${percent}% 100%)`;
-        } catch (e) { console.error("Setting Load Failed", e); }
+            // countUp 動畫
+            const el = document.getElementById('percent-text');
+            let count = 0;
+            const step = Math.max(1, Math.ceil(pct / 60));
+            const timer = setInterval(() => {
+                count = Math.min(count + step, pct);
+                el.textContent = count + '%';
+                if (count >= pct) clearInterval(timer);
+            }, 30);
+
+            // SVG stroke
+            const circumference = 2 * Math.PI * 120; // r=120
+            const arc = document.getElementById('ring-arc');
+            arc.style.strokeDasharray = circumference;
+            setTimeout(() => {
+                arc.style.strokeDashoffset = circumference - (circumference * pct / 100);
+            }, 200);
+        } catch (e) { console.error('Setting Load Failed', e); }
     })();
 
-    // 2. 芳名錄初始化
+    /* 2. 芳名錄 */
     (async () => {
         const list = document.getElementById('honor-list');
         const fullList = document.getElementById('full-honor-list');
         try {
             const res = await fetch('/api/donations/public?type=fund');
             const data = await res.json();
-            if(!data.length) return list.innerHTML = '🙏 期待首位護持大德';
+            if (!data.length) { list.innerHTML = '<div style="padding:40px;text-align:center;">🙏 期待首位護持大德</div>'; return; }
 
-            const itemsToHtml = (d) => `
-                <div class="donor-item">
-                    <span class="donor-name">${d.name}</span>
-                    <span class="donor-items">${d.items.replace(/, /g, '<br>')}</span>
-                </div>`;
+            const toHtml = d => `<div class="donor-row"><span class="donor-name">${d.name}</span><span class="donor-items">${d.items.replace(/, /g,'<br>')}</span></div>`;
+            fullList.innerHTML = data.map(toHtml).join('');
 
-            fullList.innerHTML = data.map(itemsToHtml).join('');
-            
-            // 跑馬燈處理
-            let marqueeData = [...data];
-            while(marqueeData.length < 6) marqueeData = marqueeData.concat(data);
-            const html = marqueeData.map(itemsToHtml).join('');
-            list.innerHTML = html + html; 
-            list.style.animation = `seamlessScroll ${Math.max(20, marqueeData.length * 3)}s linear infinite`;
-        } catch (e) { list.innerHTML = '讀取失敗'; }
+            let mq = [...data];
+            while (mq.length < 6) mq = mq.concat(data);
+            const html = mq.map(toHtml).join('');
+            list.innerHTML = html + html;
+            list.style.animation = `seamlessScroll ${Math.max(20, mq.length * 3)}s linear infinite`;
+        } catch (e) { list.innerHTML = '<div style="padding:40px;text-align:center;">讀取失敗</div>'; }
     })();
 
-    // 3. 輸入遮罩
+    /* 3. 輸入遮罩 */
     const masks = {
-        date: (v) => v.replace(/\D/g, '').slice(0,8).replace(/(\d{4})(\d{2})?(\d{2})?/, (m,p1,p2,p3) => p1 + (p2?'/'+p2:'') + (p3?'/'+p3:'')),
-        phone: (v) => v.replace(/\D/g, '').slice(0,10).replace(/(\d{4})(\d{3})?(\d{3})?/, (m,p1,p2,p3) => p1 + (p2?'-'+p2:'') + (p3?'-'+p3:''))
+        date: v => v.replace(/\D/g,'').slice(0,8).replace(/(\d{4})(\d{2})?(\d{2})?/,(m,a,b,c)=>a+(b?'/'+b:'')+(c?'/'+c:'')),
+        phone: v => v.replace(/\D/g,'').slice(0,10).replace(/(\d{4})(\d{3})?(\d{3})?/,(m,a,b,c)=>a+(b?'-'+b:'')+(c?'-'+c:''))
     };
     document.querySelectorAll('[data-mask]').forEach(el => {
-        el.addEventListener('input', e => {
-            const type = el.dataset.mask;
-            if(masks[type]) el.value = masks[type](el.value);
+        el.addEventListener('input', () => {
+            const fn = masks[el.dataset.mask];
+            if (fn) el.value = fn(el.value);
         });
     });
 
-    // 4. 表單提交
+    /* 4. 表單提交 */
     const form = document.getElementById('donation-form');
     form.addEventListener('submit', e => {
         e.preventDefault();
         const nameVal = form.name.value.trim();
-        if(/[、，,。/&＆\s]/.test(nameVal) || /(全家|一家|闔家)/.test(nameVal)) {
-            return alert('姓名欄位請填寫單一真實姓名，勿包含符號或「全家」等字眼。');
+        if (/[、，,。/&＆\s]/.test(nameVal) || /(全家|一家|闔家)/.test(nameVal)) {
+            return alert('姓名欄位請填寫單一真實姓名。');
         }
-
         document.getElementById('conf-name').innerText = form.name.value;
-        document.getElementById('conf-total').innerText = document.getElementById('total-amount').innerText;
-        let itemsDesc = "";
-        Object.values(GlobalConfig.items).forEach(i => { if(i.qty > 0) itemsDesc += `${i.name} x ${i.qty}<br>`; });
-        document.getElementById('conf-items').innerHTML = itemsDesc;
-
+        document.getElementById('conf-total').innerText = 'NT$ ' + document.getElementById('total-amount').innerText;
+        let desc = '';
+        Object.values(GlobalConfig.items).forEach(i => { if (i.qty > 0) desc += `${i.name} × ${i.qty}<br>`; });
+        document.getElementById('conf-items').innerHTML = desc;
         ModalLogic.close('fund-form-modal');
         ModalLogic.open('confirm-modal');
     });
 
-    // 5. 最終 API 送出
+    /* 5. 最終送出 */
     document.getElementById('final-submit-btn').onclick = async () => {
         const btn = document.getElementById('final-submit-btn');
         btn.disabled = true;
         btn.innerText = '處理中...';
 
-        const orderItems = Object.entries(GlobalConfig.items)
-            .filter(([k, v]) => v.qty > 0)
+        const items = Object.entries(GlobalConfig.items)
+            .filter(([, v]) => v.qty > 0)
             .map(([k, v]) => ({ name: `[建廟] ${v.name}`, price: v.price, qty: v.qty, id: k }));
 
         const payload = {
@@ -733,7 +1389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             last5: form.last5.value,
             email: form.email.value,
             lunarBirthday: form.lunarBirthday.value,
-            items: orderItems,
+            items,
             total: parseInt(document.getElementById('total-amount').innerText.replace(/,/g, ''), 10)
         };
 
@@ -744,7 +1400,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf || '' },
                 body: JSON.stringify(payload)
             });
-
             const result = await res.json();
             if (result.success) {
                 ModalLogic.close('confirm-modal');
@@ -752,10 +1407,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 alert('失敗：' + (result.message || '系統錯誤'));
                 btn.disabled = false;
+                btn.innerText = '確認送出';
             }
         } catch (e) {
             alert('網路連線異常');
             btn.disabled = false;
+            btn.innerText = '確認送出';
         }
     };
 });
