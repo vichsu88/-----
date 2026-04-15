@@ -775,32 +775,47 @@ def debug_connection():
     except Exception as e:
         status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
     return jsonify(status)
-# === 委員會名額管理 API ===
+# === 委員會名額與金額管理 API ===
 @admin_bp.route('/api/settings/committee-quota', methods=['GET', 'POST'])
 @admin_required(roles=['super_admin', 'cms'])
 def handle_committee_quota():
+    # 完整的 9 個項目預設值
+    default_roles = [
+        {"name": "[建廟] 籌備主委", "limit": 1, "price": 50000},
+        {"name": "[建廟] 籌備副主委", "limit": 10, "price": 36000},
+        {"name": "[建廟] 建廟功德金", "limit": 999, "price": 10000},
+        {"name": "[顧問] 顧問主席", "limit": 1, "price": 50000},
+        {"name": "[顧問] 顧問副主席", "limit": 7, "price": 36000},
+        {"name": "[顧問] 顧問", "limit": 999, "price": 20000},
+        {"name": "[本府] 主委", "limit": 1, "price": 50000},
+        {"name": "[本府] 副主委", "limit": 7, "price": 36000},
+        {"name": "[本府] 委員", "limit": 999, "price": 25000}
+    ]
+
     if request.method == 'GET':
         setting = db.settings.find_one({"type": "committee_quota"})
-        # 完整 9 個項目清單與預設金額
-        default_roles = [
-            {"name": "[建廟] 籌備主委", "limit": 1, "price": 50000},
-            {"name": "[建廟] 籌備副主委", "limit": 10, "price": 36000},
-            {"name": "[建廟] 建廟功德金", "limit": 999, "price": 10000},
-            {"name": "[顧問] 顧問主席", "limit": 1, "price": 50000},
-            {"name": "[顧問] 顧問副主席", "limit": 7, "price": 36000},
-            {"name": "[顧問] 顧問", "limit": 999, "price": 20000},
-            {"name": "[本府] 主委", "limit": 1, "price": 50000},
-            {"name": "[本府] 副主委", "limit": 7, "price": 36000},
-            {"name": "[本府] 委員", "limit": 999, "price": 25000}
-        ]
-        return jsonify(setting.get("roles", default_roles) if setting else default_roles)
+        db_roles = setting.get("roles", []) if setting else []
+        
+        # 💡 強效修復：如果資料庫項目不齊全，則進行合併
+        if len(db_roles) < 9:
+            # 以預設值為基底，如果資料庫有同名的就用資料庫的數字
+            db_map = {r['name']: r for r in db_roles}
+            final_roles = []
+            for d in default_roles:
+                final_roles.append(db_map.get(d['name'], d))
+            return jsonify(final_roles)
+            
+        return jsonify(db_roles)
     
+    # 儲存設定
     data = request.get_json()
     db.settings.update_one(
         {"type": "committee_quota"},
         {"$set": {"roles": data}},
         upsert=True
     )
+    # 寫入操作日誌以便追蹤
+    write_audit_log(session.get('admin_username', 'admin'), '更新委員會名額與金額')
     return jsonify({"success": True})
 # =========================================================
 # 臨時工具：歷史回饋單快照修復

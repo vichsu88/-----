@@ -1438,24 +1438,43 @@ async loadFeedbackReview() {
 
     window.loadCommitteeQuotas = async () => {
     try {
-        const roles = await Core.apiFetch('/api/settings/committee-quota');
+        // 同時抓取設定與目前名額狀態 (API 由 main.py 提供)
+        const [configRoles, statusData] = await Promise.all([
+            Core.apiFetch('/api/settings/committee-quota'),
+            Core.apiFetch('/api/public/committee-status')
+        ]);
+        
         const tbody = document.getElementById('committee-quota-list');
-        if(!tbody) return;
+        if (!tbody) return;
+        
+        // 建立狀態對照表 (方便顯示已佔用人數)
+        const statusMap = {};
+        statusData.forEach(s => statusMap[s.name] = s);
 
-        tbody.innerHTML = roles.map(r => `
-            <tr style="border-bottom: 1px solid rgba(0,0,0,0.1);">
-                <td style="padding:12px;"><strong>${r.name}</strong></td>
-                <td style="padding:12px;">
-                    <input type="number" class="quota-input c-form-input" 
-                           data-name="${r.name}" value="${r.limit}" style="width:80px; margin-bottom:0;" min="0">
-                </td>
-                <td style="padding:12px;">
-                    <input type="number" class="price-input c-form-input" 
-                           data-name="${r.name}" value="${r.price || 0}" style="width:100px; margin-bottom:0;" min="0">
-                </td>
-            </tr>
-        `).join('');
-    } catch (err) { console.error("名額載入失敗", err); }
+        tbody.innerHTML = configRoles.map(r => {
+            const currentStatus = statusMap[r.name] || { remaining: 0, used: 0 };
+            const usedCount = (r.limit - currentStatus.remaining) || 0;
+
+            return `
+                <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <td style="padding:12px;"><strong>${r.name}</strong></td>
+                    <td style="padding:12px;">
+                        <input type="number" class="quota-input c-form-input" 
+                               data-name="${r.name}" value="${r.limit}" style="width:80px; margin-bottom:0;" min="0">
+                    </td>
+                    <td style="padding:12px;">
+                        <input type="number" class="price-input c-form-input" 
+                               data-name="${r.name}" value="${r.price || 0}" style="width:100px; margin-bottom:0;" min="0">
+                    </td>
+                    <td style="padding:12px;">
+                        <span class="fs-13 text-gray">已報名: ${usedCount}</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error("載入失敗", err);
+    }
 };
 
 window.saveCommitteeQuotas = async () => {
@@ -1463,18 +1482,20 @@ window.saveCommitteeQuotas = async () => {
     const data = Array.from(rows).map(row => {
         const quotaInput = row.querySelector('.quota-input');
         const priceInput = row.querySelector('.price-input');
+        if (!quotaInput || !priceInput) return null;
         return { 
             name: quotaInput.dataset.name, 
             limit: parseInt(quotaInput.value) || 0,
-            price: parseInt(priceInput.value) || 0 // 儲存金額
+            price: parseInt(priceInput.value) || 0
         };
-    });
-
+    }).filter(item => item !== null);
+    
     await Core.apiFetch('/api/settings/committee-quota', {
         method: 'POST',
         body: JSON.stringify(data)
     });
-    alert("✅ 委員會名額與金額設定儲存成功！");
+    alert("✅名額與金額設定已成功儲存！");
+    loadCommitteeQuotas(); // 重新載入以更新顯示
 };
 
     /* =========================================
