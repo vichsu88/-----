@@ -366,43 +366,7 @@ def mark_donations_reported():
 # 委員會名額動態管理 (CMS)
 # =========================================================
 
-@admin_bp.route('/api/settings/committee-quota', methods=['GET', 'POST'])
-@admin_required(roles=['super_admin', 'cms'])  # 允許最高權限與內容管理員存取
-def handle_committee_quota():
-    if request.method == 'GET':
-        # 讀取目前的設定
-        setting = db.settings.find_one({"type": "committee_quota"})
-        if not setting:
-            # 如果資料庫還沒有設定過，給予預設值 (包含您的 6 個主要限制職位)
-            setting = {
-                "roles": [
-                    {"id": "c_chair", "name": "[本府] 主委", "limit": 1},
-                    {"id": "c_v_chair", "name": "[本府] 副主委", "limit": 7},
-                    {"id": "prep_chair", "name": "[建廟] 籌備主委", "limit": 1},
-                    {"id": "prep_v_chair", "name": "[建廟] 籌備副主委", "limit": 10},
-                    {"id": "adv_chair", "name": "[顧問] 顧問主席", "limit": 1},
-                    {"id": "adv_v_chair", "name": "[顧問] 顧問副主席", "limit": 7}
-                ]
-            }
-        return jsonify(setting.get("roles", []))
-        
-    else:
-        # POST: 儲存管理員修改後的名額數字
-        data = request.get_json()
-        if not isinstance(data, list):
-            return jsonify({"error": "資料格式錯誤"}), 400
-            
-        db.settings.update_one(
-            {"type": "committee_quota"},
-            {"$set": {"roles": data}},
-            upsert=True
-        )
-        
-        # 紀錄操作日誌
-        admin_name = session.get('admin_username', 'admin')
-        write_audit_log(admin_name, '更新委員會名額設定')
-        
-        return jsonify({"success": True, "message": "名額設定已成功更新"})
+
 @admin_bp.route('/api/admin/data/export-csv')
 @admin_required(roles=['super_admin', 'data', 'finance'])
 def export_data_csv():

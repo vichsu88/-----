@@ -119,7 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     'cms-announcements': () => CMSManager.loadAnnouncements(),
                     'cms-faq': () => CMSManager.loadFaqs(),
                     'cms-fund': () => CMSManager.loadFund(),
-                    'cms-settings': () => CMSManager.loadSettings()
+                    'cms-settings': () => CMSManager.loadSettings(),
+                    'cms-committee': () => window.loadCommitteeQuotas() 
                 }},
                 { attr: 'data-sys-tab', cls: 'sys-sub', actions: {
                     'sys-users': () => SystemManager.loadUsers(),
@@ -1224,70 +1225,7 @@ async loadFeedbackReview() {
             FinanceManager.refresh();
         });
     };
-    // 載入委員會名額設定
-async function loadCommitteeQuotas() {
-    try {
-        const res = await fetch('/api/settings/committee-quota');
-        const data = await res.json();
-        
-        const tbody = document.getElementById('committee-quota-list');
-        tbody.innerHTML = '';
-        
-        data.forEach((role, index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${role.name}</strong></td>
-                <td>
-                    <input type="number" class="form-control quota-input" 
-                           data-id="${role.id}" data-name="${role.name}" 
-                           value="${role.limit}" min="0">
-                </td>
-                <td><span class="badge bg-info">連動中</span></td>
-            `;
-            tbody.appendChild(tr);
-        });
-    } catch (err) {
-        alert("載入名額失敗：" + err);
-    }
-}
 
-// 儲存委員會名額設定
-async function saveCommitteeQuotas() {
-    const inputs = document.querySelectorAll('.quota-input');
-    const newData = Array.from(inputs).map(input => ({
-        id: input.dataset.id,
-        name: input.dataset.name,
-        limit: parseInt(input.value) || 0
-    }));
-
-    if (!confirm("確定要更新所有名額上限嗎？這會直接影響前台報名。")) return;
-
-    try {
-        const res = await fetch('/api/settings/committee-quota', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken() // 確保您的系統有處理 CSRF
-            },
-            body: JSON.stringify(newData)
-        });
-        
-        const result = await res.json();
-        if (result.success) {
-            alert("✅ 名額設定儲存成功！");
-            loadCommitteeQuotas(); // 重新整理列表
-        } else {
-            alert("❌ 儲存失敗：" + result.error);
-        }
-    } catch (err) {
-        alert("傳輸發生錯誤：" + err);
-    }
-}
-
-// 初始化：如果目前在管理頁面，自動載入一次
-if (document.getElementById('committee-quota-list')) {
-    loadCommitteeQuotas();
-}
     // --- 站務操作 ---
     window.shipOrder = async (id) => {
         const trackNum = prompt('請輸入物流單號 (寄送出貨通知信)：');
@@ -1493,7 +1431,55 @@ if (document.getElementById('committee-quota-list')) {
         await Core.apiFetch(`/api/faq/${id}`, { method: 'DELETE' });
         ContentManager.fetchFaqs();
     });
+    window.delFaq = (id) => Core.confirmAction('刪除？', async () => {
+        await Core.apiFetch(`/api/faq/${id}`, { method: 'DELETE' });
+        ContentManager.fetchFaqs();
+    });
 
+    // =========================================================
+    // 💡 新增：委員會名額管理 (全域綁定)
+    // =========================================================
+    window.loadCommitteeQuotas = async () => {
+        try {
+            const roles = await Core.apiFetch('/api/settings/committee-quota');
+            const tbody = document.getElementById('committee-quota-list');
+            if(!tbody) return;
+            
+            tbody.innerHTML = roles.map(r => `
+                <tr style="border-bottom: 1px solid rgba(0,0,0,0.1);">
+                    <td style="padding:12px;"><strong>${r.name}</strong></td>
+                    <td style="padding:12px;">
+                        <input type="number" class="quota-input c-form-input" 
+                               data-name="${r.name}" value="${r.limit}" style="width:80px; margin-bottom:0;" min="0">
+                    </td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error("名額載入失敗", err);
+        }
+    };
+
+    window.saveCommitteeQuotas = async () => {
+        const inputs = document.querySelectorAll('.quota-input');
+        const data = Array.from(inputs).map(i => ({ 
+            name: i.dataset.name, 
+            limit: parseInt(i.value) || 0 
+        }));
+        
+        try {
+            await Core.apiFetch('/api/settings/committee-quota', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            alert("✅ 委員會名額設定儲存成功！");
+        } catch (err) {
+            // Core.apiFetch 已經會自動 alert 錯誤，這裡不需額外處理
+        }
+    };
+
+    /* =========================================
+       15. 啟動流程
+       ========================================= */
     /* =========================================
        15. 啟動流程
        ========================================= */
