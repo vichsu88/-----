@@ -811,6 +811,30 @@ def debug_connection():
     except Exception as e:
         status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
     return jsonify(status)
+# === 委員會名額管理 API ===
+@admin_bp.route('/api/settings/committee-quota', methods=['GET', 'POST'])
+@admin_required(roles=['super_admin', 'cms'])
+def handle_committee_quota():
+    if request.method == 'GET':
+        setting = db.settings.find_one({"type": "committee_quota"})
+        # 預設名額設定
+        default_roles = [
+            {"id": "c_chair", "name": "[本府] 主委", "limit": 1},
+            {"id": "c_v_chair", "name": "[本府] 副主委", "limit": 7},
+            {"id": "[建廟] 籌備主委", "name": "[建廟] 籌備主委", "limit": 1},
+            {"id": "[建廟] 籌備副主委", "name": "[建廟] 籌備副主委", "limit": 10},
+            {"id": "adv_chair", "name": "[顧問] 顧問主席", "limit": 1},
+            {"id": "adv_v_chair", "name": "[顧問] 顧問副主席", "limit": 7}
+        ]
+        return jsonify(setting.get("roles", default_roles) if setting else default_roles)
+    
+    data = request.get_json()
+    db.settings.update_one(
+        {"type": "committee_quota"},
+        {"$set": {"roles": data}},
+        upsert=True
+    )
+    return jsonify({"success": True})
 # =========================================================
 # 臨時工具：歷史回饋單快照修復
 # =========================================================
