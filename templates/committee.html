@@ -338,11 +338,38 @@ function selectRole(name, price, btnElement) {
 }
 
 // 3. 開啟與關閉 Modal
-function openCommitteeModal() {
+async function openCommitteeModal() {
     if (!selectedItem) {
         alert("請先在上方點擊選擇您欲護持的項目！");
         return;
     }
+
+    // 先確認 LINE 登入狀態，未登入則引導去 LINE 登入
+    try {
+        const res = await fetch('/api/user/me');
+        const data = await res.json();
+        if (!data.logged_in) {
+            alert('為了記錄您的護持並寄送感謝狀，請先進行 LINE 登入。');
+            window.location.href = '/api/line/login?next=' + encodeURIComponent('/committee');
+            return;
+        }
+
+        // 登入後自動帶入使用者既有資料（若有）
+        const user = data.user || {};
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && !el.value && val) el.value = val;
+        };
+        setVal('c_name', user.realName);
+        setVal('c_phone', user.phone);
+        setVal('c_email', user.email);
+        setVal('c_address', user.address);
+    } catch (err) {
+        console.error('登入狀態檢查失敗', err);
+        alert('系統忙碌中，請稍後再試');
+        return;
+    }
+
     document.getElementById('modal-selected-name').innerText = selectedItem.name;
     document.getElementById('modal-selected-price').innerText = `金額：$${selectedItem.price.toLocaleString()}`;
     document.getElementById('committeeModal').style.display = 'flex';
