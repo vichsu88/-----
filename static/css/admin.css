@@ -288,10 +288,11 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
 
 /* --- Filter bar --- */
 .filter-bar {
-    background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    padding: 18px; border-radius: 16px; margin-bottom: 20px;
-    border: 1px solid var(--glass-border); box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-}
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 10px !important;
+        padding: 15px;
+    }
 .filter-item { display: flex; flex-direction: column; min-width: 100px; }
 .filter-item label { margin-bottom: 4px; }
 .filter-item input,
@@ -311,8 +312,17 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
     .admin-main { padding: 70px 12px 30px 12px; overflow: visible; height: auto; }
 
     .glass-panel { border-radius: 12px; padding: 15px; }
-    .sub-tab-group { overflow-x: auto; white-space: nowrap; border-radius: 12px; flex-wrap: nowrap; }
-    .sub-tab-btn { padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+    .sub-tab-group {
+        overflow-x: auto;
+        white-space: nowrap;
+        border-radius: 12px;
+        flex-wrap: nowrap;
+        /* 新增：右側內部漸層陰影，暗示右邊還有東西 */
+        box-shadow: inset -20px 0 15px -20px rgba(196, 137, 69, 0.4);
+        padding-right: 25px; /* 留出空間給陰影 */
+        -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動更順暢 */
+    }
+    .sub-tab-btn { padding: 12px; font-size: 14px; white-space: nowrap; }
 
     /* 頁面標題 */
     .page-title { font-size: 20px; margin-bottom: 15px; }
@@ -328,7 +338,9 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
         min-width: unset;
     }
     .filter-bar .btn {
+        grid-column: span 2;
         width: 100%;
+        height: 44px; /* 符合觸控標準高度 */
     }
 
     /* Donation toolbar 手機版 */
@@ -353,14 +365,19 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
         gap: 8px;
     }
 
-    /* 按鈕行: 允許換行 */
+    /* 按鈕行: 防誤觸加大間距 */
     .card-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 10px; /* 從 6px 加大到 10px */
         justify-content: flex-end;
+        margin-top: 15px;
     }
-    .card-actions .btn { font-size: 12px; padding: 6px 10px; }
+    .card-actions .btn { 
+        font-size: 14px; 
+        padding: 8px 16px; 
+        min-height: 40px; /* 確保觸控面積足夠 */
+    }
 
     /* Modal: 手機版 */
     .admin-modal-content {
@@ -434,6 +451,16 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
 
     /* 危險區域 */
     .danger-zone { padding: 15px; }
+    /* 財務與站務首頁的 summary 區塊：強制單欄垂直排列 */
+    #finance-summary, 
+    .d-flex.gap-10.flex-wrap.mb-20 {
+        flex-direction: column;
+        gap: 12px;
+    }
+    #finance-summary > div {
+        width: 100%;
+        box-sizing: border-box;
+    }
 }
 #sidebar-toggle { display: none; }
 
