@@ -171,21 +171,21 @@
         </div>
 
         <div class="card-grid">
-            <article class="role-card">
+            <article class="role-card" data-role-name="[建廟] 籌備主委">
                 <div class="limit-tag" data-role-name="[建廟] 籌備主委">1名</div>
                 <div class="role-title">主委</div>
                 <div class="role-price">功德金 50,000元</div>
                 <button class="btn-select" onclick="selectRole('[建廟] 籌備主委', 50000, this)">點擊選擇</button>
             </article>
-            
-            <article class="role-card">
+
+            <article class="role-card" data-role-name="[建廟] 籌備副主委">
                 <div class="limit-tag" data-role-name="[建廟] 籌備副主委">10名</div>
                 <div class="role-title">副主委</div>
                 <div class="role-price">功德金 36,000元</div>
                 <button class="btn-select" onclick="selectRole('[建廟] 籌備副主委', 36000, this)">點擊選擇</button>
             </article>
 
-            <article class="role-card">
+            <article class="role-card" data-role-name="[建廟] 建廟功德金">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">建廟功德金</div>
                 <div class="role-price">功德金 10,000元</div>
@@ -200,21 +200,21 @@
         </div>
 
         <div class="card-grid">
-            <article class="role-card">
+            <article class="role-card" data-role-name="[顧問] 顧問主席">
                 <div class="limit-tag" data-role-name="[顧問] 顧問主席">1名</div>
                 <div class="role-title">顧問主席</div>
                 <div class="role-price">功德金 50,000元</div>
                 <button class="btn-select" onclick="selectRole('[顧問] 顧問主席', 50000, this)">點擊選擇</button>
             </article>
-            
-            <article class="role-card">
+
+            <article class="role-card" data-role-name="[顧問] 顧問副主席">
                 <div class="limit-tag" data-role-name="[顧問] 顧問副主席">7名</div>
                 <div class="role-title">顧問副主席</div>
                 <div class="role-price">功德金 36,000元</div>
                 <button class="btn-select" onclick="selectRole('[顧問] 顧問副主席', 36000, this)">點擊選擇</button>
             </article>
-            
-            <article class="role-card">
+
+            <article class="role-card" data-role-name="[顧問] 顧問">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">顧問</div>
                 <div class="role-price">功德金 20,000元</div>
@@ -229,21 +229,21 @@
         </div>
 
         <div class="card-grid">
-            <article class="role-card">
+            <article class="role-card" data-role-name="[本府] 主委">
                 <div class="limit-tag" data-role-name="[本府] 主委">1名</div>
                 <div class="role-title">主委</div>
                 <div class="role-price">功德金 50,000元</div>
                 <button class="btn-select" onclick="selectRole('[本府] 主委', 50000, this)">點擊選擇</button>
             </article>
-            
-            <article class="role-card">
+
+            <article class="role-card" data-role-name="[本府] 副主委">
                 <div class="limit-tag" data-role-name="[本府] 副主委">7名</div>
                 <div class="role-title">副主委</div>
                 <div class="role-price">功德金 36,000元</div>
                 <button class="btn-select" onclick="selectRole('[本府] 副主委', 36000, this)">點擊選擇</button>
             </article>
-            
-            <article class="role-card">
+
+            <article class="role-card" data-role-name="[本府] 委員">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">委員</div>
                 <div class="role-price">功德金 25,000元</div>
@@ -308,14 +308,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // 2. 更新金額文字與按鈕參數
-            const card = document.querySelector(`.role-card:has([data-role-name="${item.name}"])`);
-            if (card) {
+            // 2. 更新金額文字與按鈕參數（直接用 role-card 上的 data-role-name 對應）
+            const card = document.querySelector(`.role-card[data-role-name="${item.name}"]`);
+            if (card && typeof item.price === 'number') {
                 const priceDisplay = card.querySelector('.role-price');
                 const selectBtn = card.querySelector('.btn-select');
-                priceDisplay.innerText = `功德金 ${item.price.toLocaleString()}元`;
-                // 重寫按鈕的 onclick 事件以使用後台金額
-                selectBtn.setAttribute('onclick', `selectRole('${item.name}', ${item.price}, this)`);
+                if (priceDisplay) {
+                    priceDisplay.innerText = `功德金 ${item.price.toLocaleString()}元`;
+                }
+                if (selectBtn) {
+                    // 重寫按鈕的 onclick 事件以使用後台金額
+                    selectBtn.setAttribute('onclick', `selectRole('${item.name}', ${item.price}, this)`);
+                }
             }
         });
     });
