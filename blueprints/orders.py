@@ -18,36 +18,8 @@ from utils.email import (
 
 orders_bp = Blueprint('orders', __name__)
 
-@orders_bp.route('/api/public/committee-status', methods=['GET'])
-def get_committee_status():
-    """前台專用：獲取委員會各職位即時剩餘名額"""
-    if db is None:
-        return jsonify([])
+# 註：/api/public/committee-status 改由 main.py 提供（包含 price 欄位）
 
-    # 1. 讀取後台設定的總名額
-    setting = db.settings.find_one({"type": "committee_quota"})
-    roles = setting.get('roles', []) if setting else []
-    
-    status_list = []
-    for r in roles:
-        # 2. 計算目前已付款與待付款的人數
-        used = db.orders.count_documents({
-            "orderType": "committee",
-            "status": {"$in": ["paid", "pending"]},
-            "items.name": r['name']
-        })
-        
-        # 3. 計算剩餘名額 (最低為 0)
-        remaining = max(0, r.get('limit', 0) - used)
-        
-        status_list.append({
-            "name": r['name'],
-            "limit": r.get('limit', 0),
-            "used": used,
-            "remaining": remaining
-        })
-        
-    return jsonify(status_list)
 @orders_bp.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
     if db is None:
