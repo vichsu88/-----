@@ -164,21 +164,24 @@
 
         <div class="card-grid">
             <article class="role-card">
-                <div class="limit-tag">1名</div>
+                <div class="limit-tag" data-role-name="[建廟] 籌備主委">1名</div>
                 <div class="role-title">主委</div>
                 <div class="role-price">功德金 50,000元</div>
+                <button class="btn btn-select mt-3" onclick="selectRole('[建廟] 籌備主委', 50000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
             </article>
             
             <article class="role-card">
-                <div class="limit-tag">10名</div>
+                <div class="limit-tag" data-role-name="[建廟] 籌備副主委">10名</div>
                 <div class="role-title">副主委</div>
                 <div class="role-price">功德金 36,000元</div>
+                <button class="btn btn-select mt-3" onclick="selectRole('[建廟] 籌備副主委', 36000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
             </article>
 
             <article class="role-card">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">建廟功德金</div>
                 <div class="role-price">功德金 10,000元</div>
+                <button class="btn btn-select mt-3" onclick="selectRole('[建廟] 建廟功德金', 10000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
             </article>
         </div>
 
@@ -212,21 +215,24 @@
 
         <div class="card-grid">
             <article class="role-card">
-                <div class="limit-tag">1名</div>
+                <div class="limit-tag" data-role-name="[顧問] 顧問主席">1名</div>
                 <div class="role-title">顧問主席</div>
                 <div class="role-price">功德金 50,000元</div>
+                <button class="btn btn-select mt-3" onclick="selectRole('[顧問] 顧問主席', 50000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
             </article>
             
             <article class="role-card">
-                <div class="limit-tag">7名</div>
+                <div class="limit-tag" data-role-name="[顧問] 顧問副主席">7名</div>
                 <div class="role-title">顧問副主席</div>
                 <div class="role-price">功德金 36,000元</div>
+                <button class="btn btn-select mt-3" onclick="selectRole('[顧問] 顧問副主席', 36000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
             </article>
             
             <article class="role-card">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">顧問</div>
                 <div class="role-price">功德金 20,000元</div>
+                <button class="btn btn-select mt-3" onclick="selectRole('[顧問] 顧問', 20000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
             </article>
         </div>
 
@@ -253,21 +259,24 @@
 
         <div class="card-grid">
             <article class="role-card">
-                <div class="limit-tag">1名</div>
+                <div class="limit-tag" data-role-name="[本府] 主委">1名</div>
                 <div class="role-title">主委</div>
                 <div class="role-price">功德金 50,000元</div>
+                <button class="btn btn-select mt-3" onclick="selectRole('[本府] 主委', 50000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
             </article>
             
             <article class="role-card">
-                <div class="limit-tag">7名</div>
+                <div class="limit-tag" data-role-name="[本府] 副主委">7名</div>
                 <div class="role-title">副主委</div>
                 <div class="role-price">功德金 36,000元</div>
+                <button class="btn btn-select mt-3" onclick="selectRole('[本府] 副主委', 36000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
             </article>
             
             <article class="role-card">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">委員</div>
                 <div class="role-price">功德金 25,000元</div>
+                <button class="btn btn-select mt-3" onclick="selectRole('[本府] 委員', 25000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
             </article>
         </div>
 
@@ -295,7 +304,86 @@
 </div>
 
 <div class="checkout-pill">
-    <a href="https://zhongcheng.ycbot.cc/line/home" class="btn-action-large" target="_blank" rel="noopener noreferrer">點此前往護持報名</a>
+    <button type="button" class="btn-action-large" data-bs-toggle="modal" data-bs-target="#checkoutModal" onclick="prepareCommitteeCheckout()">
+        確認選擇，填寫報名資料
+    </button>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. 載入即時名額
+    fetch('/api/public/committee-status')
+        .then(res => res.json())
+        .then(data => {
+            // 將 API 回傳的陣列轉為字典，方便查找：{"[本府] 主委": 0, "[本府] 副主委": 5}
+            const quotaMap = {};
+            data.forEach(item => {
+                quotaMap[item.name] = item.remaining;
+            });
 
+            // 2. 尋找畫面上所有的 limit-tag 並動態更新
+            // 這裡需要您在原本的卡片 HTML 中加上 data-role-name 屬性，例如：
+            // <div class="limit-tag" data-role-name="[本府] 副主委">讀取中...</div>
+            const tags = document.querySelectorAll('.limit-tag[data-role-name]');
+            tags.forEach(tag => {
+                const roleName = tag.getAttribute('data-role-name');
+                if (quotaMap[roleName] !== undefined) {
+                    const remaining = quotaMap[roleName];
+                    if (remaining > 0) {
+                        tag.innerHTML = `🔥 剩餘 ${remaining} 名`;
+                    } else {
+                        tag.innerHTML = `已額滿`;
+                        tag.style.background = '#555';
+                        tag.style.color = '#ccc';
+                        // 尋找這張卡片底下的按鈕並將其禁用
+                        const card = tag.closest('.role-card');
+                        if(card) {
+                            const btn = card.querySelector('.btn-select');
+                            if(btn) {
+                                btn.disabled = true;
+                                btn.innerText = "名額已滿";
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(err => console.error("名額讀取失敗", err));
+});
+
+// 3. 單選邏輯與報名準備
+let selectedCommitteeRole = null;
+
+function selectRole(name, price, element) {
+    // 視覺反饋：清除其他卡片的選取狀態，只 highlight 當前選取的這張
+    document.querySelectorAll('.role-card').forEach(c => c.style.borderColor = 'rgba(212, 175, 55, 0.4)');
+    element.closest('.role-card').style.borderColor = '#fff';
+    
+    // 強制設定數量為 1，並將選取結果存入變數
+    selectedCommitteeRole = {
+        name: name,
+        price: parseInt(price),
+        qty: 1
+    };
+    alert(`已選擇：${name}！請點擊下方按鈕填寫資料。`);
+}
+
+function prepareCommitteeCheckout() {
+    if (!selectedCommitteeRole) {
+        alert("請先選擇您欲護持的項目！");
+        // 阻止 Modal 開啟
+        event.stopPropagation();
+        return;
+    }
+    
+    // 將選好的單一項目丟入全域購物車系統 (依據您原本 main.js 的邏輯)
+    // 這樣結帳表單送出時，就會只帶這唯一的一筆資料
+    if (typeof cart !== 'undefined') {
+        cart = [selectedCommitteeRole]; // 覆蓋整個購物車，確保沒有其他東西
+        if (typeof updateCartUI === 'function') updateCartUI();
+    }
+    
+    // 設定單據類型為委員會
+    document.getElementById('checkoutOrderType').value = 'committee';
+}
+</script>
 {% endblock %}

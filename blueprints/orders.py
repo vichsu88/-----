@@ -18,7 +18,36 @@ from utils.email import (
 
 orders_bp = Blueprint('orders', __name__)
 
+@orders_bp.route('/api/public/committee-status', methods=['GET'])
+def get_committee_status():
+    """前台專用：獲取委員會各職位即時剩餘名額"""
+    if db is None:
+        return jsonify([])
 
+    # 1. 讀取後台設定的總名額
+    setting = db.settings.find_one({"type": "committee_quota"})
+    roles = setting.get('roles', []) if setting else []
+    
+    status_list = []
+    for r in roles:
+        # 2. 計算目前已付款與待付款的人數
+        used = db.orders.count_documents({
+            "orderType": "committee",
+            "status": {"$in": ["paid", "pending"]},
+            "items.name": r['name']
+        })
+        
+        # 3. 計算剩餘名額 (最低為 0)
+        remaining = max(0, r.get('limit', 0) - used)
+        
+        status_list.append({
+            "name": r['name'],
+            "limit": r.get('limit', 0),
+            "used": used,
+            "remaining": remaining
+        })
+        
+    return jsonify(status_list)
 @orders_bp.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
     if db is None:
@@ -165,6 +194,32 @@ def create_order():
     line_id = session.get('user_line_id')
 
     order_type = data.get('orderType', 'shop')
+    # === 委員會動態名額與數量驗證 ===
+    if order_type == 'committee':
+        # 1. 從資料庫讀取最新名額設定
+        quota_setting = db.settings.find_one({"type": "committee_quota"})
+        # 轉換成字典格式方便查詢：{"[本府] 主委": 1, ...}
+        quotas = {r['name']: r['limit'] for r in quota_setting.get('roles', [])} if quota_setting else {}
+
+        for item in data.get('items', []):
+            item_name = item.get('name')
+            item_qty = int(item.get('qty', 0))
+
+            # 2. 強制單件邏輯：不論是否限額，單次報名每個品項限購 1
+            if item_qty != 1:
+                return jsonify({"error": f"【{item_name}】每次結帳限購 1 名，數量不可更改。"}), 400
+
+            # 3. 動態名額限制檢查
+            # 如果該品項名稱存在於後台設定的「限額清單」中，才進行數量檢查
+            if item_name in quotas:
+                max_limit = quotas[item_name]
+                used_count = db.orders.count_documents({
+                    "orderType": "committee",
+                    "status": {"$in": ["paid", "pending"]},
+                    "items.name": item_name
+                })
+                if used_count >= max_limit:
+                    return jsonify({"error": f"非常抱歉，【{item_name}】{max_limit}個名額已全數被預約完畢！"}), 400
 
     is_valid, error_msg = validate_real_name(data.get('name', '').strip())
     if not is_valid:
@@ -175,17 +230,6 @@ def create_order():
             item_name = item.get('name')
             item_qty = int(item.get('qty', 0))
 
-            if item_name in ['副主委', '委員', '顧問'] and item_qty != 1:
-                return jsonify({"error": f"【{item_name}】每次結帳限購 1 名，數量不可更改。"}), 400
-
-            if item_name == '副主委':
-                used_count = db.orders.count_documents({
-                    "orderType": "fund",
-                    "status": {"$in": ["paid", "pending"]},
-                    "items.name": "副主委"
-                })
-                if used_count >= 7:
-                    return jsonify({"error": "非常抱歉，【副主委】7名額已全數被預約完畢！"}), 400
 
     if order_type == 'committee':
         def check_limit(name, max_limit):
@@ -199,18 +243,6 @@ def create_order():
         for item in data.get('items', []):
             item_name = item.get('name')
             item_qty = int(item.get('qty', 0))
-
-            if item_qty != 1 and item_name != '[建廟] 建廟功德金':
-                return jsonify({"error": f"【{item_name}】每次結帳限購 1 名。"}), 400
-
-            if item_name == '[本府] 主委' and check_limit(item_name, 1):
-                return jsonify({"error": "【[本府] 主委】名額已滿！"}), 400
-            if item_name == '[本府] 副主委' and check_limit(item_name, 7):
-                return jsonify({"error": "【[本府] 副主委】名額已滿！"}), 400
-            if item_name == '[建廟] 籌備主委' and check_limit(item_name, 1):
-                return jsonify({"error": "【[建廟] 籌備主委】名額已滿！"}), 400
-            if item_name == '[建廟] 籌備副主委' and check_limit(item_name, 0):
-                return jsonify({"error": "【[建廟] 籌備副主委】名額已滿！"}), 400
 
     prefix = "ORD"
     if order_type == 'donation': prefix = "DON"

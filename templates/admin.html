@@ -152,6 +152,7 @@
                         <button class="sub-tab-btn" data-cms-tab="cms-faq">❓ 問答</button>
                         <button class="sub-tab-btn" data-cms-tab="cms-fund">📊 基金</button>
                         <button class="sub-tab-btn" data-cms-tab="cms-settings">🔗 設定</button>
+                        <button class="sub-tab-btn" data-cms-tab="cms-committee">🏛️ 委員會名額</button>
                     </div>
                     <div id="cms-products" class="cms-sub">
                         <div class="text-right mb-20"><button id="add-product-btn" class="btn btn--brown btn-lg">+ 新增商品</button></div>
@@ -202,6 +203,36 @@
                         </div>
                     </div>
                 </div>
+                <div id="cms-committee" class="cms-sub" style="display:none;">
+                        <div class="card">
+                            <div class="d-flex justify-between align-center mb-15 flex-wrap gap-10">
+                                <h3 class="mt-0 mb-0">📝 委員會名額管理 (前台連動)</h3>
+                                <button class="btn btn--grey" onclick="loadCommitteeQuotas()">🔄 重新整理</button>
+                            </div>
+                            <p class="help-text">※ 修改後點擊「儲存設定」將立即影響前台報名上限與顯示數量。未列出的項目（如委員、顧問）系統將自動視為名額不限。</p>
+                            
+                            <div class="table-responsive mt-15" style="overflow-x: auto;">
+                                <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid #ecd1a8;">
+                                            <th style="padding: 10px;">職位名稱</th>
+                                            <th style="width: 150px; padding: 10px;">名額上限 (數字)</th>
+                                            <th style="padding: 10px;">狀態</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="committee-quota-list">
+                                        <tr><td colspan="3" class="text-center" style="padding: 20px;">載入中...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="text-right mt-20">
+                                <button class="btn btn--green" onclick="saveCommitteeQuotas()">💾 儲存所有名額設定</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div> 
 
                 <!-- ===== Module 5: 系統與權限管理 ===== -->
                 <div id="tab-system" class="tab-content">

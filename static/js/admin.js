@@ -1224,7 +1224,70 @@ async loadFeedbackReview() {
             FinanceManager.refresh();
         });
     };
+    // 載入委員會名額設定
+async function loadCommitteeQuotas() {
+    try {
+        const res = await fetch('/api/settings/committee-quota');
+        const data = await res.json();
+        
+        const tbody = document.getElementById('committee-quota-list');
+        tbody.innerHTML = '';
+        
+        data.forEach((role, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${role.name}</strong></td>
+                <td>
+                    <input type="number" class="form-control quota-input" 
+                           data-id="${role.id}" data-name="${role.name}" 
+                           value="${role.limit}" min="0">
+                </td>
+                <td><span class="badge bg-info">連動中</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        alert("載入名額失敗：" + err);
+    }
+}
 
+// 儲存委員會名額設定
+async function saveCommitteeQuotas() {
+    const inputs = document.querySelectorAll('.quota-input');
+    const newData = Array.from(inputs).map(input => ({
+        id: input.dataset.id,
+        name: input.dataset.name,
+        limit: parseInt(input.value) || 0
+    }));
+
+    if (!confirm("確定要更新所有名額上限嗎？這會直接影響前台報名。")) return;
+
+    try {
+        const res = await fetch('/api/settings/committee-quota', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken() // 確保您的系統有處理 CSRF
+            },
+            body: JSON.stringify(newData)
+        });
+        
+        const result = await res.json();
+        if (result.success) {
+            alert("✅ 名額設定儲存成功！");
+            loadCommitteeQuotas(); // 重新整理列表
+        } else {
+            alert("❌ 儲存失敗：" + result.error);
+        }
+    } catch (err) {
+        alert("傳輸發生錯誤：" + err);
+    }
+}
+
+// 初始化：如果目前在管理頁面，自動載入一次
+if (document.getElementById('committee-quota-list')) {
+    loadCommitteeQuotas();
+}
     // --- 站務操作 ---
     window.shipOrder = async (id) => {
         const trackNum = prompt('請輸入物流單號 (寄送出貨通知信)：');
@@ -1242,7 +1305,7 @@ async loadFeedbackReview() {
         const vStr = i.variantName ? ` <span class="text-gray">[${i.variantName}]</span>` : '';
         return `${i.name}${vStr} x${i.qty}`;
     }).join('、');
-        
+    
         // 💡 新增：處理歷程區塊
         let historyHtml = '<hr><div class="info-box mt-15"><strong class="text-brown">⏳ 處理歷程：</strong><div class="mt-5 fs-14 lh-18">';
         historyHtml += `🔹 <b>單據建立：</b> ${o.createdAt}<br>`;
