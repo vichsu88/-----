@@ -20,7 +20,7 @@
         font-family: 'LXGW WenKai TC', 'KaiTi', '標楷體', serif;
         color: var(--royal-text-light);
         min-height: 100vh;
-        padding-bottom: 200px; /* 預留足夠底部空白，防止 footer 被懸浮列遮擋 */
+        padding-bottom: 200px;
     }
 
     button, input, .btn-action, .limit-tag {
@@ -64,7 +64,7 @@
         text-shadow: 0 0 25px rgba(212, 175, 55, 0.9), 0 0 10px rgba(212, 175, 55, 0.5); letter-spacing: 2px;
     }
 
-    /* === 4. 職位卡片設計 (純展示版) === */
+    /* === 4. 職位卡片設計 === */
     .card-grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; margin-bottom: 50px; }
     .role-card {
         background: linear-gradient(145deg, rgba(40, 5, 5, 0.85), rgba(15, 0, 0, 0.95)); 
@@ -89,6 +89,14 @@
     
     .role-title { font-size: 2rem; color: #fff; margin-bottom: 15px; font-weight: bold; text-shadow: 0 2px 5px #000; letter-spacing: 2px; }
     .role-price { font-size: 1.4rem; color: var(--royal-gold-light); text-shadow: 0 0 10px rgba(212,175,55,0.5); }
+
+    .btn-select {
+        background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; 
+        border: none; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 1.1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-select:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(212, 175, 55, 0.8); }
+    .btn-select:disabled { background: #555; color: #aaa; cursor: not-allowed; box-shadow: none; transform: none; }
 
     /* === 5. 權益區塊與結尾祈福 === */
     .benefits-box {
@@ -131,9 +139,16 @@
         background: linear-gradient(to bottom, #fffacd 0%, #d4af37 50%, #b8860b 100%);
         cursor: pointer; animation: pulse-btn 2.5s infinite; letter-spacing: 2px;
     }
-    .btn-action-large:hover { color: #000; text-decoration: none; background: linear-gradient(to bottom, #fff 0%, #fef0a5 50%, #d4af37 100%); }
+    .btn-action-large:hover { color: #000; background: linear-gradient(to bottom, #fff 0%, #fef0a5 50%, #d4af37 100%); }
 
-    /* === 響應式 RWD === */
+    /* Modal Form Styles */
+    .c-form-input {
+        width: 100%; padding: 12px 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.3);
+        background: rgba(0,0,0,0.5); color: #fff; font-size: 1.1rem; box-sizing: border-box;
+    }
+    .c-form-input::placeholder { color: #aaa; }
+    .c-form-input:focus { outline: none; border-color: var(--royal-gold-main); box-shadow: 0 0 8px rgba(212, 175, 55, 0.4); }
+
     @media (max-width: 768px) {
         .checkout-pill { bottom: 20px; width: 95%; }
         .main-title { font-size: 2.2rem; }
@@ -151,15 +166,8 @@
     <section class="section-container">
         <div class="section-divider"><span>建廟籌備委員會 招募公告</span></div>
         <div class="intro-text">
-            為推動本府未來建廟大業，使道場長存、香火鼎盛，<br>
-            特成立「建廟籌備委員會」。<br>
+            為推動本府未來建廟大業，使道場長存、香火鼎盛，特成立「建廟籌備委員會」。<br>
             廣邀十方善信大德發心護持，共襄盛舉 同植福田，眾志成城 共建聖堂。
-            <br><br>
-            <div class="intro-note">
-                【建廟籌備委員會編制】<br>
-                任期：一年<br>
-                每年舉辦委員聯誼暨會議三次，共同討論建廟規劃與未來發展方向。
-            </div>
         </div>
 
         <div class="card-grid">
@@ -167,50 +175,28 @@
                 <div class="limit-tag" data-role-name="[建廟] 籌備主委">1名</div>
                 <div class="role-title">主委</div>
                 <div class="role-price">功德金 50,000元</div>
-                <button class="btn btn-select mt-3" onclick="selectRole('[建廟] 籌備主委', 50000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
+                <button class="btn-select" onclick="selectRole('[建廟] 籌備主委', 50000, this)">點擊選擇</button>
             </article>
             
             <article class="role-card">
                 <div class="limit-tag" data-role-name="[建廟] 籌備副主委">10名</div>
                 <div class="role-title">副主委</div>
                 <div class="role-price">功德金 36,000元</div>
-                <button class="btn btn-select mt-3" onclick="selectRole('[建廟] 籌備副主委', 36000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
+                <button class="btn-select" onclick="selectRole('[建廟] 籌備副主委', 36000, this)">點擊選擇</button>
             </article>
 
             <article class="role-card">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">建廟功德金</div>
                 <div class="role-price">功德金 10,000元</div>
-                <button class="btn btn-select mt-3" onclick="selectRole('[建廟] 建廟功德金', 10000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
+                <button class="btn-select" onclick="selectRole('[建廟] 建廟功德金', 10000, this)">點擊選擇</button>
             </article>
         </div>
 
-        <div class="benefits-box">
-            <div class="benefits-title">【建廟籌備委員會成員權益】</div>
-            <div class="benefit-item"><span class="icon">一、</span>芳名登錄於本府功德簿，永誌留存。</div>
-            <div class="benefit-item"><span class="icon">二、</span>參與本府各項法會與科儀，享有優先登記權。</div>
-            <div class="benefit-item"><span class="icon">三、</span>建廟功德芳名，優先登錄。</div>
-            <div class="benefit-item"><span class="icon">四、</span>參與委員聯誼暨餐會交流。</div>
-            <div class="benefit-item"><span class="icon">五、</span>芳名刊登於本府年曆首頁，並蒙煙島中壇元帥庇佑。</div>
-            <hr class="benefit-divider">
-            <div class="benefit-item benefit-highlight" style="flex-direction: column; text-align: center;">
-                <div style="margin-bottom: 10px; font-size: 1.5rem;">【建廟功德】 一念發心 功德無量</div>
-                <div style="font-weight: normal; font-size: 1.15rem; color: #fef0a5; line-height: 1.8;">
-                    眾志成城 共建聖堂 香火鼎盛 福澤四方<br>
-                    凡發心護持建廟者，待建廟完成後，功德芳名將留名於建廟功德牆，永誌紀念。
-                </div>
-            </div>
-        </div>
-        
         <div class="section-divider"><span>顧問團 招募公告</span></div>
         <div class="intro-text">
             為護持本府聖業發展，凝聚十方善信之力，特設立 顧問團。<br>
-            誠邀十方善信大德發心護持、隨喜贊助，<br>
-            共同護持帥府香火鼎盛，聖業長存。<br><br>
-            <div class="intro-note">
-                【顧問團編制】<br>任期：一年<br>
-                ※ 顧問團為榮譽護持職，不參與本府行政事務與決策。
-            </div>
+            誠邀十方善信大德發心護持、隨喜贊助，共同護持帥府香火鼎盛，聖業長存。
         </div>
 
         <div class="card-grid">
@@ -218,43 +204,28 @@
                 <div class="limit-tag" data-role-name="[顧問] 顧問主席">1名</div>
                 <div class="role-title">顧問主席</div>
                 <div class="role-price">功德金 50,000元</div>
-                <button class="btn btn-select mt-3" onclick="selectRole('[顧問] 顧問主席', 50000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
+                <button class="btn-select" onclick="selectRole('[顧問] 顧問主席', 50000, this)">點擊選擇</button>
             </article>
             
             <article class="role-card">
                 <div class="limit-tag" data-role-name="[顧問] 顧問副主席">7名</div>
                 <div class="role-title">顧問副主席</div>
                 <div class="role-price">功德金 36,000元</div>
-                <button class="btn btn-select mt-3" onclick="selectRole('[顧問] 顧問副主席', 36000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
+                <button class="btn-select" onclick="selectRole('[顧問] 顧問副主席', 36000, this)">點擊選擇</button>
             </article>
             
             <article class="role-card">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">顧問</div>
                 <div class="role-price">功德金 20,000元</div>
-                <button class="btn btn-select mt-3" onclick="selectRole('[顧問] 顧問', 20000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
+                <button class="btn-select" onclick="selectRole('[顧問] 顧問', 20000, this)">點擊選擇</button>
             </article>
-        </div>
-
-        <div class="benefits-box">
-            <div class="benefits-title">【顧問團成員禮遇】</div>
-            <div class="benefit-item"><span class="icon">一、</span>芳名登錄本府功德簿，永誌留存。</div>
-            <div class="benefit-item"><span class="icon">二、</span>參與本府法會與科儀，享有優先登記。</div>
-            <div class="benefit-item"><span class="icon">三、</span>未來建廟功德芳名，優先登錄。</div>
-            <div class="benefit-item"><span class="icon">四、</span>芳名刊登於本府年曆首頁。</div>
-            <div class="benefit-item"><span class="icon">五、</span>蒙煙島中壇元帥庇佑，福報綿長。</div>
         </div>
 
         <div class="section-divider"><span>委員會組織公告</span></div>
         <div class="intro-text">
-            為推動本府各項聖務發展，凝聚十方善信之力，<br>
-            弘揚神威，廣布福澤，特成立「委員會」，<br>
-            以協助本府推展各項聖務，共護帥府聖業，永續香火。<br>
-            誠邀十方善信大德，共發善心，同植福田，齊心協力，共襄盛舉。<br><br>
-            <div class="intro-note">
-                【委員會編制】<br>任期：一年<br>
-                委員會每年舉辦委員聯誼暨會議三次，共同研議本府未來發展方向，並協助推動各項聖務規劃。
-            </div>
+            為推動本府各項聖務發展，凝聚十方善信之力，弘揚神威，廣布福澤，特成立「委員會」。<br>
+            誠邀十方善信大德，共發善心，同植福田，齊心協力，共襄盛舉。
         </div>
 
         <div class="card-grid">
@@ -262,41 +233,26 @@
                 <div class="limit-tag" data-role-name="[本府] 主委">1名</div>
                 <div class="role-title">主委</div>
                 <div class="role-price">功德金 50,000元</div>
-                <button class="btn btn-select mt-3" onclick="selectRole('[本府] 主委', 50000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
+                <button class="btn-select" onclick="selectRole('[本府] 主委', 50000, this)">點擊選擇</button>
             </article>
             
             <article class="role-card">
                 <div class="limit-tag" data-role-name="[本府] 副主委">7名</div>
                 <div class="role-title">副主委</div>
                 <div class="role-price">功德金 36,000元</div>
-                <button class="btn btn-select mt-3" onclick="selectRole('[本府] 副主委', 36000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
+                <button class="btn-select" onclick="selectRole('[本府] 副主委', 36000, this)">點擊選擇</button>
             </article>
             
             <article class="role-card">
                 <div class="limit-tag limit-tag-unlimited">名額不限</div>
                 <div class="role-title">委員</div>
                 <div class="role-price">功德金 25,000元</div>
-                <button class="btn btn-select mt-3" onclick="selectRole('[本府] 委員', 25000, this)" style="background: var(--royal-gold-main); color: #000; border-radius: 20px; padding: 8px 25px; border: none; font-weight: bold; cursor: pointer;">點擊選擇</button>
+                <button class="btn-select" onclick="selectRole('[本府] 委員', 25000, this)">點擊選擇</button>
             </article>
         </div>
 
-        <div class="benefits-box">
-            <div class="benefits-title">【委員會成員權益】</div>
-            <div class="benefit-item"><span class="icon">一、</span>芳名登錄於本府功德牆，永誌留存。</div>
-            <div class="benefit-item"><span class="icon">二、</span>參與本府各項法會與科儀，享有優先登記之禮遇。</div>
-            <div class="benefit-item"><span class="icon">三、</span>未來建廟功德芳名，享有優先登錄。</div>
-            <div class="benefit-item"><span class="icon">四、</span>每年參與委員聯誼暨交流餐會三次。</div>
-            <div class="benefit-item"><span class="icon">五、</span>芳名刊登於本府年曆首頁，並蒙煙島中壇元帥庇佑。</div>
-        </div>
-        
         <div class="blessing-text">
-            <p>
-                護持聖業 功德無量<br>
-                同心協力 福澤綿長<br>
-                香火鼎盛 澤被四方<br><br>
-                願 煙島中壇元帥庇佑<br>
-                闔家平安 福祿綿長 財源廣進 萬事順遂
-            </p>
+            <p>護持聖業 功德無量<br>同心協力 福澤綿長<br>香火鼎盛 澤被四方</p>
             <span class="blessing-sign">桃城 承天中承府 敬啟</span>
             <div class="disclaimer-text">※ 本府保留各項委員會成員資格審核及相關事項之最終決定權。</div>
         </div>
@@ -304,25 +260,45 @@
 </div>
 
 <div class="checkout-pill">
-    <button type="button" class="btn-action-large" data-bs-toggle="modal" data-bs-target="#checkoutModal" onclick="prepareCommitteeCheckout()">
-        確認選擇，填寫報名資料
-    </button>
+    <button type="button" class="btn-action-large" onclick="openCommitteeModal()">確認選擇，填寫報名資料</button>
 </div>
+
+<div id="committeeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+    <div style="background:#1a0505; padding:30px; border-radius:15px; width:90%; max-width:500px; border:1px solid var(--royal-gold-main); box-shadow:0 0 30px rgba(212,175,55,0.3); max-height:90vh; overflow-y:auto;">
+        <h2 style="color:var(--royal-gold-light); margin-top:0; text-align:center;">📋 填寫護持資料</h2>
+        
+        <div style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); padding:15px; border-radius:8px; margin-bottom:20px;">
+            <p style="margin:0; color:#ccc; font-size:0.9rem;">您選擇的護持項目：</p>
+            <p id="modal-selected-name" style="margin:5px 0 0 0; color:var(--royal-gold-main); font-size:1.3rem; font-weight:bold;">尚未選擇</p>
+            <p id="modal-selected-price" style="margin:5px 0 0 0; color:#fff; font-size:1.1rem;">金額：$0</p>
+        </div>
+
+        <form id="committeeForm">
+            <input type="text" id="c_name" class="c-form-input" placeholder="真實姓名 (必填)" required>
+            <input type="tel" id="c_phone" class="c-form-input" placeholder="聯絡電話 (必填)" required>
+            <input type="email" id="c_email" class="c-form-input" placeholder="電子信箱 (選填，用於寄送通知)">
+            <input type="text" id="c_address" class="c-form-input" placeholder="通訊地址 (必填，用於寄送感謝狀)" required>
+            <input type="text" id="c_last5" class="c-form-input" placeholder="匯款帳號末五碼 (必填)" required>
+            
+            <div style="display:flex; gap:15px; margin-top:10px;">
+                <button type="button" onclick="closeCommitteeModal()" style="flex:1; padding:12px; background:transparent; color:#fff; border:1px solid #777; border-radius:8px; cursor:pointer;">取消返回</button>
+                <button type="submit" style="flex:2; padding:12px; background:var(--royal-gold-main); color:#000; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer;">確認送出</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+let selectedItem = null;
+
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. 載入即時名額
+    // 1. 從後端載入剩餘名額
     fetch('/api/public/committee-status')
         .then(res => res.json())
         .then(data => {
-            // 將 API 回傳的陣列轉為字典，方便查找：{"[本府] 主委": 0, "[本府] 副主委": 5}
             const quotaMap = {};
-            data.forEach(item => {
-                quotaMap[item.name] = item.remaining;
-            });
+            data.forEach(item => quotaMap[item.name] = item.remaining);
 
-            // 2. 尋找畫面上所有的 limit-tag 並動態更新
-            // 這裡需要您在原本的卡片 HTML 中加上 data-role-name 屬性，例如：
-            // <div class="limit-tag" data-role-name="[本府] 副主委">讀取中...</div>
             const tags = document.querySelectorAll('.limit-tag[data-role-name]');
             tags.forEach(tag => {
                 const roleName = tag.getAttribute('data-role-name');
@@ -334,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         tag.innerHTML = `已額滿`;
                         tag.style.background = '#555';
                         tag.style.color = '#ccc';
-                        // 尋找這張卡片底下的按鈕並將其禁用
+                        
                         const card = tag.closest('.role-card');
                         if(card) {
                             const btn = card.querySelector('.btn-select');
@@ -350,40 +326,73 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(err => console.error("名額讀取失敗", err));
 });
 
-// 3. 單選邏輯與報名準備
-let selectedCommitteeRole = null;
-
-function selectRole(name, price, element) {
-    // 視覺反饋：清除其他卡片的選取狀態，只 highlight 當前選取的這張
+// 2. 選擇職位
+function selectRole(name, price, btnElement) {
+    // 視覺反饋
     document.querySelectorAll('.role-card').forEach(c => c.style.borderColor = 'rgba(212, 175, 55, 0.4)');
-    element.closest('.role-card').style.borderColor = '#fff';
+    btnElement.closest('.role-card').style.borderColor = '#fff';
     
-    // 強制設定數量為 1，並將選取結果存入變數
-    selectedCommitteeRole = {
-        name: name,
-        price: parseInt(price),
-        qty: 1
-    };
-    alert(`已選擇：${name}！請點擊下方按鈕填寫資料。`);
+    // 記錄選取的資料
+    selectedItem = { name: name, price: parseInt(price), qty: 1 };
+    alert(`✅ 已選擇：${name}！\n請點擊下方按鈕填寫報名資料。`);
 }
 
-function prepareCommitteeCheckout() {
-    if (!selectedCommitteeRole) {
-        alert("請先選擇您欲護持的項目！");
-        // 阻止 Modal 開啟
-        event.stopPropagation();
+// 3. 開啟與關閉 Modal
+function openCommitteeModal() {
+    if (!selectedItem) {
+        alert("請先在上方點擊選擇您欲護持的項目！");
         return;
     }
-    
-    // 將選好的單一項目丟入全域購物車系統 (依據您原本 main.js 的邏輯)
-    // 這樣結帳表單送出時，就會只帶這唯一的一筆資料
-    if (typeof cart !== 'undefined') {
-        cart = [selectedCommitteeRole]; // 覆蓋整個購物車，確保沒有其他東西
-        if (typeof updateCartUI === 'function') updateCartUI();
-    }
-    
-    // 設定單據類型為委員會
-    document.getElementById('checkoutOrderType').value = 'committee';
+    document.getElementById('modal-selected-name').innerText = selectedItem.name;
+    document.getElementById('modal-selected-price').innerText = `金額：$${selectedItem.price.toLocaleString()}`;
+    document.getElementById('committeeModal').style.display = 'flex';
 }
+
+function closeCommitteeModal() {
+    document.getElementById('committeeModal').style.display = 'none';
+}
+
+// 4. 表單送出至後台
+document.getElementById('committeeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (!selectedItem) return;
+
+    // 準備打 API 的資料結構
+    const payload = {
+        orderType: 'committee',
+        name: document.getElementById('c_name').value.trim(),
+        phone: document.getElementById('c_phone').value.trim(),
+        email: document.getElementById('c_email').value.trim(),
+        address: document.getElementById('c_address').value.trim(),
+        last5: document.getElementById('c_last5').value.trim(),
+        items: [selectedItem],
+        total: selectedItem.price
+    };
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+    // 送出請求
+    fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(`🎉 報名成功！感謝您的發心護持。\n您的單號為：${data.orderId}`);
+            window.location.reload(); // 重整頁面更新名額
+        } else {
+            alert(`❌ 發生錯誤：${data.error}`);
+        }
+    })
+    .catch(err => {
+        alert("網路發生錯誤，請稍後再試。");
+        console.error(err);
+    });
+});
 </script>
 {% endblock %}
