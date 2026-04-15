@@ -1436,46 +1436,46 @@ async loadFeedbackReview() {
         ContentManager.fetchFaqs();
     });
 
-    // =========================================================
-    // 💡 新增：委員會名額管理 (全域綁定)
-    // =========================================================
     window.loadCommitteeQuotas = async () => {
-        try {
-            const roles = await Core.apiFetch('/api/settings/committee-quota');
-            const tbody = document.getElementById('committee-quota-list');
-            if(!tbody) return;
-            
-            tbody.innerHTML = roles.map(r => `
-                <tr style="border-bottom: 1px solid rgba(0,0,0,0.1);">
-                    <td style="padding:12px;"><strong>${r.name}</strong></td>
-                    <td style="padding:12px;">
-                        <input type="number" class="quota-input c-form-input" 
-                               data-name="${r.name}" value="${r.limit}" style="width:80px; margin-bottom:0;" min="0">
-                    </td>
-                </tr>
-            `).join('');
-        } catch (err) {
-            console.error("名額載入失敗", err);
-        }
-    };
+    try {
+        const roles = await Core.apiFetch('/api/settings/committee-quota');
+        const tbody = document.getElementById('committee-quota-list');
+        if(!tbody) return;
 
-    window.saveCommitteeQuotas = async () => {
-        const inputs = document.querySelectorAll('.quota-input');
-        const data = Array.from(inputs).map(i => ({ 
-            name: i.dataset.name, 
-            limit: parseInt(i.value) || 0 
-        }));
-        
-        try {
-            await Core.apiFetch('/api/settings/committee-quota', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            });
-            alert("✅ 委員會名額設定儲存成功！");
-        } catch (err) {
-            // Core.apiFetch 已經會自動 alert 錯誤，這裡不需額外處理
-        }
-    };
+        tbody.innerHTML = roles.map(r => `
+            <tr style="border-bottom: 1px solid rgba(0,0,0,0.1);">
+                <td style="padding:12px;"><strong>${r.name}</strong></td>
+                <td style="padding:12px;">
+                    <input type="number" class="quota-input c-form-input" 
+                           data-name="${r.name}" value="${r.limit}" style="width:80px; margin-bottom:0;" min="0">
+                </td>
+                <td style="padding:12px;">
+                    <input type="number" class="price-input c-form-input" 
+                           data-name="${r.name}" value="${r.price || 0}" style="width:100px; margin-bottom:0;" min="0">
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) { console.error("名額載入失敗", err); }
+};
+
+window.saveCommitteeQuotas = async () => {
+    const rows = document.querySelectorAll('#committee-quota-list tr');
+    const data = Array.from(rows).map(row => {
+        const quotaInput = row.querySelector('.quota-input');
+        const priceInput = row.querySelector('.price-input');
+        return { 
+            name: quotaInput.dataset.name, 
+            limit: parseInt(quotaInput.value) || 0,
+            price: parseInt(priceInput.value) || 0 // 儲存金額
+        };
+    });
+
+    await Core.apiFetch('/api/settings/committee-quota', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+    alert("✅ 委員會名額與金額設定儲存成功！");
+};
 
     /* =========================================
        15. 啟動流程

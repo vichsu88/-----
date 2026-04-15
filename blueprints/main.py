@@ -70,25 +70,31 @@ def committee_page():
     return render_template('committee.html')
 
 
-@main_bp.route('/api/committee/status', methods=['GET'])
-def get_committee_status():
+@main_bp.route('/api/public/committee-status', methods=['GET'])
+def get_public_committee_status():
     if db is None:
-        return jsonify({})
+        return jsonify([])
 
-    def get_remain(name, max_limit):
+    # 取得後台設定
+    setting = db.settings.find_one({"type": "committee_quota"})
+    roles = setting.get("roles", []) if setting else []
+
+    results = []
+    for role in roles:
+        name = role.get('name')
+        limit = role.get('limit', 0)
+        # 計算已佔用名額
         used = db.orders.count_documents({
             "orderType": "committee",
             "status": {"$in": ["paid", "pending"]},
             "items.name": name
         })
-        return max(0, max_limit - used)
-
-    return jsonify({
-        "hon_main": get_remain('[本府] 主委', 1),
-        "hon_vice": get_remain('[本府] 副主委', 7),
-        "bld_main": get_remain('[建廟] 籌備主委', 1),
-        "bld_vice": 0
-    })
+        results.append({
+            "name": name,
+            "remaining": max(0, limit - used),
+            "price": role.get('price', 0) # 傳回後台設定的金額
+        })
+    return jsonify(results)
 
 
 @main_bp.route('/feedback')

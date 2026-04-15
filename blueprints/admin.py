@@ -781,14 +781,17 @@ def debug_connection():
 def handle_committee_quota():
     if request.method == 'GET':
         setting = db.settings.find_one({"type": "committee_quota"})
-        # 預設名額設定
+        # 完整 9 個項目清單與預設金額
         default_roles = [
-            {"id": "c_chair", "name": "[本府] 主委", "limit": 1},
-            {"id": "c_v_chair", "name": "[本府] 副主委", "limit": 7},
-            {"id": "[建廟] 籌備主委", "name": "[建廟] 籌備主委", "limit": 1},
-            {"id": "[建廟] 籌備副主委", "name": "[建廟] 籌備副主委", "limit": 10},
-            {"id": "adv_chair", "name": "[顧問] 顧問主席", "limit": 1},
-            {"id": "adv_v_chair", "name": "[顧問] 顧問副主席", "limit": 7}
+            {"name": "[建廟] 籌備主委", "limit": 1, "price": 50000},
+            {"name": "[建廟] 籌備副主委", "limit": 10, "price": 36000},
+            {"name": "[建廟] 建廟功德金", "limit": 999, "price": 10000},
+            {"name": "[顧問] 顧問主席", "limit": 1, "price": 50000},
+            {"name": "[顧問] 顧問副主席", "limit": 7, "price": 36000},
+            {"name": "[顧問] 顧問", "limit": 999, "price": 20000},
+            {"name": "[本府] 主委", "limit": 1, "price": 50000},
+            {"name": "[本府] 副主委", "limit": 7, "price": 36000},
+            {"name": "[本府] 委員", "limit": 999, "price": 25000}
         ]
         return jsonify(setting.get("roles", default_roles) if setting else default_roles)
     

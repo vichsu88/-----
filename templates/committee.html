@@ -294,36 +294,31 @@ let selectedItem = null;
 document.addEventListener('DOMContentLoaded', function() {
     // 1. 從後端載入剩餘名額
     fetch('/api/public/committee-status')
-        .then(res => res.json())
-        .then(data => {
-            const quotaMap = {};
-            data.forEach(item => quotaMap[item.name] = item.remaining);
-
-            const tags = document.querySelectorAll('.limit-tag[data-role-name]');
-            tags.forEach(tag => {
-                const roleName = tag.getAttribute('data-role-name');
-                if (quotaMap[roleName] !== undefined) {
-                    const remaining = quotaMap[roleName];
-                    if (remaining > 0) {
-                        tag.innerHTML = `🔥 剩餘 ${remaining} 名`;
-                    } else {
-                        tag.innerHTML = `已額滿`;
-                        tag.style.background = '#555';
-                        tag.style.color = '#ccc';
-                        
-                        const card = tag.closest('.role-card');
-                        if(card) {
-                            const btn = card.querySelector('.btn-select');
-                            if(btn) {
-                                btn.disabled = true;
-                                btn.innerText = "名額已滿";
-                            }
-                        }
-                    }
+    .then(res => res.json())
+    .then(data => {
+        data.forEach(item => {
+            // 1. 更新名額標籤
+            const tag = document.querySelector(`.limit-tag[data-role-name="${item.name}"]`);
+            if (tag) {
+                if (item.remaining > 0) {
+                    tag.innerHTML = `🔥 剩餘 ${item.remaining} 名`;
+                } else {
+                    tag.innerHTML = `已額滿`;
+                    tag.closest('.role-card').querySelector('.btn-select').disabled = true;
                 }
-            });
-        })
-        .catch(err => console.error("名額讀取失敗", err));
+            }
+
+            // 2. 更新金額文字與按鈕參數
+            const card = document.querySelector(`.role-card:has([data-role-name="${item.name}"])`);
+            if (card) {
+                const priceDisplay = card.querySelector('.role-price');
+                const selectBtn = card.querySelector('.btn-select');
+                priceDisplay.innerText = `功德金 ${item.price.toLocaleString()}元`;
+                // 重寫按鈕的 onclick 事件以使用後台金額
+                selectBtn.setAttribute('onclick', `selectRole('${item.name}', ${item.price}, this)`);
+            }
+        });
+    });
 });
 
 // 2. 選擇職位
