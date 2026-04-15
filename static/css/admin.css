@@ -312,17 +312,25 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
     .admin-main { padding: 70px 12px 30px 12px; overflow: visible; height: auto; }
 
     .glass-panel { border-radius: 12px; padding: 15px; }
+    /* 手機版：子頁籤改為 2 欄多行網格，避免橫向捲動 */
     .sub-tab-group {
-        overflow-x: auto;
-        white-space: nowrap;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
         border-radius: 12px;
-        flex-wrap: nowrap;
-        /* 新增：右側內部漸層陰影，暗示右邊還有東西 */
-        box-shadow: inset -20px 0 15px -20px rgba(196, 137, 69, 0.4);
-        padding-right: 25px; /* 留出空間給陰影 */
-        -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動更順暢 */
+        padding: 8px;
+        /* 取消單行橫向捲動相關設定 */
+        overflow: visible;
+        white-space: normal;
     }
-    .sub-tab-btn { padding: 12px; font-size: 14px; white-space: nowrap; }
+    .sub-tab-btn {
+        padding: 12px 8px;
+        font-size: 14px;
+        white-space: normal;       /* 允許按鈕文字換行 */
+        line-height: 1.3;
+        min-height: 44px;          /* 符合觸控標準 */
+        word-break: break-word;
+    }
 
     /* 頁面標題 */
     .page-title { font-size: 20px; margin-bottom: 15px; }
