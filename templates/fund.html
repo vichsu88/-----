@@ -74,17 +74,11 @@ button, input, .btn-action, .qty-btn, .form-control {
     filter: none;
 }
 /* 中和 base.html 可能殘留的 ::before（原本浮在左側那顆脫鉤元寶）*/
-.section-title::before {
+/* 中和 base.html 可能殘留的 ::before 與 ::after（脫鉤元寶）*/
+.section-title::before,
+.section-title::after {
     content: none !important;
     display: none !important;
-}
-.section-title::after {
-    content: '';
-    display: block;
-    width: 55px;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    margin: 14px auto 0;
 }
 .section-title .title-main {
     display: inline-flex;
@@ -102,6 +96,7 @@ button, input, .btn-action, .qty-btn, .form-control {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 2px 0 rgba(0,0,0,0.4));
+    white-space: nowrap;
 }
 .section-title .title-yuanbao {
     width: clamp(30px, 4.5vw, 44px);
@@ -899,6 +894,16 @@ button, input, .btn-action, .qty-btn, .form-control {
     .progress-ring-wrap { width: 220px; height: 220px; }
     .ring-percent { font-size: 2.5rem; }
 
+    /* 標題縮小：防止 5 字標題（捐贈芳名錄）被擠到換行 */
+    .section-title .title-main {
+        font-size: 1.5rem;
+        letter-spacing: 2px;
+        gap: 10px;
+    }
+    .section-title .title-yuanbao {
+        width: 24px;
+    }
+
     /* timeline 改單欄
        ⚠ 必須同時針對 odd 與 even，否則 .timeline-node 的 specificity 鬥不過 :nth-child(odd)
        ⚠ 必須 align-items: stretch，否則 column 模式下交叉軸 flex-start 會讓圖片容器寬度塌陷為 0 */
@@ -999,10 +1004,8 @@ button, input, .btn-action, .qty-btn, .form-control {
         <div class="origin-layout">
             <div class="origin-intro">
                 <p class="lead">
-                    十年來，承天中承府承蒙<em>煙島中壇元帥</em>神威護佑，<br>
-                    為無數善信收驚解惑、消災祈福。<br>
+                    十年來，承天中承府承蒙<em>煙島中壇元帥</em>神威護佑，為無數善信收驚解惑、消災祈福。<br>
                     元帥娘與元帥的相遇，是一段跨越人神的感人因緣——<br>
-                    在這支影片中，元帥娘將親口訴說這段故事。
                 </p>
                 <div class="play-hint">
                     <span class="triangle"></span>
@@ -1188,8 +1191,7 @@ button, input, .btn-action, .qty-btn, .form-control {
         <div class="committee-cta">
             <h3>想要更深度參與聖業？</h3>
             <p>
-                誠摯邀請加入<strong class="hl">「委員會」</strong>或<strong class="hl">「顧問團」</strong>，<br>
-                享有芳名錄刊登首頁等專屬禮遇，共創萬世聖業！
+                誠摯邀請加入<strong class="hl">「委員會」</strong>或<strong class="hl">「顧問團」</strong>，享有芳名錄刊登首頁等專屬禮遇，共創萬世聖業！
             </p>
             <a href="{{ url_for('main.committee_page') }}" class="btn-gold" style="text-decoration:none;">了解委員會專屬禮遇</a>
         </div>
