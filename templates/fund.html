@@ -65,16 +65,18 @@ button, input, .btn-action, .qty-btn, .form-control {
 
 .section-title {
     text-align: center;
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 4.5vw, 2.8rem);
-    font-weight: 900;
-    letter-spacing: 3px;
     margin-bottom: 45px;
-    background: linear-gradient(to bottom, var(--gold-pale) 0%, var(--gold) 50%, var(--gold-dark) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 2px 0 rgba(0,0,0,0.4));
     display: block;
+    /* 重置：避免 base.html 殘留的 gradient / text-fill 繼承污染到內層 SVG */
+    background: none;
+    -webkit-background-clip: initial;
+    -webkit-text-fill-color: initial;
+    filter: none;
+}
+/* 中和 base.html 可能殘留的 ::before（原本浮在左側那顆脫鉤元寶）*/
+.section-title::before {
+    content: none !important;
+    display: none !important;
 }
 .section-title::after {
     content: '';
@@ -83,6 +85,29 @@ button, input, .btn-action, .qty-btn, .form-control {
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--gold), transparent);
     margin: 14px auto 0;
+}
+.section-title .title-main {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(14px, 2.2vw, 24px);
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4.5vw, 2.8rem);
+    font-weight: 900;
+    letter-spacing: 3px;
+    line-height: 1.3;
+}
+.section-title .title-text {
+    background: linear-gradient(to bottom, var(--gold-pale) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(0,0,0,0.4));
+}
+.section-title .title-yuanbao {
+    width: clamp(30px, 4.5vw, 44px);
+    height: auto;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
 }
 
 /* =============================================
@@ -874,12 +899,16 @@ button, input, .btn-action, .qty-btn, .form-control {
     .progress-ring-wrap { width: 220px; height: 220px; }
     .ring-percent { font-size: 2.5rem; }
 
-    /* timeline 改單欄 */
+    /* timeline 改單欄
+       ⚠ 必須同時針對 odd 與 even，否則 .timeline-node 的 specificity 鬥不過 :nth-child(odd)
+       ⚠ 必須 align-items: stretch，否則 column 模式下交叉軸 flex-start 會讓圖片容器寬度塌陷為 0 */
     .timeline::before { left: 20px; }
-    .timeline-node,
+    .timeline-node:nth-child(odd),
     .timeline-node:nth-child(even) {
         flex-direction: column;
+        align-items: stretch;
         padding-left: 50px;
+        gap: 20px;
     }
     .timeline-dot {
         left: 20px;
@@ -905,6 +934,29 @@ button, input, .btn-action, .qty-btn, .form-control {
 </style>
 
 <div class="fund-page">
+
+    <!-- 共用 SVG 圖庫：元寶圖示（供 .section-title 使用）-->
+    <svg width="0" height="0" style="position:absolute; overflow:hidden" aria-hidden="true" focusable="false">
+        <defs>
+            <linearGradient id="yuanbaoGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#fcf6ba"/>
+                <stop offset="0.45" stop-color="#e8c66a"/>
+                <stop offset="1" stop-color="#8a6e2f"/>
+            </linearGradient>
+            <symbol id="icon-yuanbao" viewBox="0 0 50 35">
+                <!-- 元寶船身 -->
+                <path d="M4 24 Q4 33 14 33 L36 33 Q46 33 46 24 L42 18 Q25 15 8 18 Z"
+                      fill="url(#yuanbaoGradient)" stroke="#6b5422" stroke-width="0.8"/>
+                <!-- 上方橢圓鐔邊 -->
+                <ellipse cx="25" cy="14" rx="16" ry="4.5"
+                         fill="url(#yuanbaoGradient)" stroke="#6b5422" stroke-width="0.8"/>
+                <!-- 中央凹陷陰影 -->
+                <ellipse cx="25" cy="13" rx="13" ry="2.8" fill="#6b5422" opacity="0.35"/>
+                <!-- 左上高光 -->
+                <ellipse cx="20" cy="12.5" rx="7" ry="1.3" fill="#fffbe6" opacity="0.85"/>
+            </symbol>
+        </defs>
+    </svg>
 
     <header class="fund-hero">
         <div class="progress-ring-wrap">
@@ -937,7 +989,13 @@ button, input, .btn-action, .qty-btn, .form-control {
     </header>
 
     <section class="fund-section origin-section">
-        <h2 class="section-title">建廟緣起</h2>
+        <h2 class="section-title">
+            <span class="title-main">
+                <svg class="title-yuanbao" aria-hidden="true"><use href="#icon-yuanbao"/></svg>
+                <span class="title-text">建廟緣起</span>
+                <svg class="title-yuanbao" aria-hidden="true"><use href="#icon-yuanbao"/></svg>
+            </span>
+        </h2>
         <div class="origin-layout">
             <div class="origin-intro">
                 <p class="lead">
@@ -958,7 +1016,13 @@ button, input, .btn-action, .qty-btn, .form-control {
     </section>
 
     <section class="fund-section vision-section">
-        <h2 class="section-title">未來願景</h2>
+        <h2 class="section-title">
+            <span class="title-main">
+                <svg class="title-yuanbao" aria-hidden="true"><use href="#icon-yuanbao"/></svg>
+                <span class="title-text">未來願景</span>
+                <svg class="title-yuanbao" aria-hidden="true"><use href="#icon-yuanbao"/></svg>
+            </span>
+        </h2>
         <div class="timeline">
             <article class="timeline-node">
                 <div class="timeline-dot"></div>
@@ -1007,7 +1071,13 @@ button, input, .btn-action, .qty-btn, .form-control {
     </section>
 
     <section class="fund-section honor-section" id="donate">
-        <h2 class="section-title">捐贈芳名錄</h2>
+        <h2 class="section-title">
+            <span class="title-main">
+                <svg class="title-yuanbao" aria-hidden="true"><use href="#icon-yuanbao"/></svg>
+                <span class="title-text">捐贈芳名錄</span>
+                <svg class="title-yuanbao" aria-hidden="true"><use href="#icon-yuanbao"/></svg>
+            </span>
+        </h2>
         <div class="honor-scroll-box">
             <div class="honor-heading">功德芳名</div>
             <div class="marquee-viewport">
@@ -1020,7 +1090,13 @@ button, input, .btn-action, .qty-btn, .form-control {
             </div>
         </div>
 
-        <h2 class="section-title">立即護持</h2>
+        <h2 class="section-title">
+            <span class="title-main">
+                <svg class="title-yuanbao" aria-hidden="true"><use href="#icon-yuanbao"/></svg>
+                <span class="title-text">立即護持</span>
+                <svg class="title-yuanbao" aria-hidden="true"><use href="#icon-yuanbao"/></svg>
+            </span>
+        </h2>
         <p style="text-align:center; margin-bottom:50px; font-size:1.1rem; color:var(--text-muted);">
             您的每一份心意，都將化作莊嚴廟宇的一部分。
         </p>
