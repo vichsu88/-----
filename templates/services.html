@@ -4,221 +4,796 @@
 
 {% block content %}
 <style>
-    /* === 全域設定 === */
-    :root {
-        --primary-gold: #C48945;
-        --bg-offwhite: #F9F7F2;
-        --text-dark: #333;
-    }
-    body { background-color: var(--bg-offwhite); }
+@import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@300;400;700&display=swap');
 
-    /* === 標題樣式 (元寶夾標題 - 改為黑色) === */
-    .yuanbao-header {
-        display: flex; justify-content: center; align-items: center; gap: 15px;
-        margin-bottom: 10px;
-        text-align: center;
-    }
-    .yuanbao-header h2 {
-        font-size: 2rem; color: #000; /* 改為黑色 */
-        margin: 0; font-weight: bold;
-        font-family: 'LXGW WenKai TC', serif;
-    }
-    .yuanbao-icon { width: 40px; height: auto; }
-    
-    .header-subtitle {
-        text-align: center; color: #666; font-size: 1rem; 
-        margin-bottom: 40px; display: block;
-    }
+/* =============================================
+   承天中承府 — 濟世服務
+   設計系統：米白暖色系（與 fund.html 深色系互補）
+   核心裝飾：金線+元寶分隔、滾動浮現、hover 發光
+   ============================================= */
 
-    /* === 1. Hero 頂部影音區 === */
-    .service-hero {
-        position: relative; width: 100%; height: 70vh; overflow: hidden;
-        display: flex; justify-content: center; align-items: center; background: #000;
-    }
-    .video-background {
-        position: absolute; top: 50%; left: 50%; width: 100vw; height: 100vh;
-        transform: translate(-50%, -50%); pointer-events: none; opacity: 0.6; z-index: 1;
-    }
-    .video-background iframe { width: 100%; height: 100%; object-fit: cover; }
-    .hero-content { position: relative; z-index: 2; text-align: center; color: #fff; padding: 20px; }
-    .hero-title {
-        font-family: 'LXGW WenKai TC', serif; font-size: 3.5rem; margin-bottom: 10px;
-        text-shadow: 0 0 20px rgba(196, 137, 69, 0.8); letter-spacing: 5px;
-    }
-    .hero-subtitle {
-        font-size: 1.4rem; font-weight: 300; margin-bottom: 30px; line-height: 1.6;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-    }
-    .hero-nav { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
-    .nav-anchor {
-        padding: 12px 30px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.4); color: #fff; text-decoration: none;
-        border-radius: 50px; transition: 0.3s; font-weight: bold; letter-spacing: 1px;
-    }
-    .nav-anchor:hover { background: var(--primary-gold); border-color: var(--primary-gold); transform: translateY(-3px); }
+:root {
+    --cream: #FAF7F0;
+    --cream-warm: #F3EDE0;
+    --cream-deep: #E9DEC8;
+    --paper: #FFFFFF;
+    --gold-pale: #FAEDCC;
+    --gold-light: #E8C78F;
+    --gold: #C48945;
+    --gold-dark: #8B5A1C;
+    --gold-deep: #5E3E12;
+    --crimson: #B34436;
+    --text-primary: #2B241A;
+    --text-secondary: #6B5D4E;
+    --text-muted: #A89985;
+    --border-gold: rgba(196, 137, 69, 0.2);
+    --border-gold-strong: rgba(196, 137, 69, 0.45);
+    --shadow-sm: 0 2px 8px rgba(139, 90, 28, 0.06);
+    --shadow-md: 0 8px 24px rgba(139, 90, 28, 0.1);
+    --shadow-lg: 0 16px 40px rgba(139, 90, 28, 0.15);
+    --shadow-gold-glow: 0 0 24px rgba(196, 137, 69, 0.25);
+    /* 統一改用 LXGW WenKai TC */
+    --font-display: 'LXGW WenKai TC', sans-serif;
+    --font-body: 'LXGW WenKai TC', sans-serif;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-refined: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
 
-    /* === 2. 現場問事區 (修改為等高佈局 & 輪播) === */
+body {
+    background:
+        radial-gradient(ellipse 80% 60% at top, #FFF8EA 0%, transparent 70%),
+        linear-gradient(to bottom, var(--cream) 0%, var(--cream-warm) 100%);
+    background-attachment: fixed;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+}
+
+/* =============================================
+   工具類別：滾動浮現
+   ============================================= */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.9s var(--ease-out), transform 0.9s var(--ease-out);
+}
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.reveal-d1 { transition-delay: 0.1s; }
+.reveal-d2 { transition-delay: 0.2s; }
+.reveal-d3 { transition-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal { transition: none; opacity: 1; transform: none; }
+    .marquee-track { animation: none !important; }
+    .btn-action::after { animation: none !important; }
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* =============================================
+   元寶標題（金屬質感漸層文字）
+   ============================================= */
+.yuanbao-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(12px, 2vw, 20px);
+    margin-bottom: 10px;
+    text-align: center;
+}
+.yuanbao-header h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: 3px;
+    white-space: nowrap;
+    background: linear-gradient(to bottom, #D4A05A 0%, var(--gold) 45%, var(--gold-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 1px 1px rgba(139, 90, 28, 0.15));
+}
+.yuanbao-icon {
+    width: clamp(28px, 4vw, 40px);
+    height: auto;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(139, 90, 28, 0.2));
+}
+.header-subtitle {
+    display: block;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 1rem;
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+}
+
+/* =============================================
+   Section 分隔線（金線 + 中心小元寶）
+   ============================================= */
+.section-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    max-width: 520px;
+    margin: 30px auto;
+    padding: 0 20px;
+    opacity: 0.75;
+}
+.section-divider .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.section-divider .orb {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.section-divider .orb img {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 2px 3px rgba(139, 90, 28, 0.25));
+}
+.section-divider .orb::before,
+.section-divider .orb::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 8px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.5;
+}
+.section-divider .orb::before { right: calc(100% + 4px); }
+.section-divider .orb::after { left: calc(100% + 4px); }
+
+/* =============================================
+   1. HERO
+   ============================================= */
+.service-hero {
+    position: relative;
+    width: 100%;
+    height: 75vh;
+    min-height: 520px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+}
+.service-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.55) 100%),
+        linear-gradient(to bottom, transparent 60%, var(--cream) 99%);
+    z-index: 2;
+    pointer-events: none;
+}
+.video-background {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100vw;
+    height: 100vh;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0.75;
+    z-index: 1;
+}
+.video-background iframe {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.hero-content {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    color: #fff;
+    padding: 20px;
+    max-width: 900px;
+    animation: heroFadeIn 1.2s var(--ease-out) both;
+}
+@keyframes heroFadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    margin: 0 0 18px;
+    letter-spacing: 6px;
+    text-shadow: 0 2px 20px rgba(196, 137, 69, 0.6), 0 4px 12px rgba(0,0,0,0.5);
+    color: #FFF8EA;
+    font-weight: 900;
+}
+.hero-subtitle p {
+    font-size: clamp(1rem, 1.8vw, 1.25rem);
+    font-weight: 300;
+    margin: 0 0 36px;
+    line-height: 1.9;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
+    color: rgba(255, 248, 234, 0.92);
+}
+.hero-nav {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.nav-anchor {
+    padding: 14px 32px;
+    background: rgba(255, 248, 234, 0.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 248, 234, 0.4);
+    color: #FFF8EA;
+    text-decoration: none;
+    border-radius: 50px;
+    transition: all 0.4s var(--ease-refined);
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-size: 0.98rem;
+}
+.nav-anchor:hover {
+    background: var(--gold);
+    border-color: var(--gold-light);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(196, 137, 69, 0.5);
+    color: #fff;
+}
+
+/* =============================================
+   2. 公壇問事
+   ============================================= */
+.gongtan-section {
+    max-width: 1200px;
+    margin: 80px auto;
+    padding: 20px;
+    display: flex;
+    align-items: stretch;
+    gap: clamp(30px, 5vw, 60px);
+}
+.gongtan-img-box {
+    flex: 1;
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    min-height: 420px;
+    box-shadow: 12px 12px 0 var(--gold), var(--shadow-lg);
+    border: 1px solid var(--border-gold);
+    transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out);
+}
+.gongtan-img-box:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 16px 16px 0 var(--gold), var(--shadow-lg);
+}
+.carousel-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    z-index: 1;
+}
+.carousel-img.active { opacity: 1; z-index: 2; }
+
+.gongtan-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.gongtan-content .yuanbao-header { justify-content: flex-start; }
+.gongtan-content .header-subtitle { text-align: left; margin-bottom: 30px; }
+
+.process-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.step-item {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    background: var(--paper);
+    padding: 20px 22px;
+    border-radius: 14px;
+    border: 1px solid var(--border-gold);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.35s var(--ease-refined);
+    position: relative;
+}
+.step-item:hover {
+    border-color: var(--gold);
+    box-shadow: var(--shadow-md), var(--shadow-gold-glow);
+    transform: translateX(4px);
+}
+.step-num {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 1rem;
+    box-shadow: 0 3px 8px rgba(196, 137, 69, 0.3);
+    font-family: var(--font-body);
+}
+.step-body { flex: 1; min-width: 0; }
+.step-title {
+    font-weight: 700;
+    color: var(--gold-dark);
+    font-size: 1.08rem;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.step-desc {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+.step-desc small { color: var(--crimson); }
+.line-btn {
+    display: inline-block;
+    background: #06c755;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    text-decoration: none;
+    font-weight: 700;
+    transition: transform 0.2s;
+}
+.line-btn:hover { transform: scale(1.05); }
+
+/* =============================================
+   3. 信徒回饋（100s 跑馬燈）
+   ============================================= */
+.feedback-section {
+    background: linear-gradient(to bottom, var(--paper), #FDFBF6);
+    padding: 70px 0;
+    margin: 40px 0;
+    border-top: 1px solid var(--border-gold);
+    border-bottom: 1px solid var(--border-gold);
+    overflow: hidden;
+    position: relative;
+}
+.feedback-section::before,
+.feedback-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    z-index: 3;
+    pointer-events: none;
+}
+.feedback-section::before {
+    left: 0;
+    background: linear-gradient(to right, var(--paper), transparent);
+}
+.feedback-section::after {
+    right: 0;
+    background: linear-gradient(to left, var(--paper), transparent);
+}
+.marquee-wrapper {
+    display: flex;
+    width: 100%;
+    position: relative;
+    margin-top: 30px;
+}
+.marquee-track {
+    display: flex;
+    gap: 24px;
+    animation: scrollLeft 100s linear infinite;
+    width: max-content;
+}
+.marquee-track:hover { animation-play-state: paused; }
+@keyframes scrollLeft {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.feedback-card {
+    width: 320px;
+    background: var(--paper);
+    padding: 26px 24px;
+    border-radius: 14px;
+    border: 1px solid var(--border-gold);
+    border-top: 3px solid var(--gold);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.4s var(--ease-refined);
+}
+.feedback-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md), var(--shadow-gold-glow);
+    border-color: var(--gold);
+}
+.fb-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed var(--border-gold);
+}
+.fb-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    box-shadow: 0 3px 8px rgba(196, 137, 69, 0.3);
+}
+.fb-name { font-weight: 700; color: var(--text-primary); font-size: 1rem; }
+.fb-cat { color: var(--text-muted); font-size: 0.85rem; }
+.fb-content {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    white-space: pre-wrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 7;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+}
+.fb-link {
+    text-align: center;
+    margin-top: 30px;
+}
+.fb-link a {
+    color: var(--gold-dark);
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 2px solid var(--gold);
+    padding-bottom: 3px;
+    transition: all 0.3s;
+}
+.fb-link a:hover {
+    color: var(--gold);
+    border-color: var(--gold-dark);
+}
+
+/* =============================================
+   4. 衣物收驚流程
+   ============================================= */
+.clothes-process-section {
+    max-width: 1200px;
+    margin: 40px auto 80px;
+    padding: 20px;
+}
+.process-card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 28px;
+    margin-top: 40px;
+}
+.process-card {
+    background: var(--paper);
+    border-radius: 18px;
+    padding: 28px 26px;
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+    border: 1px solid var(--border-gold);
+    transition: all 0.4s var(--ease-refined);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+.process-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold-light), var(--gold), var(--gold-dark));
+}
+.process-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg), var(--shadow-gold-glow);
+    border-color: var(--gold);
+}
+.card-title {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: var(--gold-dark);
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+}
+.card-desc {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    min-height: 60px;
+    margin-bottom: 18px;
+}
+.card-desc p { margin: 0; }
+.card-image-box {
+    margin-bottom: 22px;
+    height: 180px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #FDF7EB, #F8EED8);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-gold);
+}
+.card-image-box img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.6s;
+}
+.process-card:hover .card-image-box img {
+    transform: scale(1.05);
+}
+.card-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 50px;
+    background: linear-gradient(to bottom, var(--gold-light), var(--gold), var(--gold-dark));
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    margin-top: auto;
+    transition: all 0.3s;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 12px rgba(196, 137, 69, 0.3);
+    font-family: var(--font-body);
+}
+.card-btn:hover {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(196, 137, 69, 0.4);
+}
+
+/* =============================================
+   5. 捐香 CTA
+   ============================================= */
+.donation-promo-section {
+    background:
+        radial-gradient(ellipse at 20% 0%, rgba(232, 199, 143, 0.4) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 100%, rgba(196, 137, 69, 0.2) 0%, transparent 60%),
+        linear-gradient(to bottom, #FFFCF5, #F3E9D2);
+    border-top: 4px double var(--gold);
+    padding: 90px 20px;
+    text-align: center;
+    margin-top: 60px;
+    position: relative;
+    overflow: hidden;
+}
+.donation-promo-content { max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
+.donation-icon {
+    width: 90px;
+    margin-bottom: 24px;
+    filter: drop-shadow(0 6px 10px rgba(196, 137, 69, 0.3));
+}
+.donation-promo-desc {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 2;
+    margin: 24px 0 40px;
+    letter-spacing: 1px;
+}
+.btn-action {
+    display: inline-block;
+    padding: 16px 50px;
+    font-size: 1.25rem;
+    font-weight: 900;
+    background: linear-gradient(to bottom, var(--gold-light), var(--gold), var(--gold-dark));
+    color: #FFF8EA;
+    text-decoration: none;
+    border-radius: 50px;
+    box-shadow: 0 6px 20px rgba(196, 137, 69, 0.45);
+    transition: all 0.3s var(--ease-refined);
+    position: relative;
+    overflow: hidden;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-body);
+    letter-spacing: 2px;
+}
+.btn-action::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform: skewX(-20deg);
+    animation: btnSheen 4s infinite;
+}
+@keyframes btnSheen {
+    0% { left: -100%; }
+    18% { left: 200%; }
+    100% { left: 200%; }
+}
+.btn-action:hover {
+    transform: scale(1.04);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 28px rgba(196, 137, 69, 0.55);
+}
+
+/* =============================================
+   Modal
+   ============================================= */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 36, 26, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+    padding: 20px;
+}
+.modal-overlay.show { display: flex; opacity: 1; }
+.modal-box {
+    background: var(--paper);
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 18px;
+    padding: 32px;
+    position: relative;
+    box-shadow: var(--shadow-lg);
+    transform: scale(0.95);
+    transition: transform 0.3s var(--ease-out);
+    border: 1px solid var(--border-gold);
+}
+.modal-overlay.show .modal-box { transform: scale(1); }
+.modal-close {
+    position: absolute;
+    top: 14px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--cream-warm);
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+}
+.modal-close:hover {
+    background: var(--gold);
+    color: #fff;
+    transform: rotate(90deg);
+}
+.modal-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--gold-dark);
+    margin: 0 0 24px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--gold);
+    letter-spacing: 2px;
+}
+.modal-body {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.9;
+}
+.modal-body h3, .modal-body h4 {
+    color: var(--gold-dark);
+    font-family: var(--font-display);
+    margin: 20px 0 12px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+.modal-body ul, .modal-body ol { padding-left: 24px; margin-bottom: 15px; }
+.modal-body li { margin-bottom: 8px; }
+
+.red-paper-visual {
+    background: var(--crimson);
+    color: black;
+    width: 240px;
+    height: 320px;
+    margin: 20px auto;
+    padding: 22px;
+    box-sizing: border-box;
+    box-shadow: 5px 5px 15px rgba(139, 90, 28, 0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: var(--font-body); /* 原本寫死為標楷體，已修正為全域字體 */
+    font-size: 1.05rem;
+    text-align: center;
+    position: relative;
+    border-radius: 2px;
+}
+.red-paper-date { position: absolute; top: 10px; left: 10px; font-size: 0.85rem; writing-mode: vertical-rl; }
+.red-paper-content { display: flex; flex-direction: column; gap: 8px; justify-content: center; height: 100%; }
+.red-paper-row { border-bottom: 1px dashed rgba(0,0,0,0.3); padding-bottom: 3px; }
+
+/* =============================================
+   RWD
+   ============================================= */
+@media (max-width: 768px) {
+    .service-hero { height: 65vh; min-height: 480px; }
+    .hero-title { font-size: 2rem; letter-spacing: 3px; }
+    .hero-nav {
+        flex-direction: column;
+        width: 82%;
+        margin: 0 auto;
+        gap: 14px;
+    }
+    .nav-anchor { width: 100%; text-align: center; display: block; box-sizing: border-box; }
+
     .gongtan-section {
-        max-width: 1200px; margin: 60px auto; padding: 0 20px;
-        display: flex; 
-        align-items: stretch; /* 關鍵：讓左右兩邊等高 */
-        gap: 50px;
+        flex-direction: column;
+        gap: 40px;
+        margin: 60px auto;
     }
-    
-    .gongtan-img-box { 
-        flex: 1; 
-        position: relative; 
-        border-radius: 15px; 
-        box-shadow: 10px 10px 0 var(--primary-gold); 
-        overflow: hidden;
-        min-height: 400px; /* 手機版最小高度 */
+    .gongtan-content .yuanbao-header { justify-content: center; }
+    .gongtan-content .header-subtitle { text-align: center; }
+    .gongtan-img-box {
+        min-height: 320px;
+        box-shadow: 8px 8px 0 var(--gold), var(--shadow-md);
     }
-    
-    /* 輪播圖片樣式 */
-    .carousel-img {
-        position: absolute; top: 0; left: 0;
-        width: 100%; height: 100%;
-        object-fit: cover; /* 確保圖片填滿且不變形 */
-        opacity: 0;
-        transition: opacity 1.5s ease-in-out; /* 淡入淡出時間 */
-        z-index: 1;
+    .feedback-card { width: 280px; }
+    .process-card-container {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 20px;
+        gap: 16px;
+        grid-template-columns: none;
     }
-    .carousel-img.active { opacity: 1; z-index: 2; }
-    
-    .gongtan-content { 
-        flex: 1; 
-        display: flex; flex-direction: column; justify-content: center; /* 讓內容垂直置中 */
-    }
-
-    .process-steps { display: flex; flex-direction: column; gap: 20px; }
-    .step-item {
-        background: #fff; padding: 20px; border-radius: 10px; border-left: 4px solid #ddd;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s;
-    }
-    .step-item:hover { border-left-color: var(--primary-gold); transform: translateX(5px); }
-    .step-title { font-weight: bold; color: #8B4513; font-size: 1.1rem; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-    .step-desc { font-size: 0.95rem; color: #555; line-height: 1.5; }
-    .line-btn { display: inline-block; background: #06c755; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; text-decoration: none; margin-left: 10px; }
-
-    /* === 3. 信徒見證 (換行與輪播) === */
-    .feedback-section {
-        background: #fff; padding: 50px 0; margin: 60px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; overflow: hidden;
-    }
-    .marquee-wrapper { display: flex; width: 100%; position: relative; }
-    .marquee-track { display: flex; gap: 30px; animation: scrollLeft 60s linear infinite; width: max-content; }
-    
-    .feedback-card { 
-        width: 320px; /* 卡片寬度 */
-        background: #F9F7F2; padding: 25px; 
-        border-radius: 10px; border: 1px solid #eee; flex-shrink: 0; 
-        display: flex; flex-direction: column;
-    }
-    .fb-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-    .fb-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: #fff; background: var(--primary-gold); flex-shrink: 0;}
-    
-    .fb-content { 
-        font-size: 0.95rem; color: #444; line-height: 1.6; 
-        white-space: pre-wrap; /* 關鍵：支援換行 */
-        max-height: 200px; /* 限制最大高度 */
-        overflow-y: auto; /* 內容太多時可捲動 */
-    }
-    
-    .fb-link { text-align: center; margin-top: 20px; }
-    
-    /* 滑鼠移上去暫停輪播，方便閱讀 */
-    .marquee-track:hover { animation-play-state: paused; }
-    
-    @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-
-    /* === 4. 衣物收驚流程 === */
-    .clothes-process-section { max-width: 1100px; margin: 0 auto 80px auto; padding: 0 20px; }
-    .process-card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; }
     .process-card {
-        background: #fff; border-radius: 15px; padding: 25px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center;
-        border: 1px solid #eee; transition: 0.3s; display: flex; flex-direction: column;
+        min-width: 85%;
+        scroll-snap-align: center;
+        flex-shrink: 0;
     }
-    .process-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(196, 137, 69, 0.2); border-color: var(--primary-gold); }
-    .card-title { font-size: 1.3rem; font-weight: bold; color: #8B4513; margin-bottom: 10px; }
-    .card-desc { font-size: 0.95rem; color: #666; line-height: 1.6; min-height: 60px; margin-bottom: 15px; }
-    .card-image-box { margin-bottom: 20px; height: 180px; display: flex; justify-content: center; align-items: center; background: #fafafa; border-radius: 10px; overflow: hidden; }
-    .card-image-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .card-btn { width: 100%; padding: 10px; border-radius: 50px; background: #C48945; color: white; border: none; cursor: pointer; margin-top: auto; transition: 0.3s; font-size: 1rem;}
-    .card-btn:hover { background: #a06d35; }
-
-    /* === 5. 底部捐香推廣區 === */
-    .donation-promo-section {
-        background: linear-gradient(to bottom, #fffcf5, #f3e9d2);
-        border-top: 4px double #C48945;
-        padding: 80px 20px;
-        text-align: center;
-        margin-top: 0;
-    }
-    .donation-promo-content { max-width: 800px; margin: 0 auto; }
-    .donation-icon { width: 80px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(196, 137, 69, 0.3)); }
-    .donation-promo-desc { color: #555; font-size: 1.1rem; line-height: 1.8; margin-bottom: 40px; }
-    .btn-action {
-        display: inline-block; padding: 15px 50px; font-size: 1.3rem; font-weight: bold;
-        background: var(--primary-gold); color: white; text-decoration: none; border-radius: 50px;
-        box-shadow: 0 5px 15px rgba(196, 137, 69, 0.4); transition: 0.3s;
-    }
-    .btn-action:hover { background: #a06d35; transform: scale(1.05); }
-
-    /* === Modal 彈出視窗樣式 === */
-    .modal-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.6); z-index: 2000; justify-content: center; align-items: center;
-        opacity: 0; transition: opacity 0.3s ease;
-    }
-    .modal-overlay.show { display: flex; opacity: 1; }
-    .modal-box {
-        background: #fff; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
-        border-radius: 15px; padding: 30px; position: relative;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.3s ease;
-    }
-    .modal-overlay.show .modal-box { transform: scale(1); }
-    .modal-close { position: absolute; top: 15px; right: 20px; font-size: 30px; cursor: pointer; color: #999; transition: 0.2s; }
-    .modal-close:hover { color: #333; }
-    .modal-title { font-size: 1.5rem; color: #8B4513; margin-bottom: 20px; border-bottom: 2px solid #C48945; padding-bottom: 10px; }
-    .modal-body { font-size: 1rem; color: #444; line-height: 1.8; }
-    .modal-body ul, .modal-body ol { padding-left: 20px; margin-bottom: 15px; }
-    .modal-body li { margin-bottom: 8px; }
-
-    /* 紅紙 CSS */
-    .red-paper-visual {
-        background: #d93025; color: black;
-        width: 240px; height: 320px; margin: 20px auto; padding: 20px; box-sizing: border-box;
-        border: 1px solid rgba(0,0,0,0.1); box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
-        display: flex; flex-direction: column; justify-content: space-between;
-        font-family: "KaiTi", "BiauKai", serif; font-size: 1.1rem; text-align: center; position: relative;
-    }
-    .red-paper-date { position: absolute; top: 10px; left: 10px; font-size: 0.9rem; writing-mode: vertical-rl; }
-    .red-paper-content { display: flex; flex-direction: column; gap: 10px; justify-content: center; height: 100%; }
-    .red-paper-row { border-bottom: 1px dashed rgba(0,0,0,0.3); padding-bottom: 2px; }
-
-    /* RWD 手機版調整 */
-    @media (max-width: 768px) {
-        .hero-title { font-size: 2.2rem; }
-        
-        /* 手機版 Hero 按鈕：垂直堆疊 */
-        .hero-nav {
-            flex-direction: column;
-            width: 80%; margin: 0 auto; gap: 15px;
-        }
-        .nav-anchor { width: 100%; text-align: center; display: block; box-sizing: border-box; }
-
-        .gongtan-section { flex-direction: column; gap: 30px; }
-        .donation-promo-title { font-size: 1.8rem; }
-
-        /* 手機版衣物流程卡片：水平滑動 + 吸附 */
-        .process-card-container { 
-            display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
-            padding-bottom: 20px; gap: 15px; grid-template-columns: none;
-        }
-        .process-card {
-            min-width: 85%; scroll-snap-align: center; flex-shrink: 0; margin: 0;
-        }
-    }
+    .donation-promo-section { padding: 70px 20px; }
+    .btn-action { padding: 14px 38px; font-size: 1.1rem; }
+    .modal-box { padding: 24px 20px; }
+}
 </style>
 
 <header class="service-hero">
@@ -227,7 +802,9 @@
     </div>
     <div class="hero-content">
         <h1 class="hero-title">信仰有依．心安即家</h1>
-        <div class="hero-subtitle"><p>煙島中壇元帥與元帥娘<br>以慈悲之心做您堅實的依靠，讓懸著的心從此踏實。</p></div>
+        <div class="hero-subtitle">
+            <p>煙島中壇元帥與元帥娘<br>以慈悲之心做您堅實的依靠，讓懸著的心從此踏實。</p>
+        </div>
         <div class="hero-nav">
             <a href="#gongtan" class="nav-anchor">🙌 現場問事</a>
             <a href="#clothes-process" class="nav-anchor">📦 寄回衣物</a>
@@ -236,7 +813,7 @@
     </div>
 </header>
 
-<section id="gongtan" class="gongtan-section">
+<section id="gongtan" class="gongtan-section reveal">
     <div class="gongtan-img-box">
         <img src="{{ url_for('static', filename='images/pages/gongtan/service1.jpg') }}" class="carousel-img active" alt="輪播圖1">
         <img src="{{ url_for('static', filename='images/pages/gongtan/service2.jpg') }}" class="carousel-img" alt="輪播圖2">
@@ -249,38 +826,60 @@
             <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
         </div>
         <span class="header-subtitle">每月不定期開壇</span>
-        
+
         <div class="process-steps">
             <div class="step-item">
-                <div class="step-title">1. 報名公告 <a href="{{ links['煙島元帥社群'] or '#' }}" target="_blank" class="line-btn">加入 LINE</a></div>
-                <div class="step-desc">加入 LINE 群組，關注下個月的公壇日期、報名日期及開放名額。<br><small style="color:red;">*每人限加1群。</small></div>
+                <div class="step-num">1</div>
+                <div class="step-body">
+                    <div class="step-title">報名公告 <a href="{{ links['煙島元帥社群'] or '#' }}" target="_blank" class="line-btn">加入 LINE</a></div>
+                    <div class="step-desc">加入 LINE 群組，關注下個月的公壇日期、報名日期及開放名額。<br><small>*每人限加 1 群。</small></div>
+                </div>
             </div>
             <div class="step-item">
-                <div class="step-title">2. 線上報名</div>
-                <div class="step-desc">報名當日由小編發布「報名開始」後，需立即在群組留言「+1」，額滿即止。</div>
+                <div class="step-num">2</div>
+                <div class="step-body">
+                    <div class="step-title">線上報名</div>
+                    <div class="step-desc">報名當日由小編發布「報名開始」後，需立即在群組留言「+1」，額滿即止。</div>
+                </div>
             </div>
             <div class="step-item">
-                <div class="step-title">3. 名單公告 & 現場問事</div>
-                <div class="step-desc">名單將於整理後由群組公布，為確保流程順暢，超過該場次兩小時報到者將取消公壇資格。</div>
+                <div class="step-num">3</div>
+                <div class="step-body">
+                    <div class="step-title">名單公告 & 現場問事</div>
+                    <div class="step-desc">名單將於整理後由群組公布，為確保流程順暢，超過該場次兩小時報到者將取消公壇資格。</div>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<section class="feedback-section">
+<div class="section-divider reveal">
+    <span class="line"></span>
+    <span class="orb"><img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" alt=""></span>
+    <span class="line"></span>
+</div>
+
+<section class="feedback-section reveal">
     <div class="yuanbao-header">
         <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
         <h2>信徒真實回饋</h2>
         <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
     </div>
-    
+    <span class="header-subtitle">來自善信的真心分享</span>
+
     <div class="marquee-wrapper">
         <div class="marquee-track" id="feedback-track"><div style="padding:20px;">載入中...</div></div>
     </div>
-    <div class="fb-link"><a href="{{ url_for('main.feedback_page') }}" style="color:#C48945; font-weight:bold; text-decoration:underline;">更多信徒回饋 &raquo;</a></div>
+    <div class="fb-link"><a href="{{ url_for('main.feedback_page') }}">更多信徒回饋 &raquo;</a></div>
 </section>
 
-<section id="clothes-process" class="clothes-process-section">
+<div class="section-divider reveal">
+    <span class="line"></span>
+    <span class="orb"><img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" alt=""></span>
+    <span class="line"></span>
+</div>
+
+<section id="clothes-process" class="clothes-process-section reveal">
     <div class="yuanbao-header">
         <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
         <h2>衣物收驚服務流程</h2>
@@ -289,21 +888,21 @@
     <span class="header-subtitle">親送或郵寄皆可，讓元帥的庇佑零距離</span>
 
     <div class="process-card-container">
-        <div class="process-card">
+        <div class="process-card reveal reveal-d1">
             <div class="card-title">步驟一：準備衣物</div>
-            <div class="card-desc">準備一件輕薄衣物，並將個人資訊寫於<br> 紅紙後，夾帶於衣服中。<br> 每一件都要寫！</div>
+            <div class="card-desc">準備一件輕薄衣物，並將個人資訊寫於紅紙後<br>夾帶於衣服中。每一件都要寫！</div>
             <div class="card-image-box"><img src="{{ url_for('static', filename='images/pages/shoujing/card1.png') }}" alt="步驟一"></div>
             <button class="card-btn" onclick="openModal('modal-step1')">紅紙寫法與規範</button>
         </div>
-        <div class="process-card">
+        <div class="process-card reveal reveal-d2">
             <div class="card-title">步驟二：寄送衣物</div>
-            <div class="card-desc"><p>親送：衣物與資料親送至「八八菸酒」<br> 郵寄： 將衣物與資料一同郵寄至帥府。</p></div>
+            <div class="card-desc"><p>親送：衣物與資料親送至「八八菸酒」<br>郵寄：將衣物與資料一同郵寄至帥府。</p></div>
             <div class="card-image-box"><img src="{{ url_for('static', filename='images/pages/shoujing/card2.png') }}" alt="步驟二"></div>
             <button class="card-btn" onclick="openModal('modal-step2')">查看收件資訊</button>
         </div>
-        <div class="process-card">
+        <div class="process-card reveal reveal-d3">
             <div class="card-title">步驟三：完成取回</div>
-            <div class="card-desc"><p>關注群組收驚進度。<br><strong>1.自取</strong>：依公告編號取回。<br><strong>2.寄回</strong>：自行安排到付快遞。</p></div>
+            <div class="card-desc"><p>關注群組收驚進度。<br><strong>1. 自取</strong>：依公告編號取回。<br><strong>2. 寄回</strong>：自行安排到付快遞。</p></div>
             <div class="card-image-box"><img src="{{ url_for('static', filename='images/pages/shoujing/card3.png') }}" alt="步驟三"></div>
             <button class="card-btn" onclick="openModal('modal-step3')">寄回衣服申請</button>
         </div>
@@ -311,7 +910,7 @@
 </section>
 
 <section class="donation-promo-section">
-    <div class="donation-promo-content">
+    <div class="donation-promo-content reveal">
         <img src="{{ url_for('static', filename='images/pages/index/donate.png') }}" alt="捐香" class="donation-icon">
         <div class="yuanbao-header">
             <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
@@ -328,7 +927,7 @@
 
 <div id="modal-step1" class="modal-overlay">
     <div class="modal-box">
-        <span class="modal-close" onclick="closeModal('modal-step1')">&times;</span>
+        <button class="modal-close" onclick="closeModal('modal-step1')">&times;</button>
         <div class="modal-title">紅紙填寫與衣物規範</div>
         <div class="modal-body">
             <div class="red-paper-visual">
@@ -341,16 +940,16 @@
                     <div class="red-paper-row">電話：0912-345-678</div>
                 </div>
             </div>
-            <h4 style="color:#C48945; margin-top:20px;">1️⃣ 個人資料要求</h4>
+            <h4>1️⃣ 個人資料要求</h4>
             <ul>
                 <li>字體需端正、大、清楚。</li>
                 <li><strong>每件衣物</strong>皆需附一張資料，依順序疊好。</li>
                 <li>紅單左上角請註明「寄件日期」。</li>
             </ul>
-            <h4 style="color:#C48945;">2️⃣ 衣物要求</h4>
+            <h4>2️⃣ 衣物要求</h4>
             <p>⭕ 輕薄、穿過洗淨的長短袖上衣。</p>
-            <p>❌ 無袖、厚重衣物、針織毛衣、外套、帽T。</p>
-            <h4 style="color:#C48945;">3️⃣ 使用方式</h4>
+            <p>❌ 無袖、厚重衣物、針織毛衣、外套、帽 T。</p>
+            <h4>3️⃣ 使用方式</h4>
             <p>📌 完成後可直接穿，或放枕頭下睡。</p>
         </div>
     </div>
@@ -358,10 +957,10 @@
 
 <div id="modal-step2" class="modal-overlay">
     <div class="modal-box">
-        <span class="modal-close" onclick="closeModal('modal-step2')">&times;</span>
+        <button class="modal-close" onclick="closeModal('modal-step2')">&times;</button>
         <div class="modal-title">收件資訊</div>
         <div class="modal-body">
-            <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px;">
+            <div style="background:#FDF7EB; padding:18px; border-radius:12px; margin-bottom:20px; border:1px solid var(--border-gold);">
                 <h4 style="margin-top:0;">🏠 親自送件</h4>
                 <ul style="margin-bottom:0;">
                     <li>地點：八八菸酒</li>
@@ -369,7 +968,7 @@
                     <li>時間：上午 10:30 ～ 凌晨 03:00</li>
                 </ul>
             </div>
-            <div style="background:#f9f9f9; padding:15px; border-radius:10px;">
+            <div style="background:#FDF7EB; padding:18px; border-radius:12px; border:1px solid var(--border-gold);">
                 <h4 style="margin-top:0;">🚚 郵寄寄件</h4>
                 <ul style="margin-bottom:0;">
                     <li>收件人：承天中承府</li>
@@ -382,19 +981,19 @@
 
 <div id="modal-step3" class="modal-overlay">
     <div class="modal-box">
-        <span class="modal-close" onclick="closeModal('modal-step3')">&times;</span>
+        <button class="modal-close" onclick="closeModal('modal-step3')">&times;</button>
         <div class="modal-title">黑貓預約與登記</div>
         <div class="modal-body">
-            <p style="background:#ffeaea; color:red; padding:10px; border-radius:5px; font-weight:bold;">
+            <p style="background:#FEECEA; color:var(--crimson); padding:12px 16px; border-radius:8px; font-weight:bold; border-left:4px solid var(--crimson);">
                 ⚠ 請注意：處理完畢公告於群組，請於 6 個月內取回，逾期回收。
             </p>
-            <h3 style="color:#C48945;">Step1:線上填寫寄回單</h3>
+            <h3>Step 1: 線上填寫寄回單</h3>
             <ol>
                 <li>點選「我要寄件」。</li>
                 <li>填寫完整資料，取得可收件日。</li>
                 <li>按照系統提供可收件日期，安排黑貓到帥府取貨。</li>
             </ol>
-            <h3 style="color:#C48945;">Step2:黑貓宅急便 App 預約教學</h3>
+            <h3>Step 2: 黑貓宅急便 App 預約教學</h3>
             <ol>
                 <li>下載並開啟「黑貓宅急便 App」。</li>
                 <li>選擇「常溫宅急便」 &gt; 件數選「1」。</li>
@@ -415,10 +1014,10 @@
                 <li>內容：填寫「衣服總件數」 (如：3)。</li>
                 <li><strong>寄件日</strong>：請依照下方系統顯示的日期填寫。</li>
             </ol>
-            <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
-                <p style="font-weight:bold; color:#333;">已收到完成通知，並準備好寄回嗎？</p>
-                <a href="{{ url_for('main.ship_clothes_page') }}" class="btn-action" style="text-decoration:none; display:inline-block; padding:12px 30px; border-radius:50px;">
-                    📝 Step1:填寫衣物登記單
+            <div style="text-align:center; margin-top:30px; border-top:1px dashed var(--border-gold-strong); padding-top:22px;">
+                <p style="font-weight:bold; color:var(--text-primary);">已收到完成通知，並準備好寄回嗎？</p>
+                <a href="{{ url_for('main.ship_clothes_page') }}" class="btn-action" style="display:inline-block; padding:13px 32px; font-size:1.05rem;">
+                    📝 Step 1: 填寫衣物登記單
                 </a>
             </div>
         </div>
@@ -433,7 +1032,7 @@
             event.target.classList.remove('show');
         }
     }
-    
+
     document.addEventListener('DOMContentLoaded', () => {
         // 1. 公壇圖片淡入淡出輪播
         const slides = document.querySelectorAll('.carousel-img');
@@ -443,30 +1042,55 @@
                 slides[currentSlide].classList.remove('active');
                 currentSlide = (currentSlide + 1) % slides.length;
                 slides[currentSlide].classList.add('active');
-            }, 4000); // 4秒換一張
+            }, 4000);
         }
 
-        // 2. 跑馬燈
-        fetch('/api/feedback/approved').then(r=>r.json()).then(data => {
-            const track = document.getElementById('feedback-track');
-            if(!data.length) { track.innerHTML = '<div style="padding:20px; width:100vw; text-align:center;">暫無回饋資料</div>'; return; }
-            const cards = data.map(i => `
-                <div class="feedback-card">
-                    <div class="fb-header">
-                        <div class="fb-avatar">${i.nickname?i.nickname[0]:'善'}</div>
-                        <div><b>${i.nickname}</b><br><small style="color:#999">${i.category}</small></div>
-                    </div>
-                    <div class="fb-content">${i.content}</div>
-                </div>`).join('');
-            
-            // 複製足夠多的內容以填滿跑馬燈，確保無限循環不留白
-            // 至少複製到 20 個卡片以上，或重複 6 次
-            let content = cards;
-            while (content.length < 5000 && content.split('feedback-card').length < 20) {
-                 content += cards;
-            }
-            track.innerHTML = content;
-        });
+        // 2. 信徒回饋跑馬燈 (優化了無縫銜接邏輯並加入錯誤捕捉)
+        fetch('/api/feedback/approved')
+            .then(r => r.json())
+            .then(data => {
+                const track = document.getElementById('feedback-track');
+                if (!data || !data.length) {
+                    track.innerHTML = '<div style="padding:20px; width:100vw; text-align:center; color:var(--text-muted);">🙏 期待首位善信的分享</div>';
+                    return;
+                }
+                const cards = data.map(i => `
+                    <div class="feedback-card">
+                        <div class="fb-header">
+                            <div class="fb-avatar">${i.nickname ? i.nickname[0] : '善'}</div>
+                            <div>
+                                <span class="fb-name">${i.nickname}</span><br>
+                                <span class="fb-cat">${i.category}</span>
+                            </div>
+                        </div>
+                        <div class="fb-content">${i.content}</div>
+                    </div>`).join('');
+
+                // 為了讓 CSS translateX(-50%) 能夠完美無縫輪播，我們需要確保內容夠長，並精準複製為兩等分
+                let baseContent = cards;
+                while (baseContent.split('feedback-card').length < 10) {
+                    baseContent += cards;
+                }
+                // 將整理好的內容複製一份，變成剛剛好兩倍，這樣捲動到 -50% 時能無縫接軌
+                track.innerHTML = baseContent + baseContent;
+            })
+            .catch(err => {
+                const track = document.getElementById('feedback-track');
+                track.innerHTML = '<div style="padding:20px; width:100vw; text-align:center; color:var(--text-muted);">回饋資料載入失敗，請稍後再試。</div>';
+                console.error('Feedback Fetch Error:', err);
+            });
+
+        // 3. 滾動浮現動畫（IntersectionObserver）
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     });
 </script>
 {% endblock %}
