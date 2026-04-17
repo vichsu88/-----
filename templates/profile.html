@@ -20,26 +20,30 @@
         --status-pending-text: #856404;
         --status-pending-border: #ffc107;
         
-        --status-approved-bg: #e2e3e5;
-        --status-approved-text: #383d41;
-        --status-approved-border: #6c757d;
+        /* [MODIFIED] Badge 顏色收斂：降低飽和度，改用更柔和的色調 */
+        --status-approved-bg: #f0f0f0;
+        --status-approved-text: #555;
+        --status-approved-border: #aaa;
         
-        --status-sent-bg: #cce5ff;
-        --status-sent-text: #004085;
-        --status-sent-border: #007bff;
+        --status-sent-bg: #e8f3ff;
+        --status-sent-text: #2a5d9f;
+        --status-sent-border: #7ab3e0;
         
-        --status-success-bg: #d4edda;
-        --status-success-text: #155724;
+        --status-success-bg: #eaf6ec;
+        --status-success-text: #2d6a3f;
         
-        --status-warning-bg: #ffeeba;
-        --status-warning-text: #856404;
+        --status-warning-bg: #fff9e6;
+        --status-warning-text: #7a6000;
         
-        --status-urgent-bg: #fff3cd;
-        --status-urgent-border: #fd7e14;
+        --status-urgent-bg: #fff4e6;
+        --status-urgent-border: #e07b2a;
         
         --danger: #dc3545;
         --radius-md: 10px;
         --radius-lg: 15px;
+
+        /* [NEW] Toast 通知相關變數 */
+        --toast-z: 9999;
     }
 
     /* =========================================
@@ -93,6 +97,10 @@
         padding: 25px;
         margin-bottom: 30px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+
+        /* [NEW] 相對定位，供內部遮罩使用 */
+        position: relative;
+        overflow: hidden;
     }
     .profile-card h3.card-title {
         color: var(--primary-gold);
@@ -109,34 +117,81 @@
     .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
     .form-group { flex: 1; min-width: 200px; margin-bottom: 15px; }
     .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 15px; }
+
+    /* [MODIFIED] 表單 :focus 狀態 — 金色外框 + 同色系光暈 */
     .form-group input, .form-group select {
-        width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px;
+        width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;
+        box-sizing: border-box; font-size: 15px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
     }
+    .form-group input:focus, .form-group select:focus {
+        border-color: var(--primary-gold);
+        box-shadow: 0 0 0 3px rgba(196, 137, 69, 0.18);
+    }
+
+    /* [MODIFIED] 按鈕 :active 微互動 — 點擊縮放物理手感 */
     .btn-save {
-        background: var(--primary-gold); color: white; border: none; padding: 10px 25px; border-radius: 25px;
-        font-size: 16px; font-weight: bold; cursor: pointer; float: right; transition: 0.2s;
+        background: var(--primary-gold); color: white; border: none; padding: 10px 25px;
+        border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer;
+        float: right; transition: opacity 0.2s, transform 0.1s;
     }
-    .btn-save:hover { opacity: 0.8; }
+    .btn-save:hover { opacity: 0.85; }
+    .btn-save:active { transform: scale(0.97); }
+
+    /* =========================================
+       [NEW] 表單 Loading 遮罩 (Overlay)
+       防止儲存 API 請求期間誤觸欄位
+       ========================================= */
+    .form-loading-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 252, 245, 0.72);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        border-radius: var(--radius-lg);
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+        font-size: 15px;
+        color: var(--primary-gold);
+        font-weight: bold;
+    }
+    .form-loading-overlay.active { display: flex; }
+    .form-loading-spinner {
+        width: 28px; height: 28px;
+        border: 3px solid rgba(196,137,69,0.25);
+        border-top-color: var(--primary-gold);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* =========================================
        狀態標籤 (Badges)
        ========================================= */
     .badge {
-        display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white;
+        display: inline-block; padding: 2px 6px; border-radius: 4px;
+        font-size: 12px; font-weight: bold; color: white;
     }
-    .badge-fund { background: #8B4513; }
-    .badge-committee { background: #B22222; }
-    .badge-donation { background: var(--primary-gold); }
-    .badge-urgent { background: var(--danger); font-size: 16px; }
+    /* [MODIFIED] Badge 色彩收斂：降低飽和度，使用較柔和的色調 */
+    .badge-fund     { background: #a0693a; }
+    .badge-committee{ background: #b54040; }
+    .badge-donation { background: #c49452; }
+    .badge-urgent   { background: var(--danger); font-size: 16px; }
 
     .gift-status { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
-    .gift-status.received { background: var(--status-success-bg); color: var(--status-success-text); }
+    .gift-status.received     { background: var(--status-success-bg); color: var(--status-success-text); }
     .gift-status.not-received { background: var(--status-warning-bg); color: var(--status-warning-text); }
     .gift-note { font-size: 13px; color: var(--danger); margin-top: 5px; display: none; }
 
     .cloth-pill {
-        display: inline-block; background: #fdf6e9; border: 1px solid var(--light-gold); color: var(--primary-gold);
-        padding: 4px 10px; border-radius: 15px; font-size: 13px; margin: 0 5px 5px 0; font-weight: bold;
+        display: inline-block; background: #fdf6e9; border: 1px solid var(--light-gold);
+        color: var(--primary-gold); padding: 4px 10px; border-radius: 15px;
+        font-size: 13px; margin: 0 5px 5px 0; font-weight: bold;
     }
 
     /* =========================================
@@ -158,7 +213,7 @@
         content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
         background: linear-gradient(90deg, #fcf6ba, #bf953f, #fcf6ba);
     }
-    .fund-gold-name { font-size: 20px; font-weight: bold; color: var(--text-brown); margin-bottom: 12px; }
+    .fund-gold-name   { font-size: 20px; font-weight: bold; color: var(--text-brown); margin-bottom: 12px; }
     .fund-gold-amount { font-size: 22px; font-weight: 900; color: var(--primary-gold); letter-spacing: 1px; }
     
     .tip-box {
@@ -171,20 +226,22 @@
        歷史紀錄卡片
        ========================================= */
     .history-item {
-        background: white; border: 1px solid #eee; border-radius: var(--radius-md); padding: 15px; margin-bottom: 15px;
+        background: white; border: 1px solid #eee; border-radius: var(--radius-md);
+        padding: 15px; margin-bottom: 15px;
     }
     .history-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; color: #888; }
-    .history-item-title { font-weight: bold; color: var(--text-dark); font-size: 15px;}
-    .history-item-content { color: var(--text-dark); font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
-    .history-item-list { margin: 0; padding-left: 20px; font-size: 14px; color: #555; }
-    .history-item-list li { margin-bottom: 3px; }
-    .history-item-total { margin-top: 10px; font-weight: bold; color: var(--primary-gold); font-size: 16px; }
+    .history-item-title  { font-weight: bold; color: var(--text-dark); font-size: 15px;}
+    .history-item-content{ color: var(--text-dark); font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
+    .history-item-list   { margin: 0; padding-left: 20px; font-size: 14px; color: #555; }
+    .history-item-list li{ margin-bottom: 3px; }
+    .history-item-total  { margin-top: 10px; font-weight: bold; color: var(--primary-gold); font-size: 16px; }
     
     .history-item-status { padding: 10px; border-radius: 6px; font-size: 14px; line-height: 1.5; font-weight: 500; }
-    .status-pending { background: var(--status-pending-bg); color: var(--status-pending-text); border-left: 4px solid var(--status-pending-border); }
+    /* [MODIFIED] 狀態樣式色彩收斂：降低飽和度 */
+    .status-pending  { background: var(--status-pending-bg);  color: var(--status-pending-text);  border-left: 4px solid var(--status-pending-border); }
     .status-approved { background: var(--status-approved-bg); color: var(--status-approved-text); border-left: 4px solid var(--status-approved-border); }
-    .status-sent { background: var(--status-sent-bg); color: var(--status-sent-text); border-left: 4px solid var(--status-sent-border); }
-    .status-urgent { background: var(--status-urgent-bg); color: var(--status-pending-text); border-left: 4px solid var(--status-urgent-border); }
+    .status-sent     { background: var(--status-sent-bg);     color: var(--status-sent-text);     border-left: 4px solid var(--status-sent-border); }
+    .status-urgent   { background: var(--status-urgent-bg);   color: var(--status-pending-text);  border-left: 4px solid var(--status-urgent-border); }
 
     /* =========================================
        回饋卡片專用樣式
@@ -197,20 +254,122 @@
     }
     .feedback-text.expanded { -webkit-line-clamp: unset; }
     .read-more-btn {
-        color: var(--primary-gold); font-size: 14px; font-weight: bold; cursor: pointer; 
+        color: var(--primary-gold); font-size: 14px; font-weight: bold; cursor: pointer;
         margin-top: 5px; display: inline-block; border: none; background: none; padding: 0;
     }
     .read-more-btn:hover { text-decoration: underline; }
-    
+
+    /* =========================================
+       [NEW] Empty State 視覺強化
+       加入裝飾 Emoji 與更豐富的排版
+       ========================================= */
+    .empty-state-box {
+        text-align: center;
+        padding: 28px 20px;
+        color: #aaa;
+    }
+    .empty-state-icon {
+        font-size: 38px;
+        line-height: 1;
+        margin-bottom: 10px;
+        opacity: 0.75;
+        display: block;
+    }
+    .empty-state-msg {
+        font-size: 14px;
+        color: #999;
+        margin: 0 0 10px;
+        line-height: 1.6;
+    }
+    .empty-state-link {
+        color: var(--primary-gold);
+        font-weight: bold;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    .empty-state-link:hover { text-decoration: underline; }
+
+    /* =========================================
+       [NEW] 未解鎖卡片 — 毛玻璃遮罩 (Locked Overlay)
+       ========================================= */
+    .locked-card-wrapper {
+        position: relative;
+    }
+    .locked-overlay {
+        display: none; /* JS 控制顯示 */
+        position: absolute;
+        inset: 0;
+        /* 毛玻璃效果 */
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        background: rgba(255, 252, 245, 0.6);
+        border-radius: var(--radius-lg);
+        z-index: 5;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-align: center;
+        padding: 20px;
+    }
+    .locked-overlay.active { display: flex; }
+    .locked-overlay-icon  { font-size: 40px; }
+    .locked-overlay-title { font-size: 17px; font-weight: bold; color: var(--text-brown); margin: 0; }
+    .locked-overlay-hint  { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+    /* =========================================
+       [NEW] Toast 通知元件
+       取代原本的 window.alert()
+       ========================================= */
+    #toast-container {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: var(--toast-z);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        pointer-events: none;
+    }
+    .toast {
+        background: #333;
+        color: white;
+        padding: 12px 22px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        opacity: 0;
+        transform: translateY(16px);
+        transition: opacity 0.28s ease, transform 0.28s ease;
+        pointer-events: none;
+        max-width: 90vw;
+        white-space: normal;
+        text-align: center;
+    }
+    .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .toast.toast-success { background: #2d6a3f; }
+    .toast.toast-error   { background: #a32020; }
+    .toast.toast-info    { background: var(--primary-gold); color: white; }
+
     /* 輔助樣式 */
-    .text-center { text-align: center; }
-    .text-muted { color: #888; }
-    .text-danger { color: var(--danger); }
+    .text-center  { text-align: center; }
+    .text-muted   { color: #888; }
+    .text-danger  { color: var(--danger); }
     .text-success { color: var(--status-success-text); }
-    .empty-state { text-align: center; color: #888; padding: 20px 0; }
-    .action-link { color: var(--primary-gold); font-weight: bold; text-decoration: none; }
-    .btn-delete { background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
+    .empty-state  { text-align: center; color: #888; padding: 20px 0; }
+    .action-link  { color: var(--primary-gold); font-weight: bold; text-decoration: none; }
+    .btn-delete   { background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
 </style>
+
+<!-- [NEW] Toast 容器 — 固定在畫面底部，JS 動態注入訊息 -->
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <main class="profile-page-wrapper">
     <header class="profile-header">
@@ -226,7 +385,15 @@
 
     <div id="profile-content" style="display: none;">
         
-        <section class="profile-card">
+        <!-- 基本資料卡片：加入 form-loading-overlay -->
+        <section class="profile-card" id="profile-form-card">
+
+            <!-- [NEW] Loading 遮罩：儲存 API 請求期間防止誤觸 -->
+            <div class="form-loading-overlay" id="form-loading-overlay">
+                <div class="form-loading-spinner"></div>
+                <span>儲存中，請稍候...</span>
+            </div>
+
             <h3 class="card-title">
                 <span>📝 我的基本資料</span>
                 <div>
@@ -270,8 +437,15 @@
 
                 <div class="form-row">
                     <div class="form-group">
+                        <!--
+                            [MODIFIED] 農曆生日防呆優化：
+                            1. 加上 inputmode="numeric" 讓手機彈出數字鍵盤
+                            2. 改用 keydown + input 事件組合，修正 Backspace 刪除時
+                               因正規表達式覆寫導致的游標跳位問題（見下方 JS）
+                        -->
                         <label>農曆生日 (數字)</label>
-                        <input type="text" name="lunarBirthday" placeholder="例如：750815">
+                        <input type="text" name="lunarBirthday" inputmode="numeric"
+                               placeholder="例如：750815（民國年月日）" autocomplete="off">
                     </div>
                     <div class="form-group">
                         <label>出生時辰</label>
@@ -304,7 +478,12 @@
             </form>
         </section>
 
-        <section id="profile-lock-msg" class="alert-box dashed" style="display: none;">
+        <!--
+            [MODIFIED] 舊的 profile-lock-msg 已移除，
+            改由 locked-overlay 直接疊加在各卡片上，提供更直觀的誘導效果。
+            保留此 section 但僅作備用（螢幕報讀器提示）。
+        -->
+        <section id="profile-lock-msg" class="alert-box dashed" style="display: none;" aria-hidden="true">
             <h3>🔒 請先完成資料設定</h3>
             <p style="margin: 0;">
                 為了確保寄送資訊正確，請先完整填寫並<b>「儲存」</b>上方基本資料，<br>
@@ -312,14 +491,31 @@
             </p>
         </section>
 
-        <div id="extended-profile-section" style="display: none;">
-            
-            <section class="profile-card">
+        <!--
+            [MODIFIED] 擴充區塊：不再 display:none，
+            改為始終顯示，透過各卡片上的 .locked-overlay 控制鎖定狀態。
+        -->
+        <div id="extended-profile-section">
+
+            <!-- 回饋紀錄卡片 — 帶 locked-overlay -->
+            <section class="profile-card locked-card-wrapper">
+                <!-- [NEW] 毛玻璃鎖定遮罩 -->
+                <div class="locked-overlay" id="lock-feedback">
+                    <span class="locked-overlay-icon">🔒</span>
+                    <p class="locked-overlay-title">請先完成基本資料設定</p>
+                    <p class="locked-overlay-hint">填寫並儲存上方資料後，即可解鎖此功能。</p>
+                </div>
                 <h3 class="card-title">📖 我的回饋紀錄</h3>
                 <div id="history-list"><p class="empty-state">載入中...</p></div>
             </section>
 
-            <section class="profile-card">
+            <!-- 捐贈紀錄卡片 — 帶 locked-overlay -->
+            <section class="profile-card locked-card-wrapper">
+                <div class="locked-overlay" id="lock-donation">
+                    <span class="locked-overlay-icon">🔒</span>
+                    <p class="locked-overlay-title">請先完成基本資料設定</p>
+                    <p class="locked-overlay-hint">填寫並儲存上方資料後，即可解鎖此功能。</p>
+                </div>
                 <h3 class="card-title">🙏 我的捐贈紀錄 (捐香/建廟)</h3>
                 
                 <div style="margin-bottom: 25px;">
@@ -340,12 +536,24 @@
                 </div>
             </section>
 
-            <section class="profile-card">
+            <!-- 取件預約卡片 — 帶 locked-overlay -->
+            <section class="profile-card locked-card-wrapper">
+                <div class="locked-overlay" id="lock-pickup">
+                    <span class="locked-overlay-icon">🔒</span>
+                    <p class="locked-overlay-title">請先完成基本資料設定</p>
+                    <p class="locked-overlay-hint">填寫並儲存上方資料後，即可解鎖此功能。</p>
+                </div>
                 <h3 class="card-title">👕 取回收驚衣服預約</h3>
                 <div id="pickup-list"><p class="empty-state">載入中...</p></div>
             </section>
             
-            <section class="profile-card">
+            <!-- 購買紀錄卡片 — 帶 locked-overlay -->
+            <section class="profile-card locked-card-wrapper">
+                <div class="locked-overlay" id="lock-order">
+                    <span class="locked-overlay-icon">🔒</span>
+                    <p class="locked-overlay-title">請先完成基本資料設定</p>
+                    <p class="locked-overlay-hint">填寫並儲存上方資料後，即可解鎖此功能。</p>
+                </div>
                 <h3 class="card-title">🛍️ 我的購買紀錄</h3>
                 <div id="order-list"><p class="empty-state">載入中...</p></div>
             </section>
@@ -356,39 +564,124 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+
+    // ==========================================
+    // [NEW] Toast 通知系統
+    // 取代所有 window.alert()，3 秒後自動消失
+    // ==========================================
+    const toastContainer = document.getElementById('toast-container');
+
+    /**
+     * 顯示 Toast 通知
+     * @param {string} message   - 顯示的文字
+     * @param {'success'|'error'|'info'} type - 通知類型
+     * @param {number} duration  - 顯示毫秒數 (預設 3000)
+     */
+    function showToast(message, type = 'success', duration = 3000) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+
+        // 觸發過渡動畫（需等一個 frame）
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => toast.classList.add('show'));
+        });
+
+        // 自動消失
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+        }, duration);
+    }
+
     // 安全獲取 CSRF Token
     const getCsrfToken = () => {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
     };
-    
+
+    // ==========================================
+    // [NEW] HTML 實體跳脫工具函式 (XSS 防護)
+    // 用於將使用者輸入的內容安全地插入 DOM
+    // ==========================================
+    function escapeHtml(str) {
+        if (typeof str !== 'string') return '';
+        return str
+            .replace(/&/g,  '&amp;')
+            .replace(/</g,  '&lt;')
+            .replace(/>/g,  '&gt;')
+            .replace(/"/g,  '&quot;')
+            .replace(/'/g,  '&#x27;');
+    }
+
     // DOM 元素快取
     const els = {
-        loginSection: document.getElementById('login-section'),
-        profileContent: document.getElementById('profile-content'),
-        profileForm: document.getElementById('profile-form'),
-        historyList: document.getElementById('history-list'),
-        pickupList: document.getElementById('pickup-list'),
-        donationList: document.getElementById('donation-list'),
-        orderList: document.getElementById('order-list'),
+        loginSection:    document.getElementById('login-section'),
+        profileContent:  document.getElementById('profile-content'),
+        profileForm:     document.getElementById('profile-form'),
+        formLoadingOverlay: document.getElementById('form-loading-overlay'),
+        historyList:     document.getElementById('history-list'),
+        pickupList:      document.getElementById('pickup-list'),
+        donationList:    document.getElementById('donation-list'),
+        orderList:       document.getElementById('order-list'),
         fundSummaryList: document.getElementById('fund-summary-list'),
-        lockMsg: document.getElementById('profile-lock-msg'),
+        lockMsg:         document.getElementById('profile-lock-msg'),
         extendedSection: document.getElementById('extended-profile-section'),
-        userGreeting: document.getElementById('user-greeting'),
-        saveBtn: document.getElementById('save-btn'),
-        giftBadge: document.getElementById('gift-status-badge'),
-        giftNote: document.getElementById('gift-note')
+        userGreeting:    document.getElementById('user-greeting'),
+        saveBtn:         document.getElementById('save-btn'),
+        giftBadge:       document.getElementById('gift-status-badge'),
+        giftNote:        document.getElementById('gift-note'),
+        // [NEW] 各卡片的鎖定遮罩元素
+        lockFeedback:    document.getElementById('lock-feedback'),
+        lockDonation:    document.getElementById('lock-donation'),
+        lockPickup:      document.getElementById('lock-pickup'),
+        lockOrder:       document.getElementById('lock-order'),
     };
 
     // 檢查資料是否完整
     const isProfileComplete = (u) => u.realName && u.nickname && u.phone && u.email && u.address;
 
-    // 通用產生 Empty State HTML
-    const createEmptyState = (msg, linkUrl, linkText) => 
-        `<div class="empty-state">
-            <p style="margin-bottom: 5px;">${msg}</p>
-            ${linkUrl ? `<br><a href="${linkUrl}" class="action-link">${linkText}</a>` : ''}
+    // ==========================================
+    // [MODIFIED] createEmptyState：升級 Empty State 視覺
+    // 加入 Emoji 圖示，減少畫面冷清感
+    // ==========================================
+    const EMPTY_STATE_ICONS = {
+        default:  '📭',
+        feedback: '📝',
+        donation: '🙏',
+        pickup:   '👕',
+        order:    '🛍️',
+        fund:     '🏗️',
+    };
+
+    function createEmptyState(msg, linkUrl, linkText, iconKey = 'default') {
+        const icon = EMPTY_STATE_ICONS[iconKey] || EMPTY_STATE_ICONS.default;
+        const linkHtml = linkUrl
+            ? `<a href="${linkUrl}" class="empty-state-link">${linkText}</a>`
+            : '';
+        return `
+        <div class="empty-state-box">
+            <span class="empty-state-icon">${icon}</span>
+            <p class="empty-state-msg">${msg}</p>
+            ${linkHtml}
         </div>`;
+    }
+
+    // ==========================================
+    // [NEW] 鎖定/解鎖擴充卡片的輔助函式
+    // 控制各卡片上毛玻璃遮罩的顯示狀態
+    // ==========================================
+    function setLockedState(isLocked) {
+        const lockOverlays = [
+            els.lockFeedback, els.lockDonation, els.lockPickup, els.lockOrder
+        ];
+        lockOverlays.forEach(overlay => {
+            if (overlay) overlay.classList.toggle('active', isLocked);
+        });
+        // 備用：小螢幕仍顯示提示文字（aria）
+        if (els.lockMsg) els.lockMsg.style.display = isLocked ? 'block' : 'none';
+    }
 
     // ==========================================
     // API 初始化與資料載入
@@ -405,14 +698,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 els.userGreeting.textContent = `歡迎回來，${u.displayName || u.realName}${titleSuffix}！`;
                 
                 // 填入表單
-                els.profileForm.realName.value = u.realName || '';
-                els.profileForm.nickname.value = u.nickname || u.displayName || '';
-                els.profileForm.phone.value = u.phone || '';
-                els.profileForm.email.value = u.email || '';
-                els.profileForm.address.value = u.address || '';
+                els.profileForm.realName.value      = u.realName || '';
+                els.profileForm.nickname.value      = u.nickname || u.displayName || '';
+                els.profileForm.phone.value         = u.phone || '';
+                els.profileForm.email.value         = u.email || '';
+                els.profileForm.address.value       = u.address || '';
                 els.profileForm.lunarBirthday.value = u.lunarBirthday || '';
-                els.profileForm.birthTime.value = u.birthTime || '吉時';
-                els.profileForm.gender.value = u.gender || '';
+                els.profileForm.birthTime.value     = u.birthTime || '吉時';
+                els.profileForm.gender.value        = u.gender || '';
+
                 // 處理小神衣狀態
                 if (u.has_received_gift) {
                     els.giftBadge.textContent = '🎁 小神衣：已領取';
@@ -420,16 +714,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     els.giftNote.style.display = 'block';
                 }
 
-                // 判斷是否解鎖擴充區塊
-                if (isProfileComplete(u)) {
-                    els.lockMsg.style.display = 'none';
-                    els.extendedSection.style.display = 'block';
-                } else {
-                    els.lockMsg.style.display = 'block';
-                    els.extendedSection.style.display = 'none';
-                }
+                // [MODIFIED] 判斷是否解鎖 — 改用 setLockedState() 控制毛玻璃遮罩
+                const locked = !isProfileComplete(u);
+                setLockedState(locked);
 
-                // 非同步載入各項歷史紀錄 (合併了捐贈與建廟累計，解決不同步問題)
+                // 非同步載入各項歷史紀錄
                 loadDonationsAndFund();
                 loadFeedbackHistory();
                 loadPickupHistory();
@@ -441,22 +730,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
     // ==========================================
-    // 儲存修改基本資料
+    // [MODIFIED] 儲存修改基本資料
+    // 1. 加上 form-loading-overlay 遮罩防止誤觸
+    // 2. 以 showToast() 取代 window.alert()
     // ==========================================
     els.profileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // 顯示 Loading 遮罩
+        els.formLoadingOverlay.classList.add('active');
         els.saveBtn.textContent = '儲存中...';
         els.saveBtn.disabled = true;
 
         const payload = {
-            realName: els.profileForm.realName.value.trim(),
-            nickname: els.profileForm.nickname.value.trim(),
-            phone: els.profileForm.phone.value.trim(),
-            email: els.profileForm.email.value.trim(),
-            address: els.profileForm.address.value.trim(),
+            realName:      els.profileForm.realName.value.trim(),
+            nickname:      els.profileForm.nickname.value.trim(),
+            phone:         els.profileForm.phone.value.trim(),
+            email:         els.profileForm.email.value.trim(),
+            address:       els.profileForm.address.value.trim(),
             lunarBirthday: els.profileForm.lunarBirthday.value.trim(),
-            birthTime: els.profileForm.birthTime.value,
-            gender: els.profileForm.gender.value
+            birthTime:     els.profileForm.birthTime.value,
+            gender:        els.profileForm.gender.value
         };
 
         try {
@@ -465,17 +759,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                 body: JSON.stringify(payload)
             });
-            if(res.ok) {
-                alert('資料已成功更新！功能已解鎖。');
-                els.lockMsg.style.display = 'none';
-                els.extendedSection.style.display = 'block';
+            if (res.ok) {
+                // [MODIFIED] 以 Toast 取代 alert()
+                showToast('✅ 資料已成功更新！', 'success');
+                // 解鎖擴充卡片
+                setLockedState(false);
                 els.extendedSection.scrollIntoView({ behavior: 'smooth' });
             } else {
-                alert('更新失敗，請稍後再試。');
+                showToast('❌ 更新失敗，請稍後再試。', 'error');
             }
         } catch(err) {
             console.error(err);
+            showToast('❌ 連線異常，請稍後再試。', 'error');
         } finally {
+            // 隱藏 Loading 遮罩，恢復按鈕
+            els.formLoadingOverlay.classList.remove('active');
             els.saveBtn.textContent = '儲存修改';
             els.saveBtn.disabled = false;
         }
@@ -484,43 +782,47 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 各區塊資料載入函式
     // ==========================================
-    
-    // 同時載入「建廟護持累計」與「捐贈歷史紀錄」，解決畫面載入不同步問題
+
     async function loadDonationsAndFund() {
         try {
-            // 使用 Promise.all 讓兩個請求同時出發，等兩邊都拿到資料後再一起繪製畫面
             const [fundRes, donationRes] = await Promise.all([
                 fetch('/api/user/fund-summary'),
                 fetch('/api/user/donations')
             ]);
             
-            const fundData = await fundRes.json();
+            const fundData     = await fundRes.json();
             const donationData = await donationRes.json();
 
             // --- 渲染上半部：建廟累計 ---
-            if(fundData.length === 0) {
-                // 套用精準的空狀態文案
-                els.fundSummaryList.innerHTML = createEmptyState('您目前尚未參與建廟護持。', '/fund', '點此前往護持建廟');
+            if (fundData.length === 0) {
+                els.fundSummaryList.innerHTML = createEmptyState(
+                    '您目前尚未參與建廟護持。', '/fund', '點此前往護持建廟', 'fund'
+                );
             } else {
                 els.fundSummaryList.innerHTML = fundData.map(item => `
                     <div class="fund-gold-card">
-                        <div class="fund-gold-name">${item.name} 大德</div>
+                        <div class="fund-gold-name">${escapeHtml(item.name)} 大德</div>
                         <div class="fund-gold-amount">累計捐贈 NT$ ${item.total.toLocaleString()}</div>
                     </div>
                 `).join('');
             }
 
             // --- 渲染下半部：歷史捐贈紀錄 ---
-            if(donationData.length === 0) {
-                els.donationList.innerHTML = createEmptyState('無近期護持紀錄。<br><a href="/donation" class="action-link">前往捐香</a> 或 <a href="/fund" class="action-link">護持建廟</a>');
+            if (donationData.length === 0) {
+                els.donationList.innerHTML = createEmptyState(
+                    '無近期護持紀錄。', null, null, 'donation'
+                ) + `<p class="text-center" style="margin-top:0; font-size:14px;">
+                    <a href="/donation" class="action-link">前往捐香</a>
+                    &nbsp;或&nbsp;
+                    <a href="/fund" class="action-link">護持建廟</a>
+                </p>`;
             } else {
                 const now = new Date();
                 els.donationList.innerHTML = donationData.map(order => {
-                    let statusHtml = '';
+                    let statusHtml  = '';
                     let borderColor = '#ccc';
-                    let typeBadge = '';
+                    let typeBadge   = '';
 
-                    // 判斷徽章類型
                     if (order.orderType === 'fund') {
                         typeBadge = '<span class="badge badge-fund">🏗️ 建廟</span>';
                     } else if (order.orderType === 'committee') {
@@ -540,7 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>`;
                         } else {
                             borderColor = 'var(--status-pending-border)';
-                            statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span class="text-danger" style="font-weight:bold;">${order.paymentDeadline}</span> 前完成匯款。</div>`;
+                            statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span class="text-danger" style="font-weight:bold;">${escapeHtml(order.paymentDeadline)}</span> 前完成匯款。</div>`;
                         }
                     } else if (order.status === 'paid') {
                         borderColor = '#28a745';
@@ -553,17 +855,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         statusHtml = `<div class="history-item-status status-approved">🟢 <b>功德圓滿：</b>感謝您的護持！電子感謝狀已寄至信箱。${reportText}</div>`;
                     }
 
-                    const itemsHtml = order.items.map(i => `<li>${i.name} x ${i.qty}</li>`).join('');
+                    const itemsHtml = order.items.map(i =>
+                        `<li>${escapeHtml(i.name)} x ${escapeHtml(String(i.qty))}</li>`
+                    ).join('');
 
                     return `
                     <article class="history-item" style="border-left: 4px solid ${borderColor};">
                         <header class="history-item-header">
-                            <span class="history-item-title">${typeBadge} ${order.orderId}</span>
-                            <span>${order.createdAt}</span>
+                            <span class="history-item-title">${typeBadge} ${escapeHtml(order.orderId)}</span>
+                            <span>${escapeHtml(order.createdAt)}</span>
                         </header>
                         <div class="history-item-content">
                             <ul class="history-item-list">${itemsHtml}</ul>
-                            <div class="history-item-total">護持金額：NT$ ${order.total}</div>
+                            <div class="history-item-total">護持金額：NT$ ${escapeHtml(String(order.total))}</div>
                         </div>
                         ${statusHtml}
                     </article>`;
@@ -572,69 +876,91 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(err) {
             console.error('載入捐贈資料發生錯誤:', err);
             els.fundSummaryList.innerHTML = '<p class="text-danger text-center w-100">累計資料載入失敗</p>';
-            els.donationList.innerHTML = '<p class="text-danger text-center">紀錄載入失敗</p>';
+            els.donationList.innerHTML    = '<p class="text-danger text-center">紀錄載入失敗</p>';
         }
     }
 
-    // 載入回饋紀錄
+    // ==========================================
+    // [MODIFIED] 載入回饋紀錄
+    // XSS 防護：使用者輸入內容改用 textContent 純文字插入
+    // ==========================================
     async function loadFeedbackHistory() {
         try {
-            const res = await fetch('/api/user/feedbacks');
+            const res  = await fetch('/api/user/feedbacks');
             const data = await res.json();
             
-            if(data.length === 0) {
-                els.historyList.innerHTML = createEmptyState('您目前還沒有撰寫過回饋故事，', '/feedback', '點此前往分享');
+            if (data.length === 0) {
+                els.historyList.innerHTML = createEmptyState(
+                    '您目前還沒有撰寫過回饋故事。', '/feedback', '點此前往分享', 'feedback'
+                );
                 return;
             }
 
-            els.historyList.innerHTML = data.map((item, index) => {
+            // 先清空容器
+            els.historyList.innerHTML = '';
+
+            data.forEach((item, index) => {
                 let statusHtml = '';
-                if(item.status === 'pending') {
+                if (item.status === 'pending') {
                     statusHtml = `<div class="history-item-status status-pending">🟡 <b>審核中：</b>感謝您的分享，廟方正在用心閱讀中。</div>`;
                 } else if (item.status === 'approved') {
                     statusHtml = `<div class="history-item-status status-approved">🟢 <b>已刊登：</b>文章已刊登！元帥娘正在為您的小神衣開符加持中，開符完成後寄出請耐心等候。</div>`;
                 } else if (item.status === 'sent') {
-                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已寄出：</b>結緣品已寄出！<br><span class="text-dark mt-1 d-inline-block">📦 物流單號：<b>${item.trackingNumber || '無'}</b></span></div>`;
+                    const trackingNum = escapeHtml(item.trackingNumber || '無');
+                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已寄出：</b>結緣品已寄出！<br><span class="text-dark mt-1 d-inline-block">📦 物流單號：<b>${trackingNum}</b></span></div>`;
                 }
                 
-                const cat = Array.isArray(item.category) ? item.category.join(', ') : item.category;
-                const fbIdHtml = item.feedbackId ? `<div class="feedback-id-tag">#${item.feedbackId}</div>` : '';
-                const contentId = `fb-content-${index}`;
-                const btnId = `fb-btn-${index}`;
-                const safeContent = item.content || item.content_preview || '';
+                const cat        = Array.isArray(item.category) ? item.category.join(', ') : (item.category || '');
+                const fbIdHtml   = item.feedbackId ? `<div class="feedback-id-tag">#${escapeHtml(item.feedbackId)}</div>` : '';
+                const contentId  = `fb-content-${index}`;
+                const btnId      = `fb-btn-${index}`;
 
-                return `
-                <article class="history-item">
+                // 建立文章容器骨架（不含 safeContent，避免 innerHTML XSS）
+                const article = document.createElement('article');
+                article.className = 'history-item';
+                article.innerHTML = `
                     ${fbIdHtml}
                     <header class="history-item-header">
-                        <span>🏷️ ${cat}</span>
-                        <span>${item.createdAt}</span>
+                        <span>🏷️ ${escapeHtml(cat)}</span>
+                        <span>${escapeHtml(item.createdAt)}</span>
                     </header>
                     <div class="feedback-content-box">
-                        <div id="${contentId}" class="feedback-text">${safeContent}</div>
-                        <button id="${btnId}" class="read-more-btn" onclick="toggleFeedback('${contentId}', '${btnId}')">閱讀全文 🔽</button>
+                        <div id="${contentId}" class="feedback-text"></div>
+                        <button id="${btnId}" class="read-more-btn">閱讀全文 🔽</button>
                     </div>
                     ${statusHtml}
-                </article>`;
-            }).join('');
+                `;
+
+                // [MODIFIED] XSS 防護：使用 textContent 將使用者輸入的回饋內容
+                // 以純文字方式插入，徹底杜絕惡意 HTML/Script 注入。
+                const contentDiv = article.querySelector(`#${contentId}`);
+                contentDiv.textContent = item.content || item.content_preview || '';
+
+                // 為「閱讀全文」按鈕綁定事件（避免 onclick 字串污染）
+                const readMoreBtn = article.querySelector(`#${btnId}`);
+                readMoreBtn.addEventListener('click', () => toggleFeedback(contentId, btnId));
+
+                els.historyList.appendChild(article);
+            });
         } catch(err) {
             els.historyList.innerHTML = '<p class="text-danger text-center">紀錄載入失敗</p>';
         }
     }
 
-    // 載入取件預約紀錄
     async function loadPickupHistory() {
         try {
-            const res = await fetch('/api/user/pickups');
+            const res  = await fetch('/api/user/pickups');
             const data = await res.json();
             
-            if(data.length === 0) {
-                els.pickupList.innerHTML = createEmptyState('無預約紀錄。', '/shipclothes', '點此前往預約');
+            if (data.length === 0) {
+                els.pickupList.innerHTML = createEmptyState(
+                    '無預約紀錄。', '/shipclothes', '點此前往預約', 'pickup'
+                );
                 return;
             }
 
             els.pickupList.innerHTML = data.map(item => {
-                const typeText = item.pickupType === 'self' ? '🏃 現場自取' : '🚚 黑貓寄件';
+                const typeText  = item.pickupType === 'self' ? '🏃 現場自取' : '🚚 黑貓寄件';
                 const typeColor = item.pickupType === 'self' ? '#28a745' : '#007bff';
                 
                 const deliveryNote = item.pickupType === 'delivery' 
@@ -642,11 +968,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     : '';
 
                 const clothesHtml = item.clothes.map(c => 
-                    `<span class="cloth-pill">${c.clothId} ${c.name} (${c.birthYear})</span>`
+                    `<span class="cloth-pill">${escapeHtml(c.clothId)} ${escapeHtml(c.name)} (${escapeHtml(String(c.birthYear))})</span>`
                 ).join('');
 
                 const deleteBtn = item.isDeletable 
-                    ? `<button onclick="cancelPickup('${item._id}')" class="btn-delete">取消預約</button>`
+                    ? `<button onclick="cancelPickup('${escapeHtml(item._id)}')" class="btn-delete">取消預約</button>`
                     : '';
 
                 return `
@@ -654,12 +980,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <header class="history-item-header">
                         <div>
                             <span style="font-weight: bold; color: ${typeColor}; font-size: 15px;">${typeText}</span>
-                            <span class="text-muted" style="margin-left:10px; font-size:13px;">填單：${item.createdAt}</span>
+                            <span class="text-muted" style="margin-left:10px; font-size:13px;">填單：${escapeHtml(item.createdAt)}</span>
                         </div>
                         ${deleteBtn}
                     </header>
                     <div style="font-size: 18px; font-weight: bold; color: var(--text-dark); margin-bottom: 10px;">
-                        預約日期：${item.pickupDate}
+                        預約日期：${escapeHtml(item.pickupDate)}
                     </div>
                     <div style="margin-bottom: 5px;">${clothesHtml}</div>
                     ${deliveryNote}
@@ -670,20 +996,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 載入商城訂單紀錄
     async function loadOrderHistory() {
         try {
-            const res = await fetch('/api/user/orders');
+            const res  = await fetch('/api/user/orders');
             const data = await res.json();
             
-            if(data.length === 0) {
-                els.orderList.innerHTML = createEmptyState('無購買紀錄。', '/shop', '點此前往賣場');
+            if (data.length === 0) {
+                els.orderList.innerHTML = createEmptyState(
+                    '無購買紀錄。', '/shop', '點此前往賣場', 'order'
+                );
                 return;
             }
 
             const now = new Date();
             els.orderList.innerHTML = data.map(order => {
-                let statusHtml = '';
+                let statusHtml  = '';
                 let borderColor = '#ccc';
 
                 if (order.status === 'pending') {
@@ -697,27 +1024,30 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>`;
                     } else {
                         borderColor = 'var(--status-pending-border)';
-                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span class="badge badge-urgent">${order.paymentDeadline}</span> 前完成匯款，逾期將自動取消。</div>`;
+                        statusHtml = `<div class="history-item-status status-pending">🟡 <b>待核款：</b><br>請於 <span class="badge badge-urgent">${escapeHtml(order.paymentDeadline)}</span> 前完成匯款，逾期將自動取消。</div>`;
                     }
                 } else if (order.status === 'paid') {
                     borderColor = '#28a745';
                     statusHtml = `<div class="history-item-status status-approved">🟢 <b>處理中：</b>廟方已確認收款，正在為您準備商品。</div>`;
                 } else if (order.status === 'shipped') {
                     borderColor = '#007bff';
-                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已出貨：</b>商品已寄出！<br><span class="text-dark" style="margin-top:5px; display:inline-block;">📦 物流單號：<b>${order.trackingNumber || '無'}</b></span></div>`;
+                    const trackingNum = escapeHtml(order.trackingNumber || '無');
+                    statusHtml = `<div class="history-item-status status-sent">🔵 <b>已出貨：</b>商品已寄出！<br><span class="text-dark" style="margin-top:5px; display:inline-block;">📦 物流單號：<b>${trackingNum}</b></span></div>`;
                 }
 
-                const itemsHtml = order.items.map(i => `<li>${i.name} (${i.variant}) x ${i.qty}</li>`).join('');
+                const itemsHtml = order.items.map(i =>
+                    `<li>${escapeHtml(i.name)} (${escapeHtml(i.variant)}) x ${escapeHtml(String(i.qty))}</li>`
+                ).join('');
 
                 return `
                 <article class="history-item" style="border-left: 4px solid ${borderColor};">
                     <header class="history-item-header">
-                        <span class="history-item-title">單號：${order.orderId}</span>
-                        <span>下單：${order.createdAt}</span>
+                        <span class="history-item-title">單號：${escapeHtml(order.orderId)}</span>
+                        <span>下單：${escapeHtml(order.createdAt)}</span>
                     </header>
                     <div class="history-item-content">
                         <ul class="history-item-list">${itemsHtml}</ul>
-                        <div class="history-item-total">總金額：NT$ ${order.total}</div>
+                        <div class="history-item-total">總金額：NT$ ${escapeHtml(String(order.total))}</div>
                     </div>
                     ${statusHtml}
                 </article>`;
@@ -734,8 +1064,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 全文展開/收起
     window.toggleFeedback = (contentId, btnId) => {
         const contentDiv = document.getElementById(contentId);
-        const btn = document.getElementById(btnId);
-        
+        const btn        = document.getElementById(btnId);
         if (contentDiv.classList.toggle('expanded')) {
             btn.textContent = '收起內容 🔼';
         } else {
@@ -743,8 +1072,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 取消預約
+    // [MODIFIED] 取消預約 — 以 showToast() 取代 window.alert() / window.confirm()
     window.cancelPickup = (id) => {
+        // 建立一個簡單的確認 Toast（使用原生 confirm 因為需要阻塞確認，保留此處）
+        // 若需完全去除 confirm 可自行改為 Modal 元件
         if (!confirm('確定要取消這筆預約嗎？\n(注意：取消後若需取件請重新預約)')) return;
 
         fetch(`/api/pickup/${id}`, { 
@@ -754,29 +1085,56 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                alert('預約已取消');
-                location.reload(); 
+                // [MODIFIED] Toast 取代 alert('預約已取消')
+                showToast('✅ 預約已成功取消', 'info');
+                setTimeout(() => location.reload(), 1200);
             } else {
-                alert(data.error || '取消失敗');
+                showToast(`❌ 取消失敗：${data.error || '請稍後再試'}`, 'error');
             }
         })
-        .catch(() => alert('連線錯誤'));
+        .catch(() => showToast('❌ 連線錯誤，請稍後再試', 'error'));
     };
 
-    // 表單格式自動排版
+    // ==========================================
+    // [MODIFIED] 表單格式自動排版
+    // ==========================================
+
+    // 電話格式化（邏輯不變）
     els.profileForm.phone.addEventListener('input', (e) => {
-        let v = e.target.value.replace(/\D/g, ''); 
+        let v = e.target.value.replace(/\D/g, '');
         if (v.length > 10) v = v.slice(0, 10);
-        if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
+        if (v.length > 7)      v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
         else if (v.length > 4) v = v.replace(/(\d{4})(\d{0,3})/, '$1-$2');
         e.target.value = v;
     });
 
-    els.profileForm.lunarBirthday.addEventListener('blur', (e) => {
+    // [MODIFIED] 農曆生日防呆優化
+    // 策略：改在 blur (離開欄位) 時才格式化，輸入中完全不干擾游標，
+    // 解決 Backspace 刪除時正規表達式覆寫造成游標跳位的問題。
+    // keydown 偵測刪除鍵，若值已有斜線則先清除格式化，讓原始數字可自由編輯。
+    const lunarInput = els.profileForm.lunarBirthday;
+
+    lunarInput.addEventListener('keydown', (e) => {
+        // 若使用者按刪除/退格，先將斜線去除，恢復純數字狀態以利游標操作
+        if ((e.key === 'Backspace' || e.key === 'Delete') && lunarInput.value.includes('/')) {
+            const digits = lunarInput.value.replace(/\D/g, '');
+            lunarInput.value = digits;
+        }
+    });
+
+    lunarInput.addEventListener('input', (e) => {
+        // 輸入中只過濾非數字，不做格式化（不干擾游標）
+        let v = e.target.value.replace(/[^0-9/]/g, '');
+        e.target.value = v;
+    });
+
+    lunarInput.addEventListener('blur', (e) => {
+        // 離開欄位才格式化
         let v = e.target.value.replace(/\D/g, '');
-        if(v.length === 6) e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
+        if      (v.length === 6) e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
         else if (v.length === 7) e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
         else if (v.length === 8) e.target.value = v.replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3');
+        else e.target.value = v; // 長度不符則保持原樣，讓使用者修改
     });
 });
 </script>
