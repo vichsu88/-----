@@ -3,192 +3,673 @@
 {% block title %}承天中承府 - 信徒回饋{% endblock %}
 
 {% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet">
+
 <style>
-    /* --- 本頁專屬樣式 --- */
-    .feedback-page-wrapper {
-        padding: 40px 20px;
-        max-width: 900px;
-        margin: 0 auto;
-        position: relative;
-        font-family: 'Noto Sans TC', sans-serif;
-    }
-    .feedback-header {
-        text-align: center;
-        margin-bottom: 40px;
-    }
+/* ================================================
+   CSS Variables & Base
+   ================================================ */
+:root {
+    --font-main: 'LXGW WenKai TC', 'Noto Sans TC', serif;
+    --gold-deep:    #A0703A;
+    --gold-mid:     #C48945;
+    --gold-light:   #E6BA67;
+    --gold-pale:    #F5E6CC;
+    --gold-wash:    #FBF4E8;
+    --bg-page:      #F7F2EA;
+    --bg-card:      #FDFAF5;
+    --text-heading: #5C3D1E;
+    --text-body:    #4A4035;
+    --text-muted:   #9A8875;
+    --border-soft:  rgba(196, 137, 69, 0.18);
+    --shadow-card:  0 2px 12px rgba(100, 65, 20, 0.08), 0 1px 3px rgba(100, 65, 20, 0.05);
+    --shadow-hover: 0 8px 28px rgba(100, 65, 20, 0.14), 0 2px 8px rgba(100, 65, 20, 0.08);
+    --radius-card:  18px;
+    --radius-pill:  50px;
+}
 
-    /* 列表卡片樣式 */
-    .feedback-card {
-        border: 2px solid #E6BA67;
-        border-radius: 30px;
-        padding: 20px 24px;
-        margin: 0 auto 25px auto;
-        max-width: 600px;
-        background: #FFF;
-    }
-    .feedback-card__header {
-        margin: 0 0 12px 0;
-        font-size: 22px;
-        font-weight: bold;
-        color: #C48945;
-        line-height: 1.3;
-    }
-    .feedback-card__content {
-        font-size: 16px;
-        line-height: 1.9;
-        color: #555;
-        white-space: pre-wrap;
-        word-break: break-word; /* 防止長文字爆版 */
-    }
+/* ================================================
+   Page Layout
+   ================================================ */
+.fb-page {
+    min-height: 100vh;
+    background: var(--bg-page);
+    font-family: var(--font-main);
+    padding-bottom: 80px;
+}
 
-    /* 浮動按鈕 (電腦版) */
-    .feedback-floating-btn {
-        position: fixed;
-        top: 50%;
+.fb-hero {
+    text-align: center;
+    padding: 52px 20px 36px;
+    position: relative;
+}
+
+.fb-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--gold-light), var(--gold-mid), var(--gold-light), transparent);
+}
+
+.fb-hero__ornament {
+    font-size: 28px;
+    letter-spacing: 6px;
+    color: var(--gold-light);
+    display: block;
+    margin-bottom: 10px;
+    opacity: 0.7;
+}
+
+.fb-hero__title {
+    font-size: clamp(24px, 5vw, 36px);
+    font-weight: 400;
+    color: var(--text-heading);
+    margin: 0 0 10px;
+    letter-spacing: 4px;
+}
+
+.fb-hero__subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+/* ================================================
+   Category Filter Bar
+   ================================================ */
+.fb-filter-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: linear-gradient(to bottom, var(--bg-page) 85%, transparent);
+    padding: 14px 0 10px;
+}
+
+.fb-filter-bar {
+    display: flex;
+    gap: 10px;
+    padding: 4px 20px 10px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.fb-filter-bar::-webkit-scrollbar { display: none; }
+
+.fb-filter-btn {
+    flex-shrink: 0;
+    padding: 8px 20px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--gold-light);
+    background: transparent;
+    color: var(--gold-mid);
+    font-family: var(--font-main);
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    white-space: nowrap;
+}
+
+.fb-filter-btn:hover {
+    background: var(--gold-pale);
+    border-color: var(--gold-mid);
+}
+
+.fb-filter-btn.is-active {
+    background: var(--gold-mid);
+    border-color: var(--gold-mid);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(196, 137, 69, 0.35);
+    font-weight: bold;
+}
+
+/* ================================================
+   Feed Container
+   ================================================ */
+.fb-feed {
+    max-width: 660px;
+    margin: 0 auto;
+    padding: 10px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ================================================
+   Story Card
+   ================================================ */
+.fb-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border-soft);
+    padding: 24px 26px 20px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease, opacity 0.35s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.fb-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--gold-light), var(--gold-mid));
+    border-radius: 4px 0 0 4px;
+    opacity: 0.6;
+}
+
+.fb-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+/* Fade in animation */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.fb-card.is-visible {
+    animation: fadeInUp 0.38s ease forwards;
+}
+.fb-card.is-hidden {
+    display: none;
+}
+
+/* Card Header Row */
+.fb-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.fb-card__left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.fb-card__author {
+    font-size: 17px;
+    font-weight: bold;
+    color: var(--text-heading);
+    letter-spacing: 1px;
+    line-height: 1.3;
+}
+
+.fb-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Category Tag */
+.fb-tag {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+.fb-tag--運途 { background: #FFF0D6; color: #C07800; }
+.fb-tag--事業 { background: #E8F4FF; color: #3570A8; }
+.fb-tag--財運 { background: #EDFCE8; color: #3A8040; }
+.fb-tag--身體 { background: #FDE8E8; color: #B03030; }
+.fb-tag--姻緣 { background: #FDE8F8; color: #9B3A8A; }
+.fb-tag--收驚 { background: #E8F0FF; color: #4050B0; }
+.fb-tag--其他 { background: #F0EDE8; color: #7A6858; }
+.fb-tag--default { background: var(--gold-pale); color: var(--gold-deep); }
+
+/* Date placeholder */
+.fb-card__date {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+/* Feedback ID */
+.fb-card__id {
+    font-size: 11px;
+    color: #C8BAA8;
+    font-family: monospace;
+    letter-spacing: 1.5px;
+}
+
+/* Content Block */
+.fb-card__body {
+    position: relative;
+}
+
+.fb-card__text {
+    font-size: 15px;
+    line-height: 1.95;
+    color: var(--text-body);
+    word-break: break-word;
+    letter-spacing: 0.3px;
+}
+
+/* Collapsed state */
+.fb-card__text.is-collapsed {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.fb-card__fade {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--bg-card));
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+.fb-card__fade.is-hidden { opacity: 0; pointer-events: none; }
+
+/* Card Footer */
+.fb-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(196, 137, 69, 0.2);
+}
+
+/* Read More Toggle */
+.fb-readmore-btn {
+    background: none;
+    border: none;
+    color: var(--gold-mid);
+    font-family: var(--font-main);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+}
+.fb-readmore-btn:hover { color: var(--gold-deep); }
+.fb-readmore-btn::after {
+    content: '▾';
+    display: inline-block;
+    transition: transform 0.3s;
+}
+.fb-readmore-btn.is-open::after { transform: rotate(180deg); }
+.fb-readmore-btn.is-hidden-btn { visibility: hidden; pointer-events: none; }
+
+/* Blessing Button */
+.fb-bless-btn {
+    background: none;
+    border: 1.5px solid var(--gold-pale);
+    border-radius: var(--radius-pill);
+    padding: 5px 14px;
+    font-size: 13px;
+    font-family: var(--font-main);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.fb-bless-btn:hover {
+    background: var(--gold-wash);
+    border-color: var(--gold-light);
+    color: var(--gold-mid);
+}
+.fb-bless-btn.is-blessed {
+    background: var(--gold-pale);
+    border-color: var(--gold-mid);
+    color: var(--gold-deep);
+    font-weight: bold;
+}
+.fb-bless-btn .bless-icon { 
+    font-size: 15px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.fb-bless-btn.is-blessed .bless-icon { transform: scale(1.3); }
+
+/* Empty State */
+.fb-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    font-size: 15px;
+    letter-spacing: 1px;
+    line-height: 2;
+}
+.fb-empty__icon { font-size: 40px; display: block; margin-bottom: 12px; opacity: 0.5; }
+
+/* ================================================
+   Floating CTA Button
+   ================================================ */
+.fb-float-btn {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    z-index: 900;
+    cursor: pointer;
+    transition: transform 0.25s ease, opacity 0.3s;
+    width: 200px;
+}
+.fb-float-btn img { width: 100%; height: auto; display: block; }
+.fb-float-btn:hover { transform: translateY(-50%) scale(1.06); }
+
+/* ================================================
+   Modal
+   ================================================ */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(60, 35, 10, 0.55);
+    backdrop-filter: blur(3px);
+    justify-content: center;
+    align-items: center;
+}
+.modal-overlay.is-visible { display: flex; }
+
+.modal-content {
+    background: #F8F3EA;
+    padding: 32px 28px;
+    border-radius: 20px;
+    position: relative;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(60, 35, 10, 0.25);
+    width: 92%;
+    max-width: 580px;
+    font-family: var(--font-main);
+    border: 1px solid var(--border-soft);
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: var(--gold-mid);
+    border: none;
+    border-radius: 50%;
+    width: 34px; height: 34px;
+    color: white;
+    font-size: 18px;
+    line-height: 34px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s;
+}
+.modal-close-btn:hover { background: var(--gold-deep); }
+
+/* Login / Warning Sections */
+.modal-info-block {
+    text-align: center;
+    padding: 36px 20px;
+    border-radius: 14px;
+    margin: 10px 0;
+}
+.modal-info-block--login {
+    background: #fffcf5;
+    border: 1px solid var(--border-soft);
+}
+.modal-info-block--warn {
+    background: #fff8e8;
+    border: 2px solid #F0C060;
+}
+.modal-info-block h3 { font-size: 18px; margin: 0 0 10px; }
+.modal-info-block p  { font-size: 14px; color: #666; line-height: 1.8; margin: 0 0 24px; }
+
+/* Form */
+.form-title {
+    color: var(--text-heading);
+    text-align: center;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    margin: 0 0 22px;
+}
+
+.form-fieldset {
+    padding: 20px 18px;
+    border-radius: 14px;
+    border: 1px solid var(--border-soft);
+    background: #fff;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 8px rgba(100,65,20,0.04);
+}
+
+.form-fieldset label {
+    display: block;
+    margin-bottom: 14px;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-heading);
+    letter-spacing: 0.5px;
+}
+.form-fieldset label:last-child { margin-bottom: 0; }
+
+.form-fieldset input[type=text],
+.form-fieldset textarea {
+    width: 100%;
+    border: 1.5px solid #E5D8C5;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-family: var(--font-main);
+    box-sizing: border-box;
+    margin-top: 6px;
+    background: var(--bg-page);
+    color: var(--text-body);
+    transition: border-color 0.2s;
+    outline: none;
+    resize: vertical;
+}
+.form-fieldset input[type=text]:focus,
+.form-fieldset textarea:focus {
+    border-color: var(--gold-mid);
+}
+
+/* Radio tags in form */
+.form-cat-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.form-cat-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--gold-light);
+    font-size: 13px;
+    color: var(--gold-mid);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-main);
+}
+.form-cat-label input[type=radio] { display: none; }
+.form-cat-label:hover { background: var(--gold-pale); }
+.form-cat-label:has(input:checked) {
+    background: var(--gold-mid);
+    border-color: var(--gold-mid);
+    color: #fff;
+    font-weight: bold;
+}
+
+/* Agree checkbox */
+.agree-row {
+    background: #fff;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    font-size: 13.5px;
+    border: 1px solid var(--border-soft);
+}
+.agree-row label {
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.6;
+    color: var(--text-body);
+}
+.agree-row input[type=checkbox] {
+    margin-top: 3px;
+    transform: scale(1.2);
+    accent-color: var(--gold-mid);
+    flex-shrink: 0;
+}
+
+/* Submit Button */
+.btn-primary {
+    width: 100%;
+    display: block;
+    background: linear-gradient(135deg, var(--gold-mid), var(--gold-deep));
+    color: #fff;
+    font-size: 16px;
+    font-family: var(--font-main);
+    font-weight: bold;
+    letter-spacing: 2px;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 13px 0;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(160, 112, 58, 0.35);
+    transition: opacity 0.2s, transform 0.2s;
+}
+.btn-primary:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+.btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #C0B0A0;
+    box-shadow: none;
+    transform: none;
+}
+
+/* ================================================
+   Responsive
+   ================================================ */
+@media (max-width: 768px) {
+    .fb-float-btn {
+        width: 120px;
+        top: auto;
+        bottom: 85px;
         right: 0;
-        transform: translateY(-50%);
-        z-index: 900;
-        cursor: pointer;
-        transition: transform 0.2s, opacity 0.3s;
-        width: 210px;
+        transform: none;
     }
-    .feedback-floating-btn img { width: 100%; height: auto; display: block; }
-    .feedback-floating-btn:hover { transform: translateY(-50%) scale(1.05); }
+    .fb-float-btn:hover { transform: scale(1.05); }
 
-    /* 手機版浮動按鈕 */
-    @media (max-width: 768px) {
-        .feedback-floating-btn {
-            width: 130px;
-            top: auto;
-            bottom: 90px;
-            transform: none;
-        }
-        .feedback-floating-btn:hover { transform: scale(1.05); }
-    }
+    .fb-hero { padding: 40px 16px 28px; }
+    .fb-feed { padding: 8px 12px 20px; }
+    .fb-card { padding: 20px 18px 16px; }
 
-    /* --- Modal 共用樣式 --- */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 1000;
-        background: rgba(0,0,0,0.6);
-        justify-content: center;
-        align-items: center;
-    }
-    .modal-overlay.is-visible { display: flex; }
-    
-    .modal-content {
-        background: #F3F0EC; 
-        padding: 30px; 
-        border-radius: 15px;
-        position: relative;
-        max-height: 90vh; 
-        overflow-y: auto;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        width: 90%;
-        max-width: 600px; /* 表單變簡單了，寬度可以縮小 */
-    }
-    
-    .modal-close-btn {
-        position: absolute; top: 15px; right: 15px; background: #C48945;
-        border: 1px solid #D9B88A; border-radius: 50%; width: 35px; height: 35px;
-        color: white; font-size: 20px; line-height: 35px; text-align: center;
-        cursor: pointer; padding: 0;
-    }
+    .modal-content { padding: 24px 18px; }
 
-    /* 表單樣式 */
-    .form-fieldset { 
-        padding: 20px 18px; 
-        border-radius: 20px; 
-        border: 2px solid #E6BA67; 
-        background: #fff; 
-        margin-bottom: 20px;
-    }
-    
-    .form-fieldset label, .single-choice p { display: block; margin-bottom: 12px; font-size: 15px; font-weight: bold; }
-    .form-fieldset input[type=text], .form-fieldset textarea { 
-        width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 10px; font-size: 15px; box-sizing: border-box; margin-top: 5px;
-    }
-    .single-choice label { margin-right: 15px; font-weight: normal; display: inline-block; cursor: pointer; }
-    
-    .btn-primary { 
-        width: 100%; display: block; 
-        background: #C48945; color: #fff; font-size: 17px; font-weight: bold; 
-        border: none; border-radius: 25px; padding: 12px 0; cursor: pointer; 
-        box-shadow: 0 4px 10px rgba(0,0,0,.15); transition: opacity .2s; 
-    }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; background: #999; box-shadow: none;}
+    .form-cat-group { gap: 6px; }
+    .form-cat-label { padding: 5px 12px; font-size: 12.5px; }
+}
 </style>
 
-<main class="feedback-page-wrapper">
-    <div class="feedback-header">
-        <h2 class="section-title">信徒回饋</h2>
+<div class="fb-page">
+
+    <!-- ── Hero ── -->
+    <header class="fb-hero">
+        <span class="fb-hero__ornament">✦ ✦ ✦</span>
+        <h2 class="fb-hero__title">信徒回饋</h2>
+        <p class="fb-hero__subtitle">每一篇故事，都是與元帥之間最真實的緣份</p>
+    </header>
+
+    <!-- ── Category Filter ── -->
+    <div class="fb-filter-wrap">
+        <div class="fb-filter-bar" id="fb-filter-bar">
+            <button class="fb-filter-btn is-active" data-cat="全部">全部</button>
+            <button class="fb-filter-btn" data-cat="運途">運途</button>
+            <button class="fb-filter-btn" data-cat="事業">事業</button>
+            <button class="fb-filter-btn" data-cat="財運">財運</button>
+            <button class="fb-filter-btn" data-cat="身體">身體</button>
+            <button class="fb-filter-btn" data-cat="姻緣">姻緣</button>
+            <button class="fb-filter-btn" data-cat="收驚">收驚</button>
+            <button class="fb-filter-btn" data-cat="其他">其他</button>
+        </div>
     </div>
 
-    <a href="#" id="show-feedback-form-btn" class="feedback-floating-btn">
+    <!-- ── Feed ── -->
+    <div class="fb-feed" id="feedback-list-container"></div>
+
+    <!-- ── Floating CTA ── -->
+    <a href="#" id="show-feedback-form-btn" class="fb-float-btn">
         <img src="{{ url_for('static', filename='images/pages/feedback/new.png') }}" alt="我要回饋">
     </a>
+</div>
 
-    <div id="feedback-list-container">
-        </div>
-</main>
-
+<!-- ── Modal ── -->
 <div id="feedback-form-modal" class="modal-overlay">
     <div class="modal-content">
         <button class="modal-close-btn">&times;</button>
-        
-        <div id="login-section" style="text-align: center; padding: 40px 20px; background: #fffcf5; border-radius: 12px; margin: 20px 0;">
-            <h3 style="color: #C48945; margin-bottom: 15px;">請先綁定 LINE 繼續操作</h3>
-            <p style="color: #666; margin-bottom: 30px; line-height: 1.6;">
-                系統將自動綁定您的專屬會員紀錄。<br>
-                未來使用服務將自動帶入寄送資訊，無需重複填寫。
-            </p>
-            <a href="/api/line/login?next=/feedback" style="background-color: #06C755; color: white; padding: 12px 30px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(6,199,85,0.3);">
-                <img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE" style="width: 24px; margin-right: 10px; filter: brightness(0) invert(1);">
+
+        <!-- Not logged in -->
+        <div id="login-section" class="modal-info-block modal-info-block--login">
+            <h3 style="color: var(--gold-mid);">請先綁定 LINE 繼續操作</h3>
+            <p>系統將自動綁定您的專屬會員紀錄。<br>未來使用服務將自動帶入寄送資訊，無需重複填寫。</p>
+            <a href="/api/line/login?next=/feedback" style="background:#06C755; color:#fff; padding:12px 30px; border-radius:50px; text-decoration:none; font-weight:bold; font-size:15px; display:inline-flex; align-items:center; box-shadow:0 4px 12px rgba(6,199,85,0.3); font-family:var(--font-main);">
+                <img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="LINE" style="width:22px; margin-right:8px; filter:brightness(0) invert(1);">
                 使用 LINE 登入
             </a>
         </div>
 
-        <div id="profile-warning-section" style="display: none; text-align: center; padding: 30px 20px; background: #fff3cd; border: 2px solid #ffeeba; border-radius: 15px; margin: 20px 0;">
-            <h3 style="color: #856404; margin-top: 0;">⚠️ 尚未完善會員資料</h3>
-            <p style="color: #666; margin-bottom: 25px; line-height: 1.6;">
-                為了在文章刊登後能順利將「小神衣」等結緣品寄送給您，<br>請先至個人專區填寫您的<strong>收件地址與聯絡電話</strong>。
-            </p>
-            <a href="/profile" class="btn-primary" style="text-decoration: none; display: inline-block; width: auto; padding: 10px 30px;">前往填寫資料</a>
+        <!-- Profile incomplete -->
+        <div id="profile-warning-section" class="modal-info-block modal-info-block--warn" style="display:none;">
+            <h3 style="color:#856404;">⚠️ 尚未完善會員資料</h3>
+            <p>為了在文章刊登後能順利將「小神衣」等結緣品寄送給您，<br>請先至個人專區填寫您的<strong>收件地址與聯絡電話</strong>。</p>
+            <a href="/profile" class="btn-primary" style="text-decoration:none; display:inline-block; width:auto; padding:10px 36px;">前往填寫資料</a>
         </div>
 
-        <div id="feedback-form-section" style="display: none;">
+        <!-- Form -->
+        <div id="feedback-form-section" style="display:none;">
             <form id="feedback-form">
-                <h2 style="color: #C48945; text-align: center; margin-top: 0; margin-bottom: 20px;">分享我的故事</h2>
-                
+                <p class="form-title">✦ 分享我的故事 ✦</p>
+
                 <div class="form-fieldset">
-                    <label>發文暱稱 (公開顯示)：
+                    <label>發文暱稱（公開顯示）：
                         <input type="text" name="nickname" required placeholder="例如：陳信徒 或 王小姐">
                     </label>
-                    
-                    <div class="single-choice" style="margin-top: 20px;">
-                        <p>類別（擇一）：</p>
-                        <label><input type="radio" name="category" value="運途" required> 運途</label>
-                        <label><input type="radio" name="category" value="事業"> 事業</label>
-                        <label><input type="radio" name="category" value="財運"> 財運</label>
-                        <label><input type="radio" name="category" value="身體"> 身體</label>
-                        <label><input type="radio" name="category" value="姻緣"> 姻緣</label>
-                        <label><input type="radio" name="category" value="收驚"> 收驚</label>
-                        <label><input type="radio" name="category" value="其他"> 其他</label>
-                    </div>
 
-                    <label style="margin-top: 20px;">回饋內容（至少 50 字）：
-                        <textarea name="content" rows="8" minlength="50" required placeholder="請分享您與元帥的故事，每一次的分享都是最珍貴的法布施..."></textarea>
+                    <label style="margin-top:18px;">類別（擇一）：
+                        <div class="form-cat-group">
+                            <label class="form-cat-label"><input type="radio" name="category" value="運途" required>運途</label>
+                            <label class="form-cat-label"><input type="radio" name="category" value="事業">事業</label>
+                            <label class="form-cat-label"><input type="radio" name="category" value="財運">財運</label>
+                            <label class="form-cat-label"><input type="radio" name="category" value="身體">身體</label>
+                            <label class="form-cat-label"><input type="radio" name="category" value="姻緣">姻緣</label>
+                            <label class="form-cat-label"><input type="radio" name="category" value="收驚">收驚</label>
+                            <label class="form-cat-label"><input type="radio" name="category" value="其他">其他</label>
+                        </div>
+                    </label>
+
+                    <label style="margin-top:18px;">回饋內容（至少 50 字）：
+                        <textarea name="content" rows="8" minlength="50" required placeholder="請分享您與元帥的故事，每一次的分享都是最珍貴的法布施…"></textarea>
                     </label>
                 </div>
 
-                <div style="background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
-                    <label style="cursor:pointer; display:flex; align-items:flex-start;">
-                        <input type="checkbox" id="review-agreed" required style="margin-right:10px; margin-top:3px; transform: scale(1.2);">
-                        <span style="line-height: 1.5;">
-                            我已詳閱並同意授權上述內容供承天中承府公開刊登，並確認<a href="/profile" target="_blank" style="color: #C48945;">會員專區</a>的收件資料填寫無誤。
-                        </span>
+                <div class="agree-row">
+                    <label>
+                        <input type="checkbox" id="review-agreed" required>
+                        <span>我已詳閱並同意授權上述內容供承天中承府公開刊登，並確認<a href="/profile" target="_blank" style="color:var(--gold-mid);">會員專區</a>的收件資料填寫無誤。</span>
                     </label>
                 </div>
 
@@ -200,109 +681,250 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    // --- DOM Elements ---
-    const showFormBtn = document.getElementById('show-feedback-form-btn');
-    const formModal = document.getElementById('feedback-form-modal');
-    const loginSection = document.getElementById('login-section');
-    const warningSection = document.getElementById('profile-warning-section');
-    const formSection = document.getElementById('feedback-form-section');
-    
-    const feedbackForm = document.getElementById('feedback-form');
-    const confirmBtn = document.getElementById('confirm-submit-btn');
-    const agreeCheckbox = document.getElementById('review-agreed');
+    const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-    // --- 1. 檢查狀態與資料完整度 ---
+    // ── DOM refs ──
+    const showFormBtn   = document.getElementById('show-feedback-form-btn');
+    const formModal     = document.getElementById('feedback-form-modal');
+    const loginSection  = document.getElementById('login-section');
+    const warnSection   = document.getElementById('profile-warning-section');
+    const formSection   = document.getElementById('feedback-form-section');
+    const feedbackForm  = document.getElementById('feedback-form');
+    const confirmBtn    = document.getElementById('confirm-submit-btn');
+    const agreeCheckbox = document.getElementById('review-agreed');
+    const filterBar     = document.getElementById('fb-filter-bar');
+    const listContainer = document.getElementById('feedback-list-container');
+
+    // ── State ──
+    let allCards    = [];   // { element, category }
+    let activeFilter = '全部';
+
+    // ══════════════════════════════════
+    // 1. Auth / Profile Check
+    // ══════════════════════════════════
     fetch('/api/user/me')
-        .then(res => res.json())
+        .then(r => r.json())
         .then(data => {
             if (data.logged_in) {
                 const u = data.user;
                 loginSection.style.display = 'none';
-                
-                // 檢查是否填寫了必填聯絡資料 (防呆機制)
                 if (!u.realName || !u.phone || !u.address) {
-                    warningSection.style.display = 'block';
+                    warnSection.style.display = 'block';
                 } else {
                     formSection.style.display = 'block';
-                    // 自動帶入暱稱
-                    if (u.nickname) feedbackForm.nickname.value = u.nickname;
-                    else feedbackForm.nickname.value = u.displayName || '';
+                    feedbackForm.nickname.value = u.nickname || u.displayName || '';
                 }
             }
         })
         .catch(err => console.error('無法取得會員資料', err));
 
-    // --- 2. 載入已刊登文章列表 ---
+    // ══════════════════════════════════
+    // 2. Build a single card element
+    // ══════════════════════════════════
+    const TAG_COLORS = ['運途','事業','財運','身體','姻緣','收驚','其他'];
+
+    function buildCard(item) {
+        const cat    = Array.isArray(item.category) ? item.category[0] : item.category;
+        const tagCls = TAG_COLORS.includes(cat) ? `fb-tag--${cat}` : 'fb-tag--default';
+        const idHtml = item.feedbackId
+            ? `<div class="fb-card__id">#${item.feedbackId}</div>` : '';
+
+        const COLLAPSE_THRESHOLD = 80;
+        const longText = (item.content || '').length > COLLAPSE_THRESHOLD;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'fb-card';
+        wrapper.dataset.category = cat;
+
+        wrapper.innerHTML = `
+            <div class="fb-card__top">
+                <div class="fb-card__left">
+                    <div class="fb-card__author">${escHtml(item.nickname || '匿名信徒')}</div>
+                    <div class="fb-card__meta">
+                        <span class="fb-tag ${tagCls}">${escHtml(cat)}</span>
+                        ${idHtml}
+                    </div>
+                </div>
+                <div class="fb-card__date" title="刊登日期">
+                    <!-- 待 API 提供日期 -->
+                    <span style="opacity:0.4; font-size:11px; letter-spacing:1px;">● ● ●</span>
+                </div>
+            </div>
+
+            <div class="fb-card__body">
+                <p class="fb-card__text${longText ? ' is-collapsed' : ''}">${escHtml(item.content || '').replace(/\n/g,'<br>')}</p>
+                ${longText ? '<div class="fb-card__fade"></div>' : ''}
+            </div>
+
+            <div class="fb-card__footer">
+                <button class="fb-readmore-btn${longText ? '' : ' is-hidden-btn'}" type="button" aria-expanded="false">
+                    閱讀完整故事
+                </button>
+                <button class="fb-bless-btn" type="button" aria-pressed="false">
+                    <span class="bless-icon">🙏</span>
+                    <span class="bless-label">隨喜祝福</span>
+                </button>
+            </div>
+        `;
+
+        // Read more toggle
+        if (longText) {
+            const textEl  = wrapper.querySelector('.fb-card__text');
+            const fadeEl  = wrapper.querySelector('.fb-card__fade');
+            const readBtn = wrapper.querySelector('.fb-readmore-btn');
+
+            readBtn.addEventListener('click', () => {
+                const isOpen = readBtn.classList.toggle('is-open');
+                readBtn.setAttribute('aria-expanded', isOpen);
+                textEl.classList.toggle('is-collapsed', !isOpen);
+                fadeEl.classList.toggle('is-hidden', isOpen);
+                readBtn.querySelector
+                    ? null : null; // keep reference
+                readBtn.childNodes.forEach(n => {
+                    if (n.nodeType === Node.TEXT_NODE) {
+                        n.textContent = isOpen ? '收合' : '閱讀完整故事';
+                    }
+                });
+                // Simpler: just update textContent of the button directly
+                readBtn.firstChild.textContent = isOpen ? '收合 ' : '閱讀完整故事';
+            });
+        }
+
+        // Blessing button micro-interaction
+        const blessBtn  = wrapper.querySelector('.fb-bless-btn');
+        const blessLabel = blessBtn.querySelector('.bless-label');
+        blessBtn.addEventListener('click', () => {
+            const nowBlessed = blessBtn.classList.toggle('is-blessed');
+            blessBtn.setAttribute('aria-pressed', nowBlessed);
+            blessLabel.textContent = nowBlessed ? '已祝福 ✓' : '隨喜祝福';
+        });
+
+        return wrapper;
+    }
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;');
+    }
+
+    // ══════════════════════════════════
+    // 3. Fetch + Render approved list
+    // ══════════════════════════════════
     function fetchAndRenderFeedback() {
-        fetch('/api/feedback/approved', { credentials:'include' })
-            .then(res => res.json())
+        fetch('/api/feedback/approved', { credentials: 'include' })
+            .then(r => r.json())
             .then(data => {
-                const container = document.getElementById('feedback-list-container');
-                if (data.length === 0) {
-                    container.innerHTML = '<p style="text-align:center;">目前沒有已刊登的信徒回饋。</p>';
+                allCards = [];
+                listContainer.innerHTML = '';
+
+                if (!data.length) {
+                    listContainer.innerHTML = `
+                        <div class="fb-empty">
+                            <span class="fb-empty__icon">🕊️</span>
+                            目前尚無已刊登的信徒回饋<br>成為第一位分享故事的信徒吧！
+                        </div>`;
                     return;
                 }
-                container.innerHTML = data.map(item => {
-                    const cat = Array.isArray(item.category) ? item.category.join(', ') : item.category;
-                    const fbIdHtml = item.feedbackId ? `<div style="font-size: 13px; color: #aaa; margin-bottom: 5px; font-family: monospace; letter-spacing: 1px;">#${item.feedbackId}</div>` : '';
-                    return `
-                    <div class="feedback-card">
-                        ${fbIdHtml}
-                        <h3 class="feedback-card__header">${item.nickname} / ${cat}</h3>
-                        <p class="feedback-card__content">${item.content.replace(/\n/g, '<br>')}</p>
-                    </div>`;
-                }).join('');
+
+                data.forEach((item, idx) => {
+                    const card = buildCard(item);
+                    // Stagger animation
+                    card.style.animationDelay = `${idx * 60}ms`;
+                    card.classList.add('is-visible');
+                    listContainer.appendChild(card);
+                    allCards.push({ el: card, cat: card.dataset.category });
+                });
             })
             .catch(err => console.error('載入回饋失敗', err));
     }
     fetchAndRenderFeedback();
 
-    // --- 3. 表單即時驗證 ---
+    // ══════════════════════════════════
+    // 4. Category Filter
+    // ══════════════════════════════════
+    filterBar.addEventListener('click', e => {
+        const btn = e.target.closest('.fb-filter-btn');
+        if (!btn) return;
+
+        filterBar.querySelectorAll('.fb-filter-btn').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        activeFilter = btn.dataset.cat;
+
+        allCards.forEach(({ el, cat }) => {
+            const show = activeFilter === '全部' || cat === activeFilter;
+            if (show) {
+                el.classList.remove('is-hidden');
+                // Re-trigger fade-in
+                el.classList.remove('is-visible');
+                void el.offsetWidth; // reflow
+                el.classList.add('is-visible');
+            } else {
+                el.classList.remove('is-visible');
+                el.classList.add('is-hidden');
+            }
+        });
+
+        // Show empty state if nothing matches
+        const visible = allCards.filter(c => !c.el.classList.contains('is-hidden'));
+        let emptyEl = listContainer.querySelector('.fb-filter-empty');
+        if (!visible.length) {
+            if (!emptyEl) {
+                emptyEl = document.createElement('div');
+                emptyEl.className = 'fb-empty fb-filter-empty';
+                emptyEl.innerHTML = `<span class="fb-empty__icon">🔍</span>此類別目前尚無回饋`;
+                listContainer.appendChild(emptyEl);
+            }
+        } else {
+            emptyEl?.remove();
+        }
+    });
+
+    // ══════════════════════════════════
+    // 5. Form Validation
+    // ══════════════════════════════════
     function checkValidity() {
-        const isNickname = feedbackForm.nickname.value.trim().length > 0;
-        const isCat = !!feedbackForm.category.value;
-        const isContent = feedbackForm.content.value.trim().length >= 50; // 字數門檻降至 50 字
-        
-        confirmBtn.disabled = !(isNickname && isCat && isContent && agreeCheckbox.checked);
+        const ok = feedbackForm.nickname.value.trim().length > 0
+                && !!feedbackForm.category.value
+                && feedbackForm.content.value.trim().length >= 50
+                && agreeCheckbox.checked;
+        confirmBtn.disabled = !ok;
     }
-    feedbackForm.addEventListener('input', checkValidity);
+    feedbackForm.addEventListener('input',  checkValidity);
     feedbackForm.addEventListener('change', checkValidity);
 
-    // --- 4. 直接送出表單 (移除原有的 step2) ---
-    feedbackForm.addEventListener('submit', async (e) => {
+    // ══════════════════════════════════
+    // 6. Form Submit
+    // ══════════════════════════════════
+    feedbackForm.addEventListener('submit', async e => {
         e.preventDefault();
         confirmBtn.disabled = true;
-        confirmBtn.textContent = '送出中...';
+        confirmBtn.textContent = '送出中…';
 
         const payload = {
             nickname: feedbackForm.nickname.value.trim(),
             category: [feedbackForm.category.value],
-            content: feedbackForm.content.value.trim(),
-            agreed: true 
+            content:  feedbackForm.content.value.trim(),
+            agreed:   true
         };
 
         try {
             const res = await fetch('/api/feedback', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'X-CSRFToken': getCsrfToken() 
+                method:  'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken':  getCsrfToken()
                 },
                 body: JSON.stringify(payload)
             });
-            
-            if (!res.ok) {
-                let errText = await res.text();
-                throw new Error('送出失敗: ' + errText);
-            }
-            
+            if (!res.ok) throw new Error('送出失敗: ' + await res.text());
+
             alert('感謝您的法布施！回饋已成功送出，待廟方審核後將會刊登。');
             formModal.classList.remove('is-visible');
             feedbackForm.reset();
-            checkValidity(); // 重置按鈕狀態
-            
+            checkValidity();
         } catch (err) {
             alert(err.message);
         } finally {
@@ -311,16 +933,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- 5. Modal UI 控制 ---
-    showFormBtn.addEventListener('click', e => { 
-        e.preventDefault(); 
-        formModal.classList.add('is-visible'); 
+    // ══════════════════════════════════
+    // 7. Modal Controls
+    // ══════════════════════════════════
+    showFormBtn.addEventListener('click', e => {
+        e.preventDefault();
+        formModal.classList.add('is-visible');
     });
-    
     document.querySelector('.modal-close-btn').addEventListener('click', () => {
         formModal.classList.remove('is-visible');
     });
-    
     formModal.addEventListener('click', e => {
         if (e.target === formModal) formModal.classList.remove('is-visible');
     });
