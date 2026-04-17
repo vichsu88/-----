@@ -40,7 +40,7 @@
     {# --- 5. 技術設定 --- #}
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    {# --- 6. JSON-LD 結構化資料 (保留完整內容) --- #}
+    {# --- 6. JSON-LD 結構化資料 --- #}
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -74,6 +74,323 @@
         "priceRange": "免費 (隨喜功德)"
     }
     </script>
+
+    {# --- 7. 金黃廟宇視覺強化（覆蓋 style.css） --- #}
+    <style>
+        /* ============================================
+           色票系統
+           ============================================ */
+        :root {
+            --gold-primary: #D1AC2B;
+            --gold-deep:    #A8862A;
+            --gold-bright:  #E8C75C;
+            --gold-line:    #C9A94A;
+
+            /* 木紋色系（側邊選單） */
+            --wood-dark:    #2E1A0E;   /* 最深：選單底色 */
+            --wood-mid:     #3D2410;   /* 中：hover 底色 */
+            --wood-light:   #5C3820;   /* 淺：分隔線、邊框 */
+            --wood-grain:   #4A2C0A;   /* 木紋紋理用 */
+        }
+
+        /* ============================================
+           Header
+           ============================================ */
+        .main-header {
+            border-bottom: 1px solid var(--gold-line);
+            box-shadow: 0 2px 12px rgba(209, 172, 43, 0.08);
+        }
+
+        /* 桌面 nav hover：金色下劃線從中展開 */
+        .nav-links-desktop li a {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        .nav-links-desktop li a::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -6px;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+            transition: width 0.4s ease, left 0.4s ease;
+        }
+        .nav-links-desktop li a:hover { color: var(--gold-primary); }
+        .nav-links-desktop li a:hover::after { width: 100%; left: 0; }
+
+        /* Logo 微光 */
+        .nav-logo {
+            display: inline-block;
+            transition: filter 0.4s ease, transform 0.4s ease;
+        }
+        .nav-logo:hover {
+            filter: drop-shadow(0 0 8px rgba(232, 199, 92, 0.6));
+            transform: scale(1.03);
+        }
+
+        .nav-toggle { transition: filter 0.3s ease; }
+        .nav-toggle:hover { filter: drop-shadow(0 0 6px rgba(209, 172, 43, 0.5)); }
+
+        /* ============================================
+           側邊選單 —— 木紋古典風
+           ============================================ */
+        .mobile-nav-overlay {
+            /* 深棕木紋漸層底 */
+            background:
+                /* 木紋線條 pattern（極細橫紋模擬木紋） */
+                repeating-linear-gradient(
+                    175deg,
+                    transparent 0px,
+                    transparent 3px,
+                    rgba(255, 200, 80, 0.025) 3px,
+                    rgba(255, 200, 80, 0.025) 4px
+                ),
+                repeating-linear-gradient(
+                    168deg,
+                    transparent 0px,
+                    transparent 8px,
+                    rgba(0, 0, 0, 0.06) 8px,
+                    rgba(0, 0, 0, 0.06) 9px
+                ),
+                /* 深棕底色漸層 */
+                linear-gradient(
+                    160deg,
+                    #3D2410 0%,
+                    #2E1A0E 40%,
+                    #251508 100%
+                ) !important;
+
+            /* 右側金線描邊（選單從右滑入，金線在左側視覺上就是入口邊） */
+            border-left: 2px solid var(--gold-line) !important;
+            box-shadow: -6px 0 40px rgba(0, 0, 0, 0.5) !important;
+
+            /* ⚠️ 關鍵修正：讓選單可捲動、不截內容 */
+            position: fixed !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+            /* 滾動條樣式（Webkit） */
+            scrollbar-width: thin;
+            scrollbar-color: var(--gold-line) var(--wood-dark);
+        }
+        .mobile-nav-overlay::-webkit-scrollbar { width: 4px; }
+        .mobile-nav-overlay::-webkit-scrollbar-track { background: var(--wood-dark); }
+        .mobile-nav-overlay::-webkit-scrollbar-thumb {
+            background: var(--gold-line);
+            border-radius: 2px;
+        }
+
+        /* 頂部固定金線（用真實元素，sticky 才有效） */
+        .overlay-top-bar {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--gold-deep) 20%,
+                var(--gold-bright) 50%,
+                var(--gold-deep) 80%,
+                transparent 100%);
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        /* 移除原本的 ::before / ::after 光暈（木紋版不需要） */
+        .mobile-nav-overlay::before,
+        .mobile-nav-overlay::after {
+            display: none;
+        }
+
+        /* 關閉按鈕 */
+        .overlay-close-btn {
+            color: var(--gold-bright) !important;
+            transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
+        }
+        .overlay-close-btn:hover {
+            color: var(--gold-primary) !important;
+            transform: rotate(90deg);
+            text-shadow: 0 0 14px rgba(232, 199, 92, 0.8);
+        }
+
+        /* ── 選單項目容器 ── */
+        .overlay-nav-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* 每一列：入場動畫初始狀態 */
+        .overlay-nav-links li {
+            position: relative;
+            overflow: hidden;
+            /* 金線分隔（比米白版更細緻，用半透明金色） */
+            border-bottom: 1px solid rgba(201, 169, 74, 0.2);
+            opacity: 0;
+            transform: translateX(24px);
+        }
+        /* 第一列上方也加一條金線 */
+        .overlay-nav-links li:first-child {
+            border-top: 1px solid rgba(201, 169, 74, 0.2);
+        }
+
+        /* 入場 stagger 動畫 */
+        .mobile-nav-overlay.is-open .overlay-nav-links li {
+            animation: woodSlideIn 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .mobile-nav-overlay.is-open .overlay-nav-links li:nth-child(1) { animation-delay: 0.06s; }
+        .mobile-nav-overlay.is-open .overlay-nav-links li:nth-child(2) { animation-delay: 0.12s; }
+        .mobile-nav-overlay.is-open .overlay-nav-links li:nth-child(3) { animation-delay: 0.18s; }
+        .mobile-nav-overlay.is-open .overlay-nav-links li:nth-child(4) { animation-delay: 0.24s; }
+        .mobile-nav-overlay.is-open .overlay-nav-links li:nth-child(5) { animation-delay: 0.30s; }
+        .mobile-nav-overlay.is-open .overlay-nav-links li:nth-child(6) { animation-delay: 0.36s; }
+        .mobile-nav-overlay.is-open .overlay-nav-links li:nth-child(7) { animation-delay: 0.42s; }
+
+        @keyframes woodSlideIn {
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ── 連結文字：靠右、放大、直接金色 ── */
+        .overlay-nav-links li a {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;    /* 靠右對齊 */
+            gap: 10px;
+            padding: 10px 24px 10px 16px; /* 上下收緊、右側留呼吸空間 */
+            color: var(--gold-primary) !important;
+            font-size: 1.15rem;           /* 放大字體 */
+            letter-spacing: 0.12em;
+            text-decoration: none;
+            position: relative;
+            z-index: 2;
+            transition: color 0.3s ease, padding-right 0.35s ease;
+        }
+
+        /* 連結後方小菱形裝飾（靠右時放在文字右側更自然） */
+        .overlay-nav-links li a::after {
+            content: '◆';
+            font-size: 0.4em;
+            color: var(--gold-deep);
+            opacity: 0.55;
+            flex-shrink: 0;
+            transition: opacity 0.3s ease, color 0.3s ease;
+            line-height: 1;
+        }
+
+        /* hover 狀態：亮金 + 菱形發亮 */
+        .overlay-nav-links li:hover a {
+            color: var(--gold-bright) !important;
+            padding-right: 18px;          /* hover 時輕微往左移，有動感 */
+        }
+        .overlay-nav-links li:hover a::after {
+            opacity: 1;
+            color: var(--gold-bright);
+        }
+
+        /* hover 暖木色背景掃過 */
+        .overlay-nav-links li .nav-hover-bg {
+            display: none; /* 純 CSS 版本直接用 li 偽元素 */
+        }
+        .overlay-nav-links li::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg,
+                rgba(92, 56, 32, 0.8) 0%,
+                rgba(74, 44, 10, 0.6) 100%);
+            opacity: 0;
+            transition: opacity 0.35s ease;
+            z-index: 1;
+        }
+        .overlay-nav-links li:hover::after { opacity: 1; }
+
+        /* ── 社群圖示區 ── */
+        .overlay-social {
+            padding: 16px 20px 20px;      /* ⚠️ 手機友善 */
+            border-top: 1px solid rgba(201, 169, 74, 0.3);
+            margin-top: 8px;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .overlay-social a {
+            display: inline-flex;
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+        .overlay-social a:hover {
+            transform: translateY(-3px) scale(1.12);
+            filter: drop-shadow(0 4px 8px rgba(209, 172, 43, 0.55));
+        }
+
+        /* ============================================
+           Footer
+           ============================================ */
+        .main-footer { border-top: 1px solid var(--gold-line); }
+
+        .footer-title,
+        .custom-link-title {
+            color: var(--gold-primary) !important;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        .footer-title::after,
+        .custom-link-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--gold-primary), transparent);
+        }
+
+        .footer-social a {
+            display: inline-block;
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+        .footer-social a:hover {
+            transform: translateY(-3px);
+            filter: drop-shadow(0 4px 8px rgba(209, 172, 43, 0.5));
+        }
+
+        .footer-copyright { color: var(--gold-deep); opacity: 0.85; }
+
+        /* ============================================
+           Back-to-Top
+           ============================================ */
+        .back-to-top-btn {
+            background: linear-gradient(135deg,
+                var(--gold-bright) 0%,
+                var(--gold-primary) 50%,
+                var(--gold-deep) 100%) !important;
+            color: #FFF8E0 !important;
+            border: 1px solid var(--gold-line) !important;
+            box-shadow:
+                0 4px 16px rgba(209, 172, 43, 0.4),
+                inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+            transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+        }
+        .back-to-top-btn:hover {
+            transform: translateY(-4px);
+            box-shadow:
+                0 8px 24px rgba(209, 172, 43, 0.6),
+                inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+        }
+
+        /* ============================================
+           Accessibility
+           ============================================ */
+        @media (prefers-reduced-motion: reduce) {
+            .mobile-nav-overlay.is-open .overlay-nav-links li {
+                animation: none;
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -94,8 +411,7 @@
                 <img src="{{ url_for('static', filename='images/pages/index/nav-logo.png') }}" alt="承天中承府 Logo">
             </a>
 
-            <button class="nav-toggle" aria-label="開啟選單">
-                {# 優化：合併 SVG 路徑 #}
+            <button class="nav-toggle" aria-label="開啟選單" aria-expanded="false" aria-controls="mobile-nav-overlay">
                 <svg width="36" height="24" viewBox="0 0 36 24" fill="none" stroke="#D1AC2B" stroke-width="5" stroke-linecap="round">
                     <path d="M3 3H33" />
                     <path d="M3 12H33" />
@@ -131,11 +447,11 @@
                 <div class="footer-col footer-col-right">
                     <h4 class="custom-link-title">官方社群</h4>
                     <div class="footer-social">
-                        <a href="{{ links.get('煙島元帥社群', '#') }}" target="_blank" aria-label="加入社群"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line"></a>
-                        <a href="{{ links.get('FB', '#') }}" target="_blank" aria-label="Facebook 粉絲專頁"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
-                        <a href="{{ links.get('IG', '#') }}" target="_blank" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
-                        <a href="{{ links.get('TikTok', '#') }}" target="_blank" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
-                        <a href="{{ links.get('YouTube', '#') }}" target="_blank" aria-label="YouTube 頻道"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
+                        <a href="{{ links.get('煙島元帥社群', '#') }}" target="_blank" rel="noopener" aria-label="加入社群"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line" loading="lazy"></a>
+                        <a href="{{ links.get('FB', '#') }}" target="_blank" rel="noopener" aria-label="Facebook 粉絲專頁"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook" loading="lazy"></a>
+                        <a href="{{ links.get('IG', '#') }}" target="_blank" rel="noopener" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram" loading="lazy"></a>
+                        <a href="{{ links.get('TikTok', '#') }}" target="_blank" rel="noopener" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok" loading="lazy"></a>
+                        <a href="{{ links.get('YouTube', '#') }}" target="_blank" rel="noopener" aria-label="YouTube 頻道"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube" loading="lazy"></a>
                     </div>
                     <div class="footer-copyright">&copy; All copyright reserved | Eros design</div>
                 </div>
@@ -144,18 +460,19 @@
     </footer>
 
     {# --- 手機版側邊選單 --- #}
-    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay" role="dialog" aria-modal="true" aria-label="主選單">
+        <div class="overlay-top-bar"></div>
         <button class="overlay-close-btn" id="overlay-close-btn" aria-label="關閉選單">&times;</button>
         <ul class="overlay-nav-links">
             {{ nav_items() }}
         </ul>
         
         <div class="overlay-social">
-            <a href="{{ links.get('FB', '#') }}" target="_blank" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook"></a>
-            <a href="{{ links.get('IG', '#') }}" target="_blank" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram"></a>
-            <a href="{{ links.get('元帥娘官方LINE', '#') }}" target="_blank" aria-label="官方 Line"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line"></a>
-            <a href="{{ links.get('TikTok', '#') }}" target="_blank" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok"></a>
-            <a href="{{ links.get('YouTube', '#') }}" target="_blank" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube"></a>
+            <a href="{{ links.get('FB', '#') }}" target="_blank" rel="noopener" aria-label="Facebook"><img src="{{ url_for('static', filename='images/icons/footer-fb.png') }}" alt="Facebook" loading="lazy"></a>
+            <a href="{{ links.get('IG', '#') }}" target="_blank" rel="noopener" aria-label="Instagram"><img src="{{ url_for('static', filename='images/icons/footer-ig.png') }}" alt="Instagram" loading="lazy"></a>
+            <a href="{{ links.get('元帥娘官方LINE', '#') }}" target="_blank" rel="noopener" aria-label="官方 Line"><img src="{{ url_for('static', filename='images/icons/footer-line.png') }}" alt="Line" loading="lazy"></a>
+            <a href="{{ links.get('TikTok', '#') }}" target="_blank" rel="noopener" aria-label="TikTok"><img src="{{ url_for('static', filename='images/icons/footer-tt.png') }}" alt="TikTok" loading="lazy"></a>
+            <a href="{{ links.get('YouTube', '#') }}" target="_blank" rel="noopener" aria-label="YouTube"><img src="{{ url_for('static', filename='images/icons/footer-yt.png') }}" alt="YouTube" loading="lazy"></a>
         </div>
     </div>
 
