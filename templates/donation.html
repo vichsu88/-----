@@ -4,287 +4,703 @@
 
 {% block content %}
 <style>
+    /* === 字體載入：LXGW 霞鶩文楷（帶墨韻的現代書寫體） === */
+    @import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@300;400;500;700&display=swap');
+
     :root {
-        /* 原有底色與基礎色 */
-        --c-bg-light: #fffcf5;    
-        --c-text: #333;
-        --c-text-gray: #555;
-        --c-red-bg: #8B0000;
-        
-        /* 神聖金光特調色系 */
-        --divine-gold-light: #FFF8D6;
-        --divine-gold: #FFD700;
-        --divine-gold-deep: #B8860B;
-        --divine-brown: #5c3a21;
-        --divine-glow: rgba(255, 215, 0, 0.4);
-        --divine-shadow: 0 15px 40px rgba(184, 134, 11, 0.15);
-        
-        --radius-std: 15px;
+        /* --- 底色系統 --- */
+        --c-bg: #FBF7EE;              /* 溫潤紙色 */
+        --c-bg-soft: #F5EFE0;          /* 次級背景 */
+        --c-bg-card: #FFFFFF;
+
+        /* --- 文字系統（深暖灰，降低紅金配色疲勞） --- */
+        --c-text-deep: #3A2E24;        /* 主文字，深核桃 */
+        --c-text-mid: #6B5D54;         /* 次文字，暖灰 */
+        --c-text-light: #8A7E72;
+
+        /* --- 金色系統（香檳金 / 霧面金為主，純金僅作為重點） --- */
+        --gold-champagne: #C9A66B;     /* 主色：香檳金（低飽和） */
+        --gold-deep: #8B6F3F;          /* 深金：邊線、壓強 */
+        --gold-light: #E8D5A8;         /* 淺金：背景光 */
+        --gold-bright: #DDB85C;        /* 純金（微調柔）：hover / 重點 */
+
+        /* --- 玉石青：禪意點綴，打斷紅金飽和度 --- */
+        --jade: #7A9B8E;
+        --jade-soft: #B8CFC7;
+
+        /* --- 紅色系統：略調柔的傳統正紅 --- */
+        --c-red: #7A1515;
+        --c-red-deep: #4A0A0A;
+        --c-red-soft: #9C2929;
+
+        /* --- 光暈：大 blur、低 opacity，像香火透光 --- */
+        --glow-gold: 0 0 40px rgba(201, 166, 107, 0.25);
+        --glow-gold-soft: 0 0 60px rgba(201, 166, 107, 0.15);
+        --shadow-card: 0 10px 40px rgba(58, 46, 36, 0.06);
+        --shadow-card-hover: 0 20px 60px rgba(139, 111, 63, 0.15);
+        --shadow-altar: 0 20px 60px rgba(58, 46, 36, 0.08), 0 0 80px rgba(201, 166, 107, 0.08);
+
+        /* --- 錯誤提示色 --- */
+        --c-error: #B85450;
+        --c-error-bg: #FDF5F4;
+
+        --radius-std: 16px;
+        --radius-soft: 10px;
+
+        --font-main: 'LXGW WenKai TC', 'Microsoft JhengHei', 'PingFang TC', serif;
     }
 
-    /* === 通用工具類 === */
+    /* === 全域字體替換 === */
+    body, button, input, select, textarea {
+        font-family: var(--font-main);
+    }
+    body { background-color: var(--c-bg); color: var(--c-text-deep); }
+
+    /* === 通用工具 === */
     .d-none { display: none !important; }
-    .d-block { display: block !important; }
     .text-center { text-align: center; }
     .flex-center { display: flex; justify-content: center; align-items: center; }
     .relative { position: relative; }
     .pointer { cursor: pointer; }
 
-    body { background-color: var(--c-bg-light); }
+    /* === Toast 通知系統 === */
+    #toast-container {
+        position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+        z-index: 10000; display: flex; flex-direction: column; gap: 10px;
+        pointer-events: none; width: 92%; max-width: 440px;
+    }
+    .toast {
+        background: rgba(58, 46, 36, 0.95);
+        color: var(--c-bg);
+        padding: 14px 20px; border-radius: 12px;
+        font-size: 1rem; font-weight: 500; letter-spacing: 0.5px;
+        display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(201, 166, 107, 0.2);
+        opacity: 0; transform: translateY(-16px);
+        transition: opacity 0.35s ease, transform 0.35s ease;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        pointer-events: auto;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast-error { border-left: 3px solid #E99090; }
+    .toast-success { border-left: 3px solid #90D9A8; }
+    .toast-info { border-left: 3px solid var(--gold-bright); }
+    .toast-icon {
+        font-size: 1.2rem; flex-shrink: 0;
+        width: 28px; height: 28px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .toast-error .toast-icon { background: rgba(232,144,144,0.15); color: #F4B0B0; }
+    .toast-success .toast-icon { background: rgba(144,217,168,0.15); color: #A8E5BE; }
+    .toast-info .toast-icon { background: rgba(221,184,92,0.15); color: var(--gold-light); }
+    .toast-msg { flex: 1; line-height: 1.5; }
 
-    /* === 頂部視覺 Hero (神聖光暈版) === */
+    /* === Inline 欄位錯誤 === */
+    .field-error {
+        color: var(--c-error);
+        font-size: 0.88rem;
+        margin-top: 6px;
+        min-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity 0.25s, transform 0.25s, min-height 0.25s;
+    }
+    .field-error.show {
+        opacity: 1;
+        transform: translateY(0);
+        min-height: 1.2em;
+    }
+    .form-control.is-invalid {
+        border-color: var(--c-error) !important;
+        background: var(--c-error-bg) !important;
+    }
+    .form-control.is-invalid:focus {
+        box-shadow: 0 0 0 3px rgba(184, 84, 80, 0.12) !important;
+    }
+
+    /* === Hero：深化遮罩、乾淨字體 === */
     .donation-hero {
         background: url('{{ url_for("static", filename="images/pages/gongtan/signuppic.jpg") }}') no-repeat center center/cover;
-        height: 60vh;
-        min-height: 400px;
+        height: 62vh;
+        min-height: 420px;
         color: #fff;
         position: relative;
         overflow: hidden;
     }
-    .donation-hero::before { 
-        content: ''; position: absolute; inset: 0; 
-        background: radial-gradient(circle at 50% 40%, rgba(255,215,0,0.5) 0%, rgba(184,134,11,0.4) 30%, rgba(0,0,0,0.7) 100%);
+    .donation-hero::before {
+        content: ''; position: absolute; inset: 0;
+        background:
+            radial-gradient(ellipse at 50% 38%, rgba(201,166,107,0.28) 0%, transparent 55%),
+            linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.75) 100%);
         z-index: 1;
     }
-    .hero-text { position: relative; z-index: 2; padding: 20px; animation: floatUp 2s ease-out; }
-    .hero-text h1 { 
-        font-family: 'KouzanBrushFontOTF', 'Microsoft JhengHei', serif; 
-        font-size: 4rem; margin-bottom: 15px; 
-        background: linear-gradient(to bottom, #ffffff 0%, #FFD700 100%);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 0 20px rgba(255,215,0,0.8));
+    .hero-text { position: relative; z-index: 2; padding: 20px; animation: floatUp 1.4s cubic-bezier(0.22, 1, 0.36, 1); }
+    .hero-text h1 {
+        font-family: var(--font-main);
+        font-size: 4.2rem; margin-bottom: 18px;
+        font-weight: 700; letter-spacing: 8px;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F5E8C8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 30px rgba(232, 213, 168, 0.35));
     }
-    .hero-text p { 
-        font-size: 1.4rem; font-weight: bold; letter-spacing: 2px;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.9), 0 0 20px rgba(255,215,0,0.6); 
+    .hero-text p {
+        font-size: 1.25rem; font-weight: 400; letter-spacing: 4px;
+        color: #F5E8C8;
+        opacity: 0.92;
     }
-    @keyframes floatUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes floatUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* === 內容容器 (發光祭壇感) === */
+    /* === 主容器（沉穩祭壇） === */
     .donation-container {
-        max-width: 1100px; margin: -60px auto 50px auto; 
-        background: var(--c-bg-light); border-radius: var(--radius-std);
-        box-shadow: var(--divine-shadow), 0 0 30px rgba(255, 215, 0, 0.15); 
-        position: relative; z-index: 3; padding: 50px;
-        border: 1px solid rgba(218, 165, 32, 0.3);
-        border-top: 8px solid var(--divine-gold-deep);
+        max-width: 1100px; margin: -70px auto 60px auto;
+        background: var(--c-bg-card); border-radius: var(--radius-std);
+        box-shadow: var(--shadow-altar);
+        position: relative; z-index: 3; padding: 60px 50px;
+        border: 1px solid rgba(201, 166, 107, 0.18);
+        border-top: 4px solid var(--gold-deep);
     }
-    .donation-container::after {
-        content: ''; position: absolute; inset: 8px; border: 1px dashed rgba(184, 134, 11, 0.4); 
-        border-radius: 10px; pointer-events: none; z-index: -1;
+    .donation-container::before {
+        content: ''; position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+        width: 60px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold-champagne), transparent);
     }
 
     /* === 理念區塊 === */
-    .concept-section { margin-bottom: 50px; }
-    .concept-section h2 { 
-        color: var(--divine-brown); margin-bottom: 25px; font-size: 2.2rem; 
-        position: relative; display: inline-block; font-weight: 900;
-        text-shadow: 0 2px 10px rgba(255,215,0,0.3);
+    .concept-section { margin-bottom: 56px; }
+    .concept-section h2 {
+        color: var(--c-text-deep); margin-bottom: 28px; font-size: 2.3rem;
+        position: relative; display: inline-block; font-weight: 700;
+        letter-spacing: 4px;
     }
-    .concept-section h2::after { 
-        content:''; display:block; width: 80px; height: 3px; 
-        background: linear-gradient(90deg, transparent, var(--divine-gold), transparent); 
-        margin: 15px auto 0 auto; 
+    .concept-section h2::after {
+        content:''; display:block; width: 60px; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--gold-champagne), transparent);
+        margin: 16px auto 0 auto;
     }
-    .concept-text { font-size: 1.15rem; line-height: 1.9; color: var(--c-text-gray); max-width: 800px; margin: 0 auto; text-align: justify; }
-    .concept-highlight { 
-        color: var(--divine-brown); font-weight: bold; background: #fffdf5; 
-        padding: 20px; border-radius: 12px; border: 1px solid var(--divine-gold); margin-top: 30px; 
-        box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.1); text-align: center;
+    .concept-text { font-size: 1.08rem; line-height: 2; color: var(--c-text-mid); max-width: 760px; margin: 0 auto; text-align: justify; }
+    .concept-text strong { color: var(--c-text-deep); font-weight: 500; }
+    .concept-highlight {
+        color: var(--c-text-deep); font-weight: 400;
+        background: linear-gradient(135deg, #FDFAF0 0%, #F8F2E2 100%);
+        padding: 24px 28px; border-radius: var(--radius-soft);
+        border: 1px solid rgba(201, 166, 107, 0.35);
+        margin-top: 32px;
+        text-align: center;
+        line-height: 2;
+        box-shadow: var(--glow-gold-soft);
     }
 
-    /* === 芳名錄區 (宮廟紅金匾額) === */
+    /* === 芳名錄：紅底金字，深沉不刺眼 === */
     .honor-roll-section {
-        background: linear-gradient(135deg, #700000 0%, var(--c-red-bg) 50%, #4a0000 100%);
-        color: var(--divine-gold-light); padding: 25px; border-radius: 15px; margin-bottom: 50px;
+        background:
+            linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.1) 100%),
+            linear-gradient(135deg, #5C0F0F 0%, var(--c-red) 55%, #3A0808 100%);
+        color: var(--gold-light); padding: 28px; border-radius: var(--radius-std); margin-bottom: 56px;
         display: flex; align-items: center; gap: 30px; overflow: hidden;
-        border: 3px solid var(--divine-gold); outline: 2px solid var(--c-red-bg); outline-offset: 4px;
-        box-shadow: 0 10px 30px rgba(139, 0, 0, 0.3), inset 0 0 30px rgba(0,0,0,0.5);
+        border: 1px solid rgba(201, 166, 107, 0.4);
+        box-shadow: 0 15px 50px rgba(74, 10, 10, 0.3), inset 0 0 40px rgba(0,0,0,0.35);
+        position: relative;
     }
-    .honor-title-col { 
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; 
-        flex-shrink: 0; padding-right: 20px; border-right: 2px dashed rgba(255,215,0,0.3); 
+    .honor-roll-section::before {
+        content: ''; position: absolute; inset: 6px;
+        border: 1px solid rgba(201, 166, 107, 0.25); border-radius: 11px; pointer-events: none;
     }
-    .honor-title { 
-        font-size: 1.8rem; font-weight: bold; writing-mode: vertical-rl; text-orientation: upright; 
-        letter-spacing: 6px; text-shadow: 0 0 10px rgba(255,215,0,0.5); color: #FFD700;
+    .honor-title-col {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+        flex-shrink: 0; padding-right: 28px; border-right: 1px dashed rgba(201, 166, 107, 0.3);
+        position: relative; z-index: 1;
+    }
+    .honor-title {
+        font-size: 1.6rem; font-weight: 700; writing-mode: vertical-rl; text-orientation: upright;
+        letter-spacing: 8px;
+        color: var(--gold-light);
+        text-shadow: 0 0 20px rgba(232, 213, 168, 0.3);
     }
     .btn-scroll-trigger {
-        background: transparent; border: 1px solid var(--divine-gold); color: var(--divine-gold);
-        padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; cursor: pointer;
-        transition: 0.3s; font-weight: bold; box-shadow: 0 0 10px rgba(255,215,0,0.2);
+        background: transparent; border: 1px solid rgba(232, 213, 168, 0.5); color: var(--gold-light);
+        padding: 9px 18px; border-radius: 22px; font-size: 0.88rem; cursor: pointer;
+        transition: all 0.3s ease; font-weight: 500; letter-spacing: 1px;
+        font-family: var(--font-main);
     }
-    .btn-scroll-trigger:hover { 
-        background: var(--divine-gold); color: var(--c-red-bg); box-shadow: 0 0 20px rgba(255,215,0,0.6); transform: scale(1.05); 
+    .btn-scroll-trigger:hover {
+        background: var(--gold-bright); color: var(--c-red-deep);
+        border-color: var(--gold-bright);
+        box-shadow: 0 0 25px rgba(221, 184, 92, 0.5);
+        transform: translateY(-1px);
     }
 
-    .marquee-container { 
-        flex: 1; height: 160px; overflow: hidden; position: relative; 
-        mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
-        -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+    .marquee-container {
+        flex: 1; height: 180px; overflow: hidden; position: relative;
+        mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
+        -webkit-mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
+        z-index: 1;
     }
-    .marquee-content { 
-        position: absolute; 
-        top: 0;
-        left: 0;
-        width: 100%; 
-        animation: scrollUp linear infinite; 
-        will-change: transform; 
+    .marquee-content {
+        position: absolute;
+        top: 0; left: 0; width: 100%;
+        animation: scrollUp linear infinite;
+        will-change: transform;
     }
     .marquee-container:hover .marquee-content { animation-play-state: paused; }
-    .donor-item { 
-        display: flex; justify-content: space-between; padding: 12px 10px; 
-        border-bottom: 1px dashed rgba(255, 215, 0, 0.2); font-size: 1.15rem; color: #ffebcd;
+    .donor-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 13px 12px;
+        border-bottom: 1px dashed rgba(201, 166, 107, 0.18);
+        font-size: 1.1rem; color: #F0DDC2;
     }
-    .donor-item span:first-child { font-weight: bold; color: #FFF8D6; }
-    
-    @keyframes scrollUp { 
-        0% { transform: translateY(0); } 
-        100% { transform: translateY(-50%); } 
+    .donor-item .donor-name { font-weight: 500; color: var(--gold-light); }
+    .donor-item span:not(.donor-name) { font-size: 0.95rem; opacity: 0.85; }
+
+    @keyframes scrollUp {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-50%); }
     }
 
-    /* === 流金動態按鈕 === */
-    .cta-container { margin: 40px 0; }
+    /* === CTA 按鈕：香檳金漸層，克制的金光脈動 === */
+    .cta-container { margin: 48px 0; }
     .start-donate-btn, .btn-submit {
-        background: linear-gradient(to bottom, #FFFDE4 0%, #FFD700 40%, #B8860B 100%); 
-        color: #3e2723; padding: 18px 60px; font-size: 1.5rem; border-radius: 50px;
-        border: none; transition: 0.3s; cursor: pointer;
-        box-shadow: 0 5px 20px rgba(184, 134, 11, 0.5);
-        display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-weight: 900;
-        position: relative; overflow: hidden; animation: pulse-gold 2s infinite; text-decoration: none;
+        background: linear-gradient(135deg, #F5E8C8 0%, var(--gold-champagne) 45%, var(--gold-deep) 100%);
+        color: #2E2418; padding: 18px 56px; font-size: 1.35rem; border-radius: 50px;
+        border: none; transition: all 0.35s ease; cursor: pointer;
+        box-shadow: 0 8px 30px rgba(139, 111, 63, 0.3), var(--glow-gold-soft);
+        display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+        font-weight: 700; letter-spacing: 4px;
+        font-family: var(--font-main);
+        position: relative; overflow: hidden; text-decoration: none;
+        animation: pulse-soft 2.8s infinite;
     }
     .start-donate-btn::after, .btn-submit::after {
-        content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
-        transform: skewX(-20deg); animation: sheen 3s infinite;
+        content: ''; position: absolute; top: 0; left: -120%; width: 45%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+        transform: skewX(-20deg); animation: sheen 4s infinite;
     }
-    .start-donate-btn:hover:not(:disabled), .btn-submit:hover:not(:disabled) { 
-        transform: translateY(-3px) scale(1.03); box-shadow: 0 10px 30px rgba(184, 134, 11, 0.7); 
+    .start-donate-btn:hover:not(:disabled), .btn-submit:hover:not(:disabled) {
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, #FFF6D8 0%, var(--gold-bright) 45%, var(--gold-deep) 100%);
+        box-shadow: 0 14px 40px rgba(139, 111, 63, 0.4), 0 0 60px rgba(221, 184, 92, 0.35);
     }
-    @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(255, 215, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); } }
-    @keyframes sheen { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+    .start-donate-btn:disabled, .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; animation: none; }
+    @keyframes pulse-soft {
+        0%, 100% { box-shadow: 0 8px 30px rgba(139, 111, 63, 0.3), 0 0 0 0 rgba(201, 166, 107, 0); }
+        50% { box-shadow: 0 8px 30px rgba(139, 111, 63, 0.3), 0 0 0 12px rgba(201, 166, 107, 0); }
+        70% { box-shadow: 0 8px 30px rgba(139, 111, 63, 0.3), 0 0 0 20px rgba(201, 166, 107, 0.02); }
+    }
+    @keyframes sheen { 0% { left: -120%; } 25% { left: 200%; } 100% { left: 200%; } }
 
-    /* === 流程說明 (金屬立體徽章) === */
-    .process-flow-wrapper { margin-bottom: 50px; padding: 30px 0; border-bottom: 2px dashed rgba(218, 165, 32, 0.3); }
-    .process-flow { display: flex; justify-content: space-between; align-items: flex-start; position: relative; max-width: 900px; margin: 0 auto; }
-    .process-flow::before { content: ''; position: absolute; top: 30px; left: 5%; width: 90%; height: 2px; background: rgba(218, 165, 32, 0.4); z-index: 0; }
-    
+    /* === 流程區塊（徽章式，降低金屬感） === */
+    .process-flow-wrapper {
+        margin-bottom: 56px; padding: 36px 0;
+        border-top: 1px solid rgba(122, 155, 142, 0.25);
+        border-bottom: 1px solid rgba(122, 155, 142, 0.25);
+    }
+    .process-flow-wrapper h3 {
+        color: var(--c-text-deep); margin-bottom: 40px;
+        font-size: 1.7rem; font-weight: 700; letter-spacing: 6px; text-align: center;
+    }
+    .process-flow { display: flex; justify-content: space-between; align-items: flex-start; position: relative; max-width: 920px; margin: 0 auto; }
+    .process-flow::before {
+        content: ''; position: absolute; top: 28px; left: 8%; width: 84%; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(201, 166, 107, 0.4), rgba(122, 155, 142, 0.35), rgba(201, 166, 107, 0.4), transparent);
+        z-index: 0;
+    }
+
     .p-step { position: relative; z-index: 1; text-align: center; flex: 1; padding: 0 10px; }
     .p-icon {
-        width: 60px; height: 60px; margin: 0 auto 15px auto; display: flex; justify-content: center; align-items: center;
-        background: linear-gradient(135deg, #FFF8D6, #FFD700, #B8860B); color: #5c3a21; font-weight: 900; font-size: 1.5rem; 
-        border: 2px solid #fff; border-radius: 50%; box-shadow: 0 5px 15px rgba(184, 134, 11, 0.4), inset 0 0 5px rgba(255,255,255,0.8);
+        width: 56px; height: 56px; margin: 0 auto 16px auto;
+        display: flex; justify-content: center; align-items: center;
+        background: linear-gradient(135deg, #F8EED0, var(--gold-champagne) 55%, var(--gold-deep));
+        color: var(--c-red-deep); font-weight: 700; font-size: 1.3rem;
+        border: 3px solid var(--c-bg-card);
+        border-radius: 50%;
+        box-shadow: 0 6px 20px rgba(139, 111, 63, 0.2), inset 0 0 8px rgba(255,255,255,0.6);
+        font-family: var(--font-main);
     }
-    .p-text { font-size: 1.15rem; color: var(--divine-brown); font-weight: bold; line-height: 1.4; text-shadow: 0 1px 2px rgba(255,215,0,0.3); }
-    .p-desc { font-size: 0.9rem; color: #666; margin-top: 8px; line-height: 1.5; }
+    .p-text { font-size: 1.1rem; color: var(--c-text-deep); font-weight: 700; line-height: 1.5; letter-spacing: 2px; }
+    .p-desc { font-size: 0.92rem; color: var(--c-text-mid); margin-top: 8px; line-height: 1.7; }
+    .p-desc.bank { color: var(--c-red); font-weight: 500; margin-top: 8px; }
 
-    #donation-process-area { opacity: 0; transition: opacity 0.6s ease; position: relative; z-index: 1;}
+    #donation-process-area { opacity: 0; transition: opacity 0.6s ease; position: relative; z-index: 1; }
     #donation-process-area.show { opacity: 1; }
 
     /* === 護持項目卡片 === */
-    .donation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; margin-bottom: 40px; }
+    .donation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; margin-bottom: 40px; }
     .donation-card {
-        border: 1px solid rgba(218, 165, 32, 0.3); border-radius: 12px; overflow: hidden;
-        transition: 0.4s; position: relative; background: #fff; display: flex; flex-direction: column;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(201, 166, 107, 0.18);
+        border-radius: var(--radius-soft); overflow: hidden;
+        transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+        position: relative; background: var(--c-bg-card);
+        display: flex; flex-direction: column;
+        box-shadow: var(--shadow-card);
     }
-    .donation-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(184, 134, 11, 0.2); border-color: var(--divine-gold); }
-    .donation-card.active { border: 2px solid var(--divine-gold); background: #fffdf5; box-shadow: 0 0 20px rgba(255, 215, 0, 0.25); }
-    .d-img { width: 100%; height: 200px; object-fit: cover; background: #f9f6f0; border-bottom: 1px solid #f0e6d2; }
-    .d-info { padding: 20px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .d-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; color: var(--divine-brown); }
-    .d-price { color: var(--divine-gold-deep); font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
-    
-    .qty-control { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 10px; }
-    .qty-btn { 
-        width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--divine-gold-deep); background: #fff; 
-        cursor: pointer; font-size: 20px; color: var(--divine-gold-deep); transition: 0.3s; 
-        display: flex; justify-content: center; align-items: center; font-weight: bold;
+    .donation-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-card-hover);
+        border-color: var(--gold-champagne);
     }
-    .qty-btn:hover { background: var(--divine-gold); color: #fff; box-shadow: 0 2px 8px rgba(255,215,0,0.4); border-color: var(--divine-gold); }
-    .qty-display { font-size: 20px; font-weight: bold; width: 40px; text-align: center; color: var(--c-text); }
+    .donation-card.active {
+        border: 2px solid var(--gold-bright);
+        background: linear-gradient(180deg, #FFFDF5 0%, #FBF7EE 100%);
+        box-shadow: 0 0 0 4px rgba(221, 184, 92, 0.12), 0 12px 36px rgba(201, 166, 107, 0.18);
+    }
+    .d-img {
+        width: 100%; height: 200px; object-fit: cover;
+        background: var(--c-bg-soft);
+        border-bottom: 1px solid rgba(201, 166, 107, 0.15);
+    }
+    .d-info { padding: 22px 20px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+    .d-title { font-size: 1.2rem; font-weight: 700; color: var(--c-text-deep); letter-spacing: 1.5px; }
+    .d-price { color: var(--gold-deep); font-size: 1.1rem; font-weight: 500; letter-spacing: 1px; }
+    .d-price-number { color: var(--c-red); font-weight: 700; font-size: 1.2rem; }
+    .variant-select {
+        width: 100%; padding: 8px 12px; font-size: 0.95rem;
+        border: 1px solid rgba(201, 166, 107, 0.4); border-radius: 6px;
+        background: #FDFAF0; color: var(--c-text-deep);
+        cursor: pointer; text-align: center;
+        font-family: var(--font-main);
+    }
+    .variant-select:focus { outline: none; border-color: var(--gold-champagne); }
 
-    /* === 摘要與表單 === */
-    .summary-section { background: #fff; border: 2px solid var(--divine-gold); border-radius: 12px; padding: 25px; margin-bottom: 40px; box-shadow: 0 5px 20px rgba(184, 134, 11, 0.1); }
-    .summary-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .summary-table th { text-align: left; padding: 12px 10px; border-bottom: 2px solid var(--divine-gold); color: var(--divine-brown); font-size: 1.1rem; }
-    .summary-table td { padding: 12px 10px; border-bottom: 1px dashed #e0d5c1; font-size: 1.1rem; color: #444; }
-    .summary-total { text-align: right; font-size: 1.5rem; font-weight: bold; color: var(--c-red-bg); padding-top: 20px; text-shadow: 0 1px 2px rgba(255,215,0,0.3); }
+    .qty-control { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 6px; }
+    .qty-btn {
+        width: 44px; height: 44px; border-radius: 50%;
+        border: 1.5px solid var(--gold-champagne); background: #fff;
+        cursor: pointer; font-size: 20px; color: var(--gold-deep);
+        transition: all 0.25s ease;
+        display: flex; justify-content: center; align-items: center;
+        font-weight: 700; font-family: var(--font-main);
+        -webkit-tap-highlight-color: transparent;
+    }
+    .qty-btn:hover {
+        background: var(--gold-bright); color: #fff;
+        border-color: var(--gold-bright);
+        box-shadow: 0 4px 15px rgba(221, 184, 92, 0.35);
+    }
+    .qty-btn:active { transform: scale(0.92); }
+    .qty-display {
+        font-size: 1.35rem; font-weight: 700; width: 44px; text-align: center;
+        color: var(--c-text-deep);
+        transition: color 0.3s;
+    }
 
-    .step-title { border-left: 6px solid var(--divine-gold); padding-left: 15px; margin-bottom: 25px; color: var(--divine-brown); font-size: 1.6rem; }
-    .form-section { background: #fff; padding: 35px; border-radius: 12px; border: 1px solid rgba(218, 165, 32, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: var(--divine-brown); }
-    .form-control { width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; transition: 0.3s; background: #faf8f5; }
-    .form-control:focus { border-color: var(--divine-gold); background: #fff; outline: none; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
-    
-    /* === 卷軸 Modal 專屬樣式 (紅底金邊展開) === */
-    .modal-overlay { 
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-        background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 9999; 
+    /* === 互動回饋動畫：數字彈跳 + 卡片金光閃爍 === */
+    @keyframes qty-pop {
+        0% { transform: scale(1); color: var(--c-text-deep); }
+        40% { transform: scale(1.45); color: var(--gold-bright); }
+        100% { transform: scale(1); color: var(--c-text-deep); }
+    }
+    .qty-display.pop { animation: qty-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    @keyframes card-flash {
+        0% { box-shadow: var(--shadow-card); }
+        35% { box-shadow: 0 0 0 3px rgba(221, 184, 92, 0.55), 0 12px 36px rgba(201, 166, 107, 0.3); }
+        100% { box-shadow: var(--shadow-card-hover); }
+    }
+    .donation-card.flash { animation: card-flash 0.7s ease; }
+
+    /* === 購物車摘要 === */
+    .summary-section {
+        background: linear-gradient(180deg, #FFFFFF 0%, #FDFAF0 100%);
+        border: 1px solid var(--gold-champagne);
+        border-radius: var(--radius-soft);
+        padding: 28px 30px;
+        margin-bottom: 40px;
+        box-shadow: var(--glow-gold-soft);
+    }
+    .summary-section h4 {
+        margin-top: 0; color: var(--c-text-deep);
+        font-size: 1.25rem; font-weight: 700; letter-spacing: 3px;
+    }
+    .summary-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .summary-table th {
+        text-align: left; padding: 14px 12px;
+        border-bottom: 1px solid var(--gold-champagne);
+        color: var(--gold-deep); font-size: 0.95rem;
+        font-weight: 500; letter-spacing: 2px;
+    }
+    .summary-table td {
+        padding: 14px 12px;
+        border-bottom: 1px dashed rgba(201, 166, 107, 0.22);
+        font-size: 1.05rem; color: var(--c-text-deep);
+    }
+    .summary-table td:last-child { text-align: right; font-weight: 500; color: var(--c-red); }
+    .summary-total {
+        text-align: right; font-size: 1.4rem; font-weight: 700;
+        color: var(--c-red); padding-top: 22px;
+        letter-spacing: 2px;
+    }
+    .summary-total span { font-size: 1.75rem; }
+
+    /* === 表單區 === */
+    .step-title {
+        border-left: 4px solid var(--gold-champagne);
+        padding-left: 16px; margin-bottom: 28px;
+        color: var(--c-text-deep); font-size: 1.5rem;
+        font-weight: 700; letter-spacing: 3px;
+    }
+    .form-section {
+        background: var(--c-bg-card); padding: 40px 38px;
+        border-radius: var(--radius-std);
+        border: 1px solid rgba(201, 166, 107, 0.18);
+        box-shadow: var(--shadow-card);
+    }
+    .form-notice-top {
+        background: rgba(122, 155, 142, 0.08);
+        border-left: 3px solid var(--jade);
+        color: var(--c-text-mid);
+        padding: 14px 18px; border-radius: 6px;
+        font-size: 0.98rem; margin-bottom: 28px;
+        line-height: 1.7;
+    }
+    .form-group { margin-bottom: 22px; }
+    .form-group label {
+        display: block; font-weight: 500; margin-bottom: 10px;
+        color: var(--c-text-deep); font-size: 1.02rem; letter-spacing: 1.5px;
+    }
+    .form-control {
+        width: 100%; padding: 14px 16px;
+        border: 1px solid rgba(201, 166, 107, 0.3); border-radius: 8px;
+        box-sizing: border-box; font-size: 16px;
+        transition: all 0.25s ease;
+        background: #FDFAF0;
+        font-family: var(--font-main);
+        color: var(--c-text-deep);
+    }
+    .form-control:focus {
+        border-color: var(--gold-champagne);
+        background: var(--c-bg-card);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(201, 166, 107, 0.15);
+    }
+    .form-helper {
+        color: var(--jade);
+        font-size: 0.82rem; margin-top: 6px;
+        line-height: 1.6; letter-spacing: 0.5px;
+    }
+
+    /* === 匯款焦慮緩解提示 === */
+    .payment-notice {
+        display: flex; align-items: flex-start; gap: 16px;
+        background: linear-gradient(135deg, #FDF6E3 0%, #F5EBD5 100%);
+        border: 1px solid rgba(201, 166, 107, 0.45);
+        border-left: 4px solid var(--gold-deep);
+        padding: 18px 22px; border-radius: var(--radius-soft);
+        margin: 36px 0 24px;
+        color: var(--c-text-deep);
+        box-shadow: var(--glow-gold-soft);
+    }
+    .payment-notice-icon {
+        font-size: 1.5rem; flex-shrink: 0;
+        width: 38px; height: 38px; border-radius: 50%;
+        background: rgba(201, 166, 107, 0.15);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .payment-notice-body { flex: 1; line-height: 1.7; }
+    .payment-notice-body strong {
+        color: var(--c-red); font-size: 1.05rem;
+        display: block; margin-bottom: 4px; letter-spacing: 1.5px;
+    }
+    .payment-notice-body p {
+        margin: 0; font-size: 0.95rem; color: var(--c-text-mid);
+    }
+    .payment-notice-body .emph { color: var(--c-red); font-weight: 700; }
+
+    /* === Scroll Modal（聖旨卷軸）微調 === */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(30, 20, 12, 0.85);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        z-index: 9999;
     }
     .scroll-wrapper { position: relative; width: 90%; max-width: 600px; display: flex; flex-direction: column; align-items: center; }
     .scroll-close-btn {
-        position: absolute; top: -20px; right: -20px; background: #4a0e0e; color: #fcf6ba;
-        border: 2px solid var(--divine-gold); border-radius: 50%; width: 45px; height: 45px;
-        font-size: 20px; cursor: pointer; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
-        transition: transform 0.3s; display: flex; justify-content: center; align-items: center;
+        position: absolute; top: -20px; right: -20px;
+        background: var(--c-red-deep); color: var(--gold-light);
+        border: 2px solid var(--gold-champagne); border-radius: 50%;
+        width: 44px; height: 44px;
+        font-size: 18px; cursor: pointer; z-index: 10;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+        transition: transform 0.3s;
+        display: flex; justify-content: center; align-items: center;
+        font-family: var(--font-main);
     }
-    .scroll-close-btn:hover { transform: rotate(90deg) scale(1.1); background: #8B0000; }
-    
+    .scroll-close-btn:hover { transform: rotate(90deg) scale(1.08); background: var(--c-red); }
+
     .scroll-top-axis, .scroll-bottom-axis {
-        width: 105%; height: 35px; border-radius: 15px; position: relative; z-index: 3;
-        background: linear-gradient(to bottom, #FFFDE4 0%, #FFD700 40%, #B8860B 100%);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,0,0,0.5);
+        width: 105%; height: 32px; border-radius: 14px; position: relative; z-index: 3;
+        background: linear-gradient(to bottom, #F5E8C8 0%, var(--gold-champagne) 45%, var(--gold-deep) 100%);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 0 8px rgba(0,0,0,0.3);
     }
     .scroll-top-axis::before, .scroll-top-axis::after,
     .scroll-bottom-axis::before, .scroll-bottom-axis::after {
-        content: ''; position: absolute; top: -3px; width: 20px; height: 41px;
-        background: radial-gradient(circle, #5e0000, #1a0505); border: 2px solid var(--divine-gold); border-radius: 5px;
+        content: ''; position: absolute; top: -3px; width: 18px; height: 38px;
+        background: radial-gradient(circle, #5e0000, #1a0505);
+        border: 2px solid var(--gold-champagne); border-radius: 4px;
     }
     .scroll-top-axis::before, .scroll-bottom-axis::before { left: -10px; }
     .scroll-top-axis::after, .scroll-bottom-axis::after { right: -10px; }
 
     .scroll-content {
-        width: 100%; background-color: var(--c-red-bg); padding: 0 25px; overflow-y: auto; opacity: 0; max-height: 0;
-        box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
-        border-left: 4px solid var(--divine-gold); border-right: 4px solid var(--divine-gold);
+        width: 100%; background-color: var(--c-red); padding: 0 28px;
+        overflow-y: auto; opacity: 0; max-height: 0;
+        box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        border-left: 3px solid var(--gold-champagne);
+        border-right: 3px solid var(--gold-champagne);
         transition: max-height 1.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease, padding 1.2s ease;
     }
-    .scroll-wrapper.unrolled .scroll-content { max-height: 65vh; opacity: 1; padding: 30px 25px; }
+    .scroll-wrapper.unrolled .scroll-content { max-height: 65vh; opacity: 1; padding: 32px 28px; }
     .scroll-content::-webkit-scrollbar { width: 6px; }
     .scroll-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 10px; margin: 10px 0; }
-    .scroll-content::-webkit-scrollbar-thumb { background: var(--divine-gold); border-radius: 10px; }
-    .scroll-content .donor-item { border-bottom: 1px dashed rgba(255,215,0,0.3); padding: 12px 0; color: #ffebcd; }
+    .scroll-content::-webkit-scrollbar-thumb { background: var(--gold-champagne); border-radius: 10px; }
+    .scroll-content .donor-item { border-bottom: 1px dashed rgba(201, 166, 107, 0.25); padding: 13px 0; color: #F0DDC2; }
     .scroll-content .donor-item:last-child { border-bottom: none; }
-    .scroll-content .donor-name { font-weight: bold; color: #fcf6ba; }
+    .scroll-content .donor-name { font-weight: 500; color: var(--gold-light); }
 
-    /* 一般 Modal 盒子 */
-    .modal-box { background: var(--c-bg-light); padding: 40px; border-radius: 15px; text-align: center; max-width: 450px; width: 90%; border: 3px solid var(--divine-gold); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+    /* === 成功 Modal === */
+    .modal-box {
+        background: var(--c-bg); padding: 45px 38px;
+        border-radius: var(--radius-std); text-align: center;
+        max-width: 460px; width: 90%;
+        border: 1px solid var(--gold-champagne);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 5px rgba(201, 166, 107, 0.2);
+    }
+    .modal-box h2 {
+        color: var(--c-text-deep); font-size: 1.9rem;
+        margin-bottom: 12px; letter-spacing: 4px; font-weight: 700;
+    }
+    .modal-box p { color: var(--c-text-mid); line-height: 1.8; }
+    .bank-info-box {
+        background: #FDFAF0; padding: 24px; border-radius: var(--radius-soft);
+        margin: 22px 0; text-align: left;
+        border: 1px dashed var(--gold-champagne);
+        box-shadow: inset 0 0 12px rgba(201, 166, 107, 0.08);
+    }
+    .bank-info-box p { margin: 8px 0; color: var(--c-text-mid); font-size: 1.02rem; }
+    .bank-info-box p strong { color: var(--c-text-deep); font-weight: 500; }
+    #bank-account {
+        color: var(--c-red); font-weight: 700; font-size: 1.5rem;
+        letter-spacing: 3px; margin: 6px 0;
+    }
+    .modal-urgency {
+        color: var(--c-red); font-size: 0.98rem; font-weight: 500;
+        line-height: 1.7; letter-spacing: 1px;
+    }
 
-    /* === RWD 手機版順暢優化 === */
+    /* ============================================================== */
+    /* === 手機版 RWD：確保觸控舒適、流程圖對齊、排版呼吸感 === */
+    /* ============================================================== */
     @media (max-width: 768px) {
-        .donation-hero { height: 45vh; min-height: 300px; }
-        .hero-text h1 { font-size: 2.6rem; }
-        .donation-container { margin-top: -30px; border-radius: 15px; padding: 25px 20px; border-top: 5px solid var(--divine-gold-deep); }
-        .donation-container::after { display: none; } 
-        
-        .honor-roll-section { flex-direction: column; padding: 20px 15px; gap: 15px; }
-        .honor-title-col { border-right: none; border-bottom: 2px dashed rgba(255,215,0,0.3); padding-right: 0; padding-bottom: 15px; width: 100%; flex-direction: row; justify-content: space-between; }
-        .honor-title { writing-mode: horizontal-tb; font-size: 1.5rem; letter-spacing: 2px; border-left: none; border-bottom: 3px solid var(--divine-gold); padding-left: 0; padding-bottom: 5px; }
-        
-        .donation-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
-        .d-img { height: 140px; }
-        .qty-btn { width: 32px; height: 32px; font-size: 18px; }
-        .start-donate-btn { font-size: 1.2rem; padding: 15px 40px; }
-        
-        .process-flow { flex-direction: column; gap: 25px; align-items: flex-start; padding-left: 10px; }
-        .process-flow::before { width: 2px; height: 90%; top: 0; left: 40px; }
-        .p-step { display: flex; align-items: flex-start; gap: 20px; text-align: left; width: 100%; padding: 0; }
-        .p-icon { margin: 0; flex-shrink: 0; width: 50px; height: 50px; font-size: 1.2rem; }
-        .p-info-box { flex: 1; padding-top: 5px; }
+        .donation-hero { height: 48vh; min-height: 320px; }
+        .hero-text h1 { font-size: 2.5rem; letter-spacing: 5px; margin-bottom: 12px; }
+        .hero-text p { font-size: 1rem; letter-spacing: 2px; }
+
+        .donation-container {
+            margin-top: -40px;
+            border-radius: var(--radius-std);
+            padding: 32px 22px;
+            border-top: 3px solid var(--gold-deep);
+        }
+
+        .concept-section { margin-bottom: 40px; }
+        .concept-section h2 { font-size: 1.7rem; letter-spacing: 2px; }
+        .concept-text { font-size: 1rem; line-height: 1.9; }
+        .concept-highlight { padding: 20px 18px; font-size: 0.96rem; }
+
+        /* 芳名錄 */
+        .honor-roll-section {
+            flex-direction: column; padding: 22px 18px; gap: 16px;
+            margin-bottom: 40px;
+        }
+        .honor-title-col {
+            border-right: none;
+            border-bottom: 1px dashed rgba(201, 166, 107, 0.3);
+            padding-right: 0; padding-bottom: 14px; width: 100%;
+            flex-direction: row; justify-content: space-between;
+        }
+        .honor-title {
+            writing-mode: horizontal-tb; font-size: 1.35rem; letter-spacing: 3px;
+        }
+        .marquee-container { height: 160px; }
+
+        /* CTA */
+        .cta-container { margin: 36px 0; }
+        .start-donate-btn { font-size: 1.15rem; padding: 16px 38px; letter-spacing: 2px; }
+
+        /* 流程圖：垂直排列，icon 置左，連線貫穿 icon 中心 */
+        .process-flow-wrapper { padding: 28px 0; margin-bottom: 40px; }
+        .process-flow-wrapper h3 { font-size: 1.35rem; letter-spacing: 3px; margin-bottom: 28px; }
+        .process-flow {
+            flex-direction: column; gap: 22px;
+            align-items: flex-start; padding-left: 0;
+        }
+        .process-flow::before {
+            width: 1px; height: calc(100% - 48px);
+            top: 24px; left: 23px;
+            background: linear-gradient(180deg, rgba(201, 166, 107, 0.5), rgba(122, 155, 142, 0.35));
+        }
+        .p-step {
+            display: flex; align-items: flex-start; gap: 18px;
+            text-align: left; width: 100%; padding: 0;
+        }
+        .p-icon {
+            margin: 0; flex-shrink: 0;
+            width: 48px; height: 48px; font-size: 1.1rem;
+        }
+        .p-info-box { flex: 1; padding-top: 4px; }
+        .p-text { font-size: 1.02rem; letter-spacing: 1.5px; }
+        .p-desc { font-size: 0.88rem; }
+
+        /* 捐贈卡片：2 欄，更多呼吸感 */
+        .donation-grid {
+            grid-template-columns: 1fr 1fr; gap: 14px;
+            margin-bottom: 32px;
+        }
+        .d-img { height: 130px; }
+        .d-info { padding: 16px 12px; gap: 10px; }
+        .d-title { font-size: 1.02rem; letter-spacing: 1px; }
+        .d-price { font-size: 0.95rem; }
+        .d-price-number { font-size: 1rem; }
+        .qty-btn { width: 38px; height: 38px; font-size: 18px; }
+        .qty-display { font-size: 1.2rem; width: 38px; }
+        .qty-control { gap: 14px; }
+        .variant-select { font-size: 0.85rem; padding: 6px 8px; }
+
+        /* 摘要 */
+        .summary-section { padding: 22px 18px; }
+        .summary-table th, .summary-table td { padding: 12px 8px; font-size: 0.92rem; }
+        .summary-total { font-size: 1.15rem; }
+        .summary-total span { font-size: 1.45rem; }
+
+        /* 表單 */
+        .step-title { font-size: 1.3rem; letter-spacing: 2px; }
+        .form-section { padding: 26px 20px; }
+        .form-notice-top { font-size: 0.92rem; padding: 12px 14px; }
+        .payment-notice { padding: 16px 16px; gap: 12px; margin: 30px 0 20px; }
+        .payment-notice-icon { width: 34px; height: 34px; font-size: 1.3rem; }
+        .payment-notice-body strong { font-size: 1rem; }
+        .payment-notice-body p { font-size: 0.9rem; }
+
+        /* Modal */
+        .modal-box { padding: 32px 24px; }
+        .modal-box h2 { font-size: 1.55rem; letter-spacing: 3px; }
+        #bank-account { font-size: 1.3rem; letter-spacing: 2px; }
+
+        /* Toast */
+        #toast-container { top: 16px; }
+        .toast { font-size: 0.92rem; padding: 12px 16px; }
+    }
+
+    @media (max-width: 420px) {
+        .donation-grid { grid-template-columns: 1fr; }
+        .d-img { height: 180px; }
+        .hero-text h1 { font-size: 2.1rem; }
     }
 </style>
+
+<!-- Toast 通知容器 -->
+<div id="toast-container" role="status" aria-live="polite"></div>
 
 <div class="donation-hero flex-center relative">
     <div class="hero-text text-center">
@@ -314,7 +730,7 @@
         </div>
         <div class="marquee-container">
             <div class="marquee-content" id="honor-list">
-                <div class="text-center" style="padding:10px; color:#fcf6ba;">載入中...</div>
+                <div class="text-center" style="padding:10px; color:#F0DDC2;">載入中...</div>
             </div>
         </div>
     </section>
@@ -325,7 +741,7 @@
 
     <div id="donation-process-area" class="d-none">
         <div class="process-flow-wrapper">
-            <h3 class="text-center" style="color:var(--divine-brown); margin-bottom:35px; font-size:1.8rem; text-shadow:0 1px 2px rgba(255,215,0,0.3);">護持流程說明</h3>
+            <h3>護持流程說明</h3>
             <div class="process-flow">
                 <div class="p-step">
                     <div class="p-icon">1</div>
@@ -338,8 +754,8 @@
                     <div class="p-icon">2</div>
                     <div class="p-info-box">
                         <div class="p-text">銀行匯款</div>
-                        <div class="p-desc">填單後請於2小時內完成匯款轉帳。</div>
-                        <div class="p-desc" style="color:var(--c-red-bg); font-weight:bold; margin-top:5px;">103 新光銀行(北嘉義)</div>
+                        <div class="p-desc">填單後請於 2 小時內完成匯款轉帳。</div>
+                        <div class="p-desc bank">103 新光銀行(北嘉義)</div>
                         <div class="p-desc">曾凡禎 0666501299999</div>
                     </div>
                 </div>
@@ -360,53 +776,73 @@
             </div>
         </div>
 
-        <form id="donation-form">
-            <h3 class="step-title">第一步：選擇護持項目</h3>
+        <form id="donation-form" novalidate>
+            <h3 class="step-title">第一步 ‧ 選擇護持項目</h3>
             <div class="donation-grid" id="donation-grid"></div>
 
             <div class="summary-section d-none" id="summary-section">
-                <h4 style="margin-top:0; color:var(--divine-brown); font-size:1.3rem;">📋 您的護持清單</h4>
+                <h4>📋 您的護持清單</h4>
                 <table class="summary-table">
-                    <thead><tr><th>項目</th><th>數量</th><th>小計</th></tr></thead>
+                    <thead><tr><th>項目</th><th>數量</th><th style="text-align:right;">小計</th></tr></thead>
                     <tbody id="summary-body"></tbody>
                 </table>
                 <div class="summary-total">總計金額：NT$ <span id="summary-total">0</span></div>
             </div>
 
-            <h3 class="step-title" style="margin-top: 50px;">第二步：填寫祈福資料</h3>
+            <h3 class="step-title" style="margin-top: 56px;">第二步 ‧ 填寫祈福資料</h3>
             <div class="form-section">
-                <p style="color:var(--c-red-bg); font-size:1rem; margin-bottom:20px; font-weight:bold;">※ 此為代捐公壇專用項目，不會寄送實體商品至您的地址。</p>
-                
+                <div class="form-notice-top">
+                    ※ 此為代捐公壇專用項目，不會寄送實體商品至您的地址。
+                </div>
+
                 <div class="form-group">
                     <label>真實姓名</label>
-                    <input type="text" name="name" class="form-control" required placeholder="將用於疏文稟奏">
-                    <div style="color:#d32f2f; font-size:13px; margin-top:5px;">※ 系統限制：為利於疏文稟奏，此欄位【僅限填寫一位真實姓名】，請勿填寫多人、空格或「全家」等字眼。</div>
+                    <input type="text" name="name" class="form-control" placeholder="將用於疏文稟奏">
+                    <div class="form-helper">※ 系統限制：為利於疏文稟奏，此欄位【僅限填寫一位真實姓名】，請勿填寫多人、空格或「全家」等字眼。</div>
+                    <div class="field-error"></div>
                 </div>
-                
+
                 <div class="form-group">
-                    <label>聯絡電話 (09XX-XXX-XXX)</label>
-                    <input type="tel" name="phone" id="phone-input" class="form-control" placeholder="09XX-XXX-XXX" required maxlength="12">
+                    <label>聯絡電話</label>
+                    <input type="tel" name="phone" id="phone-input" class="form-control" placeholder="09XX-XXX-XXX" maxlength="12">
+                    <div class="field-error"></div>
                 </div>
+
                 <div class="form-group">
-                    <label>電子信箱 (接收電子確認信)</label>
-                    <input type="email" name="email" class="form-control" required>
+                    <label>電子信箱</label>
+                    <input type="email" name="email" class="form-control" placeholder="用於接收電子感謝狀">
+                    <div class="field-error"></div>
                 </div>
+
                 <div class="form-group">
-                    <label>聯絡地址 </label>
-                    <input type="text" name="address" class="form-control" required>
+                    <label>聯絡地址</label>
+                    <input type="text" name="address" class="form-control" placeholder="縣市 / 區 / 街道">
+                    <div class="field-error"></div>
                 </div>
-                
+
                 <div class="form-group">
-                    <label>農曆生日 (請直接輸入數字，如：750815 或 1120101)</label>
-                    <input type="text" name="lunarBirthday" id="birthday-input" class="form-control" placeholder="例：750815" maxlength="10">
+                    <label>農曆生日 <span style="font-weight:400; color:var(--c-text-light); font-size:0.9em;">（選填）</span></label>
+                    <input type="text" name="lunarBirthday" id="birthday-input" class="form-control" placeholder="例：750815 或 1120101" maxlength="10">
+                    <div class="form-helper">請直接輸入民國年月日數字，系統會自動為您加入斜線。</div>
+                    <div class="field-error"></div>
                 </div>
 
                 <div class="form-group">
                     <label>匯款帳號後五碼</label>
-                    <input type="text" name="last5" class="form-control" maxlength="5" pattern="\d{5}" placeholder="請填寫您的帳號後5碼" required title="請輸入5位數字">
+                    <input type="text" name="last5" class="form-control" maxlength="5" placeholder="請填寫您匯款帳號的後 5 碼">
+                    <div class="field-error"></div>
                 </div>
 
-                <div style="margin-top:35px;">
+                <!-- 匯款焦慮緩解提示 -->
+                <div class="payment-notice">
+                    <div class="payment-notice-icon">⏰</div>
+                    <div class="payment-notice-body">
+                        <strong>匯款小提醒</strong>
+                        <p>為保留您的護持名額，送出訂單後請協助於 <span class="emph">2 小時內</span> 完成轉帳。核對款項後我們會立即為您登錄芳名錄並寄出電子感謝狀。</p>
+                    </div>
+                </div>
+
+                <div class="text-center" style="margin-top: 10px;">
                     <button type="submit" class="btn-submit">確認捐贈並送出</button>
                 </div>
             </div>
@@ -414,28 +850,30 @@
     </div>
 </div>
 
+<!-- 成功 Modal -->
 <div id="success-modal" class="modal-overlay d-none flex-center">
     <div class="modal-box">
-        <h2 style="color:var(--divine-brown); font-size:2rem; margin-bottom:10px;">功德無量 🙏</h2>
-        <p style="font-size:1.1rem; color:var(--c-text-gray);">您的捐贈訂單已送出。</p>
-        
-        <div style="background:#fff; padding:25px; border-radius:12px; margin:25px 0; text-align:left; border:2px dashed var(--divine-gold); box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.1);">
-            <p style="margin:8px 0; color:#555; font-size:1.1rem;"><strong>銀行代碼：</strong><span id="bank-code">載入中...</span> <span id="bank-name"></span></p>
-            <p style="margin:8px 0; color:#555; font-size:1.1rem;"><strong>匯款帳號：</strong></p>
-            <p id="bank-account" style="margin:5px 0; color:var(--c-red-bg); font-weight:900; font-size:1.6rem; letter-spacing:2px; text-shadow:1px 1px 0 #fff;">載入中...</p>
+        <h2>功德無量 🙏</h2>
+        <p style="font-size:1.05rem;">您的捐贈訂單已送出。</p>
+
+        <div class="bank-info-box">
+            <p><strong>銀行代碼：</strong><span id="bank-code">載入中...</span> <span id="bank-name"></span></p>
+            <p><strong>匯款帳號：</strong></p>
+            <p id="bank-account">載入中...</p>
         </div>
 
-        <p style="color:#d9534f; font-size:1rem; font-weight:bold;">請務必於 <strong>2 小時內</strong> 完成匯款，<br>我們核對後將會寄出電子感謝狀。</p>
-        <a href="{{ url_for('main.home') }}" class="btn-submit" style="display:inline-block; width:auto; margin-top:20px; padding:12px 40px; font-size:1.2rem;">回首頁</a>
+        <p class="modal-urgency">請務必於 <strong>2 小時內</strong> 完成匯款，<br>我們核對後將會寄出電子感謝狀。</p>
+        <a href="{{ url_for('main.home') }}" class="btn-submit" style="display:inline-block; width:auto; margin-top:22px; padding:12px 38px; font-size:1.1rem;">回首頁</a>
     </div>
 </div>
 
+<!-- 卷軸 Modal -->
 <div id="scroll-modal-overlay" class="modal-overlay d-none flex-center" onclick="closeScrollModal(event)">
     <div class="scroll-wrapper" id="scroll-wrapper" onclick="event.stopPropagation()">
-        <button class="scroll-close-btn" onclick="closeScrollModal()">✖</button>
+        <button class="scroll-close-btn" onclick="closeScrollModal()" aria-label="關閉名錄">✖</button>
         <div class="scroll-top-axis"></div>
         <div class="scroll-content" id="full-honor-list">
-            <div class="text-center" style="padding:40px; color:#fcf6ba;">正在展開名錄...</div>
+            <div class="text-center" style="padding:40px; color:#F0DDC2;">正在展開名錄...</div>
         </div>
         <div class="scroll-bottom-axis"></div>
     </div>
@@ -448,14 +886,75 @@
     document.addEventListener('DOMContentLoaded', () => {
         initPageData();
         setupFormatters();
-        
+        setupFormInputClearErrors();
+
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'donate') {
             startDonation();
         }
     });
 
-    // 集中處理初始化的非同步請求 (利用 Promise.all 加速)
+    // ==========================================================================
+    // Toast 通知系統
+    // ==========================================================================
+    function showToast(message, type = 'error', duration = 3500) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        const iconMap = { error: '⚠', success: '✓', info: 'ℹ' };
+        toast.innerHTML = `
+            <span class="toast-icon">${iconMap[type] || 'ℹ'}</span>
+            <span class="toast-msg">${message}</span>
+        `;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+        }, duration);
+    }
+
+    // ==========================================================================
+    // Inline 欄位錯誤
+    // ==========================================================================
+    function setFieldError(input, message) {
+        if (!input) return;
+        const group = input.closest('.form-group');
+        if (!group) return;
+        const err = group.querySelector('.field-error');
+        if (!err) return;
+
+        if (message) {
+            err.textContent = message;
+            err.classList.add('show');
+            input.classList.add('is-invalid');
+        } else {
+            err.textContent = '';
+            err.classList.remove('show');
+            input.classList.remove('is-invalid');
+        }
+    }
+
+    function clearAllFieldErrors() {
+        document.querySelectorAll('.field-error.show').forEach(e => {
+            e.classList.remove('show');
+            e.textContent = '';
+        });
+        document.querySelectorAll('.form-control.is-invalid').forEach(i => i.classList.remove('is-invalid'));
+    }
+
+    function setupFormInputClearErrors() {
+        const form = document.getElementById('donation-form');
+        if (!form) return;
+        form.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => setFieldError(input, ''));
+        });
+    }
+
+    // ==========================================================================
+    // 初始化：並行載入芳名錄、商品、銀行資訊
+    // ==========================================================================
     async function initPageData() {
         await Promise.all([
             loadMarquee(),
@@ -465,65 +964,57 @@
     }
 
     // ==========================================================================
-    // 芳名錄 (無縫跑馬燈與聖旨卷軸)
+    // 芳名錄（無縫跑馬燈 + 聖旨卷軸）
     // ==========================================================================
     async function loadMarquee() {
         try {
-            // 維持原本的 API 呼叫，不加 ?type=all
             const res = await fetch('/api/donations/public');
             const data = await res.json();
             const list = document.getElementById('honor-list');
             const fullList = document.getElementById('full-honor-list');
-            
-            if(!data || data.length === 0) { 
-                const emptyMsg = '<div class="text-center" style="padding:20px; color:#fcf6ba;">尚無紀錄，期待您的護持 🙏</div>';
-                list.innerHTML = emptyMsg; 
+
+            if (!data || data.length === 0) {
+                const emptyMsg = '<div class="text-center" style="padding:20px; color:#F0DDC2;">尚無紀錄，期待您的護持 🙏</div>';
+                list.innerHTML = emptyMsg;
                 fullList.innerHTML = emptyMsg;
-                return; 
+                return;
             }
-            
-            // 確保跑馬燈的資料量足夠 (太少會留白)
+
+            // 資料量不足時循環補齊，避免留白
             let displayData = [...data];
-            while(displayData.length < 6) {
+            while (displayData.length < 6) {
                 displayData = displayData.concat(data);
             }
-            
-            // 💡 修正 1：跑馬燈的 HTML 應該用補齊後的 `displayData` 來 map，這樣才會生出足夠的條目
+
             const marqueeHtml = displayData.map(d => `
                 <div class="donor-item">
                     <span class="donor-name">${d.name}</span>
                     <span>${d.items}</span>
                 </div>
             `).join('');
-            
-            // 將跑馬燈塞入兩份相同的 HTML，達成 0% -> -50% 無縫循環
-            list.innerHTML = marqueeHtml + marqueeHtml; 
-            
-            // 💡 修正 2：聖旨卷軸內的完整名錄不需要重複，直接顯示最原始的 `data` 即可
+
+            // 跑馬燈：雙份內容搭配 translateY(-50%) 達成無縫循環
+            list.innerHTML = marqueeHtml + marqueeHtml;
+
+            // 完整名錄（卷軸內）：單份原始資料即可
             fullList.innerHTML = data.map(d => `
                 <div class="donor-item">
                     <span class="donor-name">${d.name}</span>
                     <span>${d.items}</span>
                 </div>
             `).join('');
-            
-            // 💡 修正 3：移除下方多餘的覆蓋程式碼 (原本這裡有 list.innerHTML = html + html; fullList.innerHTML = html;)
 
-            // 4. 動態計算速度：不要寫死秒數！
-            // 假設我們希望「每 1 筆資料」花 3 秒鐘的時間滑過畫面
-            const speedPerItem = 3; 
-            // 我們的動畫只會移動一半的高度(50%)，所以移動的總筆數就是 displayData.length
+            // 動態計算速度：每筆 3 秒
+            const speedPerItem = 3;
             const totalDuration = displayData.length * speedPerItem;
-
-            // 將計算好的秒數賦予給動畫，這樣不管資料有 10 筆還是 1000 筆，捲動速度都永遠均勻一致
             list.style.animationDuration = `${totalDuration}s`;
         } catch (e) {
             console.error('芳名錄載入失敗', e);
-            document.getElementById('honor-list').innerHTML = '<div class="text-center" style="padding:20px; color:#fcf6ba;">載入失敗</div>';
+            document.getElementById('honor-list').innerHTML = '<div class="text-center" style="padding:20px; color:#F0DDC2;">載入失敗</div>';
         }
     }
 
-    // 卷軸 Modal 控制
+    // 卷軸 Modal
     window.openScrollModal = () => {
         const overlay = document.getElementById('scroll-modal-overlay');
         const wrapper = document.getElementById('scroll-wrapper');
@@ -540,12 +1031,12 @@
     };
 
     // ==========================================================================
-    // 護持流程與商品邏輯
+    // 開啟捐贈流程（登入驗證 + 帶入使用者資料）
     // ==========================================================================
     window.startDonation = async () => {
         const btn = document.querySelector('.start-donate-btn');
         if (!btn) return;
-        
+
         const originalText = btn.innerText;
         btn.disabled = true;
         btn.innerText = '讀取資料中...';
@@ -555,8 +1046,10 @@
             const data = await res.json();
 
             if (!data.logged_in) {
-                alert('為了記錄您的功德並寄送感謝狀，請先進行 LINE 登入。');
-                window.location.href = '/api/line/login?next=' + encodeURIComponent('/donation?action=donate');
+                showToast('為記錄您的功德並寄送感謝狀，請先進行 LINE 登入', 'info', 2500);
+                setTimeout(() => {
+                    window.location.href = '/api/line/login?next=' + encodeURIComponent('/donation?action=donate');
+                }, 1200);
                 return;
             }
 
@@ -576,63 +1069,68 @@
                 area.classList.add('show');
                 area.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
-            
+
             document.getElementById('cta-container').classList.add('d-none');
         } catch (e) {
             console.error(e);
-            alert('系統忙碌中，請稍後再試');
+            showToast('系統忙碌中，請稍後再試', 'error');
         } finally {
             btn.disabled = false;
             btn.innerText = originalText;
         }
     };
 
+    // ==========================================================================
+    // 商品載入與規格
+    // ==========================================================================
     async function loadProducts() {
         try {
             const res = await fetch('/api/products');
             const data = await res.json();
             products = data.filter(p => p.isDonation === true && p.isActive);
-            
+
             const grid = document.getElementById('donation-grid');
-            if(products.length === 0) { 
-                grid.innerHTML = '<p style="text-align:center; width:100%; font-size:1.2rem; color:#888;">目前沒有開放的捐贈項目。</p>'; 
-                return; 
+            if (products.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; width:100%; font-size:1.1rem; color:var(--c-text-light); padding:40px 20px;">目前沒有開放的捐贈項目。</p>';
+                return;
             }
 
             grid.innerHTML = products.map(p => {
-                // 💡 新增：處理規格下拉選單
                 let variantHtml = '';
                 let displayPrice = p.price;
                 if (p.variants && p.variants.length > 0) {
-                    displayPrice = p.variants[0].price; // 預設顯示第一個規格的價格
+                    displayPrice = p.variants[0].price;
                     variantHtml = `
-                        <select id="variant-${p._id}" class="form-control" style="margin-bottom:10px; padding:5px; text-align:center; color: var(--divine-brown); border-color: rgba(218, 165, 32, 0.5);" onchange="changeVariant('${p._id}')">
-                            ${p.variants.map(v => `<option value="${v.name}" data-price="${v.price}">${v.name} ($${v.price})</option>`).join('')}
+                        <select id="variant-${p._id}" class="variant-select" onchange="changeVariant('${p._id}')">
+                            ${p.variants.map(v => `<option value="${v.name}" data-price="${v.price}">${v.name}（$${v.price}）</option>`).join('')}
                         </select>
                     `;
                 }
 
                 return `
                 <div class="donation-card" id="card-${p._id}">
-                    <img src="${p.image || '/static/images/common/default_product.png'}" 
-                         class="d-img" loading="lazy" 
+                    <img src="${p.image || '/static/images/common/default_product.png'}"
+                         class="d-img" loading="lazy"
                          onerror="this.src='/static/images/common/default_product.png'" alt="${p.name}">
                     <div class="d-info">
                         <div class="d-title">${p.name}</div>
                         ${variantHtml}
-                        <div class="d-price" id="price-${p._id}">護持金 NT$ ${displayPrice}</div>
+                        <div class="d-price" id="price-${p._id}">護持金 NT$ <span class="d-price-number">${displayPrice}</span></div>
                         <div class="qty-control">
-                            <button type="button" class="qty-btn" onclick="changeQty('${p._id}', -1)">-</button>
+                            <button type="button" class="qty-btn" onclick="changeQty('${p._id}', -1)" aria-label="減少數量">-</button>
                             <span class="qty-display" id="qty-${p._id}">0</span>
-                            <button type="button" class="qty-btn" onclick="changeQty('${p._id}', 1)">+</button>
+                            <button type="button" class="qty-btn" onclick="changeQty('${p._id}', 1)" aria-label="增加數量">+</button>
                         </div>
                     </div>
                 </div>
-            `}).join('');
-        } catch(e) { 
-            console.error('Load products failed', e); 
+            `;
+            }).join('');
+        } catch (e) {
+            console.error('Load products failed', e);
+            showToast('護持項目載入失敗，請重新整理頁面', 'error');
         }
     }
+
     window.changeVariant = (id) => {
         const select = document.getElementById(`variant-${id}`);
         const priceDisplay = document.getElementById(`price-${id}`);
@@ -642,10 +1140,8 @@
         const newPrice = parseFloat(selectedOption.dataset.price);
         const newVariantName = selectedOption.value;
 
-        // 更新卡片上的價格顯示
-        priceDisplay.textContent = `護持金 NT$ ${newPrice}`;
+        priceDisplay.innerHTML = `護持金 NT$ <span class="d-price-number">${newPrice}</span>`;
 
-        // 如果這個項目已經在購物車(清單)裡，同步更新購物車裡的價格和規格，並重算總計
         if (selectedItems[id]) {
             selectedItems[id].price = newPrice;
             selectedItems[id].variantName = newVariantName;
@@ -655,10 +1151,9 @@
 
     window.changeQty = (id, delta) => {
         const p = products.find(x => x._id === id);
-        if(!p) return;
-        
-        if(!selectedItems[id]) {
-            // 💡 新增：加入時，檢查是否有規格選單，如果有就抓取當下選中的價格和名稱
+        if (!p) return;
+
+        if (!selectedItems[id]) {
             let currentPrice = p.price;
             let currentVariantName = null;
             const select = document.getElementById(`variant-${id}`);
@@ -668,54 +1163,65 @@
                 currentVariantName = option.value;
             }
 
-            selectedItems[id] = { 
-                id: p._id, 
-                name: p.name, 
-                price: currentPrice, 
+            selectedItems[id] = {
+                id: p._id,
+                name: p.name,
+                price: currentPrice,
                 qty: 0,
-                variantName: currentVariantName // 存入規格名稱
+                variantName: currentVariantName
             };
         }
-        
+
         selectedItems[id].qty = Math.max(0, selectedItems[id].qty + delta);
-        
+
         const qtyDisplay = document.getElementById(`qty-${id}`);
         const card = document.getElementById(`card-${id}`);
-        
-        if(qtyDisplay) qtyDisplay.textContent = selectedItems[id].qty;
-        if(card) card.classList.toggle('active', selectedItems[id].qty > 0);
-        
-        if(selectedItems[id].qty === 0) delete selectedItems[id];
+
+        if (qtyDisplay) qtyDisplay.textContent = selectedItems[id].qty;
+        if (card) card.classList.toggle('active', selectedItems[id].qty > 0);
+
+        // 🎯 微互動回饋：+ 時數字彈跳 + 卡片閃金光
+        if (delta > 0 && qtyDisplay) {
+            qtyDisplay.classList.remove('pop');
+            void qtyDisplay.offsetWidth; // 強制 reflow 以重啟動畫
+            qtyDisplay.classList.add('pop');
+        }
+        if (delta > 0 && card) {
+            card.classList.remove('flash');
+            void card.offsetWidth;
+            card.classList.add('flash');
+        }
+
+        if (selectedItems[id].qty === 0) delete selectedItems[id];
         updateSummary();
     };
 
     function updateSummary() {
         const items = Object.values(selectedItems);
         const section = document.getElementById('summary-section');
-        if(!section) return;
-        
-        if(items.length === 0) {
+        if (!section) return;
+
+        if (items.length === 0) {
             section.classList.add('d-none');
             return;
         }
-        
+
         section.classList.remove('d-none');
         document.getElementById('summary-body').innerHTML = items.map(item => {
-            // 💡 新增：如果該項目有規格，將其串接在名字後方
-            const vStr = item.variantName ? ` <span style="font-size:0.85em; color:#888;">[${item.variantName}]</span>` : '';
+            const vStr = item.variantName ? ` <span style="font-size:0.85em; color:var(--c-text-light);">[${item.variantName}]</span>` : '';
             return `<tr><td>${item.name}${vStr}</td><td>${item.qty}</td><td>$${item.price * item.qty}</td></tr>`;
         }).join('');
-        
+
         const total = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
         document.getElementById('summary-total').textContent = total;
     }
 
     // ==========================================================================
-    // 表單驗證與送出
+    // 輸入框格式化（電話自動插破折號、生日自動插斜線）
     // ==========================================================================
     function setupFormatters() {
         const phoneInput = document.getElementById('phone-input');
-        if(phoneInput) {
+        if (phoneInput) {
             phoneInput.addEventListener('input', (e) => {
                 let v = e.target.value.replace(/\D/g, '').slice(0, 10);
                 if (v.length > 7) v = v.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1-$2-$3');
@@ -725,32 +1231,78 @@
         }
 
         const bInput = document.getElementById('birthday-input');
-        if(bInput) {
+        if (bInput) {
             bInput.addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, ''));
             bInput.addEventListener('blur', e => {
                 let v = e.target.value;
-                if(v.length === 6) e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
+                if (v.length === 6) e.target.value = v.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
                 else if (v.length === 7) e.target.value = v.replace(/(\d{3})(\d{2})(\d{2})/, '$1/$2/$3');
             });
         }
     }
 
+    // ==========================================================================
+    // 表單驗證與送出
+    // ==========================================================================
     document.getElementById('donation-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        clearAllFieldErrors();
+
         const items = Object.values(selectedItems);
-        if (items.length === 0) return alert('請至少選擇一個護持項目');
-        
-        const f = e.target;
-        if(!/^09\d{2}-\d{3}-\d{3}$/.test(f.phone.value)) return alert('電話格式錯誤，請確認為 09XX-XXX-XXX');
-        if(f.lunarBirthday.value && !/^\d{2,3}\/\d{2}\/\d{2}$/.test(f.lunarBirthday.value)) return alert('生日格式錯誤，請輸入民國年數字 (如 750821 或 1120101)');
-        
-        const nameVal = f.name.value.trim();
-        const nameRegex = /[、，,。/&＆\s]/; 
-        const nameKeywords = /(全家|一家|闔家|合家|等人|與|及)/;
-        if (nameRegex.test(nameVal) || nameKeywords.test(nameVal)) {
-            return alert('真實姓名僅限填寫「一位」。\n請移除空格、標點符號或「全家」、「等人」等字眼。');
+        if (items.length === 0) {
+            showToast('請至少選擇一個護持項目', 'error');
+            document.getElementById('donation-grid')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
         }
-        
+
+        const f = e.target;
+        let hasError = false;
+        let firstErrorInput = null;
+
+        const flagError = (input, msg) => {
+            setFieldError(input, msg);
+            hasError = true;
+            if (!firstErrorInput) firstErrorInput = input;
+        };
+
+        // 必填
+        if (!f.name.value.trim()) flagError(f.name, '請填寫姓名');
+        if (!f.phone.value.trim()) flagError(f.phone, '請填寫聯絡電話');
+        if (!f.email.value.trim()) flagError(f.email, '請填寫電子信箱');
+        if (!f.address.value.trim()) flagError(f.address, '請填寫聯絡地址');
+        if (!f.last5.value.trim()) flagError(f.last5, '請填寫匯款帳號後 5 碼');
+
+        // 格式驗證
+        if (f.phone.value && !/^09\d{2}-\d{3}-\d{3}$/.test(f.phone.value)) {
+            flagError(f.phone, '電話格式錯誤，請確認為 09XX-XXX-XXX');
+        }
+        if (f.email.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.value)) {
+            flagError(f.email, '信箱格式錯誤，請確認包含 @ 與網域');
+        }
+        if (f.lunarBirthday.value && !/^\d{2,3}\/\d{2}\/\d{2}$/.test(f.lunarBirthday.value)) {
+            flagError(f.lunarBirthday, '生日格式錯誤，請輸入民國年月日數字（如 750815 或 1120101）');
+        }
+        if (f.last5.value && !/^\d{5}$/.test(f.last5.value)) {
+            flagError(f.last5, '請輸入 5 位數字');
+        }
+
+        // 姓名單人限制
+        const nameVal = f.name.value.trim();
+        if (nameVal) {
+            const nameRegex = /[、，,。/&＆\s]/;
+            const nameKeywords = /(全家|一家|闔家|合家|等人|與|及)/;
+            if (nameRegex.test(nameVal) || nameKeywords.test(nameVal)) {
+                flagError(f.name, '僅限填寫一位真實姓名，請移除空格、標點或「全家」等字眼');
+            }
+        }
+
+        if (hasError) {
+            showToast('請修正紅字標註的欄位', 'error');
+            firstErrorInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstErrorInput?.focus({ preventScroll: true });
+            return;
+        }
+
         const calculatedTotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
         const payload = {
@@ -760,7 +1312,7 @@
             email: f.email.value,
             address: f.address.value,
             lunarBirthday: f.lunarBirthday.value,
-            prayer: '', 
+            prayer: '',
             last5: f.last5.value,
             items: items,
             total: calculatedTotal
@@ -768,7 +1320,7 @@
 
         const btn = f.querySelector('button[type="submit"]');
         const originalBtnText = btn.textContent;
-        btn.disabled = true; 
+        btn.disabled = true;
         btn.textContent = "處理中...";
 
         try {
@@ -776,44 +1328,49 @@
             const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json', 
+                    'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify(payload)
             });
-            
+
             if (res.status === 401) {
-                alert('您的登入時效已過，請重新登入 LINE');
-                window.location.href = '/api/line/login?next=' + encodeURIComponent('/donation?action=donate');
+                showToast('您的登入時效已過，請重新登入 LINE', 'info', 2500);
+                setTimeout(() => {
+                    window.location.href = '/api/line/login?next=' + encodeURIComponent('/donation?action=donate');
+                }, 1200);
                 return;
             }
 
             const result = await res.json();
-            if(result.success) {
+            if (result.success) {
                 document.getElementById('success-modal').classList.remove('d-none');
             } else {
                 throw new Error(result.message || 'API returned failure');
             }
-        } catch(err) {
+        } catch (err) {
             console.error(err);
-            alert('送出失敗，請檢查網路或稍後再試');
+            showToast('送出失敗，請檢查網路或稍後再試', 'error');
             btn.disabled = false;
             btn.textContent = originalBtnText;
         }
     });
 
+    // ==========================================================================
+    // 銀行資訊
+    // ==========================================================================
     async function fetchBankInfo() {
         try {
             const res = await fetch('/api/public/bank-info?type=shop');
             const data = await res.json();
-            
+
             const elCode = document.getElementById('bank-code');
             const elName = document.getElementById('bank-name');
             const elAccount = document.getElementById('bank-account');
-            
-            if(elCode) elCode.textContent = data.bankCode;
-            if(elName) elName.textContent = data.bankName;
-            if(elAccount) elAccount.textContent = data.account;
+
+            if (elCode) elCode.textContent = data.bankCode;
+            if (elName) elName.textContent = data.bankName;
+            if (elAccount) elAccount.textContent = data.account;
         } catch (err) {
             console.error('無法載入匯款資訊', err);
         }
