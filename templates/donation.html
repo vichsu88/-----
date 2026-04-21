@@ -4,57 +4,64 @@
 
 {% block content %}
 <style>
-    /* === 字體載入：LXGW 霞鶩文楷（帶墨韻的現代書寫體） === */
+    /* === 字體：LXGW 霞鶩文楷（墨韻現代書寫體） === */
     @import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@300;400;500;700&display=swap');
 
     :root {
-        /* --- 底色系統 --- */
-        --c-bg: #FBF7EE;              /* 溫潤紙色 */
-        --c-bg-soft: #F5EFE0;          /* 次級背景 */
-        --c-bg-card: #FFFFFF;
+        /* --- 底色：生成り(きなり) + 胡粉色(ごふん) --- */
+        --c-bg: #F5EDE0;
+        --c-bg-soft: #EDE3D4;
+        --c-bg-card: #FCF8EE;
+        --c-bg-warm: #F0E6D0;
 
-        /* --- 文字系統（深暖灰，降低紅金配色疲勞） --- */
-        --c-text-deep: #3A2E24;        /* 主文字，深核桃 */
-        --c-text-mid: #6B5D54;         /* 次文字，暖灰 */
+        /* --- 墨色系統 --- */
+        --c-text-deep: #2C2420;
+        --c-text-mid: #5A4F45;
         --c-text-light: #8A7E72;
 
-        /* --- 金色系統（香檳金 / 霧面金為主，純金僅作為重點） --- */
-        --gold-champagne: #C9A66B;     /* 主色：香檳金（低飽和） */
-        --gold-deep: #8B6F3F;          /* 深金：邊線、壓強 */
-        --gold-light: #E8D5A8;         /* 淺金：背景光 */
-        --gold-bright: #DDB85C;        /* 純金（微調柔）：hover / 重點 */
+        /* --- 朱紅系統（神社鳥居色） --- */
+        --shu: #C8372D;
+        --shu-deep: #9B2923;
+        --shu-light: #E06357;
+        --enji: #7D1E1E;
 
-        /* --- 玉石青：禪意點綴，打斷紅金飽和度 --- */
-        --jade: #7A9B8E;
-        --jade-soft: #B8CFC7;
+        /* --- 和式金（霧面） --- */
+        --kin: #C89B3F;
+        --kin-deep: #8A6A28;
+        --kin-light: #E8C977;
+        --kin-bright: #E0B85C;
 
-        /* --- 紅色系統：略調柔的傳統正紅 --- */
-        --c-red: #7A1515;
-        --c-red-deep: #4A0A0A;
-        --c-red-soft: #9C2929;
+        /* --- 侘寂色 --- */
+        --rikyu: #8A8977;
+        --matsuba: #5D6F52;
 
-        /* --- 光暈：大 blur、低 opacity，像香火透光 --- */
-        --glow-gold: 0 0 40px rgba(201, 166, 107, 0.25);
-        --glow-gold-soft: 0 0 60px rgba(201, 166, 107, 0.15);
-        --shadow-card: 0 10px 40px rgba(58, 46, 36, 0.06);
-        --shadow-card-hover: 0 20px 60px rgba(139, 111, 63, 0.15);
-        --shadow-altar: 0 20px 60px rgba(58, 46, 36, 0.08), 0 0 80px rgba(201, 166, 107, 0.08);
+        /* --- 光影 --- */
+        --glow-soft: 0 0 40px rgba(200, 155, 63, 0.18);
+        --glow-kin: 0 0 60px rgba(200, 155, 63, 0.12);
+        --shadow-card: 0 10px 40px rgba(44, 36, 32, 0.06);
+        --shadow-card-hover: 0 20px 60px rgba(138, 106, 40, 0.14);
+        --shadow-altar: 0 25px 70px rgba(44, 36, 32, 0.08), 0 0 100px rgba(200, 155, 63, 0.06);
 
-        /* --- 錯誤提示色 --- */
         --c-error: #B85450;
         --c-error-bg: #FDF5F4;
 
-        --radius-std: 16px;
-        --radius-soft: 10px;
+        --radius-std: 14px;
+        --radius-soft: 8px;
 
-        --font-main: 'LXGW WenKai TC', 'Microsoft JhengHei', 'PingFang TC', serif;
+        --font-main: 'LXGW WenKai TC', 'Noto Serif TC', 'Microsoft JhengHei', 'PingFang TC', serif;
     }
 
-    /* === 全域字體替換 === */
+    /* === 全域字體 === */
     body, button, input, select, textarea {
         font-family: var(--font-main);
     }
-    body { background-color: var(--c-bg); color: var(--c-text-deep); }
+    body {
+        background-color: var(--c-bg);
+        color: var(--c-text-deep);
+        background-image:
+            radial-gradient(circle at 20% 20%, rgba(200, 155, 63, 0.04) 0%, transparent 40%),
+            radial-gradient(circle at 80% 80%, rgba(200, 55, 45, 0.02) 0%, transparent 40%);
+    }
 
     /* === 通用工具 === */
     .d-none { display: none !important; }
@@ -63,19 +70,19 @@
     .relative { position: relative; }
     .pointer { cursor: pointer; }
 
-    /* === Toast 通知系統 === */
+    /* === Toast 通知 === */
     #toast-container {
         position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
         z-index: 10000; display: flex; flex-direction: column; gap: 10px;
         pointer-events: none; width: 92%; max-width: 440px;
     }
     .toast {
-        background: rgba(58, 46, 36, 0.95);
+        background: rgba(44, 36, 32, 0.94);
         color: var(--c-bg);
-        padding: 14px 20px; border-radius: 12px;
+        padding: 14px 20px; border-radius: 10px;
         font-size: 1rem; font-weight: 500; letter-spacing: 0.5px;
         display: flex; align-items: center; gap: 12px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(201, 166, 107, 0.2);
+        box-shadow: 0 12px 48px rgba(0,0,0,0.25), 0 0 0 1px rgba(200, 155, 63, 0.25);
         opacity: 0; transform: translateY(-16px);
         transition: opacity 0.35s ease, transform 0.35s ease;
         backdrop-filter: blur(12px);
@@ -83,35 +90,27 @@
         pointer-events: auto;
     }
     .toast.show { opacity: 1; transform: translateY(0); }
-    .toast-error { border-left: 3px solid #E99090; }
+    .toast-error { border-left: 3px solid var(--shu-light); }
     .toast-success { border-left: 3px solid #90D9A8; }
-    .toast-info { border-left: 3px solid var(--gold-bright); }
+    .toast-info { border-left: 3px solid var(--kin-bright); }
     .toast-icon {
-        font-size: 1.2rem; flex-shrink: 0;
-        width: 28px; height: 28px; border-radius: 50%;
+        font-size: 1.1rem; flex-shrink: 0;
+        width: 26px; height: 26px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
     }
-    .toast-error .toast-icon { background: rgba(232,144,144,0.15); color: #F4B0B0; }
+    .toast-error .toast-icon { background: rgba(224,99,87,0.15); color: #F4B0B0; }
     .toast-success .toast-icon { background: rgba(144,217,168,0.15); color: #A8E5BE; }
-    .toast-info .toast-icon { background: rgba(221,184,92,0.15); color: var(--gold-light); }
+    .toast-info .toast-icon { background: rgba(224,184,92,0.15); color: var(--kin-light); }
     .toast-msg { flex: 1; line-height: 1.5; }
 
     /* === Inline 欄位錯誤 === */
     .field-error {
-        color: var(--c-error);
-        font-size: 0.88rem;
-        margin-top: 6px;
-        min-height: 0;
-        overflow: hidden;
-        opacity: 0;
-        transform: translateY(-4px);
+        color: var(--c-error); font-size: 0.88rem;
+        margin-top: 6px; min-height: 0; overflow: hidden;
+        opacity: 0; transform: translateY(-4px);
         transition: opacity 0.25s, transform 0.25s, min-height 0.25s;
     }
-    .field-error.show {
-        opacity: 1;
-        transform: translateY(0);
-        min-height: 1.2em;
-    }
+    .field-error.show { opacity: 1; transform: translateY(0); min-height: 1.2em; }
     .form-control.is-invalid {
         border-color: var(--c-error) !important;
         background: var(--c-error-bg) !important;
@@ -120,115 +119,163 @@
         box-shadow: 0 0 0 3px rgba(184, 84, 80, 0.12) !important;
     }
 
-    /* === Hero：深化遮罩、乾淨字體 === */
+    /* ============================================================== */
+    /* === Hero === */
+    /* ============================================================== */
     .donation-hero {
         background: url('{{ url_for("static", filename="images/pages/gongtan/signuppic.jpg") }}') no-repeat center center/cover;
-        height: 62vh;
-        min-height: 420px;
-        color: #fff;
-        position: relative;
-        overflow: hidden;
+        height: 60vh; min-height: 400px;
+        color: #fff; position: relative; overflow: hidden;
     }
     .donation-hero::before {
-        content: ''; position: absolute; inset: 0;
+        content: ''; position: absolute; inset: 0; z-index: 1;
         background:
-            radial-gradient(ellipse at 50% 38%, rgba(201,166,107,0.28) 0%, transparent 55%),
-            linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.75) 100%);
-        z-index: 1;
+            radial-gradient(ellipse at 50% 40%, rgba(200, 155, 63, 0.22) 0%, transparent 60%),
+            linear-gradient(180deg,
+                rgba(44, 36, 32, 0.45) 0%,
+                rgba(125, 30, 30, 0.35) 55%,
+                rgba(44, 36, 32, 0.78) 100%);
     }
-    .hero-text { position: relative; z-index: 2; padding: 20px; animation: floatUp 1.4s cubic-bezier(0.22, 1, 0.36, 1); }
-    .hero-text h1 {
-        font-family: var(--font-main);
-        font-size: 4.2rem; margin-bottom: 18px;
-        font-weight: 700; letter-spacing: 8px;
-        background: linear-gradient(180deg, #FFFFFF 0%, #F5E8C8 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
+    .donation-hero::after {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; z-index: 2;
+        background: linear-gradient(90deg,
+            transparent 0%, var(--shu) 20%, var(--shu-deep) 50%, var(--shu) 80%, transparent 100%);
+        opacity: 0.85;
+    }
+
+    .hero-text {
+        position: relative; z-index: 2; padding: 20px; text-align: center;
+        animation: floatUp 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .hero-title {
+        display: inline-flex; align-items: center; gap: 24px;
+        font-size: 3.8rem; font-weight: 700; letter-spacing: 8px;
+        margin-bottom: 24px;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F5E2BA 100%);
+        -webkit-background-clip: text; background-clip: text;
         -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 0 30px rgba(232, 213, 168, 0.35));
+        filter: drop-shadow(0 0 35px rgba(232, 213, 168, 0.3));
     }
-    .hero-text p {
-        font-size: 1.25rem; font-weight: 400; letter-spacing: 4px;
-        color: #F5E8C8;
-        opacity: 0.92;
+    .hero-title-divider {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--kin-light);
+        opacity: 0.7; flex-shrink: 0;
+        -webkit-text-fill-color: initial;
+    }
+    .hero-sub {
+        font-size: 1.2rem; font-weight: 400; letter-spacing: 5px;
+        color: #F5E2BA; opacity: 0.88;
     }
     @keyframes floatUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* === 主容器（沉穩祭壇） === */
+    /* ============================================================== */
+    /* === 主容器 === */
+    /* ============================================================== */
     .donation-container {
         max-width: 1100px; margin: -70px auto 60px auto;
-        background: var(--c-bg-card); border-radius: var(--radius-std);
+        background: var(--c-bg-card);
+        border-radius: var(--radius-std);
         box-shadow: var(--shadow-altar);
-        position: relative; z-index: 3; padding: 60px 50px;
-        border: 1px solid rgba(201, 166, 107, 0.18);
-        border-top: 4px solid var(--gold-deep);
+        position: relative; z-index: 3;
+        padding: 64px 50px;
+        border: 1px solid rgba(200, 155, 63, 0.15);
+        overflow: hidden;
     }
     .donation-container::before {
-        content: ''; position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
-        width: 60px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold-champagne), transparent);
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, transparent, var(--shu) 25%, var(--shu-deep) 50%, var(--shu) 75%, transparent);
+        z-index: 4;
+    }
+    .section-ornament {
+        display: flex; align-items: center; justify-content: center;
+        gap: 14px; margin: 0 auto 24px auto;
+    }
+    .section-ornament::before, .section-ornament::after {
+        content: ''; width: 40px; height: 1px;
+        background: linear-gradient(90deg, transparent, var(--kin));
+    }
+    .section-ornament::after { background: linear-gradient(90deg, var(--kin), transparent); }
+    .section-ornament-diamond {
+        width: 8px; height: 8px; background: var(--kin); transform: rotate(45deg);
+        opacity: 0.75;
     }
 
-    /* === 理念區塊 === */
-    .concept-section { margin-bottom: 56px; }
+    /* === 理念區塊（置中） === */
+    .concept-section { margin-bottom: 60px; text-align: center; }
     .concept-section h2 {
-        color: var(--c-text-deep); margin-bottom: 28px; font-size: 2.3rem;
+        color: var(--c-text-deep); margin-bottom: 32px; font-size: 2.2rem;
         position: relative; display: inline-block; font-weight: 700;
-        letter-spacing: 4px;
+        letter-spacing: 8px;
     }
-    .concept-section h2::after {
-        content:''; display:block; width: 60px; height: 2px;
-        background: linear-gradient(90deg, transparent, var(--gold-champagne), transparent);
-        margin: 16px auto 0 auto;
+    .concept-text {
+        font-size: 1.08rem; line-height: 2.1; color: var(--c-text-mid);
+        max-width: 720px; margin: 0 auto;
+        text-align: center;
+        letter-spacing: 1px;
     }
-    .concept-text { font-size: 1.08rem; line-height: 2; color: var(--c-text-mid); max-width: 760px; margin: 0 auto; text-align: justify; }
+    .concept-text p { margin: 0 0 18px; }
     .concept-text strong { color: var(--c-text-deep); font-weight: 500; }
     .concept-highlight {
         color: var(--c-text-deep); font-weight: 400;
-        background: linear-gradient(135deg, #FDFAF0 0%, #F8F2E2 100%);
-        padding: 24px 28px; border-radius: var(--radius-soft);
-        border: 1px solid rgba(201, 166, 107, 0.35);
-        margin-top: 32px;
-        text-align: center;
-        line-height: 2;
-        box-shadow: var(--glow-gold-soft);
+        background:
+            linear-gradient(135deg, rgba(200, 155, 63, 0.05), rgba(200, 55, 45, 0.03)),
+            var(--c-bg-card);
+        padding: 28px 32px; border-radius: var(--radius-soft);
+        border: 1px solid rgba(200, 155, 63, 0.35);
+        margin-top: 36px; line-height: 2;
+        text-align: center; letter-spacing: 1px;
+        box-shadow: var(--glow-kin);
+        position: relative;
     }
+    .concept-highlight::before, .concept-highlight::after {
+        content: ''; position: absolute; width: 10px; height: 10px;
+        border: 1px solid var(--kin); opacity: 0.6;
+    }
+    .concept-highlight::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+    .concept-highlight::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
 
-    /* === 芳名錄：紅底金字，深沉不刺眼 === */
+    /* ============================================================== */
+    /* === 芳名錄 === */
+    /* ============================================================== */
     .honor-roll-section {
         background:
-            linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.1) 100%),
-            linear-gradient(135deg, #5C0F0F 0%, var(--c-red) 55%, #3A0808 100%);
-        color: var(--gold-light); padding: 28px; border-radius: var(--radius-std); margin-bottom: 56px;
+            linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.1)),
+            linear-gradient(135deg, #6E1313 0%, var(--enji) 55%, #4A0A0A 100%);
+        color: var(--kin-light); padding: 30px; border-radius: var(--radius-std);
+        margin-bottom: 60px;
         display: flex; align-items: center; gap: 30px; overflow: hidden;
-        border: 1px solid rgba(201, 166, 107, 0.4);
-        box-shadow: 0 15px 50px rgba(74, 10, 10, 0.3), inset 0 0 40px rgba(0,0,0,0.35);
+        border: 1px solid rgba(200, 155, 63, 0.4);
+        box-shadow: 0 18px 55px rgba(74, 10, 10, 0.28), inset 0 0 50px rgba(0,0,0,0.35);
         position: relative;
     }
     .honor-roll-section::before {
-        content: ''; position: absolute; inset: 6px;
-        border: 1px solid rgba(201, 166, 107, 0.25); border-radius: 11px; pointer-events: none;
+        content: ''; position: absolute; inset: 7px;
+        border: 1px solid rgba(200, 155, 63, 0.22); border-radius: 9px;
+        pointer-events: none;
     }
     .honor-title-col {
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-        flex-shrink: 0; padding-right: 28px; border-right: 1px dashed rgba(201, 166, 107, 0.3);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 18px; flex-shrink: 0;
+        padding-right: 28px; border-right: 1px dashed rgba(200, 155, 63, 0.32);
         position: relative; z-index: 1;
     }
     .honor-title {
-        font-size: 1.6rem; font-weight: 700; writing-mode: vertical-rl; text-orientation: upright;
+        font-size: 1.55rem; font-weight: 700;
+        writing-mode: vertical-rl; text-orientation: upright;
         letter-spacing: 8px;
-        color: var(--gold-light);
-        text-shadow: 0 0 20px rgba(232, 213, 168, 0.3);
+        color: var(--kin-light);
+        text-shadow: 0 0 25px rgba(232, 201, 119, 0.3);
     }
     .btn-scroll-trigger {
-        background: transparent; border: 1px solid rgba(232, 213, 168, 0.5); color: var(--gold-light);
-        padding: 9px 18px; border-radius: 22px; font-size: 0.88rem; cursor: pointer;
-        transition: all 0.3s ease; font-weight: 500; letter-spacing: 1px;
-        font-family: var(--font-main);
+        background: transparent; border: 1px solid rgba(232, 201, 119, 0.55);
+        color: var(--kin-light); padding: 9px 18px; border-radius: 22px;
+        font-size: 0.88rem; cursor: pointer; font-family: var(--font-main);
+        transition: all 0.3s ease; font-weight: 500; letter-spacing: 1.5px;
     }
     .btn-scroll-trigger:hover {
-        background: var(--gold-bright); color: var(--c-red-deep);
-        border-color: var(--gold-bright);
-        box-shadow: 0 0 25px rgba(221, 184, 92, 0.5);
+        background: var(--kin-bright); color: var(--enji);
+        border-color: var(--kin-bright);
+        box-shadow: 0 0 25px rgba(224, 184, 92, 0.45);
         transform: translateY(-1px);
     }
 
@@ -238,97 +285,128 @@
         -webkit-mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
         z-index: 1;
     }
+    /* 🎯 關鍵修正：CSS 給預設 60s duration，避免 JS 延遲時動畫停滯 */
     .marquee-content {
         position: absolute;
         top: 0; left: 0; width: 100%;
-        animation: scrollUp linear infinite;
+        animation: scrollUp 60s linear infinite;
         will-change: transform;
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
     }
     .marquee-container:hover .marquee-content { animation-play-state: paused; }
-    .donor-item {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 13px 12px;
-        border-bottom: 1px dashed rgba(201, 166, 107, 0.18);
-        font-size: 1.1rem; color: #F0DDC2;
+
+    /* 跑馬燈內 donor-item：橫向精簡 */
+    .marquee-content .donor-item {
+        display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+        padding: 13px 14px;
+        border-bottom: 1px dashed rgba(200, 155, 63, 0.18);
+        font-size: 1.05rem; color: #F0DDC2;
     }
-    .donor-item .donor-name { font-weight: 500; color: var(--gold-light); }
-    .donor-item span:not(.donor-name) { font-size: 0.95rem; opacity: 0.85; }
+    .marquee-content .donor-item .donor-name {
+        font-weight: 500; color: var(--kin-light); flex-shrink: 0;
+    }
+    .marquee-content .donor-item .donor-items {
+        font-size: 0.92rem; opacity: 0.82; text-align: right;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        min-width: 0;
+    }
 
     @keyframes scrollUp {
-        0% { transform: translateY(0); }
-        100% { transform: translateY(-50%); }
+        0% { transform: translate3d(0, 0, 0); }
+        100% { transform: translate3d(0, -50%, 0); }
     }
 
-    /* === CTA 按鈕：香檳金漸層，克制的金光脈動 === */
-    .cta-container { margin: 48px 0; }
+    /* ============================================================== */
+    /* === CTA 按鈕 === */
+    /* ============================================================== */
+    .cta-container { margin: 52px 0; text-align: center; }
     .start-donate-btn, .btn-submit {
-        background: linear-gradient(135deg, #F5E8C8 0%, var(--gold-champagne) 45%, var(--gold-deep) 100%);
-        color: #2E2418; padding: 18px 56px; font-size: 1.35rem; border-radius: 50px;
-        border: none; transition: all 0.35s ease; cursor: pointer;
-        box-shadow: 0 8px 30px rgba(139, 111, 63, 0.3), var(--glow-gold-soft);
+        background: linear-gradient(135deg, #F5E2BA 0%, var(--kin) 45%, var(--kin-deep) 100%);
+        color: #2E2218; padding: 18px 56px; font-size: 1.3rem;
+        border-radius: 48px; border: none;
+        transition: all 0.35s ease; cursor: pointer;
+        box-shadow: 0 10px 32px rgba(138, 106, 40, 0.28), var(--glow-kin);
         display: inline-flex; align-items: center; justify-content: center; gap: 10px;
         font-weight: 700; letter-spacing: 4px;
         font-family: var(--font-main);
         position: relative; overflow: hidden; text-decoration: none;
-        animation: pulse-soft 2.8s infinite;
+        animation: pulse-soft 3s infinite;
     }
     .start-donate-btn::after, .btn-submit::after {
         content: ''; position: absolute; top: 0; left: -120%; width: 45%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
-        transform: skewX(-20deg); animation: sheen 4s infinite;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+        transform: skewX(-20deg); animation: sheen 4.5s infinite;
     }
     .start-donate-btn:hover:not(:disabled), .btn-submit:hover:not(:disabled) {
         transform: translateY(-2px);
-        background: linear-gradient(135deg, #FFF6D8 0%, var(--gold-bright) 45%, var(--gold-deep) 100%);
-        box-shadow: 0 14px 40px rgba(139, 111, 63, 0.4), 0 0 60px rgba(221, 184, 92, 0.35);
+        background: linear-gradient(135deg, #FFF3D0 0%, var(--kin-bright) 45%, var(--kin-deep) 100%);
+        box-shadow: 0 16px 44px rgba(138, 106, 40, 0.4), 0 0 60px rgba(224, 184, 92, 0.3);
     }
     .start-donate-btn:disabled, .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; animation: none; }
     @keyframes pulse-soft {
-        0%, 100% { box-shadow: 0 8px 30px rgba(139, 111, 63, 0.3), 0 0 0 0 rgba(201, 166, 107, 0); }
-        50% { box-shadow: 0 8px 30px rgba(139, 111, 63, 0.3), 0 0 0 12px rgba(201, 166, 107, 0); }
-        70% { box-shadow: 0 8px 30px rgba(139, 111, 63, 0.3), 0 0 0 20px rgba(201, 166, 107, 0.02); }
+        0%, 100% { box-shadow: 0 10px 32px rgba(138, 106, 40, 0.28), 0 0 0 0 rgba(200, 155, 63, 0); }
+        50% { box-shadow: 0 10px 32px rgba(138, 106, 40, 0.28), 0 0 0 14px rgba(200, 155, 63, 0); }
+        70% { box-shadow: 0 10px 32px rgba(138, 106, 40, 0.28), 0 0 0 22px rgba(200, 155, 63, 0.02); }
     }
     @keyframes sheen { 0% { left: -120%; } 25% { left: 200%; } 100% { left: 200%; } }
 
-    /* === 流程區塊（徽章式，降低金屬感） === */
+    /* ============================================================== */
+    /* === 流程圖 === */
+    /* ============================================================== */
     .process-flow-wrapper {
-        margin-bottom: 56px; padding: 36px 0;
-        border-top: 1px solid rgba(122, 155, 142, 0.25);
-        border-bottom: 1px solid rgba(122, 155, 142, 0.25);
+        margin-bottom: 60px; padding: 40px 0;
+        border-top: 1px solid rgba(138, 137, 119, 0.22);
+        border-bottom: 1px solid rgba(138, 137, 119, 0.22);
     }
     .process-flow-wrapper h3 {
-        color: var(--c-text-deep); margin-bottom: 40px;
-        font-size: 1.7rem; font-weight: 700; letter-spacing: 6px; text-align: center;
+        color: var(--c-text-deep); margin-bottom: 44px;
+        font-size: 1.6rem; font-weight: 700; letter-spacing: 8px;
+        text-align: center;
     }
-    .process-flow { display: flex; justify-content: space-between; align-items: flex-start; position: relative; max-width: 920px; margin: 0 auto; }
+    .process-flow {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        position: relative; max-width: 920px; margin: 0 auto;
+    }
     .process-flow::before {
-        content: ''; position: absolute; top: 28px; left: 8%; width: 84%; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(201, 166, 107, 0.4), rgba(122, 155, 142, 0.35), rgba(201, 166, 107, 0.4), transparent);
+        content: ''; position: absolute; top: 26px; left: 8%; width: 84%; height: 1px;
+        background: linear-gradient(90deg,
+            transparent, rgba(200, 155, 63, 0.35), rgba(138, 137, 119, 0.3),
+            rgba(200, 155, 63, 0.35), transparent);
         z-index: 0;
     }
 
     .p-step { position: relative; z-index: 1; text-align: center; flex: 1; padding: 0 10px; }
     .p-icon {
-        width: 56px; height: 56px; margin: 0 auto 16px auto;
+        width: 52px; height: 52px; margin: 0 auto 16px auto;
         display: flex; justify-content: center; align-items: center;
-        background: linear-gradient(135deg, #F8EED0, var(--gold-champagne) 55%, var(--gold-deep));
-        color: var(--c-red-deep); font-weight: 700; font-size: 1.3rem;
-        border: 3px solid var(--c-bg-card);
+        background: linear-gradient(135deg, #F5E2BA, var(--kin) 55%, var(--kin-deep));
+        color: var(--enji); font-weight: 700; font-size: 1.25rem;
+        border: 2.5px solid var(--c-bg-card);
         border-radius: 50%;
-        box-shadow: 0 6px 20px rgba(139, 111, 63, 0.2), inset 0 0 8px rgba(255,255,255,0.6);
+        box-shadow: 0 6px 22px rgba(138, 106, 40, 0.2), inset 0 0 8px rgba(255,255,255,0.5);
         font-family: var(--font-main);
     }
-    .p-text { font-size: 1.1rem; color: var(--c-text-deep); font-weight: 700; line-height: 1.5; letter-spacing: 2px; }
-    .p-desc { font-size: 0.92rem; color: var(--c-text-mid); margin-top: 8px; line-height: 1.7; }
-    .p-desc.bank { color: var(--c-red); font-weight: 500; margin-top: 8px; }
+    .p-text { font-size: 1.05rem; color: var(--c-text-deep); font-weight: 700; line-height: 1.5; letter-spacing: 2px; }
+    .p-desc { font-size: 0.9rem; color: var(--c-text-mid); margin-top: 8px; line-height: 1.75; }
+    .p-desc.bank { color: var(--shu); font-weight: 500; margin-top: 8px; }
 
-    #donation-process-area { opacity: 0; transition: opacity 0.6s ease; position: relative; z-index: 1; }
+    #donation-process-area {
+        opacity: 0; transition: opacity 0.6s ease;
+        position: relative; z-index: 1;
+    }
     #donation-process-area.show { opacity: 1; }
 
+    /* ============================================================== */
     /* === 護持項目卡片 === */
-    .donation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; margin-bottom: 40px; }
+    /* ============================================================== */
+    .donation-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 24px; margin-bottom: 44px;
+    }
     .donation-card {
-        border: 1px solid rgba(201, 166, 107, 0.18);
+        border: 1px solid rgba(200, 155, 63, 0.18);
         border-radius: var(--radius-soft); overflow: hidden;
         transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
         position: relative; background: var(--c-bg-card);
@@ -338,187 +416,191 @@
     .donation-card:hover {
         transform: translateY(-6px);
         box-shadow: var(--shadow-card-hover);
-        border-color: var(--gold-champagne);
+        border-color: var(--kin);
     }
     .donation-card.active {
-        border: 2px solid var(--gold-bright);
-        background: linear-gradient(180deg, #FFFDF5 0%, #FBF7EE 100%);
-        box-shadow: 0 0 0 4px rgba(221, 184, 92, 0.12), 0 12px 36px rgba(201, 166, 107, 0.18);
+        border: 2px solid var(--shu);
+        background: linear-gradient(180deg, #FFFDF5 0%, var(--c-bg) 100%);
+        box-shadow: 0 0 0 4px rgba(200, 55, 45, 0.1), 0 12px 36px rgba(200, 155, 63, 0.18);
     }
     .d-img {
         width: 100%; height: 200px; object-fit: cover;
         background: var(--c-bg-soft);
-        border-bottom: 1px solid rgba(201, 166, 107, 0.15);
+        border-bottom: 1px solid rgba(200, 155, 63, 0.15);
     }
-    .d-info { padding: 22px 20px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
-    .d-title { font-size: 1.2rem; font-weight: 700; color: var(--c-text-deep); letter-spacing: 1.5px; }
-    .d-price { color: var(--gold-deep); font-size: 1.1rem; font-weight: 500; letter-spacing: 1px; }
-    .d-price-number { color: var(--c-red); font-weight: 700; font-size: 1.2rem; }
+    .d-info {
+        padding: 22px 18px; text-align: center; flex: 1;
+        display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+    }
+    .d-title {
+        font-size: 1.18rem; font-weight: 700;
+        color: var(--c-text-deep); letter-spacing: 2px;
+    }
+    .d-price { color: var(--kin-deep); font-size: 1rem; font-weight: 500; letter-spacing: 1px; }
+    .d-price-number { color: var(--shu); font-weight: 700; font-size: 1.15rem; }
     .variant-select {
         width: 100%; padding: 8px 12px; font-size: 0.95rem;
-        border: 1px solid rgba(201, 166, 107, 0.4); border-radius: 6px;
+        border: 1px solid rgba(200, 155, 63, 0.4); border-radius: 6px;
         background: #FDFAF0; color: var(--c-text-deep);
-        cursor: pointer; text-align: center;
-        font-family: var(--font-main);
+        cursor: pointer; text-align: center; font-family: var(--font-main);
     }
-    .variant-select:focus { outline: none; border-color: var(--gold-champagne); }
+    .variant-select:focus { outline: none; border-color: var(--kin); }
 
     .qty-control { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 6px; }
     .qty-btn {
         width: 44px; height: 44px; border-radius: 50%;
-        border: 1.5px solid var(--gold-champagne); background: #fff;
-        cursor: pointer; font-size: 20px; color: var(--gold-deep);
+        border: 1.5px solid var(--kin); background: #fff;
+        cursor: pointer; font-size: 20px; color: var(--kin-deep);
         transition: all 0.25s ease;
         display: flex; justify-content: center; align-items: center;
         font-weight: 700; font-family: var(--font-main);
         -webkit-tap-highlight-color: transparent;
     }
     .qty-btn:hover {
-        background: var(--gold-bright); color: #fff;
-        border-color: var(--gold-bright);
-        box-shadow: 0 4px 15px rgba(221, 184, 92, 0.35);
+        background: var(--kin-bright); color: #fff;
+        border-color: var(--kin-bright);
+        box-shadow: 0 4px 16px rgba(224, 184, 92, 0.35);
     }
     .qty-btn:active { transform: scale(0.92); }
     .qty-display {
         font-size: 1.35rem; font-weight: 700; width: 44px; text-align: center;
-        color: var(--c-text-deep);
-        transition: color 0.3s;
+        color: var(--c-text-deep); transition: color 0.3s;
     }
 
-    /* === 互動回饋動畫：數字彈跳 + 卡片金光閃爍 === */
+    /* === 微互動動畫 === */
     @keyframes qty-pop {
         0% { transform: scale(1); color: var(--c-text-deep); }
-        40% { transform: scale(1.45); color: var(--gold-bright); }
+        40% { transform: scale(1.45); color: var(--shu); }
         100% { transform: scale(1); color: var(--c-text-deep); }
     }
     .qty-display.pop { animation: qty-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
     @keyframes card-flash {
         0% { box-shadow: var(--shadow-card); }
-        35% { box-shadow: 0 0 0 3px rgba(221, 184, 92, 0.55), 0 12px 36px rgba(201, 166, 107, 0.3); }
+        35% { box-shadow: 0 0 0 3px rgba(200, 55, 45, 0.4), 0 12px 36px rgba(200, 155, 63, 0.3); }
         100% { box-shadow: var(--shadow-card-hover); }
     }
     .donation-card.flash { animation: card-flash 0.7s ease; }
 
     /* === 購物車摘要 === */
     .summary-section {
-        background: linear-gradient(180deg, #FFFFFF 0%, #FDFAF0 100%);
-        border: 1px solid var(--gold-champagne);
+        background: linear-gradient(180deg, var(--c-bg-card) 0%, #FDFAF0 100%);
+        border: 1px solid var(--kin);
         border-radius: var(--radius-soft);
-        padding: 28px 30px;
-        margin-bottom: 40px;
-        box-shadow: var(--glow-gold-soft);
+        padding: 28px 30px; margin-bottom: 44px;
+        box-shadow: var(--glow-kin);
     }
     .summary-section h4 {
         margin-top: 0; color: var(--c-text-deep);
-        font-size: 1.25rem; font-weight: 700; letter-spacing: 3px;
+        font-size: 1.22rem; font-weight: 700; letter-spacing: 3px;
     }
     .summary-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
     .summary-table th {
         text-align: left; padding: 14px 12px;
-        border-bottom: 1px solid var(--gold-champagne);
-        color: var(--gold-deep); font-size: 0.95rem;
+        border-bottom: 1px solid var(--kin);
+        color: var(--kin-deep); font-size: 0.95rem;
         font-weight: 500; letter-spacing: 2px;
     }
     .summary-table td {
         padding: 14px 12px;
-        border-bottom: 1px dashed rgba(201, 166, 107, 0.22);
-        font-size: 1.05rem; color: var(--c-text-deep);
+        border-bottom: 1px dashed rgba(200, 155, 63, 0.22);
+        font-size: 1.02rem; color: var(--c-text-deep);
     }
-    .summary-table td:last-child { text-align: right; font-weight: 500; color: var(--c-red); }
+    .summary-table td:last-child { text-align: right; font-weight: 500; color: var(--shu); }
     .summary-total {
-        text-align: right; font-size: 1.4rem; font-weight: 700;
-        color: var(--c-red); padding-top: 22px;
-        letter-spacing: 2px;
+        text-align: right; font-size: 1.3rem; font-weight: 700;
+        color: var(--shu); padding-top: 22px; letter-spacing: 2px;
     }
     .summary-total span { font-size: 1.75rem; }
 
-    /* === 表單區 === */
+    /* ============================================================== */
+    /* === 表單 === */
+    /* ============================================================== */
     .step-title {
-        border-left: 4px solid var(--gold-champagne);
-        padding-left: 16px; margin-bottom: 28px;
-        color: var(--c-text-deep); font-size: 1.5rem;
-        font-weight: 700; letter-spacing: 3px;
+        border-left: 3px solid var(--shu);
+        padding-left: 18px; margin-bottom: 30px;
+        color: var(--c-text-deep); font-size: 1.45rem;
+        font-weight: 700; letter-spacing: 4px;
     }
     .form-section {
         background: var(--c-bg-card); padding: 40px 38px;
         border-radius: var(--radius-std);
-        border: 1px solid rgba(201, 166, 107, 0.18);
+        border: 1px solid rgba(200, 155, 63, 0.2);
         box-shadow: var(--shadow-card);
     }
     .form-notice-top {
-        background: rgba(122, 155, 142, 0.08);
-        border-left: 3px solid var(--jade);
+        background: rgba(138, 137, 119, 0.08);
+        border-left: 3px solid var(--rikyu);
         color: var(--c-text-mid);
-        padding: 14px 18px; border-radius: 6px;
-        font-size: 0.98rem; margin-bottom: 28px;
+        padding: 14px 18px; border-radius: 4px;
+        font-size: 0.96rem; margin-bottom: 28px;
         line-height: 1.7;
     }
     .form-group { margin-bottom: 22px; }
     .form-group label {
         display: block; font-weight: 500; margin-bottom: 10px;
-        color: var(--c-text-deep); font-size: 1.02rem; letter-spacing: 1.5px;
+        color: var(--c-text-deep); font-size: 1rem; letter-spacing: 1.5px;
     }
     .form-control {
         width: 100%; padding: 14px 16px;
-        border: 1px solid rgba(201, 166, 107, 0.3); border-radius: 8px;
+        border: 1px solid rgba(200, 155, 63, 0.3); border-radius: 6px;
         box-sizing: border-box; font-size: 16px;
         transition: all 0.25s ease;
-        background: #FDFAF0;
-        font-family: var(--font-main);
+        background: #FDFAF0; font-family: var(--font-main);
         color: var(--c-text-deep);
     }
     .form-control:focus {
-        border-color: var(--gold-champagne);
-        background: var(--c-bg-card);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(201, 166, 107, 0.15);
+        border-color: var(--kin);
+        background: var(--c-bg-card); outline: none;
+        box-shadow: 0 0 0 3px rgba(200, 155, 63, 0.15);
     }
     .form-helper {
-        color: var(--jade);
-        font-size: 0.82rem; margin-top: 6px;
+        color: var(--rikyu); font-size: 0.82rem; margin-top: 6px;
         line-height: 1.6; letter-spacing: 0.5px;
     }
 
-    /* === 匯款焦慮緩解提示 === */
+    /* === 匯款提示 === */
     .payment-notice {
         display: flex; align-items: flex-start; gap: 16px;
-        background: linear-gradient(135deg, #FDF6E3 0%, #F5EBD5 100%);
-        border: 1px solid rgba(201, 166, 107, 0.45);
-        border-left: 4px solid var(--gold-deep);
+        background: linear-gradient(135deg, #FDF4E0 0%, #F5E8C8 100%);
+        border: 1px solid rgba(200, 155, 63, 0.45);
+        border-left: 4px solid var(--shu);
         padding: 18px 22px; border-radius: var(--radius-soft);
         margin: 36px 0 24px;
         color: var(--c-text-deep);
-        box-shadow: var(--glow-gold-soft);
+        box-shadow: var(--glow-kin);
     }
     .payment-notice-icon {
-        font-size: 1.5rem; flex-shrink: 0;
+        font-size: 1.4rem; flex-shrink: 0;
         width: 38px; height: 38px; border-radius: 50%;
-        background: rgba(201, 166, 107, 0.15);
+        background: rgba(200, 55, 45, 0.1);
         display: flex; align-items: center; justify-content: center;
     }
     .payment-notice-body { flex: 1; line-height: 1.7; }
     .payment-notice-body strong {
-        color: var(--c-red); font-size: 1.05rem;
-        display: block; margin-bottom: 4px; letter-spacing: 1.5px;
+        color: var(--shu); font-size: 1.02rem;
+        display: block; margin-bottom: 4px; letter-spacing: 2px;
     }
-    .payment-notice-body p {
-        margin: 0; font-size: 0.95rem; color: var(--c-text-mid);
-    }
-    .payment-notice-body .emph { color: var(--c-red); font-weight: 700; }
+    .payment-notice-body p { margin: 0; font-size: 0.94rem; color: var(--c-text-mid); }
+    .payment-notice-body .emph { color: var(--shu); font-weight: 700; }
 
-    /* === Scroll Modal（聖旨卷軸）微調 === */
+    /* ============================================================== */
+    /* === Scroll Modal === */
+    /* ============================================================== */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(30, 20, 12, 0.85);
         backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         z-index: 9999;
     }
-    .scroll-wrapper { position: relative; width: 90%; max-width: 600px; display: flex; flex-direction: column; align-items: center; }
+    .scroll-wrapper {
+        position: relative; width: 90%; max-width: 600px;
+        display: flex; flex-direction: column; align-items: center;
+    }
     .scroll-close-btn {
         position: absolute; top: -20px; right: -20px;
-        background: var(--c-red-deep); color: var(--gold-light);
-        border: 2px solid var(--gold-champagne); border-radius: 50%;
+        background: var(--enji); color: var(--kin-light);
+        border: 2px solid var(--kin); border-radius: 50%;
         width: 44px; height: 44px;
         font-size: 18px; cursor: pointer; z-index: 10;
         box-shadow: 0 4px 14px rgba(0,0,0,0.5);
@@ -526,176 +608,202 @@
         display: flex; justify-content: center; align-items: center;
         font-family: var(--font-main);
     }
-    .scroll-close-btn:hover { transform: rotate(90deg) scale(1.08); background: var(--c-red); }
+    .scroll-close-btn:hover { transform: rotate(90deg) scale(1.08); background: var(--shu-deep); }
 
     .scroll-top-axis, .scroll-bottom-axis {
-        width: 105%; height: 32px; border-radius: 14px; position: relative; z-index: 3;
-        background: linear-gradient(to bottom, #F5E8C8 0%, var(--gold-champagne) 45%, var(--gold-deep) 100%);
+        width: 105%; height: 32px; border-radius: 14px;
+        position: relative; z-index: 3;
+        background: linear-gradient(to bottom, #F5E2BA 0%, var(--kin) 45%, var(--kin-deep) 100%);
         box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 0 8px rgba(0,0,0,0.3);
     }
     .scroll-top-axis::before, .scroll-top-axis::after,
     .scroll-bottom-axis::before, .scroll-bottom-axis::after {
         content: ''; position: absolute; top: -3px; width: 18px; height: 38px;
         background: radial-gradient(circle, #5e0000, #1a0505);
-        border: 2px solid var(--gold-champagne); border-radius: 4px;
+        border: 2px solid var(--kin); border-radius: 4px;
     }
     .scroll-top-axis::before, .scroll-bottom-axis::before { left: -10px; }
     .scroll-top-axis::after, .scroll-bottom-axis::after { right: -10px; }
 
     .scroll-content {
-        width: 100%; background-color: var(--c-red); padding: 0 28px;
+        width: 100%; background-color: var(--enji); padding: 0 28px;
         overflow-y: auto; opacity: 0; max-height: 0;
         box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
-        border-left: 3px solid var(--gold-champagne);
-        border-right: 3px solid var(--gold-champagne);
+        border-left: 3px solid var(--kin);
+        border-right: 3px solid var(--kin);
         transition: max-height 1.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease, padding 1.2s ease;
     }
     .scroll-wrapper.unrolled .scroll-content { max-height: 65vh; opacity: 1; padding: 32px 28px; }
     .scroll-content::-webkit-scrollbar { width: 6px; }
     .scroll-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 10px; margin: 10px 0; }
-    .scroll-content::-webkit-scrollbar-thumb { background: var(--gold-champagne); border-radius: 10px; }
-    .scroll-content .donor-item { border-bottom: 1px dashed rgba(201, 166, 107, 0.25); padding: 13px 0; color: #F0DDC2; }
+    .scroll-content::-webkit-scrollbar-thumb { background: var(--kin); border-radius: 10px; }
+
+    /* 🎯 卷軸內 donor-item 改縱向堆疊，解決長字串跑版 */
+    .scroll-content .donor-item {
+        display: block;
+        padding: 16px 4px;
+        border-bottom: 1px dashed rgba(200, 155, 63, 0.22);
+    }
     .scroll-content .donor-item:last-child { border-bottom: none; }
-    .scroll-content .donor-name { font-weight: 500; color: var(--gold-light); }
+    .scroll-content .donor-item .donor-name {
+        display: block;
+        font-size: 1.1rem; font-weight: 500;
+        color: var(--kin-light);
+        margin-bottom: 6px;
+        letter-spacing: 2px;
+    }
+    .scroll-content .donor-item .donor-items {
+        display: block;
+        font-size: 0.92rem;
+        color: #F0DDC2;
+        opacity: 0.85;
+        line-height: 1.8;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        padding-left: 12px;
+        border-left: 1px solid rgba(200, 155, 63, 0.2);
+    }
 
     /* === 成功 Modal === */
     .modal-box {
         background: var(--c-bg); padding: 45px 38px;
         border-radius: var(--radius-std); text-align: center;
         max-width: 460px; width: 90%;
-        border: 1px solid var(--gold-champagne);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 5px rgba(201, 166, 107, 0.2);
+        border: 1px solid var(--kin);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 5px rgba(200, 155, 63, 0.18);
     }
     .modal-box h2 {
-        color: var(--c-text-deep); font-size: 1.9rem;
-        margin-bottom: 12px; letter-spacing: 4px; font-weight: 700;
+        color: var(--c-text-deep); font-size: 1.85rem;
+        margin-bottom: 12px; letter-spacing: 5px; font-weight: 700;
     }
     .modal-box p { color: var(--c-text-mid); line-height: 1.8; }
     .bank-info-box {
         background: #FDFAF0; padding: 24px; border-radius: var(--radius-soft);
         margin: 22px 0; text-align: left;
-        border: 1px dashed var(--gold-champagne);
-        box-shadow: inset 0 0 12px rgba(201, 166, 107, 0.08);
+        border: 1px dashed var(--kin);
+        box-shadow: inset 0 0 12px rgba(200, 155, 63, 0.08);
     }
-    .bank-info-box p { margin: 8px 0; color: var(--c-text-mid); font-size: 1.02rem; }
+    .bank-info-box p { margin: 8px 0; color: var(--c-text-mid); font-size: 1rem; }
     .bank-info-box p strong { color: var(--c-text-deep); font-weight: 500; }
     #bank-account {
-        color: var(--c-red); font-weight: 700; font-size: 1.5rem;
+        color: var(--shu); font-weight: 700; font-size: 1.5rem;
         letter-spacing: 3px; margin: 6px 0;
     }
     .modal-urgency {
-        color: var(--c-red); font-size: 0.98rem; font-weight: 500;
+        color: var(--shu); font-size: 0.98rem; font-weight: 500;
         line-height: 1.7; letter-spacing: 1px;
     }
 
     /* ============================================================== */
-    /* === 手機版 RWD：確保觸控舒適、流程圖對齊、排版呼吸感 === */
+    /* === 手機版 RWD === */
     /* ============================================================== */
     @media (max-width: 768px) {
-        .donation-hero { height: 48vh; min-height: 320px; }
-        .hero-text h1 { font-size: 2.5rem; letter-spacing: 5px; margin-bottom: 12px; }
-        .hero-text p { font-size: 1rem; letter-spacing: 2px; }
+        .donation-hero { height: 46vh; min-height: 320px; }
+
+        /* 🎯 標題改縱向，中間換為金色細線 */
+        .hero-title {
+            flex-direction: column; gap: 14px;
+            font-size: 2.6rem; letter-spacing: 10px;
+            margin-bottom: 20px;
+        }
+        .hero-title-divider {
+            width: 40px; height: 1px; border-radius: 0;
+            background: linear-gradient(90deg, transparent, var(--kin-light), transparent);
+            opacity: 0.9;
+        }
+        .hero-sub { font-size: 0.98rem; letter-spacing: 3px; }
 
         .donation-container {
             margin-top: -40px;
             border-radius: var(--radius-std);
-            padding: 32px 22px;
-            border-top: 3px solid var(--gold-deep);
+            padding: 40px 22px;
         }
 
-        .concept-section { margin-bottom: 40px; }
-        .concept-section h2 { font-size: 1.7rem; letter-spacing: 2px; }
-        .concept-text { font-size: 1rem; line-height: 1.9; }
-        .concept-highlight { padding: 20px 18px; font-size: 0.96rem; }
+        .concept-section { margin-bottom: 44px; }
+        .concept-section h2 { font-size: 1.6rem; letter-spacing: 4px; margin-bottom: 24px; }
+        .concept-text { font-size: 0.98rem; line-height: 2; letter-spacing: 0.5px; }
+        .concept-highlight { padding: 22px 20px; font-size: 0.94rem; margin-top: 28px; }
 
-        /* 芳名錄 */
         .honor-roll-section {
-            flex-direction: column; padding: 22px 18px; gap: 16px;
-            margin-bottom: 40px;
+            flex-direction: column; padding: 24px 18px; gap: 16px;
+            margin-bottom: 44px;
         }
         .honor-title-col {
             border-right: none;
-            border-bottom: 1px dashed rgba(201, 166, 107, 0.3);
-            padding-right: 0; padding-bottom: 14px; width: 100%;
+            border-bottom: 1px dashed rgba(200, 155, 63, 0.3);
+            padding-right: 0; padding-bottom: 16px; width: 100%;
             flex-direction: row; justify-content: space-between;
         }
         .honor-title {
-            writing-mode: horizontal-tb; font-size: 1.35rem; letter-spacing: 3px;
+            writing-mode: horizontal-tb; font-size: 1.3rem; letter-spacing: 4px;
         }
-        .marquee-container { height: 160px; }
+        .marquee-container { height: 170px; }
+        .marquee-content .donor-item { font-size: 0.95rem; padding: 11px 10px; }
+        .marquee-content .donor-item .donor-items { font-size: 0.85rem; }
 
-        /* CTA */
-        .cta-container { margin: 36px 0; }
-        .start-donate-btn { font-size: 1.15rem; padding: 16px 38px; letter-spacing: 2px; }
+        .cta-container { margin: 40px 0; }
+        .start-donate-btn { font-size: 1.1rem; padding: 16px 42px; letter-spacing: 3px; }
 
-        /* 流程圖：垂直排列，icon 置左，連線貫穿 icon 中心 */
-        .process-flow-wrapper { padding: 28px 0; margin-bottom: 40px; }
-        .process-flow-wrapper h3 { font-size: 1.35rem; letter-spacing: 3px; margin-bottom: 28px; }
+        .process-flow-wrapper { padding: 30px 0; margin-bottom: 44px; }
+        .process-flow-wrapper h3 { font-size: 1.3rem; letter-spacing: 4px; margin-bottom: 30px; }
         .process-flow {
-            flex-direction: column; gap: 22px;
+            flex-direction: column; gap: 24px;
             align-items: flex-start; padding-left: 0;
         }
         .process-flow::before {
             width: 1px; height: calc(100% - 48px);
             top: 24px; left: 23px;
-            background: linear-gradient(180deg, rgba(201, 166, 107, 0.5), rgba(122, 155, 142, 0.35));
+            background: linear-gradient(180deg, rgba(200, 155, 63, 0.5), rgba(138, 137, 119, 0.3));
         }
         .p-step {
-            display: flex; align-items: flex-start; gap: 18px;
+            display: flex; align-items: flex-start; gap: 20px;
             text-align: left; width: 100%; padding: 0;
         }
-        .p-icon {
-            margin: 0; flex-shrink: 0;
-            width: 48px; height: 48px; font-size: 1.1rem;
-        }
+        .p-icon { margin: 0; flex-shrink: 0; width: 48px; height: 48px; font-size: 1.1rem; }
         .p-info-box { flex: 1; padding-top: 4px; }
-        .p-text { font-size: 1.02rem; letter-spacing: 1.5px; }
+        .p-text { font-size: 1rem; letter-spacing: 2px; }
         .p-desc { font-size: 0.88rem; }
 
-        /* 捐贈卡片：2 欄，更多呼吸感 */
-        .donation-grid {
-            grid-template-columns: 1fr 1fr; gap: 14px;
-            margin-bottom: 32px;
-        }
+        .donation-grid { grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 36px; }
         .d-img { height: 130px; }
         .d-info { padding: 16px 12px; gap: 10px; }
-        .d-title { font-size: 1.02rem; letter-spacing: 1px; }
-        .d-price { font-size: 0.95rem; }
+        .d-title { font-size: 1rem; letter-spacing: 1px; }
+        .d-price { font-size: 0.92rem; }
         .d-price-number { font-size: 1rem; }
         .qty-btn { width: 38px; height: 38px; font-size: 18px; }
         .qty-display { font-size: 1.2rem; width: 38px; }
         .qty-control { gap: 14px; }
         .variant-select { font-size: 0.85rem; padding: 6px 8px; }
 
-        /* 摘要 */
         .summary-section { padding: 22px 18px; }
         .summary-table th, .summary-table td { padding: 12px 8px; font-size: 0.92rem; }
-        .summary-total { font-size: 1.15rem; }
-        .summary-total span { font-size: 1.45rem; }
+        .summary-total { font-size: 1.12rem; }
+        .summary-total span { font-size: 1.4rem; }
 
-        /* 表單 */
-        .step-title { font-size: 1.3rem; letter-spacing: 2px; }
-        .form-section { padding: 26px 20px; }
-        .form-notice-top { font-size: 0.92rem; padding: 12px 14px; }
-        .payment-notice { padding: 16px 16px; gap: 12px; margin: 30px 0 20px; }
-        .payment-notice-icon { width: 34px; height: 34px; font-size: 1.3rem; }
-        .payment-notice-body strong { font-size: 1rem; }
-        .payment-notice-body p { font-size: 0.9rem; }
+        .step-title { font-size: 1.22rem; letter-spacing: 3px; }
+        .form-section { padding: 28px 20px; }
+        .form-notice-top { font-size: 0.9rem; padding: 12px 14px; }
+        .payment-notice { padding: 16px 14px; gap: 12px; margin: 30px 0 20px; }
+        .payment-notice-icon { width: 34px; height: 34px; font-size: 1.2rem; }
+        .payment-notice-body strong { font-size: 0.98rem; }
+        .payment-notice-body p { font-size: 0.88rem; }
 
-        /* Modal */
         .modal-box { padding: 32px 24px; }
-        .modal-box h2 { font-size: 1.55rem; letter-spacing: 3px; }
+        .modal-box h2 { font-size: 1.5rem; letter-spacing: 3px; }
         #bank-account { font-size: 1.3rem; letter-spacing: 2px; }
 
-        /* Toast */
         #toast-container { top: 16px; }
         .toast { font-size: 0.92rem; padding: 12px 16px; }
+
+        .scroll-content .donor-item { padding: 14px 4px; }
+        .scroll-content .donor-item .donor-name { font-size: 1.02rem; }
+        .scroll-content .donor-item .donor-items { font-size: 0.88rem; padding-left: 10px; }
     }
 
     @media (max-width: 420px) {
         .donation-grid { grid-template-columns: 1fr; }
         .d-img { height: 180px; }
-        .hero-text h1 { font-size: 2.1rem; }
+        .hero-title { font-size: 2.2rem; letter-spacing: 8px; }
     }
 </style>
 
@@ -703,14 +811,21 @@
 <div id="toast-container" role="status" aria-live="polite"></div>
 
 <div class="donation-hero flex-center relative">
-    <div class="hero-text text-center">
-        <h1>護持公壇 ‧ 香火傳遞</h1>
-        <p>您的每一份心意，都將化作上達天聽的縷縷清香</p>
+    <div class="hero-text">
+        <h1 class="hero-title">
+            <span>護持公壇</span>
+            <span class="hero-title-divider"></span>
+            <span>香火傳遞</span>
+        </h1>
+        <p class="hero-sub">您的每一份心意，都將化作上達天聽的縷縷清香</p>
     </div>
 </div>
 
 <div class="donation-container">
-    <section class="concept-section text-center">
+    <section class="concept-section">
+        <div class="section-ornament">
+            <span class="section-ornament-diamond"></span>
+        </div>
         <h2>共造福田 ‧ 廣結善緣</h2>
         <div class="concept-text">
             <p>承天中承府的「公壇」，是元帥為信徒解惑、安撫心靈的所在。每一次的開壇辦事，都需要使用大量的香品與物資。</p>
@@ -735,7 +850,7 @@
         </div>
     </section>
 
-    <div class="cta-container text-center" id="cta-container">
+    <div class="cta-container" id="cta-container">
         <button class="start-donate-btn pointer" onclick="startDonation()">🙏 我也要捐香</button>
     </div>
 
@@ -833,7 +948,6 @@
                     <div class="field-error"></div>
                 </div>
 
-                <!-- 匯款焦慮緩解提示 -->
                 <div class="payment-notice">
                     <div class="payment-notice-icon">⏰</div>
                     <div class="payment-notice-body">
@@ -895,7 +1009,7 @@
     });
 
     // ==========================================================================
-    // Toast 通知系統
+    // Toast
     // ==========================================================================
     function showToast(message, type = 'error', duration = 3500) {
         const container = document.getElementById('toast-container');
@@ -953,7 +1067,7 @@
     }
 
     // ==========================================================================
-    // 初始化：並行載入芳名錄、商品、銀行資訊
+    // 並行初始化
     // ==========================================================================
     async function initPageData() {
         await Promise.all([
@@ -964,7 +1078,7 @@
     }
 
     // ==========================================================================
-    // 芳名錄（無縫跑馬燈 + 聖旨卷軸）
+    // 芳名錄（跑馬燈 + 卷軸）
     // ==========================================================================
     async function loadMarquee() {
         try {
@@ -980,7 +1094,6 @@
                 return;
             }
 
-            // 資料量不足時循環補齊，避免留白
             let displayData = [...data];
             while (displayData.length < 6) {
                 displayData = displayData.concat(data);
@@ -989,22 +1102,19 @@
             const marqueeHtml = displayData.map(d => `
                 <div class="donor-item">
                     <span class="donor-name">${d.name}</span>
-                    <span>${d.items}</span>
+                    <span class="donor-items">${d.items}</span>
                 </div>
             `).join('');
-
-            // 跑馬燈：雙份內容搭配 translateY(-50%) 達成無縫循環
             list.innerHTML = marqueeHtml + marqueeHtml;
 
-            // 完整名錄（卷軸內）：單份原始資料即可
             fullList.innerHTML = data.map(d => `
                 <div class="donor-item">
                     <span class="donor-name">${d.name}</span>
-                    <span>${d.items}</span>
+                    <span class="donor-items">${d.items}</span>
                 </div>
             `).join('');
 
-            // 動態計算速度：每筆 3 秒
+            // 動態速度：每筆 3 秒；CSS 有 60s 預設 fallback
             const speedPerItem = 3;
             const totalDuration = displayData.length * speedPerItem;
             list.style.animationDuration = `${totalDuration}s`;
@@ -1014,7 +1124,6 @@
         }
     }
 
-    // 卷軸 Modal
     window.openScrollModal = () => {
         const overlay = document.getElementById('scroll-modal-overlay');
         const wrapper = document.getElementById('scroll-wrapper');
@@ -1031,7 +1140,7 @@
     };
 
     // ==========================================================================
-    // 開啟捐贈流程（登入驗證 + 帶入使用者資料）
+    // 開啟捐贈流程
     // ==========================================================================
     window.startDonation = async () => {
         const btn = document.querySelector('.start-donate-btn');
@@ -1081,7 +1190,7 @@
     };
 
     // ==========================================================================
-    // 商品載入與規格
+    // 商品載入
     // ==========================================================================
     async function loadProducts() {
         try {
@@ -1164,10 +1273,8 @@
             }
 
             selectedItems[id] = {
-                id: p._id,
-                name: p.name,
-                price: currentPrice,
-                qty: 0,
+                id: p._id, name: p.name,
+                price: currentPrice, qty: 0,
                 variantName: currentVariantName
             };
         }
@@ -1180,10 +1287,9 @@
         if (qtyDisplay) qtyDisplay.textContent = selectedItems[id].qty;
         if (card) card.classList.toggle('active', selectedItems[id].qty > 0);
 
-        // 🎯 微互動回饋：+ 時數字彈跳 + 卡片閃金光
         if (delta > 0 && qtyDisplay) {
             qtyDisplay.classList.remove('pop');
-            void qtyDisplay.offsetWidth; // 強制 reflow 以重啟動畫
+            void qtyDisplay.offsetWidth;
             qtyDisplay.classList.add('pop');
         }
         if (delta > 0 && card) {
@@ -1217,7 +1323,7 @@
     }
 
     // ==========================================================================
-    // 輸入框格式化（電話自動插破折號、生日自動插斜線）
+    // 輸入格式化
     // ==========================================================================
     function setupFormatters() {
         const phoneInput = document.getElementById('phone-input');
@@ -1265,14 +1371,12 @@
             if (!firstErrorInput) firstErrorInput = input;
         };
 
-        // 必填
         if (!f.name.value.trim()) flagError(f.name, '請填寫姓名');
         if (!f.phone.value.trim()) flagError(f.phone, '請填寫聯絡電話');
         if (!f.email.value.trim()) flagError(f.email, '請填寫電子信箱');
         if (!f.address.value.trim()) flagError(f.address, '請填寫聯絡地址');
         if (!f.last5.value.trim()) flagError(f.last5, '請填寫匯款帳號後 5 碼');
 
-        // 格式驗證
         if (f.phone.value && !/^09\d{2}-\d{3}-\d{3}$/.test(f.phone.value)) {
             flagError(f.phone, '電話格式錯誤，請確認為 09XX-XXX-XXX');
         }
@@ -1286,7 +1390,6 @@
             flagError(f.last5, '請輸入 5 位數字');
         }
 
-        // 姓名單人限制
         const nameVal = f.name.value.trim();
         if (nameVal) {
             const nameRegex = /[、，,。/&＆\s]/;
