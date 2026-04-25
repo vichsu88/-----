@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request, session, Response, current_app
 
 from database import db, write_audit_log
-from utils.decorators import login_required, user_login_required
+from utils.decorators import admin_required, user_login_required
 from utils.helpers import get_object_id
 from utils.email import send_email, generate_feedback_email_html
 
@@ -115,28 +115,28 @@ def get_public_approved_feedback():
 
 
 @feedback_bp.route('/api/feedback/status/pending', methods=['GET'])
-@login_required
+@admin_required(roles=['super_admin', 'ops', 'data'])
 def get_pending_feedback():
     cursor = db.feedback.find({"status": "pending"}).sort("createdAt", 1)
     return jsonify(enrich_feedback_for_admin(cursor))
 
 
 @feedback_bp.route('/api/feedback/status/approved', methods=['GET'])
-@login_required
+@admin_required(roles=['super_admin', 'ops', 'data'])
 def get_admin_approved_feedback():
     cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", -1)
     return jsonify(enrich_feedback_for_admin(cursor))
 
 
 @feedback_bp.route('/api/feedback/status/sent', methods=['GET'])
-@login_required
+@admin_required(roles=['super_admin', 'ops', 'data'])
 def get_sent_feedback():
     cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
     return jsonify(enrich_feedback_for_admin(cursor))
 
 
 @feedback_bp.route('/api/feedback/<fid>/approve', methods=['PUT'])
-@login_required
+@admin_required(roles=['super_admin', 'ops'])
 def approve_feedback(fid):
     oid = get_object_id(fid)
     if not oid:
@@ -177,7 +177,7 @@ def approve_feedback(fid):
 
 
 @feedback_bp.route('/api/feedback/<fid>/ship', methods=['PUT'])
-@login_required
+@admin_required(roles=['super_admin', 'ops'])
 def ship_feedback(fid):
     oid = get_object_id(fid)
     if not oid:
@@ -220,7 +220,7 @@ def ship_feedback(fid):
 
 
 @feedback_bp.route('/api/feedback/<fid>', methods=['DELETE'])
-@login_required
+@admin_required(roles=['super_admin', 'ops'])
 def delete_feedback(fid):
     oid = get_object_id(fid)
     if not oid:
@@ -247,7 +247,7 @@ def delete_feedback(fid):
 
 
 @feedback_bp.route('/api/feedback/<fid>', methods=['PUT'])
-@login_required
+@admin_required(roles=['super_admin', 'ops'])
 def update_feedback(fid):
     oid = get_object_id(fid)
     if not oid:
@@ -262,7 +262,7 @@ def update_feedback(fid):
 
 
 @feedback_bp.route('/api/feedback/export-sent-txt', methods=['POST'])
-@login_required
+@admin_required(roles=['super_admin', 'ops', 'data'])
 def export_sent_feedback_txt():
     cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
     enriched = enrich_feedback_for_admin(cursor)
@@ -279,7 +279,7 @@ def export_sent_feedback_txt():
 
 
 @feedback_bp.route('/api/feedback/export-txt', methods=['POST'])
-@login_required
+@admin_required(roles=['super_admin', 'ops', 'data'])
 def export_feedback_txt():
     cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", 1)
     enriched = enrich_feedback_for_admin(cursor)

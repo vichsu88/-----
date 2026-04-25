@@ -24,12 +24,51 @@ document.addEventListener('DOMContentLoaded', function() {
        【工具】解析連結函式
        將 "文字($'網址'$)" 轉換為 HTML 連結
        ============================== */
-    function parseContentForLinks(text) {
-        if (!text) return '';
-        // 抓取 文字($'網址'$)
+    function isSafeLinkUrl(url) {
+        try {
+            const parsed = new URL(url, window.location.origin);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function appendTextWithBreaks(target, text) {
+        const parts = String(text || '').split(/\r?\n/);
+        parts.forEach((part, index) => {
+            if (index > 0) target.appendChild(document.createElement('br'));
+            if (part) target.appendChild(document.createTextNode(part));
+        });
+    }
+
+    function appendTextWithLinksAndBreaks(target, text) {
         const regex = /(.+?)\(\$\'(.+?)\'\$\)/g;
-        const replacement = '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #007bff; text-decoration: underline;">$1</a>';
-        return text.replace(regex, replacement);
+        const source = String(text || '');
+        let lastIndex = 0;
+        let match;
+
+        while ((match = regex.exec(source)) !== null) {
+            appendTextWithBreaks(target, source.slice(lastIndex, match.index));
+
+            const label = match[1];
+            const href = match[2];
+            if (isSafeLinkUrl(href)) {
+                const link = document.createElement('a');
+                link.href = href;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.style.color = '#007bff';
+                link.style.textDecoration = 'underline';
+                link.textContent = label;
+                target.appendChild(link);
+            } else {
+                appendTextWithBreaks(target, match[0]);
+            }
+
+            lastIndex = regex.lastIndex;
+        }
+
+        appendTextWithBreaks(target, source.slice(lastIndex));
     }
 
     /* ==============================
@@ -48,13 +87,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                // 2-2. 渲染 HTML
-                faqList.innerHTML = faqs.map(faq => `
-                    <div class="faq-item-card">
-                        <div class="faq-q">Q：${faq.question}</div>
-                        <div class="faq-a">A：${parseContentForLinks(faq.answer).replace(/\n/g, '<br>')}</div>
-                    </div>
-                `).join('');
+                // 2-2. 渲染內容
+                faqList.innerHTML = '';
+                faqs.forEach(faq => {
+                    const card = document.createElement('div');
+                    card.className = 'faq-item-card';
+
+                    const question = document.createElement('div');
+                    question.className = 'faq-q';
+                    question.textContent = `Q：${faq.question || ''}`;
+
+                    const answer = document.createElement('div');
+                    answer.className = 'faq-a';
+                    answer.appendChild(document.createTextNode('A：'));
+                    appendTextWithLinksAndBreaks(answer, faq.answer || '');
+
+                    card.appendChild(question);
+                    card.appendChild(answer);
+                    faqList.appendChild(card);
+                });
 
                 // 2-3. 綁定搜尋功能
                 setupFaqSearch();
@@ -144,10 +195,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     const newsItem = document.createElement('li');
                     newsItem.className = 'news-item';
                     newsItem.dataset.index = index;
-                    newsItem.innerHTML = `
-                        <span class="news-date">${news.date}</span>
-                        <p class="news-title">${news.title}</p>
-                    `;
+
+                    const date = document.createElement('span');
+                    date.className = 'news-date';
+                    date.textContent = news.date || '';
+
+                    const title = document.createElement('p');
+                    title.className = 'news-title';
+                    title.textContent = news.title || '';
+
+                    newsItem.appendChild(date);
+                    newsItem.appendChild(title);
                     
                     newsItem.addEventListener('click', () => {
                         if (modal && modalDate && modalTitle && modalBody) {
@@ -155,8 +213,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             modalDate.textContent = newsData.date;
                             modalTitle.textContent = newsData.title;
                             
-                            const contentWithLinks = parseContentForLinks(newsData.content);
-                            modalBody.innerHTML = contentWithLinks.replace(/\n/g, '<br>');
+                            modalBody.innerHTML = '';
+                            appendTextWithLinksAndBreaks(modalBody, newsData.content || '');
                             
                             modal.style.display = 'flex';
                         }

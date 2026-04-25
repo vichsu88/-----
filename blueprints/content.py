@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request, session, Response
 
 from database import db
-from utils.decorators import login_required
+from utils.decorators import admin_required
 from utils.helpers import get_object_id, get_tw_now, calculate_business_d2, mask_name
 
 content_bp = Blueprint('content', __name__)
@@ -77,7 +77,7 @@ def get_products():
 
 
 @content_bp.route('/api/products', methods=['POST'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def add_product():
     data = request.get_json()
     new_product = {
@@ -93,7 +93,7 @@ def add_product():
 
 
 @content_bp.route('/api/products/<pid>', methods=['PUT'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def update_product(pid):
     oid = get_object_id(pid)
     if not oid:
@@ -108,7 +108,7 @@ def update_product(pid):
 
 
 @content_bp.route('/api/products/<pid>', methods=['DELETE'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def delete_product(pid):
     oid = get_object_id(pid)
     if not oid:
@@ -133,7 +133,7 @@ def get_announcements():
 
 
 @content_bp.route('/api/announcements', methods=['POST'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def add_announcement():
     data = request.get_json()
     try:
@@ -152,7 +152,7 @@ def add_announcement():
 
 
 @content_bp.route('/api/announcements/<aid>', methods=['PUT'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def update_announcement(aid):
     oid = get_object_id(aid)
     if not oid:
@@ -174,7 +174,7 @@ def update_announcement(aid):
 
 
 @content_bp.route('/api/announcements/<aid>', methods=['DELETE'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def delete_announcement(aid):
     oid = get_object_id(aid)
     if not oid:
@@ -199,7 +199,7 @@ def get_faq_categories():
 
 
 @content_bp.route('/api/faq', methods=['POST'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def add_faq():
     data = request.get_json()
     if not re.match(r'^[\u4e00-\u9fff]+$', data.get('category', '')):
@@ -214,7 +214,7 @@ def add_faq():
 
 
 @content_bp.route('/api/faq/<fid>', methods=['PUT'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def update_faq(fid):
     oid = get_object_id(fid)
     if not oid:
@@ -229,7 +229,7 @@ def update_faq(fid):
 
 
 @content_bp.route('/api/faq/<fid>', methods=['DELETE'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def delete_faq(fid):
     oid = get_object_id(fid)
     if not oid:
@@ -271,7 +271,7 @@ def get_fund_settings():
 
 
 @content_bp.route('/api/fund-settings', methods=['POST'])
-@login_required
+@admin_required(roles=['super_admin', 'finance', 'cms'])
 def update_fund_settings():
     data = request.get_json()
     db.temple_fund.update_one(
@@ -290,7 +290,7 @@ def get_links():
 
 
 @content_bp.route('/api/links/<lid>', methods=['PUT'])
-@login_required
+@admin_required(roles=['super_admin', 'cms'])
 def update_link(lid):
     oid = get_object_id(lid)
     if not oid:

@@ -1,3 +1,4 @@
+import csv
 import io
 from datetime import datetime, timedelta, timezone
 
@@ -6,7 +7,7 @@ from flask import Blueprint, Response, jsonify, request, session
 from werkzeug.security import generate_password_hash
 
 from database import db, write_audit_log
-from utils.decorators import login_required, admin_required
+from utils.decorators import admin_required
 from utils.helpers import get_object_id
 
 admin_bp = Blueprint('admin', __name__)
@@ -31,6 +32,16 @@ def _serialize_doc(obj):
     if not isinstance(obj, (int, float, str, bool, type(None))):
         return str(obj)
     return obj
+
+
+def _safe_csv_cell(value):
+    if value is None:
+        text = ''
+    else:
+        text = str(value)
+    if text.lstrip()[:1] in ('=', '+', '-', '@'):
+        return "'" + text
+    return text
 
 
 def _tw_time(dt):
@@ -399,12 +410,16 @@ def export_data_csv():
 
     si = io.StringIO()
     si.write('\ufeff')  # BOM for Excel
-    si.write('單號,類型,狀態,姓名,電話,Email,地址,項目,金額,建立日期,付款日期\n')
+    writer = csv.writer(si, lineterminator='\n')
+    writer.writerow(['單號', '類型', '狀態', '姓名', '電話', 'Email', '地址', '項目', '金額', '建立日期', '付款日期'])
 
     for doc in cursor:
         cust = doc.get('customer', {})
         # 加上規格名稱的判斷
-        items_str = '；'.join([f"{i.get('name', '')}{'('+i.get('variantName', '')+')' if i.get('variantName') else ''}x{i.get('qty', 1)}" for i in doc.get('items', [])])
+        items_str = '；'.join([
+            f"{i.get('name', '')}{'('+i.get('variantName', '')+')' if i.get('variantName') else ''}x{i.get('qty', 1)}"
+            for i in doc.get('items', [])
+        ])
         row = [
             doc.get('orderId', ''),
             _TYPE_LABELS.get(doc.get('orderType', ''), ''),
@@ -412,13 +427,13 @@ def export_data_csv():
             cust.get('name', ''),
             cust.get('phone', ''),
             cust.get('email', ''),
-            cust.get('address', '').replace(',', '，'),
-            items_str.replace(',', '，'),
+            cust.get('address', ''),
+            items_str,
             str(doc.get('total', 0)),
             _tw_time(doc.get('createdAt')),
             _tw_time(doc.get('paidAt'))
         ]
-        si.write(','.join(row) + '\n')
+        writer.writerow([_safe_csv_cell(value) for value in row])
 
     return Response(
         si.getvalue(),
@@ -629,7 +644,7 @@ def get_audit_log():
 # =========================================================
 
 @admin_bp.route('/api/settings/bank', methods=['GET', 'POST'])
-@login_required
+@admin_required(roles=['super_admin', 'finance'])
 def handle_bank_settings():
     if request.method == 'GET':
         fund_set = db.settings.find_one({"type": "bank_info"}) or {}
@@ -687,7 +702,7 @@ def get_public_bank_info():
 
 
 @admin_bp.route('/api/admin/receipt/<receipt_id>', methods=['GET'])
-@login_required
+@admin_required(roles=['super_admin', 'finance', 'ops', 'data'])
 def query_receipt(receipt_id):
     """萬能單據查詢"""
     if db is None:
@@ -709,7 +724,7 @@ def query_receipt(receipt_id):
 
 
 @admin_bp.route('/api/admin/receipt/<receipt_id>', methods=['PUT'])
-@login_required
+@admin_required(roles=['super_admin'])
 def update_receipt(receipt_id):
     """萬能單據修改"""
     if db is None:
@@ -738,7 +753,7 @@ def update_receipt(receipt_id):
 
 
 @admin_bp.route('/api/admin/receipt/<receipt_id>', methods=['DELETE'])
-@login_required
+@admin_required(roles=['super_admin'])
 def force_delete_receipt(receipt_id):
     """強制刪除單據"""
     if db is None:
@@ -767,6 +782,7 @@ def force_delete_receipt(receipt_id):
 
 
 @admin_bp.route('/api/debug-connection')
+@admin_required(roles=['super_admin'])
 def debug_connection():
     status = {}
     try:

@@ -52,10 +52,16 @@ def get_current_user():
 @user_bp.route('/api/user/profile', methods=['PUT'])
 @user_login_required
 def update_user_profile():
-    data = request.get_json()
+    data = request.get_json() or {}
     line_id = session.get('user_line_id')
 
     is_valid, error_msg = validate_real_name(data.get('realName', '').strip())
+    if not is_valid:
+        return jsonify({"error": error_msg}), 400
+
+    if db is None:
+        return jsonify({"error": "資料庫連線失敗"}), 500
+
     update_data = {
         "realName": data.get('realName', '').strip(),
         "nickname": data.get('nickname', '').strip(),
@@ -73,24 +79,7 @@ def update_user_profile():
         {"lineId": line_id},
         {"$set": update_data}
     )
-    if not is_valid:
-        return jsonify({"error": error_msg}), 400
-
-    if db is not None:
-        db.users.update_one(
-            {"lineId": line_id},
-            {"$set": {
-                "realName": data.get('realName'),
-                "nickname": data.get('nickname'),
-                "phone": data.get('phone'),
-                "address": data.get('address'),
-                "email": data.get('email'),
-                "lunarBirthday": data.get('lunarBirthday'),
-                "birthTime": data.get('birthTime')
-            }}
-        )
-        return jsonify({"success": True, "message": "資料已更新"})
-    return jsonify({"error": "資料庫連線失敗"}), 500
+    return jsonify({"success": True, "message": "資料已更新"})
 
 
 @user_bp.route('/api/user/feedbacks', methods=['GET'])

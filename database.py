@@ -20,6 +20,10 @@ def init_db(mongo_uri):
     return db
 
 
+def get_client():
+    return _client
+
+
 def write_audit_log(admin_username, action, target='', details=''):
     """寫入操作日誌至 audit_log collection"""
     if db is None:

@@ -12,6 +12,17 @@ from extensions import csrf, limiter
 auth_bp = Blueprint('auth', __name__)
 
 
+def _safe_next_url(next_url):
+    if not next_url:
+        return '/'
+    if any(char in next_url for char in ('\\', '\r', '\n')):
+        return '/'
+    parsed = urllib.parse.urlparse(next_url)
+    if parsed.scheme or parsed.netloc or not next_url.startswith('/') or next_url.startswith('//'):
+        return '/'
+    return next_url
+
+
 # =========================================
 # LINE OAuth 登入 (前台使用者)
 # =========================================
@@ -26,7 +37,7 @@ def line_login():
 
     state = secrets.token_hex(16)
     session['line_state'] = state
-    next_url = request.args.get('next', '/')
+    next_url = _safe_next_url(request.args.get('next', '/'))
     session['line_next_url'] = next_url
 
     url = (
@@ -52,6 +63,8 @@ def line_callback():
 
     if state != session_state:
         return "登入狀態驗證失敗，請重新操作", 400
+    if not code:
+        return "LINE 未回傳授權碼，請重新操作", 400
 
     token_url = "https://api.line.me/oauth2/v2.1/token"
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -63,14 +76,20 @@ def line_callback():
         'client_secret': line_channel_secret
     }
 
-    token_res = requests.post(token_url, headers=headers, data=data)
+    try:
+        token_res = requests.post(token_url, headers=headers, data=data, timeout=10)
+    except requests.RequestException:
+        return "連線 LINE 登入服務失敗，請稍後再試", 502
     if token_res.status_code != 200:
         return f"獲取 Token 失敗: {token_res.text}", 400
 
     access_token = token_res.json().get('access_token')
     profile_url = "https://api.line.me/v2/profile"
     profile_headers = {'Authorization': f'Bearer {access_token}'}
-    profile_res = requests.get(profile_url, headers=profile_headers)
+    try:
+        profile_res = requests.get(profile_url, headers=profile_headers, timeout=10)
+    except requests.RequestException:
+        return "連線 LINE 使用者資料服務失敗，請稍後再試", 502
 
     if profile_res.status_code != 200:
         return "獲取使用者資料失敗", 400
@@ -97,7 +116,7 @@ def line_callback():
     session['user_display_name'] = display_name
     session.permanent = True
 
-    next_url = session.pop('line_next_url', '/')
+    next_url = _safe_next_url(session.pop('line_next_url', '/'))
     return redirect(next_url)
 
 
