@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from flask import Blueprint, Response, jsonify, request, session
+from pymongo import UpdateOne
 from werkzeug.security import generate_password_hash
 
 from database import db, write_audit_log
@@ -219,8 +220,14 @@ def get_data_history():
     status = request.args.get('status')
     start = request.args.get('start')
     end = request.args.get('end')
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 50))
+    try:
+        page = max(int(request.args.get('page', 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
+    try:
+        per_page = min(max(int(request.args.get('per_page', 50)), 1), 100)
+    except (TypeError, ValueError):
+        per_page = 50
     skip = (page - 1) * per_page
 
     date_range = None
@@ -252,7 +259,12 @@ def get_data_history():
             oq['createdAt'] = date_range
 
         total_orders = db.orders.count_documents(oq)
-        for doc in db.orders.find(oq).sort("createdAt", -1).limit(skip + per_page):
+        order_cursor = db.orders.find(oq).sort("createdAt", -1)
+        if order_type:
+            order_cursor = order_cursor.skip(skip).limit(per_page)
+        else:
+            order_cursor = order_cursor.limit(skip + per_page)
+        for doc in order_cursor:
             sort_ts = _get_sort_ts(doc.get('createdAt'))
             doc['_id'] = str(doc['_id'])
             doc['createdAt'] = _tw_time(doc.get('createdAt'))
@@ -288,7 +300,12 @@ def get_data_history():
             fq['createdAt'] = date_range
 
         total_feedback = db.feedback.count_documents(fq)
-        for doc in db.feedback.find(fq).sort("createdAt", -1).limit(skip + per_page):
+        feedback_cursor = db.feedback.find(fq).sort("createdAt", -1)
+        if order_type == 'feedback':
+            feedback_cursor = feedback_cursor.skip(skip).limit(per_page)
+        else:
+            feedback_cursor = feedback_cursor.limit(skip + per_page)
+        for doc in feedback_cursor:
             sort_ts = _get_sort_ts(doc.get('createdAt'))
             fb = {
                 '_id': str(doc['_id']),
@@ -327,7 +344,7 @@ def get_data_history():
 
     # 清除排序暫存欄位並分頁
     total = total_orders + total_feedback
-    page_results = all_results[skip:skip + per_page]
+    page_results = all_results if order_type else all_results[skip:skip + per_page]
     for r in page_results:
         r.pop('_sortTs', None)
 
@@ -450,38 +467,47 @@ def get_data_members():
         return jsonify([])
 
     try:
-        # 🚀 秘訣 1：一次性向資料庫要「所有人的訂單總數」字典，極度省 RAM 且神速
-        order_counts = {}
-        for item in db.orders.aggregate([{"$group": {"_id": "$lineId", "count": {"$sum": 1}}}]):
-            if item.get("_id"):
-                order_counts[item["_id"]] = item["count"]
-
-        # 🚀 秘訣 2：一次性向資料庫要「所有人的回饋總數」字典
-        feedback_counts = {}
-        for item in db.feedback.aggregate([{"$group": {"_id": "$lineId", "count": {"$sum": 1}}}]):
-            if item.get("_id"):
-                feedback_counts[item["_id"]] = item["count"]
-
-        # 🚀 秘訣 3：記憶體瘦身 (Projection)
-        # 只抓前台真的需要的欄位，不要把不相干的資料庫欄位拉進 RAM。
-        # 同時設定 limit(3000) 當作安全閥，避免未來會員破萬時 RAM 又爆掉。
         projection = {
-            "displayName": 1, "lineId": 1, "lastLoginAt": 1, 
-            "createdAt": 1, "pictureUrl": 1, "realName": 1
+            "displayName": 1,
+            "lineId": 1,
+            "lastLoginAt": 1,
+            "createdAt": 1,
+            "pictureUrl": 1,
+            "realName": 1,
         }
-        cursor = db.users.find({}, projection).sort("lastLoginAt", -1).limit(3000)
-        
+        users = list(db.users.find({}, projection).sort("lastLoginAt", -1).limit(3000))
+        line_ids = [user.get("lineId") for user in users if user.get("lineId")]
+
+        order_counts = {}
+        feedback_counts = {}
+        if line_ids:
+            order_pipeline = [
+                {"$match": {"lineId": {"$in": line_ids}}},
+                {"$group": {"_id": "$lineId", "count": {"$sum": 1}}},
+            ]
+            feedback_pipeline = [
+                {"$match": {"lineId": {"$in": line_ids}}},
+                {"$group": {"_id": "$lineId", "count": {"$sum": 1}}},
+            ]
+            order_counts = {
+                item["_id"]: item["count"]
+                for item in db.orders.aggregate(order_pipeline)
+                if item.get("_id")
+            }
+            feedback_counts = {
+                item["_id"]: item["count"]
+                for item in db.feedback.aggregate(feedback_pipeline)
+                if item.get("_id")
+            }
+
         results = []
-        for user in cursor:
+        for user in users:
             user['_id'] = str(user['_id'])
             user['lastLoginAt'] = _tw_time(user.get('lastLoginAt'))
             user['createdAt'] = _tw_time(user.get('createdAt'))
-            
-            # 從剛剛算好的總表字典裡快速取值 (O(1) 速度)，完全不用再連線資料庫
             line_id = user.get('lineId')
             user['orderCount'] = order_counts.get(line_id, 0)
             user['feedbackCount'] = feedback_counts.get(line_id, 0)
-            
             results.append(_serialize_doc(user))
 
         return jsonify(results)
@@ -490,15 +516,6 @@ def get_data_members():
         import traceback
         error_msg = traceback.format_exc()
         print(f"[嚴重崩潰] 會員列表無法載入:\n{error_msg}")
-        return jsonify({"error": f"資料庫查詢錯誤: {str(e)}"}), 500
-
-    except Exception as e:
-        # 🛡️ 如果是一開始的 cursor 迭代或連線就當機，會被這裡接住
-        import traceback
-        error_msg = traceback.format_exc()
-        print(f"[嚴重崩潰] 會員列表無法載入:\n{error_msg}")
-        
-        # 不再給 500 HTML 頁面，而是回傳 500 JSON，讓前端可以優雅地顯示真正的錯誤原因！
         return jsonify({"error": f"資料庫查詢錯誤: {str(e)}"}), 500
 
 
@@ -843,25 +860,37 @@ def fix_feedback_snapshots():
     if db is None:
         return jsonify({"error": "資料庫未連線"}), 500
 
-    updated_count = 0
-    # 找出所有「還沒有 realName 欄位」或「realName 為空」的舊回饋單
-    cursor = db.feedback.find({"$or": [{"realName": {"$exists": False}}, {"realName": ""}]})
-    
-    for fb in cursor:
-        line_id = fb.get('lineId')
-        if line_id:
-            user_info = db.users.find_one({"lineId": line_id})
-            if user_info:
-                db.feedback.update_one(
-                    {"_id": fb['_id']},
-                    {"$set": {
-                        "realName": user_info.get('realName', ''),
-                        "phone": user_info.get('phone', ''),
-                        "address": user_info.get('address', ''),
-                        "email": user_info.get('email', ''),
-                        "lunarBirthday": user_info.get('lunarBirthday', '')
-                    }}
-                )
-                updated_count += 1
+    feedback = list(db.feedback.find(
+        {"$or": [{"realName": {"$exists": False}}, {"realName": ""}]},
+        {"lineId": 1},
+    ))
+    line_ids = list({fb.get('lineId') for fb in feedback if fb.get('lineId')})
+    users = {
+        user['lineId']: user
+        for user in db.users.find(
+            {"lineId": {"$in": line_ids}},
+            {"lineId": 1, "realName": 1, "phone": 1, "address": 1, "email": 1, "lunarBirthday": 1},
+        )
+    } if line_ids else {}
 
-    return jsonify({"success": True, "message": f"太棒了！已成功為 {updated_count} 筆歷史回饋單補上資料快照！"})
+    operations = []
+    for fb in feedback:
+        user_info = users.get(fb.get('lineId'))
+        if not user_info:
+            continue
+        operations.append(UpdateOne(
+            {"_id": fb['_id']},
+            {"$set": {
+                "realName": user_info.get('realName', ''),
+                "phone": user_info.get('phone', ''),
+                "address": user_info.get('address', ''),
+                "email": user_info.get('email', ''),
+                "lunarBirthday": user_info.get('lunarBirthday', ''),
+            }},
+        ))
+
+    updated_count = 0
+    if operations:
+        updated_count = db.feedback.bulk_write(operations, ordered=False).modified_count
+
+    return jsonify({"success": True, "message": f"已成功為 {updated_count} 筆歷史回饋單補上資料快照"})

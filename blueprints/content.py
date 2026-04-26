@@ -54,7 +54,19 @@ def get_ship_clothes_list():
     start_date = today_date - timedelta(days=1)
     end_date = today_date + timedelta(days=5)
 
-    cursor = db.shipments.find({"pickupDate": {"$gte": start_date, "$lte": end_date}}).sort("pickupDate", 1)
+    projection = {
+        "name": 1,
+        "birthYear": 1,
+        "lineGroup": 1,
+        "lineName": 1,
+        "clothes": 1,
+        "submitDateStr": 1,
+        "pickupDateStr": 1,
+    }
+    cursor = db.shipments.find(
+        {"pickupDate": {"$gte": start_date, "$lte": end_date}},
+        projection,
+    ).sort("pickupDate", 1)
     results = []
     for doc in cursor:
         masked_clothes = [{'id': i.get('id', ''), 'owner': mask_name(i.get('owner', ''))} for i in doc.get('clothes', [])]
@@ -122,7 +134,10 @@ def delete_product(pid):
 
 @content_bp.route('/api/announcements', methods=['GET'])
 def get_announcements():
-    cursor = db.announcements.find().sort([("isPinned", -1), ("_id", -1)])
+    cursor = db.announcements.find(
+        {},
+        {"date": 1, "title": 1, "content": 1, "isPinned": 1, "createdAt": 1},
+    ).sort([("isPinned", -1), ("_id", -1)])
     results = []
     for doc in cursor:
         doc['_id'] = str(doc['_id'])
@@ -189,7 +204,10 @@ def delete_announcement(aid):
 @content_bp.route('/api/faq', methods=['GET'])
 def get_faqs():
     query = {'category': request.args.get('category')} if request.args.get('category') else {}
-    faqs = db.faq.find(query).sort([('isPinned', -1), ('createdAt', -1)])
+    faqs = db.faq.find(
+        query,
+        {"question": 1, "answer": 1, "category": 1, "isPinned": 1, "createdAt": 1},
+    ).sort([('isPinned', -1), ('createdAt', -1)])
     return jsonify([{**doc, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d')} for doc in faqs])
 
 

@@ -25,6 +25,15 @@ class OrderValidationError(ValueError):
     pass
 
 
+PRODUCT_PROJECTION = {
+    "name": 1,
+    "price": 1,
+    "variants": 1,
+    "isActive": 1,
+    "isDonation": 1,
+}
+
+
 FUND_ITEMS = {
     'suixi': {'name': '[建廟] 隨喜助建', 'price': 100},
     'tile': {'name': '[建廟] 建廟瓦片', 'price': 600},
@@ -54,13 +63,14 @@ def _to_money(value, field='金額'):
     return number
 
 
-def _normalize_product_item(raw_item, order_type):
+def _normalize_product_item(raw_item, order_type, product=None):
     product_id = raw_item.get('id')
     product_oid = get_object_id(product_id)
     if not product_oid:
         raise OrderValidationError("商品資料格式錯誤，請重新整理頁面")
 
-    product = db.products.find_one({"_id": product_oid})
+    if product is None:
+        product = db.products.find_one({"_id": product_oid}, PRODUCT_PROJECTION)
     if not product or not product.get('isActive', True):
         raise OrderValidationError("商品已下架，請重新整理頁面")
     if order_type == 'donation' and not product.get('isDonation', False):
@@ -162,7 +172,24 @@ def _normalize_order_payload(data, order_type):
     shipping_fee = 0
 
     if order_type in ('shop', 'donation'):
-        items = [_normalize_product_item(item, order_type) for item in raw_items]
+        product_oids = []
+        for item in raw_items:
+            product_oid = get_object_id(item.get('id'))
+            if not product_oid:
+                raise OrderValidationError("商品資料格式錯誤，請重新整理頁面")
+            product_oids.append(product_oid)
+
+        products = {
+            product['_id']: product
+            for product in db.products.find(
+                {"_id": {"$in": list(set(product_oids))}},
+                PRODUCT_PROJECTION,
+            )
+        }
+        items = [
+            _normalize_product_item(item, order_type, products.get(product_oids[index]))
+            for index, item in enumerate(raw_items)
+        ]
         subtotal = sum(item['price'] * item['qty'] for item in items)
         if order_type == 'shop':
             shipping_method = data.get('shippingMethod', 'home')
@@ -247,7 +274,13 @@ def get_public_donations():
     else:
         query["orderType"] = target_type
 
-    cursor = db.orders.find(query).sort("updatedAt", -1).limit(1000)
+    projection = {
+        "customer.name": 1,
+        "customer.prayer": 1,
+        "items.name": 1,
+        "items.qty": 1,
+    }
+    cursor = db.orders.find(query, projection).sort("updatedAt", -1).limit(1000)
     results = []
     for doc in cursor:
         items_summary = [f"{i['name']} x{i['qty']}" for i in doc.get('items', [])]

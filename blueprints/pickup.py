@@ -28,7 +28,7 @@ def create_pickup_reservation():
         duplicate_order = db.pickups.find_one({
             "clothes.clothId": {"$in": incoming_ids},
             "pickupDate": {"$gte": today_str}
-        })
+        }, {"clothes.clothId": 1})
 
         if duplicate_order:
             found_id = ""
@@ -78,7 +78,17 @@ def get_public_pickups():
         return jsonify([])
 
     threshold_date = (get_tw_now() - timedelta(days=1)).strftime('%Y-%m-%d')
-    cursor = db.pickups.find({"pickupDate": {"$gte": threshold_date}}).sort("pickupDate", 1)
+    projection = {
+        "pickupDate": 1,
+        "pickupType": 1,
+        "clothes.clothId": 1,
+        "clothes.name": 1,
+        "clothes.birthYear": 1,
+    }
+    cursor = db.pickups.find(
+        {"pickupDate": {"$gte": threshold_date}},
+        projection,
+    ).sort("pickupDate", 1)
 
     results = defaultdict(lambda: {'self': [], 'delivery': []})
 

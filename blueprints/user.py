@@ -20,7 +20,10 @@ def get_current_user():
     if db is not None:
         user = db.users.find_one({'lineId': line_id}, {'_id': 0})
         if user:
-            has_received = db.feedback.count_documents({"lineId": line_id, "status": "sent"}) > 0
+            has_received = db.feedback.find_one(
+                {"lineId": line_id, "status": "sent"},
+                {"_id": 1},
+            ) is not None
             user['has_received_gift'] = has_received
 
             user['title'] = ""
@@ -28,7 +31,7 @@ def get_current_user():
                 "lineId": line_id,
                 "orderType": "committee",
                 "status": "paid"
-            })
+            }, {"items.name": 1})
 
             highest_title = ""
             current_rank = 99
@@ -87,7 +90,15 @@ def update_user_profile():
 def get_user_feedbacks():
     line_id = session.get('user_line_id')
     if db is not None:
-        cursor = db.feedback.find({"lineId": line_id}).sort("createdAt", -1)
+        projection = {
+            "feedbackId": 1,
+            "category": 1,
+            "content": 1,
+            "status": 1,
+            "createdAt": 1,
+            "trackingNumber": 1,
+        }
+        cursor = db.feedback.find({"lineId": line_id}, projection).sort("createdAt", -1)
         results = []
         for doc in cursor:
             content_preview = doc.get('content', '')
@@ -116,7 +127,13 @@ def get_user_pickups():
     if db is None:
         return jsonify([])
 
-    cursor = db.pickups.find({"lineId": line_id}).sort("pickupDate", -1)
+    projection = {
+        "pickupType": 1,
+        "pickupDate": 1,
+        "clothes": 1,
+        "createdAt": 1,
+    }
+    cursor = db.pickups.find({"lineId": line_id}, projection).sort("pickupDate", -1)
     results = []
     today = get_tw_now().replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -146,7 +163,16 @@ def get_user_orders():
     if not line_id or db is None:
         return jsonify([])
 
-    cursor = db.orders.find({"lineId": line_id, "orderType": "shop"}).sort("createdAt", -1)
+    projection = {
+        "orderId": 1,
+        "items": 1,
+        "total": 1,
+        "status": 1,
+        "trackingNumber": 1,
+        "createdAt": 1,
+        "paymentDeadline": 1,
+    }
+    cursor = db.orders.find({"lineId": line_id, "orderType": "shop"}, projection).sort("createdAt", -1)
     results = []
     for doc in cursor:
         tw_created = doc['createdAt'] + timedelta(hours=8)
@@ -171,7 +197,20 @@ def get_user_donations():
     if not line_id or db is None:
         return jsonify([])
 
-    cursor = db.orders.find({"lineId": line_id, "orderType": {"$in": ["donation", "fund", "committee"]}}).sort("createdAt", -1)
+    projection = {
+        "orderType": 1,
+        "orderId": 1,
+        "items": 1,
+        "total": 1,
+        "status": 1,
+        "is_reported": 1,
+        "createdAt": 1,
+        "paymentDeadline": 1,
+    }
+    cursor = db.orders.find(
+        {"lineId": line_id, "orderType": {"$in": ["donation", "fund", "committee"]}},
+        projection,
+    ).sort("createdAt", -1)
     results = []
     for doc in cursor:
         tw_created = doc['createdAt'] + timedelta(hours=8)
@@ -198,7 +237,10 @@ def get_user_fund_summary():
     if db is None:
         return jsonify([])
 
-    cursor = db.orders.find({"lineId": line_id, "orderType": "fund", "status": "paid"})
+    cursor = db.orders.find(
+        {"lineId": line_id, "orderType": "fund", "status": "paid"},
+        {"customer.name": 1, "total": 1},
+    )
     summary_dict = defaultdict(int)
     for doc in cursor:
         customer = doc.get('customer', {})

@@ -1,48 +1,72 @@
 import os
+import time
 from datetime import timedelta
 
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, g, request
 from flask_cors import CORS
 import psutil
+
 import database
 from extensions import csrf, limiter
+
+
+def _env_int(name, default):
+    try:
+        return int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
 
 
 def create_app():
     load_dotenv()
     app = Flask(__name__)
-# =========================================
-    # 🌟 新增：記憶體監控 (依據 Claude 的建議)
-    # =========================================
-    @app.before_request
-    def log_memory():
-        process = psutil.Process(os.getpid())
-        mem = process.memory_info().rss / 1024 / 1024
-        # 建議印出所有請求的記憶體，這樣你才知道平常消耗多少，超過 400MB 加上警告符號
-        if mem > 400:
-            print(f"⚠️ [記憶體警告] 目前用量: {mem:.0f} MB", flush=True)
-        else:
-            print(f"📊 [記憶體監控] 目前用量: {mem:.0f} MB", flush=True)
-    # =========================================
-    # 1. 安全性設定
-    # =========================================
-    is_production = os.environ.get('RENDER') is not None
-    _secret_key = os.environ.get('SECRET_KEY')
-    if not _secret_key:
-        if is_production:
-            raise RuntimeError("SECRET_KEY 環境變數未設定，無法啟動生產環境")
-        _secret_key = 'dev-insecure-key-do-not-use-in-production'
 
-    app.config['SECRET_KEY'] = _secret_key
+    process = psutil.Process(os.getpid())
+    memory_state = {'last_checked': 0.0}
+    slow_request_ms = _env_int('SLOW_REQUEST_MS', 750)
+    memory_warn_mb = _env_int('MEMORY_WARN_MB', 400)
+    memory_check_interval = _env_int('MEMORY_CHECK_INTERVAL_SECONDS', 60)
+
+    @app.before_request
+    def start_request_timer():
+        g.request_started_at = time.perf_counter()
+
+    @app.after_request
+    def add_perf_headers(response):
+        started_at = getattr(g, 'request_started_at', None)
+        if started_at is not None:
+            elapsed_ms = (time.perf_counter() - started_at) * 1000
+            response.headers['X-Response-Time'] = f'{elapsed_ms:.1f}ms'
+            if elapsed_ms >= slow_request_ms:
+                print(
+                    f"[Slow Request] {request.method} {request.path} "
+                    f"{response.status_code} {elapsed_ms:.1f}ms",
+                    flush=True,
+                )
+
+        now = time.monotonic()
+        if now - memory_state['last_checked'] >= memory_check_interval:
+            memory_state['last_checked'] = now
+            mem_mb = process.memory_info().rss / 1024 / 1024
+            if mem_mb >= memory_warn_mb:
+                print(f"[Memory Warning] RSS {mem_mb:.0f} MB", flush=True)
+
+        return response
+
+    is_production = os.environ.get('RENDER') is not None
+    secret_key = os.environ.get('SECRET_KEY')
+    if not secret_key:
+        if is_production:
+            raise RuntimeError("SECRET_KEY is required in production")
+        secret_key = 'dev-insecure-key-do-not-use-in-production'
+
+    app.config['SECRET_KEY'] = secret_key
     app.config['SESSION_COOKIE_SECURE'] = is_production
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.permanent_session_lifetime = timedelta(hours=8)
 
-    # =========================================
-    # 2. 應用程式設定
-    # =========================================
     app.config['SENDGRID_API_KEY'] = os.environ.get('SENDGRID_API_KEY')
     app.config['MAIL_SENDER'] = os.environ.get('MAIL_USERNAME')
     app.config['LINE_CHANNEL_ID'] = os.environ.get('LINE_CHANNEL_ID')
@@ -50,9 +74,6 @@ def create_app():
     app.config['LINE_CALLBACK_URL'] = os.environ.get('LINE_CALLBACK_URL')
     app.config['ADMIN_PASSWORD_HASH'] = os.environ.get('ADMIN_PASSWORD_HASH')
 
-    # =========================================
-    # 3. 擴充套件初始化
-    # =========================================
     csrf.init_app(app)
     limiter.init_app(app)
 
@@ -64,14 +85,8 @@ def create_app():
     ]
     CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
 
-    # =========================================
-    # 4. 資料庫連線
-    # =========================================
     database.init_db(os.environ.get('MONGO_URI'))
 
-    # =========================================
-    # 5. 註冊 Blueprints
-    # =========================================
     from blueprints.main import main_bp
     from blueprints.auth import auth_bp
     from blueprints.user import user_bp

@@ -18,11 +18,19 @@ def enrich_feedback_for_admin(cursor):
     if not docs:
         return []
 
-    line_ids = [d.get('lineId') for d in docs if d.get('lineId')]
+    line_ids = list({d.get('lineId') for d in docs if d.get('lineId')})
 
     users_map = {}
     if line_ids:
-        for u in db.users.find({"lineId": {"$in": line_ids}}):
+        user_projection = {
+            "lineId": 1,
+            "realName": 1,
+            "phone": 1,
+            "address": 1,
+            "email": 1,
+            "lunarBirthday": 1,
+        }
+        for u in db.users.find({"lineId": {"$in": line_ids}}, user_projection):
             users_map[u['lineId']] = u
 
     sent_set = set()
@@ -100,7 +108,17 @@ def add_feedback():
 def get_public_approved_feedback():
     if db is None:
         return jsonify([])
-    cursor = db.feedback.find({"status": {"$in": ["approved", "sent"]}}).sort("approvedAt", -1)
+    projection = {
+        "feedbackId": 1,
+        "nickname": 1,
+        "category": 1,
+        "content": 1,
+        "createdAt": 1,
+    }
+    cursor = db.feedback.find(
+        {"status": {"$in": ["approved", "sent"]}},
+        projection,
+    ).sort("approvedAt", -1)
     results = []
     for doc in cursor:
         results.append({
