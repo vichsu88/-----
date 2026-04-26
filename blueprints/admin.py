@@ -10,6 +10,7 @@ from werkzeug.security import generate_password_hash
 from database import db, write_audit_log
 from utils.decorators import admin_required
 from utils.helpers import get_object_id
+from utils.security import as_string, get_json_object, get_json_value, safe_regex_contains
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -81,6 +82,51 @@ _TYPE_LABELS = {
     'committee': '🏛️ 委員會',
     'feedback': '💬 回饋'
 }
+
+VALID_ORDER_TYPES = {'shop', 'donation', 'fund', 'committee'}
+VALID_HISTORY_TYPES = VALID_ORDER_TYPES | {'feedback'}
+VALID_STATUSES = {'pending', 'paid', 'shipped', 'approved', 'sent', 'cancelled'}
+
+
+def _clean_bank_info(value):
+    if not isinstance(value, dict):
+        return {}
+    return {
+        "bankCode": as_string(value.get('bankCode')).strip(),
+        "bankName": as_string(value.get('bankName')).strip(),
+        "account": as_string(value.get('account')).strip(),
+    }
+
+
+def _clean_committee_roles(value):
+    if not isinstance(value, list):
+        return []
+    roles = []
+    for item in value[:50]:
+        if not isinstance(item, dict):
+            continue
+        try:
+            limit = int(item.get('limit', 0))
+            price = int(item.get('price', 0))
+        except (TypeError, ValueError):
+            continue
+        roles.append({
+            "name": as_string(item.get('name')).strip(),
+            "limit": max(0, limit),
+            "price": max(0, price),
+        })
+    return [role for role in roles if role["name"]]
+
+
+def _clean_receipt_update(value):
+    if not isinstance(value, dict):
+        return {}
+    blocked_fields = {'_id'}
+    return {
+        key: child
+        for key, child in value.items()
+        if key not in blocked_fields
+    }
 
 
 # =========================================================
@@ -214,12 +260,16 @@ def get_data_history():
     if db is None:
         return jsonify({"results": [], "total": 0})
 
-    order_type = request.args.get('type')
-    order_id = request.args.get('orderId')
-    name = request.args.get('name')
-    status = request.args.get('status')
-    start = request.args.get('start')
-    end = request.args.get('end')
+    order_type = as_string(request.args.get('type')).strip()
+    order_id = as_string(request.args.get('orderId')).strip()
+    name = as_string(request.args.get('name')).strip()
+    status = as_string(request.args.get('status')).strip()
+    start = as_string(request.args.get('start')).strip()
+    end = as_string(request.args.get('end')).strip()
+    if order_type and order_type not in VALID_HISTORY_TYPES:
+        return jsonify({"error": "不支援的查詢類型"}), 400
+    if status and status not in VALID_STATUSES:
+        return jsonify({"error": "不支援的狀態"}), 400
     try:
         page = max(int(request.args.get('page', 1)), 1)
     except (TypeError, ValueError):
@@ -250,9 +300,9 @@ def get_data_history():
         if order_type:
             oq['orderType'] = order_type
         if order_id:
-            oq['orderId'] = {"$regex": order_id.strip(), "$options": "i"}
+            oq['orderId'] = {"$regex": safe_regex_contains(order_id), "$options": "i"}
         if name:
-            oq['customer.name'] = {"$regex": name.strip()}
+            oq['customer.name'] = {"$regex": safe_regex_contains(name)}
         if status:
             oq['status'] = status
         if date_range:
@@ -286,10 +336,10 @@ def get_data_history():
     if not order_type or order_type == 'feedback':
         fq = {}
         if order_id:
-            fq['feedbackId'] = {"$regex": order_id.strip(), "$options": "i"}
+            fq['feedbackId'] = {"$regex": safe_regex_contains(order_id), "$options": "i"}
         if name:
             # 支援同時搜尋「真實姓名」與「暱稱」，且不分大小寫
-            name_regex = {"$regex": name.strip(), "$options": "i"}
+            name_regex = {"$regex": safe_regex_contains(name), "$options": "i"}
             fq['$or'] = [
                 {'nickname': name_regex},
                 {'realName': name_regex}
@@ -357,17 +407,17 @@ def mark_donations_reported():
     if db is None:
         return jsonify({"error": "資料庫未連線"}), 500
 
-    data = request.get_json()
+    data = get_json_object()
     if not data or 'ids' not in data:
         return jsonify({"error": "未提供要標記的資料"}), 400
 
     ids = data.get('ids', [])
-    if not ids:
+    if not isinstance(ids, list) or not ids:
         return jsonify({"error": "未提供訂單 ID"}), 400
 
     # 將字串 ID 轉換為 MongoDB 的 ObjectId
     object_ids = []
-    for id_str in ids:
+    for id_str in ids[:500]:
         oid = get_object_id(id_str)
         if oid:
             object_ids.append(oid)
@@ -403,17 +453,21 @@ def export_data_csv():
         return jsonify({"error": "資料庫未連線"}), 500
 
     query = {}
-    order_type = request.args.get('type')
+    order_type = as_string(request.args.get('type')).strip()
     if order_type:
+        if order_type not in VALID_ORDER_TYPES:
+            return jsonify({"error": "不支援的查詢類型"}), 400
         query['orderType'] = order_type
-    status = request.args.get('status')
+    status = as_string(request.args.get('status')).strip()
     if status:
+        if status not in VALID_STATUSES:
+            return jsonify({"error": "不支援的狀態"}), 400
         query['status'] = status
-    name = request.args.get('name')
+    name = as_string(request.args.get('name')).strip()
     if name:
-        query['customer.name'] = {"$regex": name.strip()}
-    start = request.args.get('start')
-    end = request.args.get('end')
+        query['customer.name'] = {"$regex": safe_regex_contains(name)}
+    start = as_string(request.args.get('start')).strip()
+    end = as_string(request.args.get('end')).strip()
     if start and end:
         try:
             query['createdAt'] = {
@@ -580,14 +634,18 @@ def list_admin_users():
 @admin_required(roles=['super_admin'])
 def create_admin_user():
     """建立新管理員帳號 — 接收陣列式權限"""
-    data = request.get_json()
-    username = data.get('username', '').strip()
-    password = data.get('password', '').strip()
+    data = get_json_object()
+    username = as_string(data.get('username')).strip()
+    password = as_string(data.get('password')).strip()
     permissions = data.get('permissions', [])
 
     # 向下相容：若前端仍傳 role 字串
     if not permissions and data.get('role'):
-        permissions = [data['role']]
+        permissions = [as_string(data.get('role')).strip()]
+    if isinstance(permissions, list):
+        permissions = [as_string(p).strip() for p in permissions if as_string(p).strip()]
+    else:
+        permissions = []
 
     if not username or not password:
         return jsonify({"error": "帳號和密碼不可為空"}), 400
@@ -645,7 +703,10 @@ def get_audit_log():
     if db is None:
         return jsonify([])
 
-    limit = int(request.args.get('limit', 200))
+    try:
+        limit = min(max(int(request.args.get('limit', 200)), 1), 500)
+    except (TypeError, ValueError):
+        limit = 200
     cursor = db.audit_log.find({}).sort("timestamp", -1).limit(limit)
 
     results = []
@@ -680,17 +741,19 @@ def handle_bank_settings():
             }
         })
     else:
-        data = request.get_json()
+        data = get_json_object()
         if 'fund' in data:
+            fund_data = _clean_bank_info(data.get('fund'))
             db.settings.update_one(
                 {"type": "bank_info"},
-                {"$set": data['fund']},
+                {"$set": fund_data},
                 upsert=True
             )
         if 'shop' in data:
+            shop_data = _clean_bank_info(data.get('shop'))
             db.settings.update_one(
                 {"type": "bank_info_shop"},
-                {"$set": data['shop']},
+                {"$set": shop_data},
                 upsert=True
             )
         write_audit_log(session.get('admin_username', 'admin'), '更新匯款帳號設定')
@@ -699,7 +762,9 @@ def handle_bank_settings():
 
 @admin_bp.route('/api/public/bank-info', methods=['GET'])
 def get_public_bank_info():
-    usage = request.args.get('type', 'shop')
+    usage = as_string(request.args.get('type'), 'shop')
+    if usage not in ('fund', 'shop'):
+        usage = 'shop'
     setting_key = "bank_info" if usage == 'fund' else "bank_info_shop"
 
     defaults = {
@@ -748,16 +813,14 @@ def update_receipt(receipt_id):
         return jsonify({"error": "資料庫未連線"}), 500
 
     clean_id = receipt_id.strip().upper()
-    data = request.get_json()
-    if not data:
+    update_data = _clean_receipt_update(get_json_object())
+    if not update_data:
         return jsonify({"error": "未收到 JSON 資料"}), 400
 
-    data.pop('_id', None)
-
     if clean_id.startswith('FB'):
-        result = db.feedback.update_one({"feedbackId": clean_id}, {"$set": data})
+        result = db.feedback.update_one({"feedbackId": clean_id}, {"$set": update_data})
     elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
-        result = db.orders.update_one({"orderId": clean_id}, {"$set": data})
+        result = db.orders.update_one({"orderId": clean_id}, {"$set": update_data})
     else:
         return jsonify({"error": f"無法識別的單號格式：{clean_id}"}), 400
 
@@ -841,7 +904,9 @@ def handle_committee_quota():
         return jsonify(db_roles)
     
     # 儲存設定
-    data = request.get_json()
+    data = _clean_committee_roles(get_json_value([]))
+    if not data:
+        return jsonify({"error": "未收到有效的委員會設定"}), 400
     db.settings.update_one(
         {"type": "committee_quota"},
         {"$set": {"roles": data}},

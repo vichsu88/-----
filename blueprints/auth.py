@@ -8,6 +8,7 @@ from werkzeug.security import check_password_hash
 
 from database import db, write_audit_log
 from extensions import csrf, limiter
+from utils.security import as_string, get_json_object
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -161,9 +162,9 @@ def session_check():
 @auth_bp.route('/api/login', methods=['POST'])
 @limiter.limit("5 per minute")
 def api_login():
-    data = request.json or {}
-    username = data.get('username', '').strip()
-    password = data.get('password', '')
+    data = get_json_object()
+    username = as_string(data.get('username')).strip()
+    password = as_string(data.get('password'))
 
     # 方式一：多帳號系統 — 查詢 AdminUser collection
     if username and db is not None:

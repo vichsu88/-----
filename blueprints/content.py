@@ -6,8 +6,38 @@ from flask import Blueprint, jsonify, request, session, Response
 from database import db
 from utils.decorators import admin_required
 from utils.helpers import get_object_id, get_tw_now, calculate_business_d2, mask_name
+from utils.security import as_string, get_json_object
 
 content_bp = Blueprint('content', __name__)
+
+
+def _to_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _to_bool(value, default=False):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.lower() in ('1', 'true', 'yes', 'on')
+    return default
+
+
+def _clean_variants(variants):
+    if not isinstance(variants, list):
+        return []
+    cleaned = []
+    for item in variants[:50]:
+        if not isinstance(item, dict):
+            continue
+        cleaned.append({
+            "name": as_string(item.get('name')).strip(),
+            "price": _to_int(item.get('price'), 0),
+        })
+    return cleaned
 
 
 # --- ShipClothes ---
@@ -22,24 +52,35 @@ def get_pickup_date_preview():
 def submit_ship_clothes():
     if db is None:
         return jsonify({"success": False, "message": "資料庫未連線"}), 500
-    data = request.get_json()
-    user_captcha = data.get('captcha', '').strip()
+    data = get_json_object()
+    user_captcha = as_string(data.get('captcha')).strip()
     correct_answer = session.get('captcha_answer')
     session.pop('captcha_answer', None)
 
     if not correct_answer or user_captcha != correct_answer:
         return jsonify({"success": False, "message": "驗證碼錯誤"}), 400
 
-    if not all(k in data and data[k] for k in ['name', 'lineGroup', 'lineName', 'birthYear', 'clothes']):
+    if not all(as_string(data.get(k)).strip() for k in ['name', 'lineGroup', 'lineName', 'birthYear']) or not isinstance(data.get('clothes'), list):
+        return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
+
+    clothes = []
+    for item in data.get('clothes', [])[:100]:
+        if not isinstance(item, dict):
+            continue
+        clothes.append({
+            "id": as_string(item.get('id')).strip(),
+            "owner": as_string(item.get('owner')).strip(),
+        })
+    if not clothes:
         return jsonify({"success": False, "message": "所有欄位皆為必填"}), 400
 
     now_tw = get_tw_now()
     pickup_date = calculate_business_d2(now_tw)
 
     db.shipments.insert_one({
-        "name": data['name'], "birthYear": data['birthYear'],
-        "lineGroup": data['lineGroup'], "lineName": data['lineName'],
-        "clothes": data['clothes'], "submitDate": now_tw,
+        "name": as_string(data.get('name')).strip(), "birthYear": as_string(data.get('birthYear')).strip(),
+        "lineGroup": as_string(data.get('lineGroup')).strip(), "lineName": as_string(data.get('lineName')).strip(),
+        "clothes": clothes, "submitDate": now_tw,
         "submitDateStr": now_tw.strftime('%Y/%m/%d'),
         "pickupDate": pickup_date, "pickupDateStr": pickup_date.strftime('%Y/%m/%d')
     })
@@ -91,13 +132,13 @@ def get_products():
 @content_bp.route('/api/products', methods=['POST'])
 @admin_required(roles=['super_admin', 'cms'])
 def add_product():
-    data = request.get_json()
+    data = get_json_object()
     new_product = {
-        "name": data.get('name'), "category": data.get('category', '其他'),
-        "series": data.get('series', ''), "seriesSort": int(data.get('seriesSort', 0)),
-        "price": int(data.get('price', 0)), "description": data.get('description', ''),
-        "image": data.get('image', ''), "isActive": data.get('isActive', True),
-        "isDonation": data.get('isDonation', False), "variants": data.get('variants', []),
+        "name": as_string(data.get('name')).strip(), "category": as_string(data.get('category'), '其他').strip(),
+        "series": as_string(data.get('series')).strip(), "seriesSort": _to_int(data.get('seriesSort'), 0),
+        "price": _to_int(data.get('price'), 0), "description": as_string(data.get('description')).strip(),
+        "image": as_string(data.get('image')).strip(), "isActive": _to_bool(data.get('isActive'), True),
+        "isDonation": _to_bool(data.get('isDonation'), False), "variants": _clean_variants(data.get('variants', [])),
         "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
     }
     db.products.insert_one(new_product)
@@ -111,10 +152,16 @@ def update_product(pid):
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    data = request.get_json()
+    data = get_json_object()
     fields = {k: data.get(k) for k in ['name', 'category', 'price', 'description', 'image', 'isActive', 'variants', 'isDonation', 'series', 'seriesSort'] if k in data}
-    if 'price' in fields: fields['price'] = int(fields['price'])
-    if 'seriesSort' in fields: fields['seriesSort'] = int(fields['seriesSort'])
+    for key in ('name', 'category', 'description', 'image', 'series'):
+        if key in fields:
+            fields[key] = as_string(fields[key]).strip()
+    if 'price' in fields: fields['price'] = _to_int(fields['price'], 0)
+    if 'seriesSort' in fields: fields['seriesSort'] = _to_int(fields['seriesSort'], 0)
+    if 'isActive' in fields: fields['isActive'] = _to_bool(fields['isActive'], True)
+    if 'isDonation' in fields: fields['isDonation'] = _to_bool(fields['isDonation'], False)
+    if 'variants' in fields: fields['variants'] = _clean_variants(fields['variants'])
     db.products.update_one({'_id': oid}, {'$set': fields})
     return jsonify({"success": True})
 
@@ -150,17 +197,17 @@ def get_announcements():
 @content_bp.route('/api/announcements', methods=['POST'])
 @admin_required(roles=['super_admin', 'cms'])
 def add_announcement():
-    data = request.get_json()
+    data = get_json_object()
     try:
-        date_obj = datetime.strptime(data['date'].replace('-', '/'), '%Y/%m/%d')
+        date_obj = datetime.strptime(as_string(data.get('date')).replace('-', '/'), '%Y/%m/%d')
     except ValueError:
         return jsonify({"error": "日期格式錯誤，請使用 YYYY/MM/DD"}), 400
 
     db.announcements.insert_one({
         "date": date_obj,
-        "title": data['title'],
-        "content": data['content'],
-        "isPinned": data.get('isPinned', False),
+        "title": as_string(data.get('title')).strip(),
+        "content": as_string(data.get('content')).strip(),
+        "isPinned": _to_bool(data.get('isPinned'), False),
         "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
     })
     return jsonify({"success": True})
@@ -173,17 +220,17 @@ def update_announcement(aid):
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    data = request.get_json()
+    data = get_json_object()
     try:
-        date_obj = datetime.strptime(data['date'].replace('-', '/'), '%Y/%m/%d')
+        date_obj = datetime.strptime(as_string(data.get('date')).replace('-', '/'), '%Y/%m/%d')
     except ValueError:
         return jsonify({"error": "日期格式錯誤"}), 400
 
     db.announcements.update_one({'_id': oid}, {'$set': {
         "date": date_obj,
-        "title": data['title'],
-        "content": data['content'],
-        "isPinned": data.get('isPinned', False)
+        "title": as_string(data.get('title')).strip(),
+        "content": as_string(data.get('content')).strip(),
+        "isPinned": _to_bool(data.get('isPinned'), False)
     }})
     return jsonify({"success": True})
 
@@ -203,7 +250,8 @@ def delete_announcement(aid):
 
 @content_bp.route('/api/faq', methods=['GET'])
 def get_faqs():
-    query = {'category': request.args.get('category')} if request.args.get('category') else {}
+    category = as_string(request.args.get('category')).strip()
+    query = {'category': category} if category else {}
     faqs = db.faq.find(
         query,
         {"question": 1, "answer": 1, "category": 1, "isPinned": 1, "createdAt": 1},
@@ -219,13 +267,14 @@ def get_faq_categories():
 @content_bp.route('/api/faq', methods=['POST'])
 @admin_required(roles=['super_admin', 'cms'])
 def add_faq():
-    data = request.get_json()
-    if not re.match(r'^[\u4e00-\u9fff]+$', data.get('category', '')):
+    data = get_json_object()
+    category = as_string(data.get('category')).strip()
+    if not re.match(r'^[\u4e00-\u9fff]+$', category):
         return jsonify({"error": "分類限中文"}), 400
 
     db.faq.insert_one({
-        "question": data['question'], "answer": data['answer'], "category": data['category'],
-        "isPinned": data.get('isPinned', False),
+        "question": as_string(data.get('question')).strip(), "answer": as_string(data.get('answer')).strip(), "category": category,
+        "isPinned": _to_bool(data.get('isPinned'), False),
         "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
     })
     return jsonify({"success": True})
@@ -238,10 +287,10 @@ def update_faq(fid):
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    data = request.get_json()
+    data = get_json_object()
     db.faq.update_one({'_id': oid}, {'$set': {
-        "question": data['question'], "answer": data['answer'],
-        "category": data['category'], "isPinned": data.get('isPinned', False)
+        "question": as_string(data.get('question')).strip(), "answer": as_string(data.get('answer')).strip(),
+        "category": as_string(data.get('category')).strip(), "isPinned": _to_bool(data.get('isPinned'), False)
     }})
     return jsonify({"success": True})
 
@@ -291,10 +340,10 @@ def get_fund_settings():
 @content_bp.route('/api/fund-settings', methods=['POST'])
 @admin_required(roles=['super_admin', 'finance', 'cms'])
 def update_fund_settings():
-    data = request.get_json()
+    data = get_json_object()
     db.temple_fund.update_one(
         {"type": "main_fund"},
-        {"$set": {"goal_amount": int(data.get('goal_amount', 10000000))}},
+        {"$set": {"goal_amount": _to_int(data.get('goal_amount'), 10000000)}},
         upsert=True
     )
     return jsonify({"success": True})
@@ -314,6 +363,6 @@ def update_link(lid):
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    data = request.get_json()
-    db.links.update_one({'_id': oid}, {'$set': {'url': data['url']}})
+    data = get_json_object()
+    db.links.update_one({'_id': oid}, {'$set': {'url': as_string(data.get('url')).strip()}})
     return jsonify({"success": True})

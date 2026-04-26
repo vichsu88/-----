@@ -9,6 +9,7 @@ from pymongo.errors import ConfigurationError, OperationFailure, PyMongoError
 from database import db, get_client, write_audit_log
 from utils.decorators import admin_required, user_login_required
 from utils.helpers import get_object_id, validate_real_name, mask_name
+from utils.security import as_string, get_json_object
 from utils.email import (
     send_email,
     generate_shop_email_html,
@@ -64,6 +65,8 @@ def _to_money(value, field='金額'):
 
 
 def _normalize_product_item(raw_item, order_type, product=None):
+    if not isinstance(raw_item, dict):
+        raise OrderValidationError("商品資料格式錯誤，請重新整理頁面")
     product_id = raw_item.get('id')
     product_oid = get_object_id(product_id)
     if not product_oid:
@@ -82,7 +85,7 @@ def _normalize_product_item(raw_item, order_type, product=None):
         raise OrderValidationError("商品名稱資料不完整")
 
     variants = product.get('variants') or []
-    requested_variant = raw_item.get('variantName') or raw_item.get('variant')
+    requested_variant = as_string(raw_item.get('variantName') or raw_item.get('variant'))
     variant_name = None
     if variants:
         variant = None
@@ -104,7 +107,7 @@ def _normalize_product_item(raw_item, order_type, product=None):
         "qty": qty,
     }
     if order_type == 'shop':
-        normalized["variant"] = variant_name or raw_item.get('variant') or '標準'
+        normalized["variant"] = variant_name or as_string(raw_item.get('variant')) or '標準'
         normalized["cartId"] = f"{normalized['id']}-{normalized['variant']}"
     elif variant_name:
         normalized["variantName"] = variant_name
@@ -113,6 +116,8 @@ def _normalize_product_item(raw_item, order_type, product=None):
 
 
 def _normalize_fund_item(raw_item):
+    if not isinstance(raw_item, dict):
+        raise OrderValidationError("建廟護持項目資料不正確，請重新整理頁面")
     key = str(raw_item.get('id') or '').strip()
     name = str(raw_item.get('name') or '').strip()
     if key not in FUND_ITEMS:
@@ -143,6 +148,8 @@ def _normalize_committee_items(raw_items):
         raise OrderValidationError("委員會名額尚未開放")
 
     raw_item = raw_items[0]
+    if not isinstance(raw_item, dict):
+        raise OrderValidationError("委員會護持項目資料不正確，請重新整理頁面")
     name = str(raw_item.get('name') or '').strip()
     role = roles.get(name)
     if not role:
@@ -192,7 +199,7 @@ def _normalize_order_payload(data, order_type):
         ]
         subtotal = sum(item['price'] * item['qty'] for item in items)
         if order_type == 'shop':
-            shipping_method = data.get('shippingMethod', 'home')
+            shipping_method = as_string(data.get('shippingMethod'), 'home')
             if shipping_method not in ('home', '711'):
                 raise OrderValidationError("配送方式不正確")
             shipping_fee = 60 if shipping_method == '711' else 120
@@ -266,7 +273,9 @@ def get_public_donations():
     if db is None:
         return jsonify([]), 500
 
-    target_type = request.args.get('type', 'donation')
+    target_type = as_string(request.args.get('type'), 'donation')
+    if target_type not in ('all', 'donation', 'fund', 'committee'):
+        return jsonify({"error": "不支援的查詢類型"}), 400
     query = {"status": "paid"}
 
     if target_type == 'all':
@@ -295,9 +304,13 @@ def get_public_donations():
 @orders_bp.route('/api/donations/admin', methods=['GET'])
 @admin_required(roles=['super_admin', 'finance', 'ops', 'data'])
 def get_admin_donations():
-    type_filter = request.args.get('type')
-    status_filter = request.args.get('status')
-    report_filter = request.args.get('reported')
+    type_filter = as_string(request.args.get('type')).strip()
+    status_filter = as_string(request.args.get('status')).strip()
+    report_filter = as_string(request.args.get('reported')).strip()
+    if type_filter and type_filter not in ('donation', 'fund', 'committee'):
+        return jsonify({"error": "不支援的查詢類型"}), 400
+    if status_filter and status_filter not in ('pending', 'paid', 'shipped', 'cancelled'):
+        return jsonify({"error": "不支援的狀態"}), 400
 
     query = {}
     if type_filter:
@@ -308,11 +321,11 @@ def get_admin_donations():
     if status_filter:
         query['status'] = status_filter
 
-    if type_filter == 'donation' and report_filter is not None:
+    if type_filter == 'donation' and report_filter:
         query['is_reported'] = (report_filter == '1')
 
-    start_str = request.args.get('start')
-    end_str = request.args.get('end')
+    start_str = as_string(request.args.get('start')).strip()
+    end_str = as_string(request.args.get('end')).strip()
     if start_str and end_str:
         try:
             start_date = datetime.strptime(start_str, '%Y-%m-%d')
@@ -335,11 +348,13 @@ def get_admin_donations():
 @orders_bp.route('/api/donations/export-txt', methods=['POST'])
 @admin_required(roles=['super_admin', 'ops', 'data'])
 def export_donations_txt():
-    data = request.get_json() or {}
-    start_str = data.get('start')
-    end_str = data.get('end')
+    data = get_json_object()
+    start_str = as_string(data.get('start')).strip()
+    end_str = as_string(data.get('end')).strip()
 
-    order_type = data.get('type', 'donation')
+    order_type = as_string(data.get('type'), 'donation')
+    if order_type not in ('donation', 'fund', 'committee'):
+        return jsonify({"error": "不支援的查詢類型"}), 400
     query = {"orderType": order_type, "status": "paid"}
 
     if start_str and end_str:
@@ -408,12 +423,12 @@ def cleanup_unpaid_orders():
 def create_order():
     if db is None:
         return jsonify({"error": "DB Error"}), 500
-    data = request.get_json() or {}
+    data = get_json_object()
     line_id = session.get('user_line_id')
 
-    order_type = data.get('orderType', 'shop')
+    order_type = as_string(data.get('orderType'), 'shop')
 
-    is_valid, error_msg = validate_real_name(data.get('name', '').strip())
+    is_valid, error_msg = validate_real_name(as_string(data.get('name')).strip())
     if not is_valid:
         return jsonify({"error": f"系統阻擋：{error_msg}"}), 400
 
@@ -430,15 +445,15 @@ def create_order():
     order_id = f"{prefix}{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
 
     customer_info = {
-        "name": data.get('name'),
-        "phone": data.get('phone'),
-        "email": data.get('email', ''),
-        "address": data.get('address'),
-        "last5": data.get('last5'),
-        "lunarBirthday": data.get('lunarBirthday', ''),
-        "prayer": data.get('prayer', ''),
-        "shippingMethod": data.get('shippingMethod', 'home'),
-        "storeInfo": data.get('storeInfo', ''),
+        "name": as_string(data.get('name')).strip(),
+        "phone": as_string(data.get('phone')).strip(),
+        "email": as_string(data.get('email')).strip(),
+        "address": as_string(data.get('address')).strip(),
+        "last5": as_string(data.get('last5')).strip(),
+        "lunarBirthday": as_string(data.get('lunarBirthday')).strip(),
+        "prayer": as_string(data.get('prayer')).strip(),
+        "shippingMethod": as_string(data.get('shippingMethod'), 'home'),
+        "storeInfo": as_string(data.get('storeInfo')).strip(),
         "shippingFee": shipping_fee
     }
 
@@ -544,8 +559,8 @@ def resend_order_email(oid):
     if not oid_obj:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    data = request.get_json()
-    new_email = data.get('email')
+    data = get_json_object()
+    new_email = as_string(data.get('email')).strip()
     order = db.orders.find_one({'_id': oid_obj})
     if not order:
         return jsonify({"error": "No order"}), 404
@@ -605,8 +620,8 @@ def ship_order(oid):
     if not oid_obj:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    data = request.get_json() or {}
-    tracking_num = data.get('trackingNumber', '').strip()
+    data = get_json_object()
+    tracking_num = as_string(data.get('trackingNumber')).strip()
 
     order = db.orders.find_one({'_id': oid_obj})
     if not order:

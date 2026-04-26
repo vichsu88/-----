@@ -7,6 +7,7 @@ from flask import Blueprint, jsonify, request, session
 from database import db
 from utils.decorators import user_login_required
 from utils.helpers import validate_real_name
+from utils.security import as_string, get_json_object
 
 user_bp = Blueprint('user', __name__)
 
@@ -55,10 +56,10 @@ def get_current_user():
 @user_bp.route('/api/user/profile', methods=['PUT'])
 @user_login_required
 def update_user_profile():
-    data = request.get_json() or {}
+    data = get_json_object()
     line_id = session.get('user_line_id')
 
-    is_valid, error_msg = validate_real_name(data.get('realName', '').strip())
+    is_valid, error_msg = validate_real_name(as_string(data.get('realName')).strip())
     if not is_valid:
         return jsonify({"error": error_msg}), 400
 
@@ -66,15 +67,15 @@ def update_user_profile():
         return jsonify({"error": "資料庫連線失敗"}), 500
 
     update_data = {
-        "realName": data.get('realName', '').strip(),
-        "nickname": data.get('nickname', '').strip(),
-        "phone": data.get('phone', '').strip(),
-        "email": data.get('email', '').strip(),
-        "address": data.get('address', '').strip(),
-        "lunarBirthday": data.get('lunarBirthday', '').strip(),
-        "birthTime": data.get('birthTime', '吉時'),
+        "realName": as_string(data.get('realName')).strip(),
+        "nickname": as_string(data.get('nickname')).strip(),
+        "phone": as_string(data.get('phone')).strip(),
+        "email": as_string(data.get('email')).strip(),
+        "address": as_string(data.get('address')).strip(),
+        "lunarBirthday": as_string(data.get('lunarBirthday')).strip(),
+        "birthTime": as_string(data.get('birthTime'), '吉時').strip(),
         # 💡 新增：接收並更新性別資料
-        "gender": data.get('gender', ''),
+        "gender": as_string(data.get('gender')).strip(),
         "updatedAt": datetime.now(timezone.utc).replace(tzinfo=None)
     }
 

@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request, session
 from database import db
 from utils.decorators import user_login_required
 from utils.helpers import get_tw_now, get_object_id, mask_name
+from utils.security import as_string, get_json_object
 
 pickup_bp = Blueprint('pickup', __name__)
 
@@ -13,16 +14,33 @@ pickup_bp = Blueprint('pickup', __name__)
 @user_login_required
 def create_pickup_reservation():
     line_id = session.get('user_line_id')
-    data = request.get_json()
-    pickup_type = data.get('pickupType')
-    pickup_date = data.get('pickupDate')
+    data = get_json_object()
+    pickup_type = as_string(data.get('pickupType')).strip()
+    pickup_date = as_string(data.get('pickupDate')).strip()
     clothes = data.get('clothes', [])
+
+    if not isinstance(clothes, list):
+        clothes = []
+
+    normalized_clothes = []
+    for item in clothes[:100]:
+        if not isinstance(item, dict):
+            continue
+        normalized_clothes.append({
+            "clothId": as_string(item.get('clothId')).strip(),
+            "name": as_string(item.get('name')).strip(),
+            "birthYear": as_string(item.get('birthYear')).strip(),
+        })
+    clothes = normalized_clothes
 
     if not pickup_type or not pickup_date or not clothes:
         return jsonify({"error": "資料不完整"}), 400
 
+    incoming_ids = [c.get('clothId', '').strip() for c in clothes if c.get('clothId')]
+    if not incoming_ids:
+        return jsonify({"error": "請至少填寫一個衣服編號"}), 400
+
     if db is not None:
-        incoming_ids = [c.get('clothId', '').strip() for c in clothes if c.get('clothId')]
         today_str = get_tw_now().strftime('%Y-%m-%d')
 
         duplicate_order = db.pickups.find_one({

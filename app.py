@@ -9,6 +9,7 @@ import psutil
 
 import database
 from extensions import csrf, limiter
+from utils.security import validate_request_input
 
 
 def _env_int(name, default):
@@ -31,6 +32,7 @@ def create_app():
     @app.before_request
     def start_request_timer():
         g.request_started_at = time.perf_counter()
+        return validate_request_input()
 
     @app.after_request
     def add_perf_headers(response):

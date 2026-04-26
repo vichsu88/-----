@@ -7,6 +7,7 @@ from flask import Blueprint, jsonify, request, session, Response, current_app
 from database import db, write_audit_log
 from utils.decorators import admin_required, user_login_required
 from utils.helpers import get_object_id
+from utils.security import as_string, get_json_object
 from utils.email import send_email, generate_feedback_email_html
 
 feedback_bp = Blueprint('feedback', __name__)
@@ -76,18 +77,21 @@ def add_feedback():
         return jsonify({"error": "DB Error"}), 500
     line_id = session.get('user_line_id')
 
-    data = request.get_json()
+    data = get_json_object()
     if not data.get('agreed'):
         return jsonify({"error": "必須勾選同意條款"}), 400
+
+    raw_category = data.get('category', [])
+    category = [as_string(item).strip() for item in raw_category if as_string(item).strip()] if isinstance(raw_category, list) else []
 
     # 🚀 快照核心邏輯：在送出瞬間，立刻去 users 表把當下最新的個資抓出來
     user_info = db.users.find_one({"lineId": line_id}) or {}
 
     new_feedback = {
         "lineId": line_id,
-        "nickname": data.get('nickname'),
-        "category": data.get('category', []),
-        "content": data.get('content'),
+        "nickname": as_string(data.get('nickname')).strip(),
+        "category": category,
+        "content": as_string(data.get('content')).strip(),
         "agreed": True,
         "createdAt": datetime.now(timezone.utc).replace(tzinfo=None),
         "status": "pending",
@@ -201,8 +205,8 @@ def ship_feedback(fid):
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
         
-    data = request.get_json()
-    tracking = data.get('trackingNumber', '')
+    data = get_json_object()
+    tracking = as_string(data.get('trackingNumber')).strip()
     
     fb = db.feedback.find_one({'_id': oid})
     if not fb:
@@ -270,11 +274,13 @@ def update_feedback(fid):
     oid = get_object_id(fid)
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
-    data = request.get_json()
+    data = get_json_object()
+    raw_category = data.get('category', [])
+    category = [as_string(item).strip() for item in raw_category if as_string(item).strip()] if isinstance(raw_category, list) else []
     db.feedback.update_one({'_id': oid}, {'$set': {
-        'nickname': data.get('nickname'),
-        'category': data.get('category'),
-        'content': data.get('content')
+        'nickname': as_string(data.get('nickname')).strip(),
+        'category': category,
+        'content': as_string(data.get('content')).strip()
     }})
     return jsonify({"success": True})
 
