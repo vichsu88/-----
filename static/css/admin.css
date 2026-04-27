@@ -25,7 +25,7 @@ body {
     height: 100vh;
     overflow: hidden;
     display: flex;
-    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    font-family: 'LXGW WenKai TC', sans-serif;
     color: var(--text-dark);
     background-color: #fcf9f5;
 }

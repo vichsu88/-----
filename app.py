@@ -67,6 +67,10 @@ def create_app():
     app.config['SESSION_COOKIE_SECURE'] = is_production
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = _env_int(
+        'STATIC_CACHE_SECONDS',
+        31536000 if is_production else 0,
+    )
     app.permanent_session_lifetime = timedelta(hours=8)
 
     app.config['SENDGRID_API_KEY'] = os.environ.get('SENDGRID_API_KEY')
@@ -75,11 +79,17 @@ def create_app():
     app.config['LINE_CHANNEL_SECRET'] = os.environ.get('LINE_CHANNEL_SECRET')
     app.config['LINE_CALLBACK_URL'] = os.environ.get('LINE_CALLBACK_URL')
     app.config['ADMIN_PASSWORD_HASH'] = os.environ.get('ADMIN_PASSWORD_HASH')
+    app.config['RATELIMIT_STORAGE_URI'] = os.environ.get('RATELIMIT_STORAGE_URI', 'memory://')
 
     csrf.init_app(app)
     limiter.init_app(app)
 
-    allowed_origins = [
+    env_origins = [
+        origin.strip()
+        for origin in os.environ.get('CORS_ORIGINS', '').split(',')
+        if origin.strip()
+    ]
+    allowed_origins = env_origins or [
         "http://localhost:5000",
         "http://127.0.0.1:5000",
         "http://140.119.143.95:5000",

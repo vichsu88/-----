@@ -31,6 +31,7 @@ def send_email_task(to_email, subject, body, is_html, **kwargs):
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'html' if is_html else 'plain', 'utf-8'))
 
+    server = None
     try:
         if mail_port == 465:
             server = smtplib.SMTP_SSL(mail_server, mail_port)
@@ -40,18 +41,25 @@ def send_email_task(to_email, subject, body, is_html, **kwargs):
             
         server.login(mail_sender, mail_password)
         server.send_message(msg)
-        server.quit()
         print(f"✅ Namecheap SMTP 寄信成功!")
     except Exception as e:
         print(f"❌ SMTP 寄信出錯: {str(e)}")
         
+    finally:
+        if server:
+            try:
+                server.quit()
+            except Exception:
+                pass
+
 def send_email(to_email, subject, body, sendgrid_api_key=None, mail_sender=None, is_html=False):
     if not to_email:
         return
     # 這裡保留舊的參數名稱是為了不改動其他呼叫此函數的地方
     thread = threading.Thread(
         target=send_email_task,
-        args=(to_email, subject, body, is_html)
+        args=(to_email, subject, body, is_html),
+        daemon=True
     )
     thread.start()
 # =========================================

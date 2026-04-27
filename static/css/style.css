@@ -22,7 +22,7 @@ body {
 
 body {
     margin: 0;
-    font-family: 'Noto Sans TC', sans-serif; 
+    font-family: 'LXGW WenKai TC', sans-serif;
     background-color: #F3F0EC;
     color: #333; 
     min-width: 390px;
@@ -307,7 +307,7 @@ body::before {
 }
 
 .font-fallback {
-    font-family: "Noto Sans TC", sans-serif;
+    font-family: "LXGW WenKai TC", sans-serif;
 }
 
 @media (min-width: 768px) {
@@ -564,7 +564,7 @@ body::before {
 }
 
 .footer-info p {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: 'LXGW WenKai TC', sans-serif;
     font-size: 14px;
     margin: 5px 0;
     opacity: 0.9;
@@ -833,7 +833,7 @@ body.menu-open {
 
 .custom-link-title {
   /* 字體設定 */
-  font-family: 'Noto Sans TC', sans-serif; /* 改回 Noto Sans TC */
+  font-family: 'LXGW WenKai TC', sans-serif;
   font-size: 16px;       /* 設定一個適中的字體大小 */
   font-weight: 400;      /* 加粗以示強調 */
   color: #FFFFFF;        /* 維持白色 */
@@ -1306,7 +1306,7 @@ body.menu-open {
     text-decoration: none;
     display: block;
     font-size: 18px !important; /* 比主選單小一點 */
-    font-family: 'Noto Sans TC', sans-serif !important; /* 子選單用清晰字體 */
+    font-family: 'LXGW WenKai TC', sans-serif !important;
     text-shadow: none !important;
 }
 
@@ -1326,7 +1326,7 @@ body.menu-open {
    ========================================= */
 /* 小標題 (不可點擊) */
 .mobile-group-title {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: 'LXGW WenKai TC', sans-serif;
     font-size: 16px;
     color: #888;
     margin-bottom: 15px !important;

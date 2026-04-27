@@ -41,6 +41,8 @@ def ensure_indexes():
     _create_index('orders', [('status', ASCENDING), ('createdAt', DESCENDING)], name='orders_status_created')
     _create_index('orders', [('status', ASCENDING), ('paidAt', ASCENDING)], name='orders_status_paid')
     _create_index('orders', [('status', ASCENDING), ('shippedAt', DESCENDING)], name='orders_status_shipped')
+    _create_index('orders', [('status', ASCENDING), ('orderType', ASCENDING), ('updatedAt', DESCENDING)], name='orders_status_type_updated')
+    _create_index('orders', [('orderType', ASCENDING), ('status', ASCENDING), ('items.name', ASCENDING)], name='orders_type_status_item')
     _create_index('orders', [('items.name', ASCENDING), ('orderType', ASCENDING), ('status', ASCENDING)], name='orders_item_type_status')
 
     _create_index('feedback', [('feedbackId', ASCENDING)], name='feedback_feedback_id')
@@ -61,6 +63,7 @@ def ensure_indexes():
     _create_index('shipments', [('pickupDate', ASCENDING)], name='shipments_pickup_date')
 
     _create_index('products', [('category', ASCENDING), ('createdAt', DESCENDING)], name='products_category_created')
+    _create_index('products', [('isActive', ASCENDING), ('category', ASCENDING), ('createdAt', DESCENDING)], name='products_active_category_created')
     _create_index('announcements', [('isPinned', DESCENDING), ('_id', DESCENDING)], name='announcements_pinned_id')
     _create_index('faq', [('category', ASCENDING), ('isPinned', DESCENDING), ('createdAt', DESCENDING)], name='faq_category_pinned_created')
     _create_index('audit_log', [('timestamp', DESCENDING)], name='audit_log_timestamp')

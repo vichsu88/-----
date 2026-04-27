@@ -379,7 +379,7 @@ async loadFeedbackReview() {
             pw.document.write(`
                 <html><head><title>公壇手工香信徒捐香登記表</title>
                 <style>
-                    body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; padding: 20px; background: white; color: #000; }
+                    body { font-family: "LXGW WenKai TC", serif; padding: 20px; background: white; color: #000; }
                     .header { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
                     table { width: 100%; border-collapse: collapse; font-size: 16px; margin-bottom: 30px; }
                     th, td { border: 1px solid #000; padding: 12px 10px; text-align: left; vertical-align: middle; }
@@ -1401,7 +1401,7 @@ async loadFeedbackReview() {
         const pw = window.open('', '_blank');
         pw.document.write(`
             <html><head><title>信徒回饋匯出</title><style>
-            body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #333; }
+            body { font-family: "LXGW WenKai TC", serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #333; }
             .feedback-item { margin-bottom: 60px; page-break-inside: avoid; }
             .meta { font-size: 14px; color: #666; margin-bottom: 5px; }
             .nickname { font-size: 20px; font-weight: bold; margin-bottom: 15px; }

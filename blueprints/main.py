@@ -78,17 +78,32 @@ def get_public_committee_status():
     # 取得後台設定
     setting = db.settings.find_one({"type": "committee_quota"})
     roles = setting.get("roles", []) if setting else []
+    role_names = [role.get('name') for role in roles if role.get('name')]
+
+    used_counts = {}
+    if role_names:
+        pipeline = [
+            {"$match": {
+                "orderType": "committee",
+                "status": {"$in": ["paid", "pending"]},
+                "items.name": {"$in": role_names},
+            }},
+            {"$unwind": "$items"},
+            {"$match": {"items.name": {"$in": role_names}}},
+            {"$group": {"_id": "$items.name", "used": {"$sum": 1}}},
+        ]
+        used_counts = {
+            item["_id"]: item["used"]
+            for item in db.orders.aggregate(pipeline)
+            if item.get("_id")
+        }
 
     results = []
     for role in roles:
         name = role.get('name')
         limit = role.get('limit', 0)
         # 計算已佔用名額
-        used = db.orders.count_documents({
-            "orderType": "committee",
-            "status": {"$in": ["paid", "pending"]},
-            "items.name": name
-        })
+        used = used_counts.get(name, 0)
         results.append({
             "name": name,
             "remaining": max(0, limit - used),

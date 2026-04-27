@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /* ==============================
        4. 最新消息 (Fetch API)
        ============================== */
-    if (newsList) {
+    if (newsList && !newsList.querySelector('[data-news]')) {
         fetch('/api/announcements')
             .then(res => {
                 if (!res.ok) throw new Error('Network response was not ok');

@@ -5,7 +5,7 @@
 {% block content %}
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet">
 
 <style>
 
@@ -34,8 +34,8 @@
     --radius-lg: 24px;
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --font-display: 'LXGW WenKai TC', '標楷體', serif;
-    --font-body: 'Noto Serif TC', 'Georgia', serif;
-    --font-ui: 'Noto Sans TC', sans-serif;
+    --font-body: 'LXGW WenKai TC', serif;
+    --font-ui: 'LXGW WenKai TC', sans-serif;
     --content-width: 1080px;
 }
 
@@ -880,11 +880,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeBtn = document.getElementById('modalCloseBtn');
     const newsList = document.getElementById('news-list');
 
+    const renderTextWithBreaks = (target, text) => {
+        target.replaceChildren();
+        String(text || '').split(/\r?\n/).forEach((line, index) => {
+            if (index > 0) target.appendChild(document.createElement('br'));
+            if (line) target.appendChild(document.createTextNode(line));
+        });
+    };
+
     const showNews = (news) => {
         document.getElementById('modalDate').textContent = news.date;
         document.getElementById('modalTitle').textContent = news.title;
         const content = news.content || news.description || '';
-        document.getElementById('modalBody').innerHTML = content.replace(/\n/g, '<br>');
+        renderTextWithBreaks(document.getElementById('modalBody'), content);
         modal.classList.add('show');
     };
 
