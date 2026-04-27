@@ -3,12 +3,12 @@ import time
 from datetime import timedelta
 
 from dotenv import load_dotenv
-from flask import Flask, g, request
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
-import psutil
 
 import database
 from extensions import csrf, limiter
+from utils.errors import AppError
 from utils.security import validate_request_input
 
 
@@ -23,11 +23,14 @@ def create_app():
     load_dotenv()
     app = Flask(__name__)
 
-    process = psutil.Process(os.getpid())
-    memory_state = {'last_checked': 0.0}
     slow_request_ms = _env_int('SLOW_REQUEST_MS', 750)
-    memory_warn_mb = _env_int('MEMORY_WARN_MB', 400)
-    memory_check_interval = _env_int('MEMORY_CHECK_INTERVAL_SECONDS', 60)
+
+    @app.errorhandler(AppError)
+    def handle_app_error(error):
+        payload = {"error": error.message, "code": error.code}
+        if error.details is not None:
+            payload["details"] = error.details
+        return jsonify(payload), error.status_code
 
     @app.before_request
     def start_request_timer():
@@ -46,13 +49,6 @@ def create_app():
                     f"{response.status_code} {elapsed_ms:.1f}ms",
                     flush=True,
                 )
-
-        now = time.monotonic()
-        if now - memory_state['last_checked'] >= memory_check_interval:
-            memory_state['last_checked'] = now
-            mem_mb = process.memory_info().rss / 1024 / 1024
-            if mem_mb >= memory_warn_mb:
-                print(f"[Memory Warning] RSS {mem_mb:.0f} MB", flush=True)
 
         return response
 

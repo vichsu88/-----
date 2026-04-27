@@ -7,8 +7,23 @@ from flask import Blueprint, jsonify, request, session, Response, current_app
 from pymongo.errors import ConfigurationError, OperationFailure, PyMongoError
 
 from database import db, get_client, write_audit_log
+from services.order_service import (
+    confirm_payment as confirm_payment_service,
+    list_admin_donations,
+    list_shop_orders,
+    mark_shipped as mark_shipped_service,
+)
+from utils.business_rules import (
+    ORDER_PAYMENT_DEADLINE_HOURS,
+    SHIPPED_ORDER_RETENTION_DAYS,
+    UNPAID_ORDER_GRACE_HOURS,
+    get_shop_shipping_fee,
+)
 from utils.decorators import admin_required, user_login_required
+from utils.errors import ValidationError
 from utils.helpers import get_object_id, validate_real_name, mask_name
+from utils.pagination import page_response, parse_pagination
+from utils.schema import pick_allowed_fields
 from utils.security import as_string, get_json_object
 from utils.email import (
     send_email,
@@ -22,7 +37,7 @@ orders_bp = Blueprint('orders', __name__)
 # 註：/api/public/committee-status 改由 main.py 提供（包含 price 欄位）
 
 
-class OrderValidationError(ValueError):
+class OrderValidationError(ValidationError):
     pass
 
 
@@ -42,6 +57,23 @@ FUND_ITEMS = {
 }
 FUND_ITEM_NAMES = {v['name']: k for k, v in FUND_ITEMS.items()}
 FUND_ITEM_NAMES.update({v['name'].replace('[建廟] ', ''): k for k, v in FUND_ITEMS.items()})
+
+ORDER_CREATE_FIELDS = {
+    'orderType',
+    'items',
+    'total',
+    'name',
+    'phone',
+    'email',
+    'address',
+    'last5',
+    'lunarBirthday',
+    'prayer',
+    'shippingMethod',
+    'storeInfo',
+}
+RESEND_EMAIL_FIELDS = {'email'}
+SHIP_ORDER_FIELDS = {'trackingNumber'}
 
 
 def _to_positive_int(value, field='數量', max_value=99):
@@ -202,7 +234,7 @@ def _normalize_order_payload(data, order_type):
             shipping_method = as_string(data.get('shippingMethod'), 'home')
             if shipping_method not in ('home', '711'):
                 raise OrderValidationError("配送方式不正確")
-            shipping_fee = 60 if shipping_method == '711' else 120
+            shipping_fee = get_shop_shipping_fee(shipping_method)
             if shipping_method == '711' and not str(data.get('storeInfo', '')).strip():
                 raise OrderValidationError("請填寫 7-11 門市資訊")
             if shipping_method == 'home' and not str(data.get('address', '')).strip():
@@ -334,15 +366,9 @@ def get_admin_donations():
         except Exception:
             pass
 
-    cursor = db.orders.find(query).sort([("is_reported", 1), ("createdAt", -1)])
-    results = []
-    for doc in cursor:
-        doc['_id'] = str(doc['_id'])
-        doc['createdAt'] = (doc['createdAt'] + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
-        if doc.get('reportedAt'):
-            doc['reportedAt'] = (doc['reportedAt'] + timedelta(hours=8)).strftime('%Y-%m-%d')
-        results.append(doc)
-    return jsonify(results)
+    pagination = parse_pagination(request.args, default_per_page=50, max_per_page=100)
+    results, total = list_admin_donations(query, pagination)
+    return jsonify(page_response(results, total, pagination))
 
 
 @orders_bp.route('/api/donations/export-txt', methods=['POST'])
@@ -405,7 +431,7 @@ def export_donations_txt():
 @orders_bp.route('/api/donations/cleanup-unpaid', methods=['DELETE'])
 @admin_required(roles=['super_admin', 'finance', 'ops'])
 def cleanup_unpaid_orders():
-    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=76)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=UNPAID_ORDER_GRACE_HOURS)
     cursor = db.orders.find({"status": "pending", "createdAt": {"$lt": cutoff}})
     for order in cursor:
         if order.get('customer', {}).get('email'):
@@ -423,7 +449,7 @@ def cleanup_unpaid_orders():
 def create_order():
     if db is None:
         return jsonify({"error": "DB Error"}), 500
-    data = get_json_object()
+    data = pick_allowed_fields(get_json_object(), ORDER_CREATE_FIELDS)
     line_id = session.get('user_line_id')
 
     order_type = as_string(data.get('orderType'), 'shop')
@@ -432,10 +458,7 @@ def create_order():
     if not is_valid:
         return jsonify({"error": f"系統阻擋：{error_msg}"}), 400
 
-    try:
-        normalized_items, total, shipping_fee, quota_checks = _normalize_order_payload(data, order_type)
-    except OrderValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
+    normalized_items, total, shipping_fee, quota_checks = _normalize_order_payload(data, order_type)
 
     prefix = "ORD"
     if order_type == 'donation': prefix = "DON"
@@ -458,7 +481,7 @@ def create_order():
     }
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    deadline = now + timedelta(hours=2)
+    deadline = now + timedelta(hours=ORDER_PAYMENT_DEADLINE_HOURS)
 
     order = {
         "orderId": order_id, "orderType": order_type, "customer": customer_info,
@@ -471,10 +494,7 @@ def create_order():
     if order_type == 'donation':
         order['is_reported'] = False
 
-    try:
-        _insert_order_with_quota(order, quota_checks)
-    except OrderValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
+    _insert_order_with_quota(order, quota_checks)
 
     subject = f"【承天中承府】訂單確認 ({order_id})"
     if order_type == 'donation':
@@ -498,19 +518,15 @@ def create_order():
 @orders_bp.route('/api/orders', methods=['GET'])
 @admin_required(roles=['super_admin', 'finance', 'ops', 'data'])
 def get_orders():
-    cursor = db.orders.find({"orderType": "shop"}).sort("createdAt", -1)
-    results = []
-    for doc in cursor:
-        doc['_id'] = str(doc['_id'])
-        doc['createdAt'] = (doc['createdAt'] + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
-        results.append(doc)
-    return jsonify(results)
+    pagination = parse_pagination(request.args, default_per_page=50, max_per_page=100)
+    results, total = list_shop_orders(pagination)
+    return jsonify(page_response(results, total, pagination))
 
 
 @orders_bp.route('/api/orders/cleanup-shipped', methods=['DELETE'])
 @admin_required(roles=['super_admin', 'ops'])
 def cleanup_shipped_orders():
-    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=14)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=SHIPPED_ORDER_RETENTION_DAYS)
     result = db.orders.delete_many({"status": "shipped", "shippedAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
@@ -518,24 +534,8 @@ def cleanup_shipped_orders():
 @orders_bp.route('/api/orders/<oid>/confirm', methods=['PUT'])
 @admin_required(roles=['super_admin', 'finance'])
 def confirm_order_payment(oid):
-    oid_obj = get_object_id(oid)
-    if not oid_obj:
-        return jsonify({"error": "無效的 ID 格式"}), 400
-
-    order = db.orders.find_one({'_id': oid_obj})
-    if not order:
-        return jsonify({"error": "No order"}), 404
-
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
-
-    # ✅ 變數都準備好後，才執行更新
-    db.orders.update_one(
-        {'_id': oid_obj}, 
-        {'$set': {'status': 'paid', 'updatedAt': now, 'paidAt': now, 'paidBy': admin_user}}
-    )
-
-    write_audit_log(admin_user, '確認收款', order.get('orderId', oid), f"${order.get('total', 0)}")
+    order = confirm_payment_service(oid, admin_user)
     cust = order['customer']
 
     if order.get('orderType') in ['donation', 'fund', 'committee']:
@@ -559,7 +559,7 @@ def resend_order_email(oid):
     if not oid_obj:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    data = get_json_object()
+    data = pick_allowed_fields(get_json_object(), RESEND_EMAIL_FIELDS)
     new_email = as_string(data.get('email')).strip()
     order = db.orders.find_one({'_id': oid_obj})
     if not order:
@@ -616,31 +616,10 @@ def delete_order(oid):
 @orders_bp.route('/api/orders/<oid>/ship', methods=['PUT'])
 @admin_required(roles=['super_admin', 'ops'])
 def ship_order(oid):
-    oid_obj = get_object_id(oid)
-    if not oid_obj:
-        return jsonify({"error": "無效的 ID 格式"}), 400
-
-    data = get_json_object()
+    data = pick_allowed_fields(get_json_object(), SHIP_ORDER_FIELDS)
     tracking_num = as_string(data.get('trackingNumber')).strip()
-
-    order = db.orders.find_one({'_id': oid_obj})
-    if not order:
-        return jsonify({"error": "No order"}), 404
-
-    # 準備好所有變數
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
-
-    # ✅ 變數都準備好後，才執行更新
-    db.orders.update_one({'_id': oid_obj}, {'$set': {
-        'status': 'shipped', 
-        'updatedAt': now, 
-        'shippedAt': now, 
-        'trackingNumber': tracking_num, 
-        'shippedBy': admin_user
-    }})
-
-    write_audit_log(admin_user, '出貨', order.get('orderId', oid), tracking_num)
+    order = mark_shipped_service(oid, tracking_num, admin_user)
 
     # 寄信通知
     cust = order['customer']
