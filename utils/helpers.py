@@ -1,11 +1,13 @@
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from bson import ObjectId
 from bson.errors import InvalidId
 
+from utils.timezone import taipei_now
+
 
 def get_tw_now():
-    return datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    return taipei_now()
 
 
 def validate_real_name(name):

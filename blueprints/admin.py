@@ -1,6 +1,7 @@
 import csv
 import io
-from datetime import datetime, timedelta, timezone
+import logging
+from datetime import datetime, timedelta
 
 from bson import ObjectId
 from flask import Blueprint, Response, jsonify, request, session
@@ -11,8 +12,10 @@ from database import db, write_audit_log
 from utils.decorators import admin_required
 from utils.helpers import get_object_id
 from utils.security import as_string, get_json_object, get_json_value, safe_regex_contains
+from utils.timezone import taipei_now, utc_now
 
 admin_bp = Blueprint('admin', __name__)
+logger = logging.getLogger(__name__)
 
 
 # =========================================================
@@ -233,7 +236,7 @@ def get_shipped_list():
     if db is None:
         return jsonify([])
 
-    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
+    cutoff = utc_now() - timedelta(days=30)
     cursor = db.orders.find({
         "status": "shipped",
         "shippedAt": {"$gte": cutoff}
@@ -426,7 +429,7 @@ def mark_donations_reported():
         return jsonify({"error": "無效的訂單 ID"}), 400
 
     admin_name = session.get('admin_username', 'admin')
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = utc_now()
 
     # 執行批次更新
     result = db.orders.update_many(
@@ -509,7 +512,7 @@ def export_data_csv():
     return Response(
         si.getvalue(),
         mimetype='text/csv; charset=utf-8',
-        headers={"Content-Disposition": f"attachment; filename=export_{datetime.now().strftime('%Y%m%d')}.csv"}
+        headers={"Content-Disposition": f"attachment; filename=export_{taipei_now().strftime('%Y%m%d')}.csv"}
     )
 
 
@@ -567,9 +570,7 @@ def get_data_members():
         return jsonify(results)
 
     except Exception as e:
-        import traceback
-        error_msg = traceback.format_exc()
-        print(f"[嚴重崩潰] 會員列表無法載入:\n{error_msg}")
+        logger.exception("Member list failed", extra={"event": "admin_member_list_failed"})
         return jsonify({"error": f"資料庫查詢錯誤: {str(e)}"}), 500
 
 
@@ -669,7 +670,7 @@ def create_admin_user():
         "password_hash": generate_password_hash(password),
         "permissions": permissions,
         "role": 'super_admin' if 'super_admin' in permissions else permissions[0],
-        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
+        "createdAt": utc_now()
     })
 
     admin_name = session.get('admin_username', 'admin')

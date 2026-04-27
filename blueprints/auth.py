@@ -1,27 +1,22 @@
 import secrets
-import urllib.parse
-from datetime import datetime, timezone
 
-import requests
-from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session, url_for
-from werkzeug.security import check_password_hash
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session
 
-from database import db, write_audit_log
+from database import write_audit_log
 from extensions import csrf, limiter
-from utils.security import as_string, get_json_object
+from schemas.auth import AdminLoginSchema
+from services.auth_service import (
+    authenticate_admin,
+    build_line_authorize_url,
+    fetch_line_profile,
+    safe_next_url,
+    upsert_line_user,
+)
+from utils.errors import AppError
+from utils.security import get_json_object
+from utils.validation import validate_payload
 
 auth_bp = Blueprint('auth', __name__)
-
-
-def _safe_next_url(next_url):
-    if not next_url:
-        return '/'
-    if any(char in next_url for char in ('\\', '\r', '\n')):
-        return '/'
-    parsed = urllib.parse.urlparse(next_url)
-    if parsed.scheme or parsed.netloc or not next_url.startswith('/') or next_url.startswith('//'):
-        return '/'
-    return next_url
 
 
 # =========================================
@@ -33,22 +28,15 @@ def line_login():
     line_channel_id = current_app.config['LINE_CHANNEL_ID']
     line_callback_url = current_app.config['LINE_CALLBACK_URL']
 
-    if not line_channel_id:
-        return "伺服器尚未設定 LINE_CHANNEL_ID", 500
-
     state = secrets.token_hex(16)
     session['line_state'] = state
-    next_url = _safe_next_url(request.args.get('next', '/'))
+    next_url = safe_next_url(request.args.get('next', '/'))
     session['line_next_url'] = next_url
 
-    url = (
-        "https://access.line.me/oauth2/v2.1/authorize?"
-        "response_type=code&"
-        f"client_id={line_channel_id}&"
-        f"redirect_uri={urllib.parse.quote(line_callback_url)}&"
-        f"state={state}&"
-        "scope=profile%20openid"
-    )
+    try:
+        url = build_line_authorize_url(line_channel_id, line_callback_url, state)
+    except AppError as error:
+        return error.message, error.status_code
     return redirect(url)
 
 
@@ -64,78 +52,23 @@ def line_callback():
 
     if state != session_state:
         return "登入狀態驗證失敗，請重新操作", 400
-    if not code:
-        return "LINE 未回傳授權碼，請重新操作", 400
-
-    token_url = "https://api.line.me/oauth2/v2.1/token"
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    data = {
-        'grant_type': 'authorization_code',
-        'code': code,
-        'redirect_uri': line_callback_url,
-        'client_id': line_channel_id,
-        'client_secret': line_channel_secret
-    }
-
     try:
-        token_res = requests.post(token_url, headers=headers, data=data, timeout=10)
-    except requests.RequestException:
-        return "連線 LINE 登入服務失敗，請稍後再試", 502
-    if token_res.status_code != 200:
-        return f"獲取 Token 失敗: {token_res.text}", 400
+        profile = fetch_line_profile(code, line_channel_id, line_channel_secret, line_callback_url)
+        user = upsert_line_user(profile)
+    except AppError as error:
+        return error.message, error.status_code
 
-    access_token = token_res.json().get('access_token')
-    profile_url = "https://api.line.me/v2/profile"
-    profile_headers = {'Authorization': f'Bearer {access_token}'}
-    try:
-        profile_res = requests.get(profile_url, headers=profile_headers, timeout=10)
-    except requests.RequestException:
-        return "連線 LINE 使用者資料服務失敗，請稍後再試", 502
-
-    if profile_res.status_code != 200:
-        return "獲取使用者資料失敗", 400
-
-    profile = profile_res.json()
-    line_id = profile.get('userId')
-    display_name = profile.get('displayName')
-    picture_url = profile.get('pictureUrl', '')
-
-    if db is not None:
-        db.users.update_one(
-            {'lineId': line_id},
-            {'$set': {
-                'lineId': line_id,
-                'displayName': display_name,
-                'pictureUrl': picture_url,
-                'lastLoginAt': datetime.now(timezone.utc).replace(tzinfo=None)
-            },
-            '$setOnInsert': {'createdAt': datetime.now(timezone.utc).replace(tzinfo=None)}},
-            upsert=True
-        )
-
-    session['user_line_id'] = line_id
-    session['user_display_name'] = display_name
+    session['user_line_id'] = user['line_id']
+    session['user_display_name'] = user['display_name']
     session.permanent = True
 
-    next_url = _safe_next_url(session.pop('line_next_url', '/'))
+    next_url = safe_next_url(session.pop('line_next_url', '/'))
     return redirect(next_url)
 
 
 # =========================================
 # 後台管理員登入 (RBAC 多帳號系統 — 陣列式權限)
 # =========================================
-
-def _resolve_permissions(admin_user):
-    """從 DB 文件解析權限陣列 (相容舊版 role 字串)"""
-    perms = admin_user.get('permissions', [])
-    if perms:
-        return perms
-    # 向下相容：舊資料只有 role 字串
-    legacy_role = admin_user.get('role', 'ops')
-    if legacy_role == 'super_admin':
-        return ['super_admin']
-    return [legacy_role]
-
 
 @auth_bp.route('/admin')
 def admin_page():
@@ -162,44 +95,26 @@ def session_check():
 @auth_bp.route('/api/login', methods=['POST'])
 @limiter.limit("5 per minute")
 def api_login():
-    data = get_json_object()
-    username = as_string(data.get('username')).strip()
-    password = as_string(data.get('password'))
+    payload = validate_payload(AdminLoginSchema, get_json_object())
+    auth_result = authenticate_admin(
+        payload.username.strip(),
+        payload.password,
+        current_app.config['ADMIN_PASSWORD_HASH'],
+    )
 
-    # 方式一：多帳號系統 — 查詢 AdminUser collection
-    if username and db is not None:
-        admin_user = db.admin_users.find_one({"username": username})
-        if admin_user and check_password_hash(admin_user['password_hash'], password):
-            permissions = _resolve_permissions(admin_user)
-            session['admin_logged_in'] = True
-            session['admin_username'] = admin_user['username']
-            session['admin_role'] = 'super_admin' if 'super_admin' in permissions else (permissions[0] if permissions else 'ops')
-            session['admin_permissions'] = permissions
-            session.permanent = True
-            write_audit_log(admin_user['username'], '登入系統')
-            return jsonify({
-                "success": True,
-                "message": "登入成功",
-                "username": admin_user['username'],
-                "role": session['admin_role'],
-                "permissions": permissions
-            })
-
-    # 方式二：環境變數密碼 (向下相容，視為 super_admin)
-    admin_hash = current_app.config['ADMIN_PASSWORD_HASH']
-    if admin_hash and check_password_hash(admin_hash, password):
+    if auth_result:
         session['admin_logged_in'] = True
-        session['admin_username'] = 'admin'
-        session['admin_role'] = 'super_admin'
-        session['admin_permissions'] = ['super_admin']
+        session['admin_username'] = auth_result['username']
+        session['admin_role'] = auth_result['role']
+        session['admin_permissions'] = auth_result['permissions']
         session.permanent = True
-        write_audit_log('admin', '登入系統 (主密碼)')
+        write_audit_log(auth_result['audit_label'], '登入系統')
         return jsonify({
             "success": True,
             "message": "登入成功",
-            "username": "admin",
-            "role": "super_admin",
-            "permissions": ["super_admin"]
+            "username": auth_result['username'],
+            "role": auth_result['role'],
+            "permissions": auth_result['permissions']
         })
 
     return jsonify({"success": False, "message": "帳號或密碼錯誤"}), 401

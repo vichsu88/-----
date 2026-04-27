@@ -26,10 +26,12 @@ multidict==6.0.5
 packaging==25.0
 pycparser==2.22
 pymongo==4.13.0
+pydantic==2.7.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 PyYAML==6.0.2
 requests==2.31.0
+celery[redis]==5.4.0
 six==1.16.0
 typing_extensions==4.11.0
 urllib3==2.2.1

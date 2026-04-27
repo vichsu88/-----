@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, redirect, render_template, url_for
@@ -5,6 +6,7 @@ from flask import Blueprint, jsonify, redirect, render_template, url_for
 from database import db
 
 main_bp = Blueprint('main', __name__)
+logger = logging.getLogger(__name__)
 
 
 @main_bp.app_context_processor
@@ -35,8 +37,8 @@ def home():
                 if 'date' in doc and isinstance(doc['date'], datetime):
                     doc['date'] = doc['date'].strftime('%Y/%m/%d')
                 announcements_data.append(doc)
-    except Exception as e:
-        print(f"SSR Error (Home): {e}")
+    except Exception:
+        logger.exception("SSR home data failed", extra={"event": "ssr_home_failed"})
     return render_template('index.html', announcements=announcements_data)
 
 
@@ -125,8 +127,8 @@ def feedback_page():
                     'content': doc.get('content', ''),
                     'category': doc.get('category', [])
                 })
-    except Exception as e:
-        print(f"SSR Error (Feedback): {e}")
+    except Exception:
+        logger.exception("SSR feedback data failed", extra={"event": "ssr_feedback_failed"})
     return render_template('feedback.html', feedbacks=feedbacks_data)
 
 
@@ -139,8 +141,8 @@ def faq_page():
             for doc in cursor:
                 doc['_id'] = str(doc['_id'])
                 faq_data.append(doc)
-    except Exception as e:
-        print(f"SSR Error (FAQ): {e}")
+    except Exception:
+        logger.exception("SSR FAQ data failed", extra={"event": "ssr_faq_failed"})
     return render_template('faq.html', faqs=faq_data)
 
 

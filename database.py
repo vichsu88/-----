@@ -1,11 +1,14 @@
 import os
-from datetime import datetime, timezone
+import logging
 
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import PyMongoError
 
+from utils.timezone import utc_now
+
 db = None
 _client = None
+logger = logging.getLogger(__name__)
 
 
 def _env_int(name, default):
@@ -21,7 +24,11 @@ def _create_index(collection_name, keys, **kwargs):
     try:
         db[collection_name].create_index(keys, **kwargs)
     except PyMongoError as exc:
-        print(f"[MongoDB Index Warning] {collection_name}.{kwargs.get('name', keys)}: {exc}")
+        logger.warning(
+            "MongoDB index creation failed",
+            extra={"event": "mongodb_index_warning", "target": collection_name},
+            exc_info=exc,
+        )
 
 
 def ensure_indexes():
@@ -86,13 +93,13 @@ def init_db(mongo_uri):
             db = _client['ChentienTempleDB']
             _client.admin.command('ping')
             ensure_indexes()
-            print("--- MongoDB connected ---")
+            logger.info("MongoDB connected", extra={"event": "mongodb_connected"})
         except Exception as e:
             db = None
             _client = None
-            print(f"--- MongoDB connection failed: {e} ---")
+            logger.exception("MongoDB connection failed", extra={"event": "mongodb_connection_failed"})
     else:
-        print("--- Missing MONGO_URI ---")
+        logger.warning("Missing MONGO_URI", extra={"event": "mongodb_missing_uri"})
     return db
 
 
@@ -106,11 +113,11 @@ def write_audit_log(admin_username, action, target='', details=''):
         return
     try:
         db.audit_log.insert_one({
-            "timestamp": datetime.now(timezone.utc).replace(tzinfo=None),
+            "timestamp": utc_now(),
             "admin": admin_username or 'system',
             "action": action,
             "target": target,
             "details": details
         })
     except Exception as e:
-        print(f"[AuditLog Error] {e}")
+        logger.exception("Audit log write failed", extra={"event": "audit_log_failed"})

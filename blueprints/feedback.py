@@ -1,6 +1,5 @@
 import io
 import random
-from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request, session, Response, current_app
 
@@ -9,6 +8,7 @@ from utils.decorators import admin_required, user_login_required
 from utils.helpers import get_object_id
 from utils.security import as_string, get_json_object
 from utils.email import send_email, generate_feedback_email_html
+from utils.timezone import format_taipei, taipei_now, utc_now
 
 feedback_bp = Blueprint('feedback', __name__)
 
@@ -62,7 +62,7 @@ def enrich_feedback_for_admin(cursor):
                     pass  # already a string, keep as-is
                 else:
                     try:
-                        doc[field] = val.strftime(fmt)
+                        doc[field] = format_taipei(val, fmt)
                     except Exception:
                         doc[field] = str(val) if val else ''
 
@@ -93,7 +93,7 @@ def add_feedback():
         "category": category,
         "content": as_string(data.get('content')).strip(),
         "agreed": True,
-        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None),
+        "createdAt": utc_now(),
         "status": "pending",
         "isMarked": False,
         
@@ -169,8 +169,8 @@ def approve_feedback(fid):
         return jsonify({"error": "No data"}), 404
 
     # 準備好所有變數
-    fb_id = f"FB{datetime.now().strftime('%Y%m%d')}{random.randint(10,99)}"
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    fb_id = f"FB{taipei_now().strftime('%Y%m%d')}{random.randint(10,99)}"
+    now = utc_now()
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
 
     # ✅ 變數都準備好後，才執行更新
@@ -213,7 +213,7 @@ def ship_feedback(fid):
         return jsonify({"error": "No data"}), 404
 
     # 準備好所有變數
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = utc_now()
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
 
     # ✅ 變數都準備好後，才執行更新
@@ -294,7 +294,7 @@ def export_sent_feedback_txt():
         return jsonify({"error": "無已寄送資料"}), 404
 
     si = io.StringIO()
-    si.write(f"已寄送名單匯出\n匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+    si.write(f"已寄送名單匯出\n匯出時間: {taipei_now().strftime('%Y-%m-%d %H:%M')}\n")
     si.write("=" * 50 + "\n")
     for doc in enriched:
         si.write(f"{doc.get('realName', '')}\t{doc.get('phone', '')}\t{doc.get('address', '')}\n")
@@ -311,7 +311,7 @@ def export_feedback_txt():
         return jsonify({"error": "無資料"}), 404
 
     si = io.StringIO()
-    si.write(f"匯出時間: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n")
+    si.write(f"匯出時間: {taipei_now().strftime('%Y-%m-%d %H:%M')}\n\n")
     for doc in enriched:
         si.write(f"【編號】{doc.get('feedbackId', '無')}\n")
         si.write(f"姓名：{doc.get('realName', '')}\n")

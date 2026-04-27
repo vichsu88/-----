@@ -1,13 +1,16 @@
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+import logging
+from datetime import datetime, timedelta
 from utils.line_bot import send_admin_notification
 from flask import Blueprint, jsonify, request, session
 from database import db
 from utils.decorators import user_login_required
 from utils.helpers import get_tw_now, get_object_id, mask_name
 from utils.security import as_string, get_json_object
+from utils.timezone import utc_now
 
 pickup_bp = Blueprint('pickup', __name__)
+logger = logging.getLogger(__name__)
 
 
 @pickup_bp.route('/api/pickup/reserve', methods=['POST'])
@@ -62,7 +65,7 @@ def create_pickup_reservation():
         "pickupType": pickup_type,
         "pickupDate": pickup_date,
         "clothes": clothes,
-        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
+        "createdAt": utc_now()
     }
 
     if db is not None:
@@ -80,9 +83,9 @@ def create_pickup_reservation():
                 f"請記得到後台確認喔！"
             )
             send_admin_notification(notify_msg)
-        except Exception as e:
+        except Exception:
             # 即使推播失敗，也不要影響使用者預約成功的流程
-            print(f"推播執行發生錯誤: {e}")
+            logger.exception("Pickup notification failed", extra={"event": "pickup_notification_failed"})
         # 👆👆👆 新增結束 👆👆👆
 
         return jsonify({"success": True, "message": "預約成功"})
@@ -148,12 +151,12 @@ def delete_pickup(pid):
     if not pickup:
         return jsonify({"error": "找不到預約"}), 404
 
-    try:
-        p_date = datetime.strptime(pickup.get('pickupDate'), '%Y-%m-%d')
-        today = get_tw_now().replace(hour=0, minute=0, second=0, microsecond=0)
+        try:
+            p_date = datetime.strptime(pickup.get('pickupDate'), '%Y-%m-%d').date()
+            today = get_tw_now().date()
 
-        if today >= p_date:
-            return jsonify({"error": "已超過取消期限 (限取件日前一天)"}), 400
+            if today >= p_date:
+                return jsonify({"error": "已超過取消期限 (限取件日前一天)"}), 400
     except Exception:
         return jsonify({"error": "日期資料異常"}), 400
 

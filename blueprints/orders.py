@@ -1,17 +1,21 @@
 import io
 import random
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from utils.line_bot import send_admin_notification
 from flask import Blueprint, jsonify, request, session, Response, current_app
 from pymongo.errors import ConfigurationError, OperationFailure, PyMongoError
 
 from database import db, get_client, write_audit_log
+from schemas.orders import OrderCreateSchema, ResendEmailSchema, ShipOrderSchema
 from services.order_service import (
     confirm_payment as confirm_payment_service,
     list_admin_donations,
     list_shop_orders,
     mark_shipped as mark_shipped_service,
+    queue_order_created_email,
+    queue_order_shipped_email,
+    queue_payment_confirmed_email,
 )
 from utils.business_rules import (
     ORDER_PAYMENT_DEADLINE_HOURS,
@@ -23,8 +27,9 @@ from utils.decorators import admin_required, user_login_required
 from utils.errors import ValidationError
 from utils.helpers import get_object_id, validate_real_name, mask_name
 from utils.pagination import page_response, parse_pagination
-from utils.schema import pick_allowed_fields
 from utils.security import as_string, get_json_object
+from utils.timezone import taipei_now, utc_now
+from utils.validation import validate_payload
 from utils.email import (
     send_email,
     generate_shop_email_html,
@@ -57,24 +62,6 @@ FUND_ITEMS = {
 }
 FUND_ITEM_NAMES = {v['name']: k for k, v in FUND_ITEMS.items()}
 FUND_ITEM_NAMES.update({v['name'].replace('[建廟] ', ''): k for k, v in FUND_ITEMS.items()})
-
-ORDER_CREATE_FIELDS = {
-    'orderType',
-    'items',
-    'total',
-    'name',
-    'phone',
-    'email',
-    'address',
-    'last5',
-    'lunarBirthday',
-    'prayer',
-    'shippingMethod',
-    'storeInfo',
-}
-RESEND_EMAIL_FIELDS = {'email'}
-SHIP_ORDER_FIELDS = {'trackingNumber'}
-
 
 def _to_positive_int(value, field='數量', max_value=99):
     try:
@@ -261,7 +248,7 @@ def _insert_order_with_quota(order, quota_checks):
         return
 
     def write_order(session_obj=None):
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = utc_now()
         for check in quota_checks:
             query = {
                 "orderType": "committee",
@@ -299,6 +286,13 @@ def _insert_order_with_quota(order, quota_checks):
             raise
 
     write_order()
+
+
+def _current_mail_config():
+    return {
+        "sendgrid_api_key": current_app.config['SENDGRID_API_KEY'],
+        "mail_sender": current_app.config['MAIL_SENDER'],
+    }
 
 @orders_bp.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
@@ -431,7 +425,7 @@ def export_donations_txt():
 @orders_bp.route('/api/donations/cleanup-unpaid', methods=['DELETE'])
 @admin_required(roles=['super_admin', 'finance', 'ops'])
 def cleanup_unpaid_orders():
-    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=UNPAID_ORDER_GRACE_HOURS)
+    cutoff = utc_now() - timedelta(hours=UNPAID_ORDER_GRACE_HOURS)
     cursor = db.orders.find({"status": "pending", "createdAt": {"$lt": cutoff}})
     for order in cursor:
         if order.get('customer', {}).get('email'):
@@ -449,7 +443,8 @@ def cleanup_unpaid_orders():
 def create_order():
     if db is None:
         return jsonify({"error": "DB Error"}), 500
-    data = pick_allowed_fields(get_json_object(), ORDER_CREATE_FIELDS)
+    payload = validate_payload(OrderCreateSchema, get_json_object())
+    data = payload.model_dump(exclude_none=True)
     line_id = session.get('user_line_id')
 
     order_type = as_string(data.get('orderType'), 'shop')
@@ -465,7 +460,7 @@ def create_order():
     elif order_type == 'fund': prefix = "FND"
     elif order_type == 'committee': prefix = "COM"
 
-    order_id = f"{prefix}{datetime.now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
+    order_id = f"{prefix}{taipei_now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
 
     customer_info = {
         "name": as_string(data.get('name')).strip(),
@@ -480,7 +475,7 @@ def create_order():
         "shippingFee": shipping_fee
     }
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = utc_now()
     deadline = now + timedelta(hours=ORDER_PAYMENT_DEADLINE_HOURS)
 
     order = {
@@ -495,23 +490,7 @@ def create_order():
         order['is_reported'] = False
 
     _insert_order_with_quota(order, quota_checks)
-
-    subject = f"【承天中承府】訂單確認 ({order_id})"
-    if order_type == 'donation':
-        subject = f"【承天中承府】捐香登記確認 ({order_id})"
-    elif order_type == 'fund':
-        subject = f"【承天中承府】建廟護持確認 ({order_id})"
-    elif order_type == 'committee':
-        subject = f"【承天中承府】委員會發心護持確認 ({order_id})"
-
-    if order_type in ['donation', 'fund', 'committee']:
-        html = generate_donation_created_email(order, db=db)
-    else:
-        html = generate_shop_email_html(order, 'created', db=db)
-
-    send_email(customer_info['email'], subject, html,
-               current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'],
-               is_html=True)
+    queue_order_created_email(order, _current_mail_config())
     return jsonify({"success": True, "orderId": order_id, "total": total})
 
 
@@ -526,7 +505,7 @@ def get_orders():
 @orders_bp.route('/api/orders/cleanup-shipped', methods=['DELETE'])
 @admin_required(roles=['super_admin', 'ops'])
 def cleanup_shipped_orders():
-    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=SHIPPED_ORDER_RETENTION_DAYS)
+    cutoff = utc_now() - timedelta(days=SHIPPED_ORDER_RETENTION_DAYS)
     result = db.orders.delete_many({"status": "shipped", "shippedAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
@@ -536,20 +515,7 @@ def cleanup_shipped_orders():
 def confirm_order_payment(oid):
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
     order = confirm_payment_service(oid, admin_user)
-    cust = order['customer']
-
-    if order.get('orderType') in ['donation', 'fund', 'committee']:
-        email_subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order['orderId']})"
-        email_html = generate_donation_paid_email(cust, order['orderId'], order['items'], order['total'])
-        send_email(cust.get('email'), email_subject, email_html,
-                   current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'],
-                   is_html=True)
-    else:
-        email_subject = f"【承天中承府】收款確認通知 ({order['orderId']})"
-        email_html = generate_shop_email_html(order, 'paid', db=db)
-        send_email(cust.get('email'), email_subject, email_html,
-                   current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'],
-                   is_html=True)
+    queue_payment_confirmed_email(order, _current_mail_config())
     return jsonify({"success": True})
 
 @orders_bp.route('/api/orders/<oid>/resend-email', methods=['POST'])
@@ -559,8 +525,8 @@ def resend_order_email(oid):
     if not oid_obj:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    data = pick_allowed_fields(get_json_object(), RESEND_EMAIL_FIELDS)
-    new_email = as_string(data.get('email')).strip()
+    payload = validate_payload(ResendEmailSchema, get_json_object())
+    new_email = payload.email.strip()
     order = db.orders.find_one({'_id': oid_obj})
     if not order:
         return jsonify({"error": "No order"}), 404
@@ -616,16 +582,9 @@ def delete_order(oid):
 @orders_bp.route('/api/orders/<oid>/ship', methods=['PUT'])
 @admin_required(roles=['super_admin', 'ops'])
 def ship_order(oid):
-    data = pick_allowed_fields(get_json_object(), SHIP_ORDER_FIELDS)
-    tracking_num = as_string(data.get('trackingNumber')).strip()
+    payload = validate_payload(ShipOrderSchema, get_json_object())
+    tracking_num = payload.trackingNumber.strip()
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
     order = mark_shipped_service(oid, tracking_num, admin_user)
-
-    # 寄信通知
-    cust = order['customer']
-    email_subject = f"【承天中承府】訂單出貨通知 ({order['orderId']})"
-    email_html = generate_shop_email_html(order, 'shipped', tracking_num, db=db)
-    send_email(cust.get('email'), email_subject, email_html,
-               current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'],
-               is_html=True)
+    queue_order_shipped_email(order, tracking_num, _current_mail_config())
     return jsonify({"success": True})

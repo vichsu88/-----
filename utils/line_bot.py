@@ -1,10 +1,12 @@
 import os
+import logging
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
 from linebot.exceptions import LineBotApiError
 
 # 從環境變數讀取 Access Token
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+logger = logging.getLogger(__name__)
 
 
 def _get_line_bot_api():
@@ -22,7 +24,7 @@ def send_admin_notification(message_text):
 
     api = _get_line_bot_api()
     if api is None:
-        print("⚠️ LINE_CHANNEL_ACCESS_TOKEN 未設定，略過推播")
+        logger.warning("LINE token is not configured; skip push", extra={"event": "line_push_missing_token"})
         return
 
     try:
@@ -30,6 +32,6 @@ def send_admin_notification(message_text):
             admin_user_id,
             TextSendMessage(text=message_text)
         )
-        print("✅ LINE 推播成功！")
-    except LineBotApiError as e:
-        print(f"❌ LINE 推播失敗: {e}")
+        logger.info("LINE push sent", extra={"event": "line_push_sent"})
+    except LineBotApiError:
+        logger.exception("LINE push failed", extra={"event": "line_push_failed"})

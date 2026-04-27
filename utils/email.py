@@ -1,5 +1,6 @@
 import os 
 import json
+import logging
 import smtplib
 import threading
 import urllib.request
@@ -8,6 +9,10 @@ from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from utils.helpers import get_tw_now
+from utils.task_queue import celery_app, queue_available
+
+
+logger = logging.getLogger(__name__)
 
 
 # =========================================
@@ -22,8 +27,11 @@ def send_email_task(to_email, subject, body, is_html, **kwargs):
     mail_password = os.environ.get('MAIL_PASSWORD')
 
     if not mail_sender or not mail_password:
-        print("❌ 錯誤: SMTP 帳號或密碼未設定")
-        return
+        logger.warning(
+            "SMTP credentials are not configured",
+            extra={"event": "email_missing_credentials", "target": to_email},
+        )
+        return False
 
     msg = MIMEMultipart()
     msg['From'] = mail_sender
@@ -41,9 +49,17 @@ def send_email_task(to_email, subject, body, is_html, **kwargs):
             
         server.login(mail_sender, mail_password)
         server.send_message(msg)
-        print(f"✅ Namecheap SMTP 寄信成功!")
-    except Exception as e:
-        print(f"❌ SMTP 寄信出錯: {str(e)}")
+        logger.info(
+            "Email sent",
+            extra={"event": "email_sent", "target": to_email},
+        )
+        return True
+    except Exception:
+        logger.exception(
+            "SMTP email send failed",
+            extra={"event": "email_send_failed", "target": to_email},
+        )
+        return False
         
     finally:
         if server:
@@ -52,9 +68,33 @@ def send_email_task(to_email, subject, body, is_html, **kwargs):
             except Exception:
                 pass
 
+
+if celery_app is not None:
+    @celery_app.task(name="email.send")
+    def send_email_task_queued(to_email, subject, body, is_html=False):
+        return send_email_task(to_email, subject, body, is_html)
+else:
+    send_email_task_queued = None
+
+
 def send_email(to_email, subject, body, sendgrid_api_key=None, mail_sender=None, is_html=False):
     if not to_email:
         return
+
+    if queue_available() and send_email_task_queued is not None:
+        try:
+            send_email_task_queued.delay(to_email, subject, body, is_html)
+            logger.info(
+                "Email queued",
+                extra={"event": "email_queued", "target": to_email},
+            )
+            return
+        except Exception:
+            logger.exception(
+                "Email queue failed; falling back to local background thread",
+                extra={"event": "email_queue_failed", "target": to_email},
+            )
+
     # 這裡保留舊的參數名稱是為了不改動其他呼叫此函數的地方
     thread = threading.Thread(
         target=send_email_task,

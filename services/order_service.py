@@ -1,8 +1,13 @@
-from datetime import timedelta
-
 from database import db, write_audit_log
+from utils.email import (
+    generate_donation_created_email,
+    generate_donation_paid_email,
+    generate_shop_email_html,
+    send_email,
+)
 from utils.errors import NotFoundError, ServiceUnavailableError, ValidationError
 from utils.helpers import get_object_id
+from utils.timezone import format_taipei, utc_now
 
 
 def _require_db():
@@ -11,12 +16,7 @@ def _require_db():
 
 
 def _tw_datetime(value, fmt="%Y-%m-%d %H:%M"):
-    if not value:
-        return ""
-    try:
-        return (value + timedelta(hours=8)).strftime(fmt)
-    except Exception:
-        return str(value)
+    return format_taipei(value, fmt)
 
 
 def _serialize_order(doc):
@@ -67,9 +67,7 @@ def confirm_payment(order_id, admin_user):
     if not order:
         raise NotFoundError("Order not found")
 
-    from datetime import datetime, timezone
-
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = utc_now()
     db.orders.update_one(
         {"_id": oid},
         {"$set": {
@@ -93,9 +91,7 @@ def mark_shipped(order_id, tracking_number, admin_user):
     if not order:
         raise NotFoundError("Order not found")
 
-    from datetime import datetime, timezone
-
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = utc_now()
     db.orders.update_one(
         {"_id": oid},
         {"$set": {
@@ -108,3 +104,57 @@ def mark_shipped(order_id, tracking_number, admin_user):
     )
     write_audit_log(admin_user, "ship_order", order.get("orderId", order_id), tracking_number)
     return order
+
+
+def _mail_args(mail_config):
+    mail_config = mail_config or {}
+    return (
+        mail_config.get("sendgrid_api_key"),
+        mail_config.get("mail_sender"),
+    )
+
+
+def queue_order_created_email(order, mail_config=None):
+    customer = order.get("customer", {})
+    order_id = order.get("orderId", "")
+    order_type = order.get("orderType")
+    subject = f"【承天中承府】訂單確認 ({order_id})"
+    if order_type == "donation":
+        subject = f"【承天中承府】捐香登記確認 ({order_id})"
+    elif order_type == "fund":
+        subject = f"【承天中承府】建廟護持確認 ({order_id})"
+    elif order_type == "committee":
+        subject = f"【承天中承府】委員會發心護持確認 ({order_id})"
+
+    if order_type in ["donation", "fund", "committee"]:
+        html = generate_donation_created_email(order, db=db)
+    else:
+        html = generate_shop_email_html(order, "created", db=db)
+
+    send_email(customer.get("email"), subject, html, *_mail_args(mail_config), is_html=True)
+
+
+def queue_payment_confirmed_email(order, mail_config=None):
+    customer = order.get("customer", {})
+    order_id = order.get("orderId", "")
+    if order.get("orderType") in ["donation", "fund", "committee"]:
+        subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order_id})"
+        html = generate_donation_paid_email(
+            customer,
+            order_id,
+            order.get("items", []),
+            order.get("total", 0),
+        )
+    else:
+        subject = f"【承天中承府】收款確認通知 ({order_id})"
+        html = generate_shop_email_html(order, "paid", db=db)
+
+    send_email(customer.get("email"), subject, html, *_mail_args(mail_config), is_html=True)
+
+
+def queue_order_shipped_email(order, tracking_number, mail_config=None):
+    customer = order.get("customer", {})
+    order_id = order.get("orderId", "")
+    subject = f"【承天中承府】訂單出貨通知 ({order_id})"
+    html = generate_shop_email_html(order, "shipped", tracking_number, db=db)
+    send_email(customer.get("email"), subject, html, *_mail_args(mail_config), is_html=True)

@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request, session, Response
 
@@ -7,6 +7,7 @@ from database import db
 from utils.decorators import admin_required
 from utils.helpers import get_object_id, get_tw_now, calculate_business_d2, mask_name
 from utils.security import as_string, get_json_object
+from utils.timezone import utc_now
 
 content_bp = Blueprint('content', __name__)
 
@@ -139,7 +140,7 @@ def add_product():
         "price": _to_int(data.get('price'), 0), "description": as_string(data.get('description')).strip(),
         "image": as_string(data.get('image')).strip(), "isActive": _to_bool(data.get('isActive'), True),
         "isDonation": _to_bool(data.get('isDonation'), False), "variants": _clean_variants(data.get('variants', [])),
-        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
+        "createdAt": utc_now()
     }
     db.products.insert_one(new_product)
     return jsonify({"success": True})
@@ -208,7 +209,7 @@ def add_announcement():
         "title": as_string(data.get('title')).strip(),
         "content": as_string(data.get('content')).strip(),
         "isPinned": _to_bool(data.get('isPinned'), False),
-        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
+        "createdAt": utc_now()
     })
     return jsonify({"success": True})
 
@@ -275,7 +276,7 @@ def add_faq():
     db.faq.insert_one({
         "question": as_string(data.get('question')).strip(), "answer": as_string(data.get('answer')).strip(), "category": category,
         "isPinned": _to_bool(data.get('isPinned'), False),
-        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None)
+        "createdAt": utc_now()
     })
     return jsonify({"success": True})
 

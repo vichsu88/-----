@@ -1,15 +1,21 @@
 import os
 import time
+import logging
 from datetime import timedelta
 
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
 
 import database
 from extensions import csrf, limiter
 from utils.errors import AppError
+from utils.logging_config import configure_logging
 from utils.security import validate_request_input
+
+
+logger = logging.getLogger(__name__)
 
 
 def _env_int(name, default):
@@ -21,6 +27,7 @@ def _env_int(name, default):
 
 def create_app():
     load_dotenv()
+    configure_logging()
     app = Flask(__name__)
 
     slow_request_ms = _env_int('SLOW_REQUEST_MS', 750)
@@ -31,6 +38,16 @@ def create_app():
         if error.details is not None:
             payload["details"] = error.details
         return jsonify(payload), error.status_code
+
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(error):
+        if isinstance(error, HTTPException):
+            return error
+        logger.exception(
+            "Unhandled server error",
+            extra={"event": "unhandled_error", "path": request.path, "method": request.method},
+        )
+        return jsonify({"error": "Internal server error", "code": "internal_server_error"}), 500
 
     @app.before_request
     def start_request_timer():
@@ -44,10 +61,16 @@ def create_app():
             elapsed_ms = (time.perf_counter() - started_at) * 1000
             response.headers['X-Response-Time'] = f'{elapsed_ms:.1f}ms'
             if elapsed_ms >= slow_request_ms:
-                print(
-                    f"[Slow Request] {request.method} {request.path} "
-                    f"{response.status_code} {elapsed_ms:.1f}ms",
-                    flush=True,
+                logger.warning(
+                    "Slow request",
+                    extra={
+                        "event": "slow_request",
+                        "method": request.method,
+                        "path": request.path,
+                        "status_code": response.status_code,
+                        "elapsed_ms": round(elapsed_ms, 1),
+                        "remote_addr": request.remote_addr,
+                    },
                 )
 
         return response
