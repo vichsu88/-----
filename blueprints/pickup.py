@@ -151,12 +151,12 @@ def delete_pickup(pid):
     if not pickup:
         return jsonify({"error": "找不到預約"}), 404
 
-        try:
-            p_date = datetime.strptime(pickup.get('pickupDate'), '%Y-%m-%d').date()
-            today = get_tw_now().date()
+    try:  # ✅ 退一格，和上面的 if 對齊
+        p_date = datetime.strptime(pickup.get('pickupDate'), '%Y-%m-%d').date()
+        today = get_tw_now().date()
 
-            if today >= p_date:
-                return jsonify({"error": "已超過取消期限 (限取件日前一天)"}), 400
+        if today >= p_date:
+            return jsonify({"error": "已超過取消期限 (限取件日前一天)"}), 400
     except Exception:
         return jsonify({"error": "日期資料異常"}), 400
 
