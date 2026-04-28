@@ -7,6 +7,7 @@ from flask import Blueprint, jsonify, request, session, Response, current_app
 from pymongo.errors import ConfigurationError, OperationFailure, PyMongoError
 
 from database import db, get_client, write_audit_log
+from extensions import limiter
 from schemas.orders import OrderCreateSchema, ResendEmailSchema, ShipOrderSchema
 from services.order_service import (
     confirm_payment as confirm_payment_service,
@@ -439,6 +440,7 @@ def cleanup_unpaid_orders():
 
 
 @orders_bp.route('/api/orders', methods=['POST'])
+@limiter.limit("30 per hour")
 @user_login_required
 def create_order():
     if db is None:

@@ -1,9 +1,12 @@
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 UTC = timezone.utc
-TAIPEI_TZ = ZoneInfo("Asia/Taipei")
+try:
+    TAIPEI_TZ = ZoneInfo("Asia/Taipei")
+except ZoneInfoNotFoundError:
+    TAIPEI_TZ = timezone(timedelta(hours=8), "Asia/Taipei")
 
 
 def utc_now():

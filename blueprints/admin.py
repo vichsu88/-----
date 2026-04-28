@@ -89,6 +89,7 @@ _TYPE_LABELS = {
 VALID_ORDER_TYPES = {'shop', 'donation', 'fund', 'committee'}
 VALID_HISTORY_TYPES = VALID_ORDER_TYPES | {'feedback'}
 VALID_STATUSES = {'pending', 'paid', 'shipped', 'approved', 'sent', 'cancelled'}
+MIN_ADMIN_PASSWORD_LENGTH = 10
 
 
 def _clean_bank_info(value):
@@ -651,8 +652,8 @@ def create_admin_user():
     if not username or not password:
         return jsonify({"error": "帳號和密碼不可為空"}), 400
 
-    if len(password) < 6:
-        return jsonify({"error": "密碼長度至少 6 字元"}), 400
+    if len(password) < MIN_ADMIN_PASSWORD_LENGTH:
+        return jsonify({"error": f"管理員密碼至少需要 {MIN_ADMIN_PASSWORD_LENGTH} 個字元"}), 400
 
     valid_perms = ['super_admin', 'finance', 'ops', 'data', 'cms']
     for p in permissions:

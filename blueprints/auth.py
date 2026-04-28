@@ -3,7 +3,7 @@ import secrets
 from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session
 
 from database import write_audit_log
-from extensions import csrf, limiter
+from extensions import limiter
 from schemas.auth import AdminLoginSchema
 from services.auth_service import (
     authenticate_admin,
@@ -24,6 +24,7 @@ auth_bp = Blueprint('auth', __name__)
 # =========================================
 
 @auth_bp.route('/api/line/login')
+@limiter.limit("20 per minute")
 def line_login():
     line_channel_id = current_app.config['LINE_CHANNEL_ID']
     line_callback_url = current_app.config['LINE_CALLBACK_URL']
@@ -51,7 +52,9 @@ def line_callback():
     session_state = session.get('line_state')
 
     if state != session_state:
+        session.pop('line_state', None)
         return "登入狀態驗證失敗，請重新操作", 400
+    session.pop('line_state', None)
     try:
         profile = fetch_line_profile(code, line_channel_id, line_channel_secret, line_callback_url)
         user = upsert_line_user(profile)
@@ -91,7 +94,6 @@ def session_check():
     return jsonify({"logged_in": False})
 
 
-@csrf.exempt
 @auth_bp.route('/api/login', methods=['POST'])
 @limiter.limit("5 per minute")
 def api_login():

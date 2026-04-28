@@ -4,6 +4,7 @@ import random
 from flask import Blueprint, jsonify, request, session, Response, current_app
 
 from database import db, write_audit_log
+from extensions import limiter
 from utils.decorators import admin_required, user_login_required
 from utils.helpers import get_object_id
 from utils.security import as_string, get_json_object
@@ -71,6 +72,7 @@ def enrich_feedback_for_admin(cursor):
 
 
 @feedback_bp.route('/api/feedback', methods=['POST'])
+@limiter.limit("10 per hour")
 @user_login_required
 def add_feedback():
     if db is None:

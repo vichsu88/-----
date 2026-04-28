@@ -6,6 +6,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
+from flask_wtf.csrf import CSRFError
 from werkzeug.exceptions import HTTPException
 
 import database
@@ -25,12 +26,46 @@ def _env_int(name, default):
         return default
 
 
+def _set_default_header(response, name, value):
+    if name not in response.headers:
+        response.headers[name] = value
+
+
+def _security_headers(is_production):
+    csp = (
+        "default-src 'self'; "
+        "base-uri 'self'; "
+        "object-src 'none'; "
+        "frame-ancestors 'none'; "
+        "form-action 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com data:; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://api.cloudinary.com; "
+        "frame-src https://www.youtube.com https://www.youtube-nocookie.com"
+    )
+    headers = {
+        "Content-Security-Policy": csp,
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+        "Cross-Origin-Opener-Policy": "same-origin",
+    }
+    if is_production:
+        headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    return headers
+
+
 def create_app():
     load_dotenv()
     configure_logging()
     app = Flask(__name__)
 
     slow_request_ms = _env_int('SLOW_REQUEST_MS', 750)
+    is_production = os.environ.get('RENDER') is not None
+    secure_headers = _security_headers(is_production)
 
     @app.errorhandler(AppError)
     def handle_app_error(error):
@@ -38,6 +73,15 @@ def create_app():
         if error.details is not None:
             payload["details"] = error.details
         return jsonify(payload), error.status_code
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        if request.path.startswith('/api/'):
+            return jsonify({
+                "error": "Security token expired. Please refresh the page and try again.",
+                "code": "csrf_error",
+            }), 400
+        return error.description, 400
 
     @app.errorhandler(Exception)
     def handle_unexpected_error(error):
@@ -55,7 +99,7 @@ def create_app():
         return validate_request_input()
 
     @app.after_request
-    def add_perf_headers(response):
+    def add_response_headers(response):
         started_at = getattr(g, 'request_started_at', None)
         if started_at is not None:
             elapsed_ms = (time.perf_counter() - started_at) * 1000
@@ -73,9 +117,15 @@ def create_app():
                     },
                 )
 
+        for name, value in secure_headers.items():
+            _set_default_header(response, name, value)
+
+        if request.path == '/admin' or request.path.startswith('/api/'):
+            _set_default_header(response, "Cache-Control", "no-store, max-age=0")
+            _set_default_header(response, "Pragma", "no-cache")
+
         return response
 
-    is_production = os.environ.get('RENDER') is not None
     secret_key = os.environ.get('SECRET_KEY')
     if not secret_key:
         if is_production:
@@ -86,6 +136,7 @@ def create_app():
     app.config['SESSION_COOKIE_SECURE'] = is_production
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['MAX_CONTENT_LENGTH'] = _env_int('MAX_CONTENT_LENGTH', 1_000_000)
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = _env_int(
         'STATIC_CACHE_SECONDS',
         31536000 if is_production else 0,

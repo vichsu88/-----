@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request, session, Response
 
 from database import db
+from extensions import limiter
 from utils.decorators import admin_required
 from utils.helpers import get_object_id, get_tw_now, calculate_business_d2, mask_name
 from utils.security import as_string, get_json_object
@@ -50,6 +51,7 @@ def get_pickup_date_preview():
 
 
 @content_bp.route('/api/shipclothes', methods=['POST'])
+@limiter.limit("10 per hour")
 def submit_ship_clothes():
     if db is None:
         return jsonify({"success": False, "message": "資料庫未連線"}), 500

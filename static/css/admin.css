@@ -223,6 +223,13 @@ h2, h3, h4 { margin-top: 0; color: #4b2c1c; }
 }
 .btn:hover { opacity: 0.95; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
 .btn:active { transform: translateY(0); }
+.btn:disabled,
+button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
 .btn--brown { background: linear-gradient(135deg, var(--main-brown), var(--main-brown-hover)); }
 .btn--red { background: linear-gradient(135deg, var(--danger), #d9363e); }
 .btn--green { background: linear-gradient(135deg, var(--success), #389e0d); }
@@ -249,6 +256,7 @@ label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; font
 .checkbox-label input { width: auto; margin: 0 10px 0 0; }
 .readonly-input { background-color: rgba(0,0,0,0.03); cursor: not-allowed; color: #777; }
 .help-text { font-size: 13px; color: var(--text-gray); display: block; margin-bottom: 10px; }
+#login-error { min-height: 1.4em; }
 
 /* 權限 checkbox 群組 */
 .perm-checkbox-group {

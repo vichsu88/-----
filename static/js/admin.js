@@ -14,23 +14,38 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             try {
                 const response = await fetch(url, { ...options, credentials: 'include', headers });
-                if (!response.ok) throw new Error((await response.text()) || `Error: ${response.status}`);
-                const contentType = response.headers.get('content-type');
-                return contentType?.includes('json') ? response.json() : response.text();
+                const contentType = response.headers.get('content-type') || '';
+                const payload = contentType.includes('json') ? await response.json() : await response.text();
+                if (!response.ok) {
+                    const message = typeof payload === 'object'
+                        ? (payload.message || payload.error || `Request failed (${response.status})`)
+                        : (payload || `Request failed (${response.status})`);
+                    const err = new Error(message);
+                    err.status = response.status;
+                    err.payload = payload;
+                    throw err;
+                }
+                return payload;
             } catch (error) {
                 console.error('API Fetch Error:', error);
-                try {
-                    const errObj = JSON.parse(error.message);
-                    alert(errObj.message || errObj.error || '發生錯誤');
-                } catch (e) {
-                    alert('操作失敗，請檢查網路或權限');
-                }
+                alert(error.message || '操作失敗，請檢查網路或權限');
                 throw error;
             }
         },
 
         confirmAction(msg, cb) { if (confirm(msg)) cb(); },
-        safeStringify(obj) { return JSON.stringify(obj).replace(/'/g, "&apos;"); }
+        escapeHTML(value) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' };
+            return String(value ?? '').replace(/[&<>"'`]/g, ch => map[ch]);
+        },
+        htmlSafe(value) {
+            if (Array.isArray(value)) return value.map(item => this.htmlSafe(item));
+            if (value && typeof value === 'object') {
+                return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, this.htmlSafe(item)]));
+            }
+            return typeof value === 'string' ? this.escapeHTML(value) : value;
+        },
+        safeStringify(obj) { return this.escapeHTML(JSON.stringify(obj)); }
     };
 
     /* =========================================
@@ -181,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async checkSession() {
             try {
-                const data = await fetch('/api/session_check').then(r => r.json());
+                const data = await fetch('/api/session_check', { credentials: 'include' }).then(r => r.json());
                 if (data.logged_in) {
                     this.permissions = data.permissions || [data.role || 'super_admin'];
                     this.username = data.username || 'admin';
@@ -197,24 +212,51 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById('sidebar-user-info');
             if (!el) return;
             const labels = { super_admin: 'SuperAdmin', finance: 'Finance', ops: 'Ops', data: 'Data', cms: 'CMS' };
-            const badges = this.permissions.map(p => `<span class="role-badge">${labels[p] || p}</span>`).join(' ');
-            el.innerHTML = `${this.username} ${badges}`;
+            const badges = this.permissions
+                .map(p => `<span class="role-badge">${Core.escapeHTML(labels[p] || p)}</span>`)
+                .join(' ');
+            el.innerHTML = `${Core.escapeHTML(this.username)} ${badges}`;
         },
 
         async login(username, password) {
+            const form = document.getElementById('login-form');
+            const submitBtn = form?.querySelector('button[type="submit"]');
+            const errorEl = document.getElementById('login-error');
+            if (errorEl) errorEl.textContent = '';
+            if (!username || !password) {
+                if (errorEl) errorEl.textContent = '請輸入帳號與密碼';
+                return;
+            }
             try {
+                if (submitBtn) {
+                    submitBtn.dataset.originalText = submitBtn.textContent;
+                    submitBtn.textContent = '登入中...';
+                    submitBtn.disabled = true;
+                    submitBtn.setAttribute('aria-busy', 'true');
+                }
                 const res = await fetch('/api/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': Core.getCsrfToken()
+                    },
                     body: JSON.stringify({ username, password })
                 });
                 const data = await res.json();
                 if (data.success) location.reload();
                 else {
-                    const el = document.getElementById('login-error');
-                    if (el) el.textContent = data.message || '帳號或密碼錯誤';
+                    if (errorEl) errorEl.textContent = data.message || data.error || '帳號或密碼錯誤';
                 }
-            } catch (e) { alert('連線錯誤'); }
+            } catch (e) {
+                if (errorEl) errorEl.textContent = '連線錯誤，請稍後再試';
+            } finally {
+                if (submitBtn) {
+                    submitBtn.textContent = submitBtn.dataset.originalText || '登入';
+                    submitBtn.disabled = false;
+                    submitBtn.removeAttribute('aria-busy');
+                }
+            }
         },
 
         async logout() {
@@ -247,7 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const list = await Core.apiFetch('/api/admin/finance/pending');
                 if (!list.length) { el.innerHTML = '<p class="empty-state">🎉 目前沒有待收款單據</p>'; return; }
-                el.innerHTML = list.map(o => `
+                const displayList = list.map(item => Core.htmlSafe(item));
+                el.innerHTML = displayList.map((o, index) => `
                     <div class="feedback-card border-left-danger fb-card-pending-bg">
                         <div class="card-meta">
                             <span class="badge-source">${o.source_label}</span>
@@ -312,7 +355,8 @@ async loadFeedbackReview() {
         }
         
         // 這裡就是你想要的「全部展開顯示」卡片設計
-        rEl.innerHTML = pendingList.map(i => `
+        const displayList = pendingList.map(item => Core.htmlSafe(item));
+        rEl.innerHTML = displayList.map((i, index) => `
             <div class="feedback-card border-left-warning mb-20" style="background-color: #faf8f5;">
                 <div class="d-flex justify-between align-center border-bottom pb-10 mb-10">
                     <strong class="text-brown">🕒 投稿時間：${i.createdAt}</strong>
@@ -334,7 +378,7 @@ async loadFeedbackReview() {
                     <div class="pre-wrap mt-10 fs-16 lh-18">${i.content || ''}</div>
                 </div>
                 <div class="fb-card-footer mt-15 d-flex justify-end gap-10">
-                    <button class="btn btn--grey" onclick='editFb(${Core.safeStringify(i)})'>✏️ 修改</button>
+                    <button class="btn btn--grey" onclick='editFb(${Core.safeStringify(pendingList[index])})'>✏️ 修改</button>
                     <button class="btn btn--green" onclick="approveFb('${i._id}')">✅ 核准刊登</button>
                     <button class="btn btn--red" onclick="delFb('${i._id}')">🗑️ 刪除拒絕</button>
                 </div>
@@ -511,7 +555,8 @@ async loadFeedbackReview() {
                 const sLabels = { pending: '待收款', paid: '已付款', shipped: '已出貨', approved: '已核准', sent: '已寄出' };
                 const sPills = { pending: 'pill-pending', paid: 'pill-paid', shipped: 'pill-shipped', approved: 'pill-success', sent: 'pill-shipped' };
 
-                el.innerHTML = data.results.map(o => {
+                const displayResults = data.results.map(item => Core.htmlSafe(item));
+                el.innerHTML = displayResults.map((o, index) => {
                     const isFeedback = o._docType === 'feedback';
                     const detailFn = isFeedback ? 'viewFbDetail' : (o.orderType === 'shop' ? 'viewOrderDetails' : 'viewDonationDetail');
                     
@@ -566,8 +611,9 @@ async loadFeedbackReview() {
         renderMembers(list) {
             const el = document.getElementById('members-list');
             if (!el) return;
-            el.innerHTML = list.length ? list.map(m => `
-                <div class="admin-list-item member-card" style="cursor:pointer;" onclick="DataManager.viewMemberHistory('${m.lineId || ''}', '${(m.displayName || '').replace(/'/g, "\\'")}')">
+            const displayList = list.map(item => Core.htmlSafe(item));
+            el.innerHTML = list.length ? displayList.map((m, index) => `
+                <div class="admin-list-item member-card" style="cursor:pointer;" onclick='DataManager.viewMemberHistory(${Core.safeStringify(list[index].lineId || '')}, ${Core.safeStringify(list[index].displayName || '')})'>
                     <div class="member-avatar">${m.pictureUrl ? `<img src="${m.pictureUrl}">` : ''}</div>
                     <div class="flex-1">
                         <strong>${m.displayName || '未知'}</strong>
@@ -1188,6 +1234,7 @@ async loadFeedbackReview() {
             const checkedPerms = Array.from(adminUserForm.querySelectorAll('input[name="permissions"]:checked'))
                 .map(cb => cb.value);
             if (checkedPerms.length === 0) return alert('請至少選擇一個權限');
+            if ((adminUserForm.password.value || '').length < 10) return alert('管理員密碼至少需要 10 個字元');
             await Core.apiFetch('/api/admin/system/users', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -1237,6 +1284,7 @@ async loadFeedbackReview() {
     };
 
     window.viewDonationDetail = (o) => {
+        o = Core.htmlSafe(o);
         const body = document.getElementById('donation-detail-body');
         if (!body) return;
         const itemsStr = (o.items || []).map(i => {
@@ -1272,6 +1320,7 @@ async loadFeedbackReview() {
     };
 
     window.viewOrderDetails = (o) => {
+        o = Core.htmlSafe(o);
         const body = document.getElementById('order-detail-body');
         if (!body) return;
         const deliveryInfo = o.customer?.shippingMethod === '711'
@@ -1358,6 +1407,7 @@ async loadFeedbackReview() {
 };
 
     window.viewFbDetail = (item) => {
+        item = Core.htmlSafe(item);
         const body = document.getElementById('feedback-detail-body');
         if (!body) return;
         
@@ -1395,7 +1445,7 @@ async loadFeedbackReview() {
             Core.apiFetch('/api/feedback/status/approved'),
             Core.apiFetch('/api/feedback/status/sent')
         ]);
-        const all = [...approved, ...sent];
+        const all = [...approved, ...sent].map(item => Core.htmlSafe(item));
         if (!all.length) return alert('目前沒有符合資格的名單');
 
         const pw = window.open('', '_blank');
