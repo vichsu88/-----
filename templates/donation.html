@@ -805,6 +805,84 @@
         .d-img { height: 180px; }
         .hero-title { font-size: 2.2rem; letter-spacing: 8px; }
     }
+/* === Refined page polish === */
+.donation-hero::before {
+    background:
+        radial-gradient(ellipse at 50% 40%, rgba(231, 201, 133, 0.18) 0%, transparent 58%),
+        linear-gradient(180deg, rgba(42, 26, 10, 0.36) 0%, rgba(89, 30, 24, 0.30) 55%, rgba(42, 26, 10, 0.74) 100%);
+}
+
+.hero-title,
+.concept-section h2,
+.process-flow-wrapper h3,
+.step-title {
+    letter-spacing: 0.14em;
+}
+
+.donation-container {
+    background: rgba(252, 248, 238, 0.94);
+    border-color: rgba(200, 155, 63, 0.14);
+    box-shadow: 0 24px 70px rgba(44, 36, 32, 0.09);
+}
+
+.concept-highlight,
+.summary-section,
+.form-section,
+.donation-card,
+.modal-box,
+.bank-info-box {
+    border-color: rgba(200, 155, 63, 0.18);
+    box-shadow: 0 12px 34px rgba(44, 36, 32, 0.065);
+}
+
+.donation-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 48px rgba(44, 36, 32, 0.11);
+    border-color: rgba(200, 155, 63, 0.34);
+}
+
+.honor-roll-section {
+    border-color: rgba(200, 155, 63, 0.28);
+    box-shadow: 0 18px 48px rgba(74, 10, 10, 0.22), inset 0 0 36px rgba(0,0,0,0.28);
+}
+
+.honor-title-col {
+    padding-right: 36px;
+}
+
+.honor-title {
+    line-height: 1.7;
+}
+
+.marquee-content {
+    animation-duration: 96s;
+}
+
+.start-donate-btn,
+.btn-submit {
+    animation: none;
+    background: linear-gradient(135deg, #F2DDA7 0%, var(--kin) 52%, var(--kin-deep) 100%);
+}
+
+.start-donate-btn::after,
+.btn-submit::after {
+    animation: none;
+    transition: left 0.65s ease;
+}
+
+.start-donate-btn:hover::after,
+.btn-submit:hover::after {
+    left: 170%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .marquee-content,
+    .hero-text,
+    .donation-card.flash,
+    .qty-display.pop {
+        animation: none !important;
+    }
+}
 </style>
 
 <!-- Toast 通知容器 -->

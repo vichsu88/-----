@@ -366,6 +366,45 @@
     .empty-state  { text-align: center; color: #888; padding: 20px 0; }
     .action-link  { color: var(--primary-gold); font-weight: bold; text-decoration: none; }
     .btn-delete   { background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
+/* === Refined page polish === */
+.profile-page-wrapper {
+    padding-top: 56px;
+    padding-bottom: 72px;
+}
+
+.profile-card,
+.alert-box,
+.fund-gold-card,
+.history-item {
+    border-color: rgba(196, 137, 69, 0.16);
+    box-shadow: 0 14px 36px rgba(42, 26, 10, 0.065);
+}
+
+.profile-card {
+    border-width: 1px;
+}
+
+.profile-card h3.card-title {
+    letter-spacing: 0.08em;
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #E7C985 0%, #C48945 52%, #8F6128 100%);
+    box-shadow: 0 10px 24px rgba(143, 97, 40, 0.18);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-line-login {
+    box-shadow: 0 10px 24px rgba(6, 199, 85, 0.16);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-save:hover,
+.btn-line-login:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(143, 97, 40, 0.22);
+}
 </style>
 
 <!-- [NEW] Toast 容器 — 固定在畫面底部，JS 動態注入訊息 -->

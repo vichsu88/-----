@@ -583,6 +583,49 @@
     .form-cat-group { gap: 6px; }
     .form-cat-label { padding: 5px 12px; font-size: 12.5px; }
 }
+/* === Refined page polish === */
+.fb-hero {
+    padding-top: 76px;
+    padding-bottom: 58px;
+}
+
+.fb-hero__title {
+    letter-spacing: 0.16em;
+}
+
+.fb-card,
+.modal-content,
+.modal-info-block,
+.form-fieldset {
+    border-color: rgba(196, 137, 69, 0.16);
+    box-shadow: 0 14px 36px rgba(100, 65, 20, 0.07);
+}
+
+.fb-card {
+    border-radius: 14px;
+}
+
+.fb-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 22px 52px rgba(100, 65, 20, 0.11);
+}
+
+.fb-filter-btn,
+.fb-bless-btn,
+.btn-primary {
+    box-shadow: 0 8px 22px rgba(160, 112, 58, 0.13);
+}
+
+.fb-float-btn {
+    filter: drop-shadow(0 12px 24px rgba(42, 26, 10, 0.16));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fb-card.is-visible,
+    .fb-float-btn {
+        animation: none !important;
+    }
+}
 </style>
 
 <div class="fb-page">

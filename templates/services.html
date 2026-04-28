@@ -794,6 +794,91 @@ body {
     .btn-action { padding: 14px 38px; font-size: 1.1rem; }
     .modal-box { padding: 24px 20px; }
 }
+/* === Refined page polish === */
+.service-hero::after {
+    background:
+        radial-gradient(ellipse at center, rgba(42, 26, 10, 0.12) 0%, rgba(42, 26, 10, 0.48) 100%),
+        linear-gradient(to bottom, rgba(42, 26, 10, 0.05) 52%, var(--cream) 100%);
+}
+
+.video-background {
+    opacity: 0.66;
+}
+
+.yuanbao-header h2,
+.hero-title,
+.modal-title {
+    letter-spacing: 0.14em;
+}
+
+.gongtan-section {
+    margin: 96px auto;
+}
+
+.gongtan-img-box {
+    border-radius: 14px;
+    box-shadow: 0 20px 54px rgba(43, 36, 26, 0.12);
+    border: 1px solid rgba(196, 137, 69, 0.18);
+}
+
+.gongtan-img-box:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 26px 64px rgba(43, 36, 26, 0.16);
+}
+
+.step-item,
+.feedback-card,
+.process-card,
+.modal-box {
+    border-color: rgba(196, 137, 69, 0.16);
+    box-shadow: 0 12px 34px rgba(43, 36, 26, 0.07);
+}
+
+.step-item:hover,
+.feedback-card:hover,
+.process-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 48px rgba(43, 36, 26, 0.11);
+    border-color: rgba(196, 137, 69, 0.34);
+}
+
+.feedback-section {
+    padding: 86px 0;
+    background: linear-gradient(to bottom, rgba(255, 253, 248, 0.92), #F8F0E4);
+    border-color: rgba(196, 137, 69, 0.14);
+}
+
+.marquee-track {
+    animation-duration: 140s;
+}
+
+.card-btn,
+.btn-action {
+    background: linear-gradient(135deg, #E7C985 0%, #C48945 52%, #8F6128 100%);
+    box-shadow: 0 10px 28px rgba(143, 97, 40, 0.2);
+}
+
+.btn-action::after {
+    animation: none;
+    transition: left 0.65s var(--ease-refined);
+}
+
+.btn-action:hover::after {
+    left: 160%;
+}
+
+.red-paper-visual {
+    margin: 36px auto;
+    padding: 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .video-background,
+    .marquee-track,
+    .btn-action::after {
+        animation: none !important;
+    }
+}
 </style>
 
 <header class="service-hero">

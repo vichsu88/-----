@@ -936,6 +936,62 @@ button, input, .btn-action, .qty-btn, .form-control {
     .committee-cta { padding: 35px 22px; }
     .committee-cta h3 { font-size: 1.5rem; }
 }
+/* === Refined page polish === */
+.fund-section {
+    padding-top: 96px;
+    padding-bottom: 96px;
+}
+
+.section-title .title-main,
+.hero-headline h1 {
+    letter-spacing: 0.14em;
+}
+
+.ring-deco-rotate {
+    animation-duration: 80s;
+    opacity: 0.82;
+}
+
+.origin-section,
+.vision-section,
+.honor-section,
+.donate-section {
+    border-color: rgba(196, 154, 69, 0.16);
+}
+
+.vision-card,
+.donate-card,
+.modal-content,
+.scroll-content {
+    border-color: rgba(196, 154, 69, 0.22);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+}
+
+.donate-card {
+    border-radius: 12px;
+}
+
+.donate-card:hover,
+.donate-card.selected {
+    box-shadow: 0 18px 42px rgba(0,0,0,0.38), 0 0 18px rgba(196,154,69,0.16);
+}
+
+.btn-gold::after {
+    animation: none;
+    transition: left 0.65s ease;
+}
+
+.btn-gold:hover::after {
+    left: 170%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ring-deco-rotate,
+    .marquee-track,
+    .btn-gold::after {
+        animation: none !important;
+    }
+}
 </style>
 
 <div class="fund-page">

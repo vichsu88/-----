@@ -81,10 +81,15 @@
            色票系統
            ============================================ */
         :root {
-            --gold-primary: #D1AC2B;
-            --gold-deep:    #A8862A;
-            --gold-bright:  #E8C75C;
-            --gold-line:    #C9A94A;
+            --gold-primary: #C48945;
+            --gold-deep:    #8F6128;
+            --gold-bright:  #E7C985;
+            --gold-line:    rgba(196, 137, 69, 0.32);
+            --cream-site:   #F7F1E7;
+            --cream-panel:  #FFFDF8;
+            --ink-site:     #2A1A0A;
+            --ink-soft:     #574634;
+            --shadow-refined: 0 18px 48px rgba(42, 26, 10, 0.10);
 
             /* 木紋色系（側邊選單） */
             --wood-dark:    #2E1A0E;   /* 最深：選單底色 */
@@ -93,18 +98,26 @@
             --wood-grain:   #4A2C0A;   /* 木紋紋理用 */
         }
 
+        body {
+            background:
+                radial-gradient(ellipse at 50% -8%, rgba(231, 201, 133, 0.18), transparent 48%),
+                linear-gradient(180deg, #FFFDF8 0%, var(--cream-site) 52%, #EFE4D3 100%) !important;
+            color: var(--ink-site) !important;
+        }
+
         /* ============================================
            Header
            ============================================ */
         .main-header {
             border-bottom: 1px solid var(--gold-line);
-            box-shadow: 0 2px 12px rgba(209, 172, 43, 0.08);
+            box-shadow: 0 12px 34px rgba(42, 26, 10, 0.06);
         }
 
         /* 桌面 nav hover：金色下劃線從中展開 */
         .nav-links-desktop li a {
             position: relative;
             transition: color 0.3s ease;
+            letter-spacing: 0.08em;
         }
         .nav-links-desktop li a::after {
             content: '';

@@ -120,6 +120,48 @@
         .qty-in { width: 100%; padding: 5px; }
         .add-btn { padding: 6px; font-size: 14px; }
     }
+/* === Refined page polish === */
+#shopping-section {
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(231, 201, 133, 0.16), transparent 42%),
+        #F7F1E7;
+    padding-top: 56px;
+}
+
+.shop-instructions,
+#login-modal > div,
+.checkout-box,
+.price-summary {
+    border-color: rgba(196, 137, 69, 0.16) !important;
+    box-shadow: 0 16px 42px rgba(42, 26, 10, 0.08) !important;
+}
+
+.cat-btn {
+    box-shadow: 0 8px 18px rgba(42, 26, 10, 0.06);
+}
+
+.cat-btn.active,
+.cat-btn:hover {
+    background: linear-gradient(135deg, #E7C985 0%, #C48945 52%, #8F6128 100%);
+    box-shadow: 0 12px 26px rgba(143, 97, 40, 0.18);
+}
+
+.product-card {
+    border: 1px solid rgba(196, 137, 69, 0.12);
+    box-shadow: 0 12px 30px rgba(42, 26, 10, 0.07);
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 46px rgba(42, 26, 10, 0.11);
+}
+
+.add-btn,
+.btn-submit,
+.floating-cart {
+    background: linear-gradient(135deg, #E7C985 0%, #C48945 52%, #8F6128 100%);
+    box-shadow: 0 10px 24px rgba(143, 97, 40, 0.18);
+}
 </style>
 
 <div class="modal-overlay" id="login-modal" style="display:none; z-index:9999; justify-content:center; align-items:center;">
