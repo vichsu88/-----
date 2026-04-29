@@ -223,8 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = form?.querySelector('button[type="submit"]');
             const errorEl = document.getElementById('login-error');
             if (errorEl) errorEl.textContent = '';
-            if (!username || !password) {
-                if (errorEl) errorEl.textContent = '請輸入帳號與密碼';
+            if (!password) {
+                if (errorEl) errorEl.textContent = '請輸入密碼';
                 return;
             }
             try {
