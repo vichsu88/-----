@@ -39,7 +39,7 @@
     font-family: 'LXGW WenKai TC', serif;
     color: var(--scroll-ink);
     min-height: 100vh;
-    padding-bottom: 160px;
+    padding-bottom: 90px;
     position: relative;
     overflow-x: hidden;
 }
@@ -56,6 +56,59 @@
 
 button, input, .btn-action, .limit-tag, .btn-select {
     font-family: 'LXGW WenKai TC', sans-serif !important;
+}
+
+/* === Toast 通知 === */
+#toast-container {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    width: 92%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    background: rgba(26, 8, 8, 0.94);
+    color: var(--gold-light);
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(212, 175, 55, 0.24);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.36);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(-12px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    backdrop-filter: blur(12px);
+    pointer-events: auto;
+}
+
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-success { border-left: 4px solid #8fd19e; }
+.toast-error { border-left: 4px solid #ff9187; }
+.toast-info { border-left: 4px solid var(--gold-bright); }
+.toast-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(212, 175, 55, 0.14);
+    flex-shrink: 0;
+}
+
+.toast-msg {
+    flex: 1;
+    color: #fff8d6;
+    line-height: 1.5;
 }
 
 /* === 2. 頂部龍紋帷幕 Header === */
@@ -513,78 +566,28 @@ button, input, .btn-action, .limit-tag, .btn-select {
     letter-spacing: 1px;
 }
 
-/* === 9. 浮動按鈕 === */
-@keyframes pulse-action {
-    0%, 100% { box-shadow: 0 5px 15px rgba(0,0,0,0.5), 0 0 8px rgba(212, 175, 55, 0.3); }
-    50% { box-shadow: 0 5px 15px rgba(0,0,0,0.5), 0 0 22px rgba(212, 175, 55, 0.7); }
-}
-
-.checkout-pill {
-    position: fixed;
-    bottom: 25px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-    max-width: 480px;
-    background: rgba(14, 2, 2, 0.95);
-    backdrop-filter: blur(12px);
-    border: 2px solid var(--gold-bright);
-    border-radius: 50px;
-    padding: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.8), 0 0 15px rgba(212, 175, 55, 0.2);
-}
-
-.btn-action-large {
-    width: 100%;
-    text-align: center;
-    text-decoration: none;
-    display: block;
-    padding: 14px 30px;
-    font-size: 1.3rem;
-    font-weight: 900;
-    color: #2b0808;
-    border: 1px solid #fffacd;
-    border-radius: 40px;
-    background: linear-gradient(to bottom, #fffacd 0%, #d4af37 50%, #b8860b 100%);
-    cursor: pointer;
-    animation: pulse-action 3s infinite;
-    letter-spacing: 2px;
-    font-family: 'LXGW WenKai TC', sans-serif !important;
-}
-.btn-action-large:hover {
-    color: #000;
-    background: linear-gradient(to bottom, #fff 0%, #fef0a5 50%, #d4af37 100%);
-}
-
-/* === 10. Modal 表單 === */
-.modal-overlay {
+/* === 9. 頁面內報名表單 === */
+.committee-form-panel {
     display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.88);
-    z-index: 9999;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(6px);
+    position: relative;
+    z-index: 1;
+    width: min(92%, 560px);
+    margin: 40px auto 0;
 }
 
-.modal-content {
+.committee-form-panel.is-visible {
+    display: block;
+}
+
+.committee-form-card {
     background: var(--night-bg-alt);
     padding: 30px;
     border-radius: 14px;
-    width: 90%;
-    max-width: 480px;
     border: 1.5px solid var(--gold-bright);
     box-shadow: 0 0 40px rgba(212,175,55,0.2);
-    max-height: 90vh;
-    overflow-y: auto;
 }
 
-.modal-title {
+.form-title {
     color: var(--gold-light);
     margin-top: 0;
     text-align: center;
@@ -592,7 +595,7 @@ button, input, .btn-action, .limit-tag, .btn-select {
     letter-spacing: 2px;
 }
 
-.modal-selection-box {
+.selection-summary {
     background: rgba(212,175,55,0.08);
     border: 1px solid rgba(212,175,55,0.3);
     padding: 14px 18px;
@@ -600,14 +603,40 @@ button, input, .btn-action, .limit-tag, .btn-select {
     margin-bottom: 20px;
 }
 
-.modal-selection-box .label { margin: 0; color: #aaa; font-size: 0.9rem; }
-.modal-selection-box .value-name { margin: 5px 0 0; color: var(--gold-bright); font-size: 1.25rem; font-weight: 700; }
-.modal-selection-box .value-price { margin: 4px 0 0; color: #ddd; font-size: 1.05rem; }
+.selection-summary .label { margin: 0; color: #aaa; font-size: 0.9rem; }
+.selection-summary .value-name { margin: 5px 0 0; color: var(--gold-bright); font-size: 1.25rem; font-weight: 700; }
+.selection-summary .value-price { margin: 4px 0 0; color: #ddd; font-size: 1.05rem; }
+
+.form-notice {
+    display: none;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    line-height: 1.6;
+    color: #fff8d6;
+    border: 1px solid rgba(212, 175, 55, 0.24);
+    background: rgba(212,175,55,0.08);
+}
+
+.form-notice.is-visible { display: block; }
+.form-notice.is-error {
+    color: #ffe5e2;
+    border-color: rgba(255, 145, 135, 0.42);
+    background: rgba(194, 58, 44, 0.18);
+}
+.form-notice.is-success {
+    color: #e9ffe9;
+    border-color: rgba(143, 209, 158, 0.42);
+    background: rgba(74, 150, 91, 0.18);
+}
+
+.form-field {
+    margin-bottom: 14px;
+}
 
 .c-form-input {
     width: 100%;
     padding: 12px 15px;
-    margin-bottom: 14px;
     border-radius: 8px;
     border: 1px solid rgba(212, 175, 55, 0.25);
     background: rgba(0,0,0,0.5);
@@ -618,8 +647,20 @@ button, input, .btn-action, .limit-tag, .btn-select {
 }
 .c-form-input::placeholder { color: #999; }
 .c-form-input:focus { outline: none; border-color: var(--gold-bright); box-shadow: 0 0 8px rgba(212, 175, 55, 0.3); }
+.c-form-input.is-invalid {
+    border-color: #ff9187;
+    box-shadow: 0 0 0 3px rgba(255,145,135,0.12);
+}
 
-.modal-btn-row {
+.field-error {
+    color: #ffb0a9;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    min-height: 0;
+    margin-top: 6px;
+}
+
+.form-btn-row {
     display: flex;
     gap: 12px;
     margin-top: 10px;
@@ -652,6 +693,10 @@ button, input, .btn-action, .limit-tag, .btn-select {
     letter-spacing: 1px;
 }
 .btn-submit:hover { background: var(--vermillion-dark); }
+.btn-submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
 
 /* === 11. 響應式 === */
 @media (max-width: 768px) {
@@ -662,7 +707,10 @@ button, input, .btn-action, .limit-tag, .btn-select {
     .role-block { width: 100%; max-width: 300px; }
     .role-grid { gap: 15px; }
     .benefits-panel { padding: 22px 18px; }
-    .checkout-pill { bottom: 15px; width: 94%; }
+    .committee-form-card { padding: 24px 18px; }
+    .form-btn-row { flex-direction: column; }
+    .btn-cancel,
+    .btn-submit { width: 100%; flex: none; }
     .blessing-verse { font-size: 1.25rem; letter-spacing: 3px; }
 }
 
@@ -684,7 +732,7 @@ button, input, .btn-action, .limit-tag, .btn-select {
 }
 
 .role-block,
-.modal-content {
+.committee-form-card {
     border-color: rgba(212, 175, 55, 0.26);
     box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
 }
@@ -695,19 +743,13 @@ button, input, .btn-action, .limit-tag, .btn-select {
     box-shadow: 0 24px 56px rgba(0,0,0,0.34), 0 0 0 2px rgba(179, 57, 57, 0.75);
 }
 
-.btn-action-large {
-    animation: none;
-    box-shadow: 0 18px 40px rgba(0,0,0,0.42), 0 0 18px rgba(212, 175, 55, 0.16);
-}
-
 .btn-select,
 .btn-submit {
     box-shadow: 0 10px 24px rgba(0,0,0,0.22);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .header-deity-name,
-    .btn-action-large {
+    .header-deity-name {
         animation: none !important;
     }
 }
@@ -716,6 +758,8 @@ button, input, .btn-action, .limit-tag, .btn-select {
 <!-- ============================
      頁面主體
      ============================ -->
+<div id="toast-container" role="status" aria-live="polite"></div>
+
 <div class="committee-page-wrapper">
 
     <!-- ─── Header ─── -->
@@ -751,19 +795,19 @@ button, input, .btn-action, .limit-tag, .btn-select {
                     <div class="limit-tag role-limit" data-role-name="[建廟] 籌備主委">1 名</div>
                     <div class="role-name">主委</div>
                     <div class="role-price">功德金 50,000 元</div>
-                    <button class="btn-select" onclick="selectRole('[建廟] 籌備主委', 50000, this)">點擊選擇</button>
+                    <button class="btn-select" data-role-price="50000">點擊選擇</button>
                 </article>
                 <article class="role-block" data-role-name="[建廟] 籌備副主委">
                     <div class="limit-tag role-limit" data-role-name="[建廟] 籌備副主委">10 名</div>
                     <div class="role-name">副主委</div>
                     <div class="role-price">功德金 36,000 元</div>
-                    <button class="btn-select" onclick="selectRole('[建廟] 籌備副主委', 36000, this)">點擊選擇</button>
+                    <button class="btn-select" data-role-price="36000">點擊選擇</button>
                 </article>
                 <article class="role-block" data-role-name="[建廟] 建廟功德金">
                     <div class="limit-tag role-limit role-limit-open">名額不限</div>
                     <div class="role-name">建廟功德金</div>
                     <div class="role-price">功德金 10,000 元</div>
-                    <button class="btn-select" onclick="selectRole('[建廟] 建廟功德金', 10000, this)">點擊選擇</button>
+                    <button class="btn-select" data-role-price="10000">點擊選擇</button>
                 </article>
             </div>
 
@@ -831,19 +875,19 @@ button, input, .btn-action, .limit-tag, .btn-select {
                     <div class="limit-tag role-limit" data-role-name="[顧問] 顧問主席">1 名</div>
                     <div class="role-name">顧問主席</div>
                     <div class="role-price">功德金 50,000 元</div>
-                    <button class="btn-select" onclick="selectRole('[顧問] 顧問主席', 50000, this)">點擊選擇</button>
+                    <button class="btn-select" data-role-price="50000">點擊選擇</button>
                 </article>
                 <article class="role-block" data-role-name="[顧問] 顧問副主席">
                     <div class="limit-tag role-limit" data-role-name="[顧問] 顧問副主席">7 名</div>
                     <div class="role-name">顧問副主席</div>
                     <div class="role-price">功德金 36,000 元</div>
-                    <button class="btn-select" onclick="selectRole('[顧問] 顧問副主席', 36000, this)">點擊選擇</button>
+                    <button class="btn-select" data-role-price="36000">點擊選擇</button>
                 </article>
                 <article class="role-block" data-role-name="[顧問] 顧問">
                     <div class="limit-tag role-limit role-limit-open">名額不限</div>
                     <div class="role-name">顧問</div>
                     <div class="role-price">功德金 20,000 元</div>
-                    <button class="btn-select" onclick="selectRole('[顧問] 顧問', 20000, this)">點擊選擇</button>
+                    <button class="btn-select" data-role-price="20000">點擊選擇</button>
                 </article>
             </div>
 
@@ -893,19 +937,19 @@ button, input, .btn-action, .limit-tag, .btn-select {
                     <div class="limit-tag role-limit" data-role-name="[本府] 主委">1 名</div>
                     <div class="role-name">主委</div>
                     <div class="role-price">功德金 50,000 元</div>
-                    <button class="btn-select" onclick="selectRole('[本府] 主委', 50000, this)">點擊選擇</button>
+                    <button class="btn-select" data-role-price="50000">點擊選擇</button>
                 </article>
                 <article class="role-block" data-role-name="[本府] 副主委">
                     <div class="limit-tag role-limit" data-role-name="[本府] 副主委">7 名</div>
                     <div class="role-name">副主委</div>
                     <div class="role-price">功德金 36,000 元</div>
-                    <button class="btn-select" onclick="selectRole('[本府] 副主委', 36000, this)">點擊選擇</button>
+                    <button class="btn-select" data-role-price="36000">點擊選擇</button>
                 </article>
                 <article class="role-block" data-role-name="[本府] 委員">
                     <div class="limit-tag role-limit role-limit-open">名額不限</div>
                     <div class="role-name">委員</div>
                     <div class="role-price">功德金 25,000 元</div>
-                    <button class="btn-select" onclick="selectRole('[本府] 委員', 25000, this)">點擊選擇</button>
+                    <button class="btn-select" data-role-price="25000">點擊選擇</button>
                 </article>
             </div>
 
@@ -953,37 +997,48 @@ button, input, .btn-action, .limit-tag, .btn-select {
         </div>
     </div>
 
-</div>
+    <!-- ─── 報名資料表單 ─── -->
+    <section id="committeeFormPanel" class="committee-form-panel" aria-live="polite">
+        <div class="committee-form-card">
+            <h2 class="form-title">填寫護持資料</h2>
 
-<!-- ─── 浮動報名按鈕 ─── -->
-<div class="checkout-pill">
-    <button type="button" class="btn-action-large" onclick="openCommitteeModal()">確認選擇，填寫報名資料</button>
-</div>
-
-<!-- ─── Modal 表單 ─── -->
-<div id="committeeModal" class="modal-overlay">
-    <div class="modal-content">
-        <h2 class="modal-title">📋 填寫護持資料</h2>
-
-        <div class="modal-selection-box">
-            <p class="label">您選擇的護持項目：</p>
-            <p id="modal-selected-name" class="value-name">尚未選擇</p>
-            <p id="modal-selected-price" class="value-price">金額：$0</p>
-        </div>
-
-        <form id="committeeForm">
-            <input type="text" id="c_name" class="c-form-input" placeholder="真實姓名（必填）" required>
-            <input type="tel" id="c_phone" class="c-form-input" placeholder="聯絡電話（必填）" required>
-            <input type="email" id="c_email" class="c-form-input" placeholder="電子信箱（選填，用於寄送通知）">
-            <input type="text" id="c_address" class="c-form-input" placeholder="通訊地址（必填，用於寄送感謝狀）" required>
-            <input type="text" id="c_last5" class="c-form-input" placeholder="匯款帳號末五碼（必填）" required>
-
-            <div class="modal-btn-row">
-                <button type="button" class="btn-cancel" onclick="closeCommitteeModal()">取消返回</button>
-                <button type="submit" class="btn-submit">確認送出</button>
+            <div class="selection-summary">
+                <p class="label">您選擇的護持項目：</p>
+                <p id="selected-name" class="value-name">尚未選擇</p>
+                <p id="selected-price" class="value-price">金額：$0</p>
             </div>
-        </form>
-    </div>
+
+            <div id="form-notice" class="form-notice"></div>
+
+            <form id="committeeForm" novalidate>
+                <div class="form-field">
+                    <input type="text" id="c_name" class="c-form-input" placeholder="真實姓名（必填）" autocomplete="name" required>
+                    <div class="field-error"></div>
+                </div>
+                <div class="form-field">
+                    <input type="tel" id="c_phone" class="c-form-input" placeholder="聯絡電話（必填）" autocomplete="tel" required>
+                    <div class="field-error"></div>
+                </div>
+                <div class="form-field">
+                    <input type="email" id="c_email" class="c-form-input" placeholder="電子信箱（選填，用於寄送通知）" autocomplete="email">
+                    <div class="field-error"></div>
+                </div>
+                <div class="form-field">
+                    <input type="text" id="c_address" class="c-form-input" placeholder="通訊地址（必填，用於寄送感謝狀）" autocomplete="street-address" required>
+                    <div class="field-error"></div>
+                </div>
+                <div class="form-field">
+                    <input type="text" id="c_last5" class="c-form-input" placeholder="匯款帳號末五碼（必填）" inputmode="numeric" maxlength="5" autocomplete="off" required>
+                    <div class="field-error"></div>
+                </div>
+
+                <div class="form-btn-row">
+                    <button type="button" class="btn-cancel" id="committeeFormCancel">取消選擇</button>
+                    <button type="submit" class="btn-submit">確認送出</button>
+                </div>
+            </form>
+        </div>
+    </section>
 </div>
 
 <!-- ════════════════════════════════════════
@@ -991,66 +1046,262 @@ button, input, .btn-action, .limit-tag, .btn-select {
      ════════════════════════════════════════ -->
 <script>
 let selectedItem = null;
+let userProfileLoaded = false;
+const LINE_LOGIN_URL = '/api/line/login?next=' + encodeURIComponent('/committee');
 
-document.addEventListener('DOMContentLoaded', function() {
-    // 從後端載入剩餘名額與即時金額
-    fetch('/api/public/committee-status')
-    .then(res => res.json())
-    .then(data => {
-        data.forEach(item => {
-            // 更新名額標籤
-            const tag = document.querySelector(`.role-limit[data-role-name="${item.name}"]`);
-            if (tag) {
-                if (item.remaining > 0) {
-                    tag.innerHTML = `🔥 剩餘 ${item.remaining} 名`;
-                } else {
-                    tag.innerHTML = `已額滿`;
-                    tag.closest('.role-block').querySelector('.btn-select').disabled = true;
-                }
-            }
+const getById = id => document.getElementById(id);
 
-            // 更新金額與按鈕參數
-            const card = document.querySelector(`.role-block[data-role-name="${item.name}"]`);
-            if (card && typeof item.price === 'number') {
-                const priceDisplay = card.querySelector('.role-price');
-                const selectBtn = card.querySelector('.btn-select');
-                if (priceDisplay) {
-                    priceDisplay.innerText = `功德金 ${item.price.toLocaleString()} 元`;
-                }
-                if (selectBtn) {
-                    selectBtn.setAttribute('onclick', `selectRole('${item.name}', ${item.price}, this)`);
-                }
-            }
-        });
-    });
+document.addEventListener('DOMContentLoaded', () => {
+    setupRoleButtons();
+    setupCommitteeForm();
+    loadCommitteeStatus().finally(restorePendingSelection);
 });
 
-// 選擇職位
-function selectRole(name, price, btnElement) {
-    // 清除所有選取狀態
-    document.querySelectorAll('.role-block').forEach(c => c.classList.remove('selected'));
-    // 標記當前選取
-    btnElement.closest('.role-block').classList.add('selected');
-
-    selectedItem = { name: name, price: parseInt(price), qty: 1 };
-    alert(`✅ 已選擇：${name}！\n請點擊下方按鈕填寫報名資料。`);
+function setupRoleButtons() {
+    document.querySelectorAll('.role-block').forEach(card => {
+        const button = card.querySelector('.btn-select');
+        if (!button) return;
+        button.addEventListener('click', () => {
+            selectRole(card.dataset.roleName, Number(button.dataset.rolePrice || 0), button);
+        });
+    });
 }
 
-// 開啟 Modal
-async function openCommitteeModal() {
-    if (!selectedItem) {
-        alert("請先在上方點擊選擇您欲護持的項目！");
+async function loadCommitteeStatus() {
+    try {
+        const res = await fetch('/api/public/committee-status', {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!res.ok) throw new Error('status request failed');
+        const data = await res.json();
+
+        data.forEach(item => {
+            const card = findRoleCard(item.name);
+            if (!card) return;
+
+            const tag = findRoleLimitTag(card, item.name);
+            const priceDisplay = card.querySelector('.role-price');
+            const selectBtn = card.querySelector('.btn-select');
+            const price = Number(item.price);
+            const remaining = Number(item.remaining);
+
+            if (priceDisplay && Number.isFinite(price)) {
+                priceDisplay.innerText = `功德金 ${price.toLocaleString()} 元`;
+            }
+            if (selectBtn && Number.isFinite(price)) {
+                selectBtn.dataset.rolePrice = String(price);
+            }
+
+            if (!Number.isFinite(remaining)) return;
+            if (remaining > 0) {
+                if (tag) tag.innerText = `剩餘 ${remaining} 名`;
+                if (selectBtn) {
+                    selectBtn.disabled = false;
+                    if (selectBtn.innerText === '已額滿') selectBtn.innerText = '點擊選擇';
+                }
+            } else {
+                if (tag) tag.innerText = '已額滿';
+                if (selectBtn) {
+                    selectBtn.disabled = true;
+                    selectBtn.innerText = '已額滿';
+                }
+                if (selectedItem?.name === item.name) cancelCommitteeSelection();
+            }
+        });
+    } catch (err) {
+        console.error('名額資訊載入失敗', err);
+        showToast('名額資訊載入失敗，請重新整理頁面再試', 'error');
+    }
+}
+
+function setupCommitteeForm() {
+    const form = getById('committeeForm');
+    if (form) form.addEventListener('submit', submitCommitteeForm);
+
+    const cancelBtn = getById('committeeFormCancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', cancelCommitteeSelection);
+
+    document.querySelectorAll('.c-form-input').forEach(input => {
+        input.addEventListener('input', () => setFieldError(input, ''));
+    });
+}
+
+function persistSelectedItemForLogin() {
+    if (!selectedItem) return;
+    try {
+        sessionStorage.setItem('committeePendingSelection', JSON.stringify({
+            ...selectedItem,
+            savedAt: Date.now()
+        }));
+    } catch (err) {
+        console.warn('無法暫存委員會選擇', err);
+    }
+}
+
+function clearPersistedSelection() {
+    try {
+        sessionStorage.removeItem('committeePendingSelection');
+    } catch (err) {
+        console.warn('無法清除委員會暫存選擇', err);
+    }
+}
+
+async function restorePendingSelection() {
+    let pending = null;
+    try {
+        const raw = sessionStorage.getItem('committeePendingSelection');
+        pending = raw ? JSON.parse(raw) : null;
+    } catch (err) {
+        clearPersistedSelection();
         return;
     }
 
-    // 確認 LINE 登入狀態
+    if (!pending?.name || Date.now() - Number(pending.savedAt || 0) > 30 * 60 * 1000) {
+        clearPersistedSelection();
+        return;
+    }
+
+    const card = findRoleCard(pending.name);
+    const button = card?.querySelector('.btn-select');
+    if (!card || !button || button.disabled) {
+        clearPersistedSelection();
+        return;
+    }
+
+    const price = Number(button.dataset.rolePrice || pending.price);
+    if (!Number.isFinite(price) || price <= 0) {
+        clearPersistedSelection();
+        return;
+    }
+
+    resetRoleSelectionButtons();
+    card.classList.add('selected');
+    button.innerText = '已選擇';
+    selectedItem = { name: pending.name, price: Math.round(price), qty: 1 };
+    updateSelectionSummary();
+    clearPersistedSelection();
+    openCommitteeForm();
+    await ensureUserProfile();
+}
+
+function findRoleCard(name) {
+    return Array.from(document.querySelectorAll('.role-block'))
+        .find(card => card.dataset.roleName === name);
+}
+
+function findRoleLimitTag(card, name) {
+    return Array.from(card.querySelectorAll('.role-limit'))
+        .find(tag => tag.dataset.roleName === name);
+}
+
+function showToast(message, type = 'info', duration = 3200) {
+    const container = getById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+
+    const icon = document.createElement('span');
+    icon.className = 'toast-icon';
+    icon.textContent = ({ success: '✓', error: '!', info: 'i' })[type] || 'i';
+
+    const text = document.createElement('span');
+    text.className = 'toast-msg';
+    text.textContent = message;
+
+    toast.append(icon, text);
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => {
+        toast.classList.remove('show');
+        toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+    }, duration);
+}
+
+function showFormNotice(message, type = 'info') {
+    const notice = getById('form-notice');
+    if (!notice) return;
+    notice.className = 'form-notice is-visible';
+    if (type === 'error') notice.classList.add('is-error');
+    if (type === 'success') notice.classList.add('is-success');
+    notice.textContent = message;
+}
+
+function clearFormNotice() {
+    const notice = getById('form-notice');
+    if (!notice) return;
+    notice.className = 'form-notice';
+    notice.textContent = '';
+}
+
+// 選擇職位
+async function selectRole(name, price, btnElement) {
+    if (!name || !Number.isFinite(price) || price <= 0 || btnElement?.disabled) {
+        showToast('護持項目資料不完整，請重新整理頁面', 'error');
+        return;
+    }
+
+    resetRoleSelectionButtons();
+    btnElement.closest('.role-block')?.classList.add('selected');
+    btnElement.innerText = '已選擇';
+
+    selectedItem = { name, price: Math.round(price), qty: 1 };
+    updateSelectionSummary();
+    openCommitteeForm();
+    showToast(`已選擇：${name}，可直接填寫資料`, 'success', 2200);
+    await ensureUserProfile();
+}
+
+function resetRoleSelectionButtons() {
+    document.querySelectorAll('.role-block').forEach(card => {
+        card.classList.remove('selected');
+        const button = card.querySelector('.btn-select');
+        if (button && !button.disabled) button.innerText = '點擊選擇';
+    });
+}
+
+function updateSelectionSummary() {
+    const nameEl = getById('selected-name');
+    const priceEl = getById('selected-price');
+    if (!nameEl || !priceEl) return;
+
+    if (!selectedItem) {
+        nameEl.innerText = '尚未選擇';
+        priceEl.innerText = '金額：$0';
+        return;
+    }
+
+    nameEl.innerText = selectedItem.name;
+    priceEl.innerText = `金額：$${selectedItem.price.toLocaleString()}`;
+}
+
+function openCommitteeForm() {
+    const panel = getById('committeeFormPanel');
+    if (!panel || !selectedItem) return;
+
+    panel.classList.add('is-visible');
+    showFormNotice('正在確認 LINE 登入狀態與帶入會員資料...', 'info');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function ensureUserProfile() {
+    if (userProfileLoaded) {
+        showFormNotice('請填寫以下資料，送出後會建立待付款登記。', 'info');
+        return true;
+    }
+
     try {
-        const res = await fetch('/api/user/me');
+        const res = await fetch('/api/user/me', {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!res.ok) throw new Error('profile request failed');
         const data = await res.json();
         if (!data.logged_in) {
-            alert('為了記錄您的護持並寄送感謝狀，請先進行 LINE 登入。');
-            window.location.href = '/api/line/login?next=' + encodeURIComponent('/committee');
-            return;
+            persistSelectedItemForLogin();
+            showFormNotice('請先完成 LINE 登入，登入後會回到委員會頁面繼續填寫。', 'error');
+            showToast('請先完成 LINE 登入', 'info', 2200);
+            setTimeout(() => { window.location.href = LINE_LOGIN_URL; }, 800);
+            return false;
         }
 
         const user = data.user || {};
@@ -1058,64 +1309,170 @@ async function openCommitteeModal() {
             const el = document.getElementById(id);
             if (el && !el.value && val) el.value = val;
         };
+
         setVal('c_name', user.realName);
         setVal('c_phone', user.phone);
         setVal('c_email', user.email);
         setVal('c_address', user.address);
+        userProfileLoaded = true;
+        showFormNotice('請填寫以下資料，送出後會建立待付款登記。', 'info');
+        return true;
     } catch (err) {
         console.error('登入狀態檢查失敗', err);
-        alert('系統忙碌中，請稍後再試');
-        return;
+        showFormNotice('系統忙碌中，暫時無法確認登入狀態，請稍後再試。', 'error');
+        showToast('系統忙碌中，請稍後再試', 'error');
+        return false;
+    }
+}
+
+function cancelCommitteeSelection() {
+    selectedItem = null;
+    clearPersistedSelection();
+    resetRoleSelectionButtons();
+    updateSelectionSummary();
+    clearFormNotice();
+    clearAllFieldErrors();
+
+    const panel = getById('committeeFormPanel');
+    if (panel) panel.classList.remove('is-visible');
+}
+
+function setFieldError(input, message) {
+    if (!input) return;
+    const field = input.closest('.form-field');
+    const error = field?.querySelector('.field-error');
+    input.classList.toggle('is-invalid', Boolean(message));
+    if (error) error.textContent = message || '';
+}
+
+function clearAllFieldErrors() {
+    document.querySelectorAll('.c-form-input.is-invalid').forEach(input => {
+        input.classList.remove('is-invalid');
+    });
+    document.querySelectorAll('.field-error').forEach(error => {
+        error.textContent = '';
+    });
+}
+
+function validateCommitteeForm() {
+    clearAllFieldErrors();
+    const fields = {
+        name: getById('c_name'),
+        phone: getById('c_phone'),
+        email: getById('c_email'),
+        address: getById('c_address'),
+        last5: getById('c_last5')
+    };
+    let firstInvalid = null;
+
+    const flag = (input, message) => {
+        setFieldError(input, message);
+        if (!firstInvalid) firstInvalid = input;
+    };
+
+    const name = fields.name?.value.trim() || '';
+    if (!name) {
+        flag(fields.name, '請填寫真實姓名');
+    } else if (/[、，,。/&＆\s]/.test(name) || /(全家|一家|闔家|合家|等人|與|及)/.test(name)) {
+        flag(fields.name, '姓名僅限填寫一位，請勿包含空格、標點或群體字眼');
     }
 
-    document.getElementById('modal-selected-name').innerText = selectedItem.name;
-    document.getElementById('modal-selected-price').innerText = `金額：$${selectedItem.price.toLocaleString()}`;
-    document.getElementById('committeeModal').style.display = 'flex';
+    if (!fields.phone?.value.trim()) {
+        flag(fields.phone, '請填寫聯絡電話');
+    }
+
+    const email = fields.email?.value.trim() || '';
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        flag(fields.email, '電子信箱格式不正確');
+    }
+
+    if (!fields.address?.value.trim()) {
+        flag(fields.address, '請填寫通訊地址');
+    }
+
+    const last5 = fields.last5?.value.trim() || '';
+    if (!/^\d{5}$/.test(last5)) {
+        flag(fields.last5, '請輸入 5 位數字');
+    }
+
+    if (firstInvalid) {
+        showFormNotice('請修正紅字標註的欄位後再送出。', 'error');
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstInvalid.focus({ preventScroll: true });
+        return false;
+    }
+
+    clearFormNotice();
+    return true;
 }
 
-function closeCommitteeModal() {
-    document.getElementById('committeeModal').style.display = 'none';
-}
-
-// 表單送出
-document.getElementById('committeeForm').addEventListener('submit', function(e) {
+async function submitCommitteeForm(e) {
     e.preventDefault();
-    if (!selectedItem) return;
+    if (!selectedItem) {
+        showToast('請先點擊選擇欲護持的項目', 'error');
+        return;
+    }
+    if (!await ensureUserProfile()) return;
+    if (!validateCommitteeForm()) return;
 
     const payload = {
         orderType: 'committee',
-        name: document.getElementById('c_name').value.trim(),
-        phone: document.getElementById('c_phone').value.trim(),
-        email: document.getElementById('c_email').value.trim(),
-        address: document.getElementById('c_address').value.trim(),
-        last5: document.getElementById('c_last5').value.trim(),
+        name: getById('c_name').value.trim(),
+        phone: getById('c_phone').value.trim(),
+        email: getById('c_email').value.trim(),
+        address: getById('c_address').value.trim(),
+        last5: getById('c_last5').value.trim(),
         items: [selectedItem],
         total: selectedItem.price
     };
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    const form = getById('committeeForm');
+    const submitBtn = form?.querySelector('.btn-submit');
+    const originalText = submitBtn?.innerText || '確認送出';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = '送出中...';
+    }
 
-    fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert(`🎉 報名成功！感謝您的發心護持。\n您的單號為：${data.orderId}`);
-            window.location.reload();
-        } else {
-            alert(`❌ 發生錯誤：${data.error}`);
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.status === 401) {
+            persistSelectedItemForLogin();
+            showFormNotice('登入時效已過，請重新完成 LINE 登入。', 'error');
+            showToast('登入時效已過，請重新登入 LINE', 'info', 2200);
+            setTimeout(() => { window.location.href = LINE_LOGIN_URL; }, 800);
+            return;
         }
-    })
-    .catch(err => {
-        alert("網路發生錯誤，請稍後再試。");
+
+        if (!res.ok || !data.success) {
+            throw new Error(data.error || data.message || '送出失敗，請稍後再試');
+        }
+
+        showFormNotice(`報名成功！感謝您的發心護持。您的單號為：${data.orderId}`, 'success');
+        showToast('報名成功，感謝您的發心護持', 'success');
+        clearPersistedSelection();
+        if (submitBtn) submitBtn.innerText = '送出成功';
+        setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+        const message = err.message || '網路發生錯誤，請稍後再試';
+        showFormNotice(message, 'error');
+        showToast(message, 'error');
         console.error(err);
-    });
-});
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalText;
+        }
+    }
+}
 </script>
 {% endblock %}
