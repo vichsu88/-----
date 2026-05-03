@@ -20,6 +20,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeModalBtn = document.getElementById('modalCloseBtn');
     let allNewsData = []; 
 
+    function showAnnouncementModal() {
+        if (!modal) return;
+        modal.style.removeProperty('display');
+        modal.classList.add('show');
+    }
+
+    function hideAnnouncementModal() {
+        if (!modal) return;
+        modal.classList.remove('show');
+        modal.style.removeProperty('display');
+    }
+
     /* ==============================
        【工具】解析連結函式
        將 "文字($'網址'$)" 轉換為 HTML 連結
@@ -216,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             modalBody.innerHTML = '';
                             appendTextWithLinksAndBreaks(modalBody, newsData.content || '');
                             
-                            modal.style.display = 'flex';
+                            showAnnouncementModal();
                         }
                     });
                     newsList.appendChild(newsItem);
@@ -230,9 +242,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modal 關閉邏輯
     if (closeModalBtn && modal) {
-        closeModalBtn.addEventListener('click', () => modal.style.display = 'none');
+        closeModalBtn.addEventListener('click', hideAnnouncementModal);
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.style.display = 'none';
+            if (e.target === modal) hideAnnouncementModal();
         });
     }
 

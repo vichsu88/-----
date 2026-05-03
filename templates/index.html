@@ -1007,12 +1007,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const showModal = () => {
+        modal.style.removeProperty('display');
+        modal.classList.add('show');
+    };
+
+    const hideModal = () => {
+        modal.classList.remove('show');
+        modal.style.removeProperty('display');
+    };
+
     const showNews = (news) => {
         document.getElementById('modalDate').textContent = news.date;
         document.getElementById('modalTitle').textContent = news.title;
         const content = news.content || news.description || '';
         renderTextWithBreaks(document.getElementById('modalBody'), content);
-        modal.classList.add('show');
+        showModal();
     };
 
     if (newsList) {
@@ -1024,8 +1034,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    closeBtn.onclick = () => modal.classList.remove('show');
-    window.onclick = (e) => { if (e.target === modal) modal.classList.remove('show'); };
+    closeBtn.onclick = hideModal;
+    window.onclick = (e) => { if (e.target === modal) hideModal(); };
 
     /* 查看所有公告 toggle */
     const toggleBtn = document.getElementById('btn-toggle-news');
