@@ -119,27 +119,27 @@
    ============================================= */
 .hero-section {
     width: 100%;
+    max-width: none;
+    aspect-ratio: 1920 / 600;
+    margin: 0;
+    padding: 0;
     line-height: 0;
     font-size: 0;
     overflow: hidden;
-    background: #20150c;
+    border-radius: 0;
+    background: var(--cream-warm);
 }
 .hero-section picture {
     display: block;
     width: 100%;
+    height: 100%;
 }
 .hero-section .responsive-banner {
     display: block;
     width: 100%;
-    height: auto;
-    transform-origin: 50% 46%;
-    animation: hero-kenburns 28s ease-out both;
-    will-change: transform;
-}
-
-@keyframes hero-kenburns {
-    from { transform: scale(1.012) translate3d(0, 0, 0); }
-    to { transform: scale(1.045) translate3d(0, -0.8%, 0); }
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
 }
 
 #intro-overlay {
@@ -411,20 +411,31 @@
 }
 
 .deity-grid-track {
+    --deity-gap: 24px;
     display: flex;
-    gap: 24px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    padding: 10px 45px 24px;
-    scrollbar-width: none;
+    gap: 0;
+    width: max-content;
+    padding: 10px 0 24px;
+    animation: deity-marquee 58s linear infinite;
+    will-change: transform;
 }
-.deity-grid-track::-webkit-scrollbar { display: none; }
+.deity-grid-track:hover { animation-play-state: paused; }
+
+.deity-carousel-set {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--deity-gap);
+    padding-right: var(--deity-gap);
+}
+
+@keyframes deity-marquee {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
+}
 
 .deity-card {
     flex-shrink: 0;
     width: 185px;
-    scroll-snap-align: center;
     text-align: center;
     transition: transform 0.3s ease;
 }
@@ -699,9 +710,11 @@
    ============================================= */
 @media (prefers-reduced-motion: reduce) {
     .hero-section .responsive-banner,
+    .deity-grid-track,
     .about-section.active .gallery-grid img {
         animation: none;
     }
+    .deity-grid-track { transform: translate3d(0, 0, 0); }
     .gallery-grid img {
         opacity: 1;
         transform: none;
@@ -728,6 +741,9 @@
     .gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .gallery-grid img { height: 180px; }
 
+    .hero-section { aspect-ratio: 4 / 5; }
+    .hero-section .responsive-banner { object-position: center top; }
+    .deity-grid-track { --deity-gap: 18px; animation-duration: 46s; }
     .deity-card { width: 150px; }
     .deity-card img { width: 130px; height: 130px; }
 
@@ -746,6 +762,7 @@
     .section-heading h2,
     .section-heading h3 { font-size: 1.7rem; letter-spacing: 1px; }
     .gallery-grid img { height: 140px; }
+    .deity-grid-track { --deity-gap: 14px; }
     .deity-card { width: 130px; }
     .deity-card img { width: 115px; height: 115px; }
 }
@@ -770,7 +787,7 @@
     <section class="hero-section" aria-label="承天中承府主視覺">
         <picture>
             <source media="(max-width: 768px)" srcset="{{ url_for('static', filename='images/pages/index/banner_mobile.jpg') }}">
-            <img src="{{ url_for('static', filename='images/pages/index/banner_desktop.jpg') }}"
+            <img src="{{ url_for('static', filename='images/pages/index/banner_PC.jpg') }}"
                  alt="承天中承府眾神-中壇煙島元帥與眾神尊"
                  class="responsive-banner"
                  fetchpriority="high"
@@ -866,19 +883,34 @@
             <p class="deity-label">府內供奉神明</p>
         </div>
 
+        {% set deity_cards = [
+            {'image': 'images/pages/index/god0.jpg', 'alt': '中壇煙島元帥神尊', 'temple': '承天中承府', 'name': '煙島元帥'},
+            {'image': 'images/pages/index/god1.jpg', 'alt': '王母娘娘', 'temple': '花蓮勝安宮', 'name': '王母娘娘'},
+            {'image': 'images/pages/index/god2.jpg', 'alt': '地母至尊', 'temple': '埔里寶湖宮', 'name': '地母至尊'},
+            {'image': 'images/pages/index/god3.jpg', 'alt': '天上聖母', 'temple': '朴子配天宮', 'name': '天上聖母'},
+            {'image': 'images/pages/index/god4.jpg', 'alt': '玄天上帝', 'temple': '梅山玉虛宮', 'name': '玄天上帝'},
+            {'image': 'images/pages/index/god5.jpg', 'alt': '文財神', 'temple': '嘉義文財殿', 'name': '文財神'},
+            {'image': 'images/pages/index/god6.jpg', 'alt': '武財神', 'temple': '北港武德宮', 'name': '武財神'},
+            {'image': 'images/pages/index/god7.jpg', 'alt': '關聖帝君', 'temple': '四湖參天宮', 'name': '關聖帝君'},
+            {'image': 'images/pages/index/god8.jpg', 'alt': '福德正神', 'temple': '世賢路福德宮', 'name': '福德正神'},
+            {'image': 'images/pages/index/god9.jpg', 'alt': '山軍尊神(虎爺)', 'temple': '朴子配天宮', 'name': '山軍尊神（虎爺）'}
+        ] %}
         <div class="deity-carousel-wrap">
             <div class="deity-carousel">
                 <div class="deity-grid-track">
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god0.jpg') }}" alt="中壇煙島元帥神尊" loading="lazy"><div class="deity-info"><p class="temple-name">承天中承府</p><p class="deity-name">煙島元帥</p></div></div>
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god1.jpg') }}" alt="王母娘娘" loading="lazy"><div class="deity-info"><p class="temple-name">花蓮勝安宮</p><p class="deity-name">王母娘娘</p></div></div>
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god2.jpg') }}" alt="地母至尊" loading="lazy"><div class="deity-info"><p class="temple-name">埔里寶湖宮</p><p class="deity-name">地母至尊</p></div></div>
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god3.jpg') }}" alt="天上聖母" loading="lazy"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">天上聖母</p></div></div>
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god4.jpg') }}" alt="玄天上帝" loading="lazy"><div class="deity-info"><p class="temple-name">梅山玉虛宮</p><p class="deity-name">玄天上帝</p></div></div>
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god5.jpg') }}" alt="文財神" loading="lazy"><div class="deity-info"><p class="temple-name">嘉義文財殿</p><p class="deity-name">文財神</p></div></div>
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god6.jpg') }}" alt="武財神" loading="lazy"><div class="deity-info"><p class="temple-name">北港武德宮</p><p class="deity-name">武財神</p></div></div>
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god7.jpg') }}" alt="關聖帝君" loading="lazy"><div class="deity-info"><p class="temple-name">四湖參天宮</p><p class="deity-name">關聖帝君</p></div></div>
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god8.jpg') }}" alt="福德正神" loading="lazy"><div class="deity-info"><p class="temple-name">世賢路福德宮</p><p class="deity-name">福德正神</p></div></div>
-                    <div class="deity-card"><img src="{{ url_for('static', filename='images/pages/index/god9.jpg') }}" alt="山軍尊神(虎爺)" loading="lazy"><div class="deity-info"><p class="temple-name">朴子配天宮</p><p class="deity-name">山軍尊神（虎爺）</p></div></div>
+                    {% for repeat in range(2) %}
+                    <div class="deity-carousel-set"{% if repeat == 1 %} aria-hidden="true"{% endif %}>
+                        {% for deity in deity_cards %}
+                        <div class="deity-card">
+                            <img src="{{ url_for('static', filename=deity.image) }}" alt="{{ deity.alt }}" loading="lazy">
+                            <div class="deity-info">
+                                <p class="temple-name">{{ deity.temple }}</p>
+                                <p class="deity-name">{{ deity.name }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
