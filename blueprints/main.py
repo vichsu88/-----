@@ -8,13 +8,18 @@ from database import db
 main_bp = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
 
+LINK_PROJECTION = {"name": 1, "url": 1}
+HOME_ANNOUNCEMENT_PROJECTION = {"date": 1, "title": 1, "content": 1, "isPinned": 1}
+FEEDBACK_PROJECTION = {"feedbackId": 1, "nickname": 1, "content": 1, "category": 1}
+FAQ_PROJECTION = {"question": 1, "answer": 1, "category": 1, "isPinned": 1, "createdAt": 1}
+
 
 @main_bp.app_context_processor
 def inject_links():
     if db is None:
         return dict(links={})
     try:
-        links_cursor = db.links.find({})
+        links_cursor = db.links.find({}, LINK_PROJECTION)
         links_dict = {link['name']: link['url'] for link in links_cursor}
         return dict(links=links_dict)
     except Exception:
@@ -31,7 +36,10 @@ def home():
     announcements_data = []
     try:
         if db is not None:
-            cursor = db.announcements.find().sort([("isPinned", -1), ("date", -1)]).limit(10)
+            cursor = db.announcements.find(
+                {},
+                HOME_ANNOUNCEMENT_PROJECTION,
+            ).sort([("isPinned", -1), ("date", -1)]).limit(10)
             for doc in cursor:
                 doc['_id'] = str(doc['_id'])
                 if 'date' in doc and isinstance(doc['date'], datetime):
@@ -78,7 +86,7 @@ def get_public_committee_status():
         return jsonify([])
 
     # 取得後台設定
-    setting = db.settings.find_one({"type": "committee_quota"})
+    setting = db.settings.find_one({"type": "committee_quota"}, {"roles": 1})
     roles = setting.get("roles", []) if setting else []
     role_names = [role.get('name') for role in roles if role.get('name')]
 
@@ -119,7 +127,7 @@ def feedback_page():
     feedbacks_data = []
     try:
         if db is not None:
-            cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", -1).limit(20)
+            cursor = db.feedback.find({"status": "approved"}, FEEDBACK_PROJECTION).sort("approvedAt", -1).limit(20)
             for doc in cursor:
                 feedbacks_data.append({
                     'feedbackId': doc.get('feedbackId', ''),
@@ -137,7 +145,7 @@ def faq_page():
     faq_data = []
     try:
         if db is not None:
-            cursor = db.faq.find().sort([('isPinned', -1), ('createdAt', -1)])
+            cursor = db.faq.find({}, FAQ_PROJECTION).sort([('isPinned', -1), ('createdAt', -1)])
             for doc in cursor:
                 doc['_id'] = str(doc['_id'])
                 faq_data.append(doc)

@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // 2-2. 渲染內容
-                faqList.innerHTML = '';
+                const fragment = document.createDocumentFragment();
                 faqs.forEach(faq => {
                     const card = document.createElement('div');
                     card.className = 'faq-item-card';
@@ -121,8 +121,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     card.appendChild(question);
                     card.appendChild(answer);
-                    faqList.appendChild(card);
+                    fragment.appendChild(card);
                 });
+                faqList.replaceChildren(fragment);
 
                 // 2-3. 綁定搜尋功能
                 setupFaqSearch();
@@ -140,26 +141,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const noResultMsg = document.getElementById('no-result-msg');
 
         if (searchInput && faqCards.length > 0) {
+            let searchTimer = null;
             searchInput.addEventListener('input', function(e) {
                 const term = e.target.value.trim().toLowerCase();
-                let hasResult = false;
+                window.clearTimeout(searchTimer);
+                searchTimer = window.setTimeout(() => {
+                    let hasResult = false;
 
-                faqCards.forEach(card => {
-                    const qElem = card.querySelector('.faq-q');
-                    const aElem = card.querySelector('.faq-a');
-                    const qText = qElem ? qElem.textContent : '';
-                    const aText = aElem ? aElem.textContent : '';
-                    
-                    const fullText = (qText + aText).toLowerCase();
-                    const isMatch = fullText.includes(term);
-                    
-                    card.style.display = isMatch ? '' : 'none';
-                    if (isMatch) hasResult = true;
-                });
+                    faqCards.forEach(card => {
+                        const qElem = card.querySelector('.faq-q');
+                        const aElem = card.querySelector('.faq-a');
+                        const qText = qElem ? qElem.textContent : '';
+                        const aText = aElem ? aElem.textContent : '';
 
-                if (noResultMsg) {
-                    noResultMsg.style.display = hasResult ? 'none' : 'block';
-                }
+                        const fullText = (qText + aText).toLowerCase();
+                        const isMatch = fullText.includes(term);
+
+                        card.style.display = isMatch ? '' : 'none';
+                        if (isMatch) hasResult = true;
+                    });
+
+                    if (noResultMsg) {
+                        noResultMsg.style.display = hasResult ? 'none' : 'block';
+                    }
+                }, 120);
             });
         }
     }
@@ -201,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 allNewsData = data;
-                newsList.innerHTML = '';
+                const fragment = document.createDocumentFragment();
                 
                 if (data.length === 0) {
                     newsList.innerHTML = '<li class="news-item"><p class="news-title">目前沒有最新消息。</p></li>';
@@ -236,8 +241,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             showAnnouncementModal();
                         }
                     });
-                    newsList.appendChild(newsItem);
+                    fragment.appendChild(newsItem);
                 });
+                newsList.replaceChildren(fragment);
             })
             .catch(error => {
                 console.error('Error fetching news:', error);

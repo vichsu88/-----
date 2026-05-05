@@ -7,9 +7,21 @@ from database import db
 from utils.decorators import user_login_required
 from utils.helpers import get_tw_now, validate_real_name
 from utils.security import as_string, get_json_object
-from utils.timezone import utc_now
+from utils.timezone import format_taipei, to_taipei, utc_now
 
 user_bp = Blueprint('user', __name__)
+
+
+def _format_order_dates(doc):
+    created_at = doc.get('createdAt')
+    fallback_deadline = created_at + timedelta(hours=2) if isinstance(created_at, datetime) else None
+    deadline = doc.get('paymentDeadline') or fallback_deadline
+    deadline_tw = to_taipei(deadline)
+    return {
+        "createdAt": format_taipei(created_at),
+        "paymentDeadline": format_taipei(deadline),
+        "deadline_iso": deadline_tw.isoformat() if hasattr(deadline_tw, 'isoformat') else '',
+    }
 
 
 @user_bp.route('/api/user/me', methods=['GET'])
@@ -174,8 +186,7 @@ def get_user_orders():
     cursor = db.orders.find({"lineId": line_id, "orderType": "shop"}, projection).sort("createdAt", -1)
     results = []
     for doc in cursor:
-        tw_created = doc['createdAt'] + timedelta(hours=8)
-        tw_deadline = doc.get('paymentDeadline', doc['createdAt'] + timedelta(hours=2)) + timedelta(hours=8)
+        formatted_dates = _format_order_dates(doc)
         results.append({
             "_id": str(doc['_id']),
             "orderId": doc['orderId'],
@@ -183,9 +194,7 @@ def get_user_orders():
             "total": doc.get('total', 0),
             "status": doc.get('status', 'pending'),
             "trackingNumber": doc.get('trackingNumber', ''),
-            "createdAt": tw_created.strftime('%Y-%m-%d %H:%M'),
-            "paymentDeadline": tw_deadline.strftime('%Y-%m-%d %H:%M'),
-            "deadline_iso": tw_deadline.isoformat()
+            **formatted_dates,
         })
     return jsonify(results)
 
@@ -212,8 +221,7 @@ def get_user_donations():
     ).sort("createdAt", -1)
     results = []
     for doc in cursor:
-        tw_created = doc['createdAt'] + timedelta(hours=8)
-        tw_deadline = doc.get('paymentDeadline', doc['createdAt'] + timedelta(hours=2)) + timedelta(hours=8)
+        formatted_dates = _format_order_dates(doc)
         results.append({
             "_id": str(doc['_id']),
             "orderType": doc.get('orderType', 'donation'),
@@ -222,9 +230,7 @@ def get_user_donations():
             "total": doc.get('total', 0),
             "status": doc.get('status', 'pending'),
             "is_reported": doc.get('is_reported', False),
-            "createdAt": tw_created.strftime('%Y-%m-%d %H:%M'),
-            "paymentDeadline": tw_deadline.strftime('%Y-%m-%d %H:%M'),
-            "deadline_iso": tw_deadline.isoformat()
+            **formatted_dates,
         })
     return jsonify(results)
 

@@ -19,6 +19,18 @@ from utils.security import validate_request_input
 logger = logging.getLogger(__name__)
 
 
+BLUEPRINT_IMPORTS = (
+    ('blueprints.main', 'main_bp'),
+    ('blueprints.auth', 'auth_bp'),
+    ('blueprints.user', 'user_bp'),
+    ('blueprints.pickup', 'pickup_bp'),
+    ('blueprints.feedback', 'feedback_bp'),
+    ('blueprints.orders', 'orders_bp'),
+    ('blueprints.content', 'content_bp'),
+    ('blueprints.admin', 'admin_bp'),
+)
+
+
 def _env_int(name, default):
     try:
         return int(os.environ.get(name, default))
@@ -56,6 +68,12 @@ def _security_headers(is_production):
     if is_production:
         headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     return headers
+
+
+def _register_blueprints(app):
+    for module_name, blueprint_name in BLUEPRINT_IMPORTS:
+        module = __import__(module_name, fromlist=[blueprint_name])
+        app.register_blueprint(getattr(module, blueprint_name))
 
 
 def create_app():
@@ -169,23 +187,7 @@ def create_app():
 
     database.init_db(os.environ.get('MONGO_URI'))
 
-    from blueprints.main import main_bp
-    from blueprints.auth import auth_bp
-    from blueprints.user import user_bp
-    from blueprints.pickup import pickup_bp
-    from blueprints.feedback import feedback_bp
-    from blueprints.orders import orders_bp
-    from blueprints.content import content_bp
-    from blueprints.admin import admin_bp
-
-    app.register_blueprint(main_bp)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(user_bp)
-    app.register_blueprint(pickup_bp)
-    app.register_blueprint(feedback_bp)
-    app.register_blueprint(orders_bp)
-    app.register_blueprint(content_bp)
-    app.register_blueprint(admin_bp)
+    _register_blueprints(app)
 
     return app
 

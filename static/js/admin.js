@@ -4,7 +4,13 @@ document.addEventListener('DOMContentLoaded', () => {
        1. 核心 API 與全域工具 (Core)
        ========================================= */
     const Core = {
-        getCsrfToken: () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        csrfToken: null,
+        getCsrfToken() {
+            if (this.csrfToken === null) {
+                this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            }
+            return this.csrfToken;
+        },
 
         async apiFetch(url, options = {}) {
             const headers = {

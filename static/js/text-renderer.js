@@ -135,8 +135,9 @@
 
     function render(target, text) {
         if (!target) return;
-        target.replaceChildren();
-        append(target, text);
+        const fragment = document.createDocumentFragment();
+        append(fragment, text);
+        target.replaceChildren(fragment);
     }
 
     function toPlainText(text, maxLength) {
