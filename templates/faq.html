@@ -104,14 +104,30 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const html = data.map(faq => `
-            <div class="faq-item-card">
-                <div class="faq-q">Q：${faq.question}</div>
-                <div class="faq-a">A：${faq.answer}</div>
-            </div>
-        `).join('');
-        
-        faqListDiv.innerHTML = html;
+        faqListDiv.replaceChildren();
+
+        data.forEach((faq) => {
+            const card = document.createElement('div');
+            card.className = 'faq-item-card';
+
+            const question = document.createElement('div');
+            question.className = 'faq-q';
+            question.textContent = `Q：${faq.question || ''}`;
+
+            const answer = document.createElement('div');
+            answer.className = 'faq-a';
+            answer.appendChild(document.createTextNode('A：'));
+
+            if (window.ContentTextRenderer) {
+                window.ContentTextRenderer.append(answer, faq.answer || '');
+            } else {
+                answer.appendChild(document.createTextNode(faq.answer || ''));
+            }
+
+            card.appendChild(question);
+            card.appendChild(answer);
+            faqListDiv.appendChild(card);
+        });
     }
 
     // 5. 搜尋功能監聽

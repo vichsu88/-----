@@ -54,6 +54,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function appendTextWithLinksAndBreaks(target, text) {
+        if (window.ContentTextRenderer) {
+            window.ContentTextRenderer.append(target, text);
+            return;
+        }
+
         const regex = /(.+?)\(\$\'(.+?)\'\$\)/g;
         const source = String(text || '');
         let lastIndex = 0;

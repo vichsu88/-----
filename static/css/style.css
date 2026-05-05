@@ -51,6 +51,17 @@ body {
     text-rendering: optimizeLegibility;
 }
 
+.cms-content-link {
+    color: var(--brand-gold-dark);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+}
+
+.cms-content-link:hover {
+    color: var(--brand-gold);
+}
+
 body::before {
     content: '';
     position: fixed;
