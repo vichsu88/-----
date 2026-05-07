@@ -19,6 +19,8 @@ from utils.decorators import admin_required
 from utils.helpers import get_object_id
 from utils.security import as_string, get_json_object, get_json_value, safe_regex_contains
 from utils.timezone import format_taipei, taipei_date_range_query, taipei_now, utc_now
+# 記得在檔案最上方引入我們剛剛寫的 Service
+from services.history_service import fetch_history_data
 
 admin_bp = Blueprint('admin', __name__)
 logger = logging.getLogger(__name__)
@@ -253,150 +255,41 @@ def get_shipped_list():
 # 整併 orders + feedback 到單一歷史總表
 # =========================================================
 
+
 @admin_bp.route('/api/admin/data/history')
 @admin_required(roles=['super_admin', 'data', 'finance'])
 def get_data_history():
-    """萬用歷史總表：整併 orders + feedback，支援複合篩選"""
-    if db is None:
-        return jsonify({"results": [], "total": 0})
-
+    """萬用歷史總表：整併 orders + feedback，支援複合篩選 (已優化為 DB 聚合查詢)"""
     order_type = as_string(request.args.get('type')).strip()
     order_id = as_string(request.args.get('orderId')).strip()
     name = as_string(request.args.get('name')).strip()
     status = as_string(request.args.get('status')).strip()
     start = as_string(request.args.get('start')).strip()
     end = as_string(request.args.get('end')).strip()
+
     if order_type and order_type not in VALID_HISTORY_TYPES:
         return jsonify({"error": "不支援的查詢類型"}), 400
     if status and status not in VALID_STATUSES:
         return jsonify({"error": "不支援的狀態"}), 400
+
     try:
         page = max(int(request.args.get('page', 1)), 1)
-    except (TypeError, ValueError):
-        page = 1
-    try:
         per_page = min(max(int(request.args.get('per_page', 50)), 1), 100)
     except (TypeError, ValueError):
+        page = 1
         per_page = 50
-    skip = (page - 1) * per_page
 
-    date_range = None
-    if start and end:
-        try:
-            date_range = taipei_date_range_query(start, end)
-        except ValueError:
-            pass
+    # 核心邏輯交給 Service 處理
+    results, total = fetch_history_data(
+        order_type, order_id, name, status, start, end, page, per_page
+    )
 
-    all_results = []
-    total_orders = 0
-    total_feedback = 0
-
-    # --- 查詢 Orders (type 非 feedback 時) ---
-    if order_type != 'feedback':
-        oq = {}
-        if order_type:
-            oq['orderType'] = order_type
-        if order_id:
-            oq['orderId'] = {"$regex": safe_regex_contains(order_id), "$options": "i"}
-        if name:
-            oq['customer.name'] = {"$regex": safe_regex_contains(name)}
-        if status:
-            oq['status'] = status
-        if date_range:
-            oq['createdAt'] = date_range
-
-        total_orders = db.orders.count_documents(oq)
-        order_cursor = db.orders.find(oq).sort("createdAt", -1)
-        if order_type:
-            order_cursor = order_cursor.skip(skip).limit(per_page)
-        else:
-            order_cursor = order_cursor.limit(skip + per_page)
-        for doc in order_cursor:
-            sort_ts = _get_sort_ts(doc.get('createdAt'))
-            doc['_id'] = str(doc['_id'])
-            doc['createdAt'] = _tw_time(doc.get('createdAt'))
-            doc['source_label'] = _TYPE_LABELS.get(doc.get('orderType', ''), '未知')
-            doc['_docType'] = 'order'
-            doc['_sortTs'] = sort_ts
-            if doc.get('paidAt'):
-                doc['paidAt'] = _tw_time(doc['paidAt'])
-                doc['paidBy'] = doc.get('paidBy', '') # 新增這行
-            if doc.get('shippedAt'):
-                doc['shippedAt'] = _tw_time(doc['shippedAt'])
-                doc['shippedBy'] = doc.get('shippedBy', '')
-            if doc.get('reportedAt'):
-                doc['reportedAt'] = _tw_time(doc['reportedAt'])
-                doc['reportedBy'] = doc.get('reportedBy', '')
-            all_results.append(doc)
-
-    # --- 查詢 Feedback (type 為空或 feedback 時) ---
-    if not order_type or order_type == 'feedback':
-        fq = {}
-        if order_id:
-            fq['feedbackId'] = {"$regex": safe_regex_contains(order_id), "$options": "i"}
-        if name:
-            # 支援同時搜尋「真實姓名」與「暱稱」，且不分大小寫
-            name_regex = {"$regex": safe_regex_contains(name), "$options": "i"}
-            fq['$or'] = [
-                {'nickname': name_regex},
-                {'realName': name_regex}
-            ]
-        if status:
-            fq['status'] = status
-        if date_range:
-            fq['createdAt'] = date_range
-
-        total_feedback = db.feedback.count_documents(fq)
-        feedback_cursor = db.feedback.find(fq).sort("createdAt", -1)
-        if order_type == 'feedback':
-            feedback_cursor = feedback_cursor.skip(skip).limit(per_page)
-        else:
-            feedback_cursor = feedback_cursor.limit(skip + per_page)
-        for doc in feedback_cursor:
-            sort_ts = _get_sort_ts(doc.get('createdAt'))
-            fb = {
-                '_id': str(doc['_id']),
-                'orderId': doc.get('feedbackId', ''),
-                'feedbackId': doc.get('feedbackId', ''),
-                'orderType': 'feedback',
-                'status': doc.get('status', ''),
-                'customer': {'name': doc.get('nickname', '匿名')},
-                'items': [],
-                'total': 0,
-                'createdAt': _tw_time(doc.get('createdAt')),
-                'source_label': '💬 回饋',
-                '_docType': 'feedback',
-                '_sortTs': sort_ts,
-                # 保留原始回饋欄位供 detail modal 使用
-                'nickname': doc.get('nickname', ''),
-                'content': doc.get('content', ''),
-                'category': doc.get('category', []),
-                'realName': doc.get('realName', ''),
-                'phone': doc.get('phone', ''),
-                'address': doc.get('address', ''),
-                'lineId': doc.get('lineId', ''),
-            }
-            if doc.get('approvedAt'):
-                fb['approvedAt'] = _tw_time(doc.get('approvedAt'))
-                fb['approvedBy'] = doc.get('approvedBy', '')
-            if doc.get('sentAt'):
-                fb['sentAt'] = _tw_time(doc.get('sentAt'))
-                fb['sentBy'] = doc.get('sentBy', '')
-            if doc.get('trackingNumber'):
-                fb['trackingNumber'] = doc['trackingNumber']
-            all_results.append(fb)
-
-    # 合併排序 (依建立時間降冪)
-    all_results.sort(key=lambda x: x.get('_sortTs', 0), reverse=True)
-
-    # 清除排序暫存欄位並分頁
-    total = total_orders + total_feedback
-    page_results = all_results if order_type else all_results[skip:skip + per_page]
-    for r in page_results:
-        r.pop('_sortTs', None)
-
-    return jsonify({"results": page_results, "total": total, "page": page, "per_page": per_page})
-
+    return jsonify({
+        "results": results, 
+        "total": total, 
+        "page": page, 
+        "per_page": per_page
+    })
 @admin_bp.route('/api/donations/mark-reported', methods=['POST'])
 @admin_required(roles=['super_admin', 'ops'])
 def mark_donations_reported():
