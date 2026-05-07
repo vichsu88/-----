@@ -1,16 +1,14 @@
 from collections import defaultdict
-import logging
 from datetime import datetime, timedelta
-from utils.line_bot import send_admin_notification
 from flask import Blueprint, jsonify, request, session
 from database import db
+from tasks.notifications import delay_notification, send_line_admin_notification
 from utils.decorators import user_login_required
 from utils.helpers import get_tw_now, get_object_id, mask_name
 from utils.security import as_string, get_json_object
 from utils.timezone import utc_now
 
 pickup_bp = Blueprint('pickup', __name__)
-logger = logging.getLogger(__name__)
 
 
 @pickup_bp.route('/api/pickup/reserve', methods=['POST'])
@@ -70,23 +68,17 @@ def create_pickup_reservation():
 
     if db is not None:
         db.pickups.insert_one(new_reservation)
-        # 👇👇👇 從這裡開始是新增的推播邏輯 👇👇👇
-        try:
-            cloth_count = len(clothes)
-            notify_msg = (
-                f"🔔 收到一筆新的寄衣服預約！\n"
-                f"-------------------\n"
-                f"📍 方式：{pickup_type}\n"
-                f"📅 日期：{pickup_date}\n"
-                f"👕 件數：共 {cloth_count} 件\n"
-                f"-------------------\n"
-                f"請記得到後台確認喔！"
-            )
-            send_admin_notification(notify_msg)
-        except Exception:
-            # 即使推播失敗，也不要影響使用者預約成功的流程
-            logger.exception("Pickup notification failed", extra={"event": "pickup_notification_failed"})
-        # 👆👆👆 新增結束 👆👆👆
+        cloth_count = len(clothes)
+        notify_msg = (
+            f"🔔 收到一筆新的寄衣服預約！\n"
+            f"-------------------\n"
+            f"📍 方式：{pickup_type}\n"
+            f"📅 日期：{pickup_date}\n"
+            f"👕 件數：共 {cloth_count} 件\n"
+            f"-------------------\n"
+            f"請記得到後台確認喔！"
+        )
+        delay_notification(send_line_admin_notification, notify_msg)
 
         return jsonify({"success": True, "message": "預約成功"})
 

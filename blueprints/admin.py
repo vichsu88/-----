@@ -6,9 +6,14 @@ from datetime import datetime, timedelta
 from bson import ObjectId
 from flask import Blueprint, Response, jsonify, request, session
 from pymongo import UpdateOne
+from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
 
 from database import db, write_audit_log
+from repositories.committee_quota_repository import (
+    release_committee_quota_for_order,
+    sync_committee_quota_usages,
+)
 from utils.decorators import admin_required
 from utils.helpers import get_object_id
 from utils.security import as_string, get_json_object, get_json_value, safe_regex_contains
@@ -90,6 +95,22 @@ VALID_ORDER_TYPES = {'shop', 'donation', 'fund', 'committee'}
 VALID_HISTORY_TYPES = VALID_ORDER_TYPES | {'feedback'}
 VALID_STATUSES = {'pending', 'paid', 'shipped', 'approved', 'sent', 'cancelled'}
 MIN_ADMIN_PASSWORD_LENGTH = 10
+RECEIPT_BLOCKED_FIELDS = {
+    '_id', 'lineId', 'orderId', 'feedbackId', 'orderType',
+    'createdAt', 'updatedAt',
+    'paidAt', 'paidBy', 'shippedAt', 'shippedBy',
+    'approvedAt', 'approvedBy', 'sentAt', 'sentBy',
+    'reportedAt', 'reportedBy',
+}
+ORDER_RECEIPT_ALLOWED_FIELDS = {
+    'customer', 'total', 'trackingNumber',
+    'is_reported', 'memo', 'notes',
+}
+FEEDBACK_RECEIPT_ALLOWED_FIELDS = {
+    'nickname', 'category', 'content', 'realName', 'phone',
+    'address', 'email', 'lunarBirthday', 'trackingNumber',
+    'isMarked', 'memo', 'notes',
+}
 
 
 def _clean_bank_info(value):
@@ -122,15 +143,38 @@ def _clean_committee_roles(value):
     return [role for role in roles if role["name"]]
 
 
-def _clean_receipt_update(value):
+def _safe_update_value(value):
+    if isinstance(value, dict):
+        cleaned = {}
+        for key, child in value.items():
+            if not isinstance(key, str) or not key or key.startswith('$') or '.' in key:
+                continue
+            if key in RECEIPT_BLOCKED_FIELDS:
+                continue
+            cleaned[key] = _safe_update_value(child)
+        return cleaned
+    if isinstance(value, list):
+        return [_safe_update_value(item) for item in value]
+    return value
+
+
+def _clean_receipt_update(value, allowed_fields):
     if not isinstance(value, dict):
-        return {}
-    blocked_fields = {'_id'}
-    return {
-        key: child
-        for key, child in value.items()
-        if key not in blocked_fields
-    }
+        return {}, []
+
+    cleaned = {}
+    ignored = []
+    for key, child in value.items():
+        if (
+            key in RECEIPT_BLOCKED_FIELDS
+            or key not in allowed_fields
+            or key.startswith('$')
+            or '.' in key
+        ):
+            ignored.append(key)
+            continue
+        cleaned[key] = _safe_update_value(child)
+    return cleaned, sorted(set(ignored))
 
 
 # =========================================================
@@ -666,13 +710,16 @@ def create_admin_user():
     if db.admin_users.find_one({"username": username}):
         return jsonify({"error": "此帳號已存在"}), 400
 
-    db.admin_users.insert_one({
-        "username": username,
-        "password_hash": generate_password_hash(password),
-        "permissions": permissions,
-        "role": 'super_admin' if 'super_admin' in permissions else permissions[0],
-        "createdAt": utc_now()
-    })
+    try:
+        db.admin_users.insert_one({
+            "username": username,
+            "password_hash": generate_password_hash(password),
+            "permissions": permissions,
+            "role": 'super_admin' if 'super_admin' in permissions else permissions[0],
+            "createdAt": utc_now()
+        })
+    except DuplicateKeyError:
+        return jsonify({"error": "帳號名稱已被使用"}), 400
 
     admin_name = session.get('admin_username', 'admin')
     write_audit_log(admin_name, '新增管理員帳號', username, f'權限: {", ".join(permissions)}')
@@ -815,13 +862,18 @@ def update_receipt(receipt_id):
         return jsonify({"error": "資料庫未連線"}), 500
 
     clean_id = receipt_id.strip().upper()
-    update_data = _clean_receipt_update(get_json_object())
-    if not update_data:
-        return jsonify({"error": "未收到 JSON 資料"}), 400
+    payload = get_json_object()
 
     if clean_id.startswith('FB'):
+        update_data, ignored_fields = _clean_receipt_update(payload, FEEDBACK_RECEIPT_ALLOWED_FIELDS)
+        if not update_data:
+            return jsonify({"error": "沒有可更新的合法欄位", "ignoredFields": ignored_fields}), 400
         result = db.feedback.update_one({"feedbackId": clean_id}, {"$set": update_data})
     elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
+        update_data, ignored_fields = _clean_receipt_update(payload, ORDER_RECEIPT_ALLOWED_FIELDS)
+        if not update_data:
+            return jsonify({"error": "沒有可更新的合法欄位", "ignoredFields": ignored_fields}), 400
+        update_data["updatedAt"] = utc_now()
         result = db.orders.update_one({"orderId": clean_id}, {"$set": update_data})
     else:
         return jsonify({"error": f"無法識別的單號格式：{clean_id}"}), 400
@@ -830,8 +882,13 @@ def update_receipt(receipt_id):
         return jsonify({"error": f"找不到單號：{clean_id}"}), 404
 
     admin_name = session.get('admin_username', 'admin')
-    write_audit_log(admin_name, '修改單據', clean_id)
-    return jsonify({"success": True, "message": f"單據 {clean_id} 已更新成功"})
+    ignored_text = f"，忽略欄位：{', '.join(ignored_fields)}" if ignored_fields else ''
+    write_audit_log(admin_name, '修改單據', clean_id, f"欄位：{', '.join(update_data.keys())}{ignored_text}")
+    return jsonify({
+        "success": True,
+        "message": f"單據 {clean_id} 已更新成功",
+        "ignoredFields": ignored_fields,
+    })
 
 
 @admin_bp.route('/api/admin/receipt/<receipt_id>', methods=['DELETE'])
@@ -852,8 +909,10 @@ def force_delete_receipt(receipt_id):
             return jsonify({"error": f"找不到回饋單號：{clean_id}"}), 404
 
     elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
+        order = db.orders.find_one({"orderId": clean_id})
         result = db.orders.delete_one({"orderId": clean_id})
         if result.deleted_count > 0:
+            release_committee_quota_for_order(order)
             write_audit_log(session.get('admin_username', 'admin'), '強制刪除單據', clean_id)
             return jsonify({"success": True, "message": f"已成功刪除單據：{clean_id}"})
         else:
@@ -914,6 +973,7 @@ def handle_committee_quota():
         {"$set": {"roles": data}},
         upsert=True
     )
+    sync_committee_quota_usages(data)
     # 寫入操作日誌以便追蹤
     write_audit_log(session.get('admin_username', 'admin'), '更新委員會名額與金額')
     return jsonify({"success": True})

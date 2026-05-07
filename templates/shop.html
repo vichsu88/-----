@@ -354,7 +354,7 @@
 
     async function fetchProducts() {
         try {
-            const res = await fetch('/api/products');
+            const res = await fetch('/api/public/products');
             products = await res.json();
             render('all');
         } catch(e) {}

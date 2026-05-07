@@ -1,6 +1,7 @@
 import urllib.parse
 
 import requests
+from pymongo.errors import DuplicateKeyError
 from werkzeug.security import check_password_hash
 
 from database import db
@@ -81,19 +82,20 @@ def upsert_line_user(profile):
     now = utc_now()
 
     if db is not None:
-        db.users.update_one(
-            {"lineId": line_id},
-            {
-                "$set": {
-                    "lineId": line_id,
-                    "displayName": display_name,
-                    "pictureUrl": picture_url,
-                    "lastLoginAt": now,
-                },
-                "$setOnInsert": {"createdAt": now},
+        update_doc = {
+            "$set": {
+                "lineId": line_id,
+                "displayName": display_name,
+                "pictureUrl": picture_url,
+                "lastLoginAt": now,
             },
-            upsert=True,
-        )
+            "$setOnInsert": {"createdAt": now},
+        }
+        try:
+            db.users.update_one({"lineId": line_id}, update_doc, upsert=True)
+        except DuplicateKeyError:
+            # unique lineId 在高併發登入時可能剛好由另一個請求建立，改走一般更新即可。
+            db.users.update_one({"lineId": line_id}, {"$set": update_doc["$set"]})
 
     return {
         "line_id": line_id,

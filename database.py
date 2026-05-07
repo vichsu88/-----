@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import PyMongoError
@@ -9,6 +9,7 @@ from utils.timezone import utc_now
 db = None
 _client = None
 logger = logging.getLogger(__name__)
+INDEX_OPTION_KEYS = ('unique', 'sparse', 'partialFilterExpression')
 
 
 def _env_int(name, default):
@@ -18,11 +19,84 @@ def _env_int(name, default):
         return default
 
 
+def _single_field_name(keys):
+    if len(keys) != 1:
+        return None
+    field_name, _direction = keys[0]
+    return field_name
+
+
+def _normalize_index_keys(keys):
+    return [(field, direction) for field, direction in keys]
+
+
+def _index_option(index_info, option):
+    if option in ('unique', 'sparse'):
+        return bool(index_info.get(option, False))
+    return index_info.get(option)
+
+
+def _index_matches(index_info, keys, kwargs):
+    if _normalize_index_keys(index_info.get('key', [])) != _normalize_index_keys(keys):
+        return False
+
+    for option in INDEX_OPTION_KEYS:
+        expected = kwargs.get(option, False if option in ('unique', 'sparse') else None)
+        if _index_option(index_info, option) != expected:
+            return False
+    return True
+
+
+def _has_duplicate_values(collection, field_name, partial_filter=None):
+    match_stage = partial_filter or {}
+    pipeline = []
+    if match_stage:
+        pipeline.append({"$match": match_stage})
+    pipeline.extend([
+        {"$group": {"_id": f"${field_name}", "count": {"$sum": 1}}},
+        {"$match": {"count": {"$gt": 1}}},
+        {"$limit": 1},
+    ])
+    return next(collection.aggregate(pipeline), None) is not None
+
+
+def _drop_conflicting_index_if_safe(collection_name, collection, keys, kwargs):
+    index_name = kwargs.get('name')
+    if not index_name:
+        return True
+
+    existing = collection.index_information().get(index_name)
+    if not existing or _index_matches(existing, keys, kwargs):
+        return True
+
+    field_name = _single_field_name(keys)
+    if kwargs.get('unique') and field_name:
+        partial_filter = kwargs.get('partialFilterExpression')
+        if _has_duplicate_values(collection, field_name, partial_filter):
+            # 舊資料若已有重複值，先保留原索引並提示清理，避免啟動時移除可用索引。
+            logger.warning(
+                "MongoDB unique index migration skipped because duplicate values exist",
+                extra={
+                    "event": "mongodb_unique_index_duplicates",
+                    "target": collection_name,
+                    "index": index_name,
+                    "field": field_name,
+                },
+            )
+            return False
+
+    collection.drop_index(index_name)
+    return True
+
+
 def _create_index(collection_name, keys, **kwargs):
     if db is None:
         return
     try:
-        db[collection_name].create_index(keys, **kwargs)
+        collection = db[collection_name]
+        if not _drop_conflicting_index_if_safe(collection_name, collection, keys, kwargs):
+            return
+        collection.create_index(keys, **kwargs)
     except PyMongoError as exc:
         logger.warning(
             "MongoDB index creation failed",
@@ -32,7 +106,7 @@ def _create_index(collection_name, keys, **kwargs):
 
 
 INDEX_SPECS = (
-    ('orders', [('orderId', ASCENDING)], {'name': 'orders_order_id'}),
+    ('orders', [('orderId', ASCENDING)], {'name': 'orders_order_id', 'unique': True}),
     ('orders', [('lineId', ASCENDING), ('createdAt', DESCENDING)], {'name': 'orders_line_created'}),
     ('orders', [('lineId', ASCENDING), ('orderType', ASCENDING), ('createdAt', DESCENDING)], {'name': 'orders_line_type_created'}),
     ('orders', [('lineId', ASCENDING), ('orderType', ASCENDING), ('status', ASCENDING)], {'name': 'orders_line_type_status'}),
@@ -48,16 +122,23 @@ INDEX_SPECS = (
     ('orders', [('orderType', ASCENDING), ('status', ASCENDING), ('items.name', ASCENDING)], {'name': 'orders_type_status_item'}),
     ('orders', [('items.name', ASCENDING), ('orderType', ASCENDING), ('status', ASCENDING)], {'name': 'orders_item_type_status'}),
 
-    ('feedback', [('feedbackId', ASCENDING)], {'name': 'feedback_feedback_id'}),
+    ('feedback', [('feedbackId', ASCENDING)], {
+        'name': 'feedback_feedback_id',
+        'unique': True,
+        # pending 回饋可能尚未產生編號；只限制已核准後產生的有效字串編號不可重複。
+        'partialFilterExpression': {'feedbackId': {'$type': 'string', '$gt': ''}},
+    }),
     ('feedback', [('lineId', ASCENDING), ('createdAt', DESCENDING)], {'name': 'feedback_line_created'}),
     ('feedback', [('lineId', ASCENDING), ('status', ASCENDING)], {'name': 'feedback_line_status'}),
     ('feedback', [('status', ASCENDING), ('createdAt', ASCENDING)], {'name': 'feedback_status_created'}),
     ('feedback', [('status', ASCENDING), ('approvedAt', DESCENDING)], {'name': 'feedback_status_approved'}),
     ('feedback', [('status', ASCENDING), ('sentAt', DESCENDING)], {'name': 'feedback_status_sent'}),
 
-    ('users', [('lineId', ASCENDING)], {'name': 'users_line_id'}),
+    ('users', [('lineId', ASCENDING)], {'name': 'users_line_id', 'unique': True}),
     ('users', [('lastLoginAt', DESCENDING)], {'name': 'users_last_login'}),
-    ('admin_users', [('username', ASCENDING)], {'name': 'admin_users_username'}),
+    ('admin_users', [('username', ASCENDING)], {'name': 'admin_users_username', 'unique': True}),
+    ('counters', [('updatedAt', DESCENDING)], {'name': 'counters_updated_at'}),
+    ('committee_quota_usage', [('updatedAt', DESCENDING)], {'name': 'committee_quota_usage_updated'}),
     ('settings', [('type', ASCENDING)], {'name': 'settings_type'}),
     ('temple_fund', [('type', ASCENDING)], {'name': 'temple_fund_type'}),
     ('links', [('name', ASCENDING)], {'name': 'links_name'}),

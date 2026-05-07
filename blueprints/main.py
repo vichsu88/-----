@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, redirect, render_template, url_for
 
 from database import db
+from repositories.committee_quota_repository import calculate_committee_usage
 
 main_bp = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
@@ -92,28 +93,22 @@ def get_public_committee_status():
 
     used_counts = {}
     if role_names:
-        pipeline = [
-            {"$match": {
-                "orderType": "committee",
-                "status": {"$in": ["paid", "pending"]},
-                "items.name": {"$in": role_names},
-            }},
-            {"$unwind": "$items"},
-            {"$match": {"items.name": {"$in": role_names}}},
-            {"$group": {"_id": "$items.name", "used": {"$sum": 1}}},
-        ]
         used_counts = {
-            item["_id"]: item["used"]
-            for item in db.orders.aggregate(pipeline)
-            if item.get("_id")
+            doc["_id"]: doc.get("used", 0)
+            for doc in db.committee_quota_usage.find(
+                {"_id": {"$in": role_names}},
+                {"used": 1},
+            )
         }
 
     results = []
     for role in roles:
         name = role.get('name')
         limit = role.get('limit', 0)
-        # 計算已佔用名額
-        used = used_counts.get(name, 0)
+        # 以 atomic usage 文件為主；若尚未初始化，退回歷史訂單計算。
+        used = used_counts.get(name)
+        if used is None:
+            used = calculate_committee_usage(name)
         results.append({
             "name": name,
             "remaining": max(0, limit - used),

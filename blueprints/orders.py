@@ -1,14 +1,21 @@
 import io
-import random
 from collections import defaultdict
 from datetime import datetime, timedelta
-from utils.line_bot import send_admin_notification
-from flask import Blueprint, jsonify, request, session, Response, current_app
-from pymongo.errors import ConfigurationError, OperationFailure, PyMongoError
+from flask import Blueprint, jsonify, request, session, Response
+from pymongo.errors import DuplicateKeyError
 
-from database import db, get_client, write_audit_log
+from database import db, write_audit_log
 from extensions import limiter
+from repositories.committee_quota_repository import (
+    release_committee_quota_for_order,
+    reserve_committee_quota,
+)
 from schemas.orders import OrderCreateSchema, ResendEmailSchema, ShipOrderSchema
+from tasks.notifications import (
+    delay_notification,
+    send_order_cancelled_email,
+    send_order_resend_email,
+)
 from services.order_service import (
     confirm_payment as confirm_payment_service,
     list_admin_donations,
@@ -18,6 +25,10 @@ from services.order_service import (
     queue_order_shipped_email,
     queue_payment_confirmed_email,
 )
+from services.sequence_service import (
+    generate_order_id,
+    write_with_unique_id_retry,
+)
 from utils.business_rules import (
     ORDER_PAYMENT_DEADLINE_HOURS,
     SHIPPED_ORDER_RETENTION_DAYS,
@@ -25,18 +36,12 @@ from utils.business_rules import (
     get_shop_shipping_fee,
 )
 from utils.decorators import admin_required, user_login_required
-from utils.errors import ValidationError
+from utils.errors import ServiceUnavailableError, ValidationError
 from utils.helpers import get_object_id, validate_real_name, mask_name
 from utils.pagination import page_response, parse_pagination
 from utils.security import as_string, get_json_object
-from utils.timezone import taipei_now, utc_now
+from utils.timezone import utc_now
 from utils.validation import validate_payload
-from utils.email import (
-    send_email,
-    generate_shop_email_html,
-    generate_donation_created_email,
-    generate_donation_paid_email,
-)
 
 orders_bp = Blueprint('orders', __name__)
 
@@ -185,7 +190,7 @@ def _normalize_committee_items(raw_items):
         "name": name,
         "price": price,
         "qty": qty,
-    }], [{"name": name, "limit": limit}]
+    }], [{"name": name, "limit": limit, "qty": qty}]
 
 
 def _normalize_order_payload(data, order_type):
@@ -248,52 +253,33 @@ def _insert_order_with_quota(order, quota_checks):
         db.orders.insert_one(order)
         return
 
-    def write_order(session_obj=None):
-        now = utc_now()
+    reserved = []
+    try:
         for check in quota_checks:
-            query = {
-                "orderType": "committee",
-                "status": {"$in": ["paid", "pending"]},
-                "items.name": check["name"],
-            }
-            if session_obj is not None:
-                db.committee_quota_locks.update_one(
-                    {"_id": check["name"]},
-                    {"$set": {"updatedAt": now}},
-                    upsert=True,
-                    session=session_obj,
-                )
-                used_count = db.orders.count_documents(query, session=session_obj)
-            else:
-                used_count = db.orders.count_documents(query)
-            if used_count >= check["limit"]:
+            quantity = check.get("qty", 1)
+            if not reserve_committee_quota(check["name"], check["limit"], quantity):
                 raise OrderValidationError(f"非常抱歉，【{check['name']}】名額已額滿")
+            reserved.append(check)
 
-        db.orders.insert_one(order, session=session_obj)
+        db.orders.insert_one(order)
+    except DuplicateKeyError:
+        # insert 撞到唯一鍵時會由外層 retry 重新取單號；先補回本次已扣名額。
+        for check in reserved:
+            release_committee_quota_for_order({
+                "orderType": "committee",
+                "status": "pending",
+                "items": [{"name": check["name"], "qty": check.get("qty", 1)}],
+            })
+        raise
+    except Exception:
+        for check in reserved:
+            release_committee_quota_for_order({
+                "orderType": "committee",
+                "status": "pending",
+                "items": [{"name": check["name"], "qty": check.get("qty", 1)}],
+            })
+        raise
 
-    client = get_client()
-    if client is not None:
-        try:
-            with client.start_session() as session_obj:
-                session_obj.with_transaction(lambda s: write_order(s))
-            return
-        except OrderValidationError:
-            raise
-        except (ConfigurationError, OperationFailure) as exc:
-            message = str(exc).lower()
-            if all(token not in message for token in ('transaction', 'replica set', 'sessions')):
-                raise
-        except PyMongoError:
-            raise
-
-    write_order()
-
-
-def _current_mail_config():
-    return {
-        "sendgrid_api_key": current_app.config['SENDGRID_API_KEY'],
-        "mail_sender": current_app.config['MAIL_SENDER'],
-    }
 
 @orders_bp.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
@@ -427,15 +413,21 @@ def export_donations_txt():
 @admin_required(roles=['super_admin', 'finance', 'ops'])
 def cleanup_unpaid_orders():
     cutoff = utc_now() - timedelta(hours=UNPAID_ORDER_GRACE_HOURS)
-    cursor = db.orders.find({"status": "pending", "createdAt": {"$lt": cutoff}})
-    for order in cursor:
+    query = {"status": "pending", "createdAt": {"$lt": cutoff}}
+    orders_to_delete = list(db.orders.find(query))
+    for order in orders_to_delete:
         if order.get('customer', {}).get('email'):
-            subject = f"【承天中承府】訂單/捐贈登記已取消 ({order['orderId']})"
-            body = f"親愛的 {order['customer'].get('name', '信徒')} 您好：\n您的訂單/捐贈登記 ({order['orderId']}) 因超過付款期限，系統已自動取消。如需服務請重新下單。"
-            send_email(order['customer']['email'], subject, body,
-                       current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'])
+            delay_notification(send_order_cancelled_email, {
+                "email": order['customer']['email'],
+                "orderId": order.get('orderId', ''),
+                "customerName": order.get('customer', {}).get('name', '信徒'),
+                "reason": "expired",
+            })
 
-    result = db.orders.delete_many({"status": "pending", "createdAt": {"$lt": cutoff}})
+    result = db.orders.delete_many(query)
+    if result.deleted_count:
+        for order in orders_to_delete:
+            release_committee_quota_for_order(order)
     return jsonify({"success": True, "count": result.deleted_count})
 
 
@@ -457,13 +449,6 @@ def create_order():
 
     normalized_items, total, shipping_fee, quota_checks = _normalize_order_payload(data, order_type)
 
-    prefix = "ORD"
-    if order_type == 'donation': prefix = "DON"
-    elif order_type == 'fund': prefix = "FND"
-    elif order_type == 'committee': prefix = "COM"
-
-    order_id = f"{prefix}{taipei_now().strftime('%Y%m%d%H%M%S')}{random.randint(10,99)}"
-
     customer_info = {
         "name": as_string(data.get('name')).strip(),
         "phone": as_string(data.get('phone')).strip(),
@@ -480,8 +465,8 @@ def create_order():
     now = utc_now()
     deadline = now + timedelta(hours=ORDER_PAYMENT_DEADLINE_HOURS)
 
-    order = {
-        "orderId": order_id, "orderType": order_type, "customer": customer_info,
+    order_template = {
+        "orderType": order_type, "customer": customer_info,
         "items": normalized_items, "total": total, "status": "pending",
         "lineId": line_id,
         "paymentDeadline": deadline,
@@ -489,10 +474,24 @@ def create_order():
     }
 
     if order_type == 'donation':
-        order['is_reported'] = False
+        order_template['is_reported'] = False
 
-    _insert_order_with_quota(order, quota_checks)
-    queue_order_created_email(order, _current_mail_config())
+    def write_order(candidate_order_id):
+        # 每次 retry 都用新的 dict，避免 PyMongo 在 insert 時加上的 _id 汙染下一次嘗試。
+        order = {**order_template, "orderId": candidate_order_id}
+        _insert_order_with_quota(order, quota_checks)
+        return order
+
+    try:
+        order_id, order = write_with_unique_id_retry(
+            lambda: generate_order_id(order_type),
+            write_order,
+            label="order",
+        )
+    except DuplicateKeyError as exc:
+        raise ServiceUnavailableError("訂單編號產生重複，請稍後再試") from exc
+
+    queue_order_created_email(order)
     return jsonify({"success": True, "orderId": order_id, "total": total})
 
 
@@ -517,7 +516,7 @@ def cleanup_shipped_orders():
 def confirm_order_payment(oid):
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
     order = confirm_payment_service(oid, admin_user)
-    queue_payment_confirmed_email(order, _current_mail_config())
+    queue_payment_confirmed_email(order)
     return jsonify({"success": True})
 
 @orders_bp.route('/api/orders/<oid>/resend-email', methods=['POST'])
@@ -533,33 +532,11 @@ def resend_order_email(oid):
     if not order:
         return jsonify({"error": "No order"}), 404
 
-    cust = order['customer']
-    target_email = cust.get('email')
-
+    target_email = order.get('customer', {}).get('email')
     if new_email and new_email != target_email:
         db.orders.update_one({'_id': oid_obj}, {'$set': {'customer.email': new_email}})
-        cust['email'] = new_email
-        target_email = new_email
 
-    if order.get('orderType') == 'donation':
-        if order.get('status') == 'paid':
-            email_subject = f"【補寄感謝狀】承天中承府 - 功德無量 ({order['orderId']})"
-            email_html = generate_donation_paid_email(cust, order['orderId'], order['items'], order['total'])
-        else:
-            email_subject = f"【補寄】護持登記確認通知 ({order['orderId']})"
-            email_html = generate_donation_created_email(order, db=db)
-    else:
-        email_subject = f"【承天中承府】訂單信件補寄 ({order['orderId']})"
-        if order.get('status') == 'shipped':
-            email_html = generate_shop_email_html(order, 'shipped', order.get('trackingNumber'), db=db)
-        elif order.get('status') == 'paid':
-            email_html = generate_shop_email_html(order, 'paid', db=db)
-        else:
-            email_html = generate_shop_email_html(order, 'created', db=db)
-
-    send_email(target_email, email_subject, email_html,
-               current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'],
-               is_html=True)
+    delay_notification(send_order_resend_email, order.get('orderId'))
     return jsonify({"success": True})
 
 
@@ -572,13 +549,17 @@ def delete_order(oid):
 
     order = db.orders.find_one({'_id': oid_obj})
     if order and order.get('customer', {}).get('email'):
-        subject = f"【承天中承府】訂單/登記已取消 ({order['orderId']})"
-        body = f"親愛的 {order['customer'].get('name', '信徒')} 您好：\n您的訂單/登記 ({order['orderId']}) 已被取消。如為誤操作或有任何疑問，請聯繫官方 LINE。"
-        send_email(order['customer']['email'], subject, body,
-                   current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'])
+        delay_notification(send_order_cancelled_email, {
+            "email": order['customer']['email'],
+            "orderId": order.get('orderId', ''),
+            "customerName": order.get('customer', {}).get('name', '信徒'),
+            "reason": "manual",
+        })
 
     write_audit_log(session.get('admin_username', 'admin'), '刪除訂單', order.get('orderId', oid) if order else oid)
-    db.orders.delete_one({'_id': oid_obj})
+    result = db.orders.delete_one({'_id': oid_obj})
+    if result.deleted_count:
+        release_committee_quota_for_order(order)
     return jsonify({"success": True})
 
 @orders_bp.route('/api/orders/<oid>/ship', methods=['PUT'])
@@ -588,5 +569,5 @@ def ship_order(oid):
     tracking_num = payload.trackingNumber.strip()
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
     order = mark_shipped_service(oid, tracking_num, admin_user)
-    queue_order_shipped_email(order, tracking_num, _current_mail_config())
+    queue_order_shipped_email(order, tracking_num)
     return jsonify({"success": True})

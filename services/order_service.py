@@ -1,9 +1,9 @@
 from database import db, write_audit_log
-from utils.email import (
-    generate_donation_created_email,
-    generate_donation_paid_email,
-    generate_shop_email_html,
-    send_email,
+from tasks.notifications import (
+    delay_notification,
+    send_order_created_email,
+    send_order_shipped_email,
+    send_payment_confirmed_email,
 )
 from utils.errors import NotFoundError, ServiceUnavailableError, ValidationError
 from utils.helpers import get_object_id
@@ -106,55 +106,13 @@ def mark_shipped(order_id, tracking_number, admin_user):
     return order
 
 
-def _mail_args(mail_config):
-    mail_config = mail_config or {}
-    return (
-        mail_config.get("sendgrid_api_key"),
-        mail_config.get("mail_sender"),
-    )
-
-
 def queue_order_created_email(order, mail_config=None):
-    customer = order.get("customer", {})
-    order_id = order.get("orderId", "")
-    order_type = order.get("orderType")
-    subject = f"【承天中承府】訂單確認 ({order_id})"
-    if order_type == "donation":
-        subject = f"【承天中承府】捐香登記確認 ({order_id})"
-    elif order_type == "fund":
-        subject = f"【承天中承府】建廟護持確認 ({order_id})"
-    elif order_type == "committee":
-        subject = f"【承天中承府】委員會發心護持確認 ({order_id})"
-
-    if order_type in ["donation", "fund", "committee"]:
-        html = generate_donation_created_email(order, db=db)
-    else:
-        html = generate_shop_email_html(order, "created", db=db)
-
-    send_email(customer.get("email"), subject, html, *_mail_args(mail_config), is_html=True)
+    delay_notification(send_order_created_email, order.get("orderId"))
 
 
 def queue_payment_confirmed_email(order, mail_config=None):
-    customer = order.get("customer", {})
-    order_id = order.get("orderId", "")
-    if order.get("orderType") in ["donation", "fund", "committee"]:
-        subject = f"【承天中承府】電子感謝狀 - 功德無量 ({order_id})"
-        html = generate_donation_paid_email(
-            customer,
-            order_id,
-            order.get("items", []),
-            order.get("total", 0),
-        )
-    else:
-        subject = f"【承天中承府】收款確認通知 ({order_id})"
-        html = generate_shop_email_html(order, "paid", db=db)
-
-    send_email(customer.get("email"), subject, html, *_mail_args(mail_config), is_html=True)
+    delay_notification(send_payment_confirmed_email, order.get("orderId"))
 
 
 def queue_order_shipped_email(order, tracking_number, mail_config=None):
-    customer = order.get("customer", {})
-    order_id = order.get("orderId", "")
-    subject = f"【承天中承府】訂單出貨通知 ({order_id})"
-    html = generate_shop_email_html(order, "shipped", tracking_number, db=db)
-    send_email(customer.get("email"), subject, html, *_mail_args(mail_config), is_html=True)
+    delay_notification(send_order_shipped_email, order.get("orderId"))

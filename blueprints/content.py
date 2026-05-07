@@ -124,11 +124,30 @@ def get_ship_clothes_list():
 
 # --- Products ---
 
-@content_bp.route('/api/products', methods=['GET'])
-def get_products():
-    products = list(db.products.find().sort([("category", 1), ("createdAt", -1)]))
+def _serialize_products(query):
+    products = list(db.products.find(query).sort([("category", 1), ("createdAt", -1)]))
     for p in products:
         p['_id'] = str(p['_id'])
+    return products
+
+
+@content_bp.route('/api/public/products', methods=['GET'])
+def get_public_products():
+    products = _serialize_products({"isActive": True})
+    return jsonify(products)
+
+
+@content_bp.route('/api/admin/products', methods=['GET'])
+@admin_required(roles=['super_admin', 'cms'])
+def get_admin_products():
+    products = _serialize_products({})
+    return jsonify(products)
+
+
+@content_bp.route('/api/products', methods=['GET'])
+def get_products():
+    # 舊前台路由保留為安全相容入口，不再回傳未上架商品。
+    products = _serialize_products({"isActive": True})
     return jsonify(products)
 
 

@@ -26,7 +26,7 @@ if Celery is not None and broker_url:
         "chentien_temple",
         broker=broker_url,
         backend=result_backend,
-        include=["utils.email"],
+        include=["utils.email", "tasks.notifications"],
     )
     celery_app.conf.update(
         accept_content=["json"],

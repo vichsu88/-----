@@ -827,7 +827,7 @@ async loadFeedbackReview() {
         async fetchList() {
             if (!this.listEl) return;
             try {
-                const products = await Core.apiFetch('/api/products');
+                const products = await Core.apiFetch('/api/admin/products');
 
                 const seriesSet = new Set(products.filter(p => p.series).map(p => p.series));
                 const datalist = document.getElementById('series-list');

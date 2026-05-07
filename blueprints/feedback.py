@@ -1,14 +1,20 @@
 import io
-import random
 
-from flask import Blueprint, jsonify, request, session, Response, current_app
+from flask import Blueprint, jsonify, request, session, Response
+from pymongo.errors import DuplicateKeyError
 
 from database import db, write_audit_log
 from extensions import limiter
+from services.sequence_service import generate_feedback_id, write_with_unique_id_retry
+from tasks.notifications import (
+    delay_notification,
+    send_feedback_rejected_email,
+    send_feedback_status_email,
+)
 from utils.decorators import admin_required, user_login_required
+from utils.errors import ServiceUnavailableError
 from utils.helpers import get_object_id
 from utils.security import as_string, get_json_object
-from utils.email import send_email, generate_feedback_email_html
 from utils.timezone import format_taipei, taipei_now, utc_now
 
 feedback_bp = Blueprint('feedback', __name__)
@@ -170,33 +176,30 @@ def approve_feedback(fid):
     if not fb:
         return jsonify({"error": "No data"}), 404
 
-    # 準備好所有變數
-    fb_id = f"FB{taipei_now().strftime('%Y%m%d')}{random.randint(10,99)}"
     now = utc_now()
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
 
-    # ✅ 變數都準備好後，才執行更新
-    db.feedback.update_one({'_id': oid}, {'$set': {
-        'status': 'approved',
-        'feedbackId': fb_id,
-        'approvedAt': now,
-        'approvedBy': admin_user
-    }})
+    def approve_with_id(candidate_feedback_id):
+        # feedbackId 有 partial unique index，若撞號就重新取下一個 counter 流水號。
+        return db.feedback.update_one({'_id': oid}, {'$set': {
+            'status': 'approved',
+            'feedbackId': candidate_feedback_id,
+            'approvedAt': now,
+            'approvedBy': admin_user
+        }})
+
+    try:
+        fb_id, _ = write_with_unique_id_retry(
+            generate_feedback_id,
+            approve_with_id,
+            label="feedback",
+        )
+    except DuplicateKeyError as exc:
+        raise ServiceUnavailableError("回饋編號產生重複，請稍後再試") from exc
     
     write_audit_log(admin_user, '核准回饋', fb_id)
 
-    # 寄信通知
-    user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
-    email = user.get('email') or fb.get('email')
-    if email:
-        fb_for_email = fb.copy()
-        fb_for_email['realName'] = user.get('realName', '信徒')
-        send_email(
-            email, "【承天中承府】您的回饋已核准刊登",
-            generate_feedback_email_html(fb_for_email, 'approved'),
-            current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'],
-            is_html=True
-        )
+    delay_notification(send_feedback_status_email, str(oid), 'approved')
     return jsonify({"success": True})
 
 
@@ -228,18 +231,7 @@ def ship_feedback(fid):
     
     write_audit_log(admin_user, '寄出回饋禮', fb.get('feedbackId', fid), tracking)
 
-    # 寄信通知
-    user = db.users.find_one({"lineId": fb.get('lineId')}) if fb.get('lineId') else {}
-    email = user.get('email') or fb.get('email')
-    if email:
-        fb_for_email = fb.copy()
-        fb_for_email['realName'] = user.get('realName', '信徒')
-        send_email(
-            email, "【承天中承府】結緣品寄出通知",
-            generate_feedback_email_html(fb_for_email, 'sent', tracking),
-            current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'],
-            is_html=True
-        )
+    delay_notification(send_feedback_status_email, str(oid), 'sent', tracking)
     return jsonify({"success": True})
 
 
@@ -256,14 +248,14 @@ def delete_feedback(fid):
     user = db.users.find_one({"lineId": fb.get('lineId')}) if fb and fb.get('lineId') else {}
     email = user.get('email') or (fb.get('email') if fb else None)
     if email:
-        fb_for_email = fb.copy()
-        fb_for_email['realName'] = user.get('realName', '信徒')
-        send_email(
-            email, "【承天中承府】感謝您的投稿與分享",
-            generate_feedback_email_html(fb_for_email, 'rejected'),
-            current_app.config['SENDGRID_API_KEY'], current_app.config['MAIL_SENDER'],
-            is_html=True
-        )
+        delay_notification(send_feedback_rejected_email, {
+            "email": email,
+            "feedbackId": fb.get('feedbackId', ''),
+            "nickname": fb.get('nickname', ''),
+            "category": fb.get('category', []),
+            "content": fb.get('content', ''),
+            "realName": user.get('realName') or fb.get('realName') or '信徒',
+        })
 
     write_audit_log(session.get('admin_username', 'admin'), '刪除回饋', fb.get('feedbackId', fid) if fb else fid)
     db.feedback.delete_one({'_id': oid})
