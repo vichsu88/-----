@@ -168,10 +168,15 @@ def create_app():
     app.config['LINE_CHANNEL_SECRET'] = os.environ.get('LINE_CHANNEL_SECRET')
     app.config['LINE_CALLBACK_URL'] = os.environ.get('LINE_CALLBACK_URL')
     app.config['ADMIN_PASSWORD_HASH'] = os.environ.get('ADMIN_PASSWORD_HASH')
-    ratelimit_storage_uri = os.environ.get('RATELIMIT_STORAGE_URI', 'memory://')
+    ratelimit_storage_uri = (
+    os.environ.get('RATELIMIT_STORAGE_URI')
+    or os.environ.get('REDIS_URL')
+    or os.environ.get('CELERY_BROKER_URL')
+    or 'memory://'
+)
     # Production 必須使用 Redis 等集中式儲存，避免多行程各自限流造成防護失效。
-    if is_production and ratelimit_storage_uri.strip().lower() == 'memory://':
-        raise RuntimeError("RATELIMIT_STORAGE_URI must use Redis in production")
+    if is_production and ratelimit_storage_uri.strip().lower() == 'memory://':raise RuntimeError("RATELIMIT_STORAGE_URI or REDIS_URL is required in production.")
+
     app.config['RATELIMIT_STORAGE_URI'] = ratelimit_storage_uri
 
     csrf.init_app(app)
