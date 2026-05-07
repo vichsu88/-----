@@ -1,6 +1,6 @@
 import io
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from flask import Blueprint, jsonify, request, session, Response
 from pymongo.errors import DuplicateKeyError
 
@@ -40,7 +40,7 @@ from utils.errors import ServiceUnavailableError, ValidationError
 from utils.helpers import get_object_id, validate_real_name, mask_name
 from utils.pagination import page_response, parse_pagination
 from utils.security import as_string, get_json_object
-from utils.timezone import utc_now
+from utils.timezone import format_taipei, taipei_date_range_query, taipei_now, utc_now
 from utils.validation import validate_payload
 
 orders_bp = Blueprint('orders', __name__)
@@ -341,10 +341,8 @@ def get_admin_donations():
     end_str = as_string(request.args.get('end')).strip()
     if start_str and end_str:
         try:
-            start_date = datetime.strptime(start_str, '%Y-%m-%d')
-            end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
-            query["createdAt"] = {"$gte": start_date, "$lt": end_date}
-        except Exception:
+            query["createdAt"] = taipei_date_range_query(start_str, end_str)
+        except ValueError:
             pass
 
     pagination = parse_pagination(request.args, default_per_page=50, max_per_page=100)
@@ -366,10 +364,8 @@ def export_donations_txt():
 
     if start_str and end_str:
         try:
-            start_date = datetime.strptime(start_str, '%Y-%m-%d')
-            end_date = datetime.strptime(end_str, '%Y-%m-%d') + timedelta(days=1)
-            query["updatedAt"] = {"$gte": start_date, "$lt": end_date}
-        except Exception:
+            query["updatedAt"] = taipei_date_range_query(start_str, end_str)
+        except ValueError:
             pass
 
     cursor = db.orders.find(query).sort("updatedAt", 1)
@@ -381,7 +377,7 @@ def export_donations_txt():
     report_title = title_map.get(order_type, '護持清單')
 
     si = io.StringIO()
-    si.write(f"{report_title}\n匯出日期：{datetime.now().strftime('%Y-%m-%d')}\n")
+    si.write(f"{report_title}\n匯出日期：{taipei_now().strftime('%Y-%m-%d')}\n")
     si.write("=" * 40 + "\n\n")
 
     idx = 1
@@ -389,7 +385,7 @@ def export_donations_txt():
         cust = doc.get('customer', {})
         # 加上規格名稱的判斷
         items_str = "、".join([f"{i.get('name', '')}{'['+i.get('variantName', '')+']' if i.get('variantName') else ''}x{i.get('qty', 1)}" for i in doc.get('items', [])])
-        paid_date = doc.get('updatedAt').strftime('%Y/%m/%d') if doc.get('updatedAt') else ''
+        paid_date = format_taipei(doc.get('updatedAt'), '%Y/%m/%d')
 
         si.write(f"【{idx}】\n")
         si.write(f"日期：{paid_date}\n")

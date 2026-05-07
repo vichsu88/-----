@@ -2,6 +2,7 @@ import csv
 import io
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from bson import ObjectId
 from flask import Blueprint, Response, jsonify, request, session
@@ -17,10 +18,13 @@ from repositories.committee_quota_repository import (
 from utils.decorators import admin_required
 from utils.helpers import get_object_id
 from utils.security import as_string, get_json_object, get_json_value, safe_regex_contains
-from utils.timezone import taipei_now, utc_now
+from utils.timezone import format_taipei, taipei_date_range_query, taipei_now, utc_now
 
 admin_bp = Blueprint('admin', __name__)
 logger = logging.getLogger(__name__)
+
+# 過渡期讓既有 blueprints/admin.py 可以逐步拆出 blueprints/admin/*.py 子模組。
+__path__ = [str(Path(__file__).with_suffix(""))]
 
 
 # =========================================================
@@ -56,14 +60,7 @@ def _safe_csv_cell(value):
 
 def _tw_time(dt):
     """UTC datetime → 台灣時間字串（相容 legacy 字串資料）"""
-    if not dt:
-        return ''
-    if isinstance(dt, str):
-        return dt
-    try:
-        return (dt + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M')
-    except Exception:
-        return str(dt) if dt else ''
+    return format_taipei(dt)
 
 
 def _get_sort_ts(dt):
@@ -179,53 +176,8 @@ def _clean_receipt_update(value, allowed_fields):
 
 # =========================================================
 # Module 1: 💰 財務稽核中樞 (Finance Hub)
+# Finance routes 已拆至 blueprints/admin/finance.py，保留區塊標記方便後續搬遷。
 # =========================================================
-
-@admin_bp.route('/api/admin/finance/pending')
-@admin_required(roles=['super_admin', 'finance'])
-def get_finance_pending():
-    """彙整所有來源的「待收款」單據"""
-    if db is None:
-        return jsonify([])
-
-    cursor = db.orders.find({"status": "pending"}).sort("createdAt", -1)
-    results = []
-    for doc in cursor:
-        doc['_id'] = str(doc['_id'])
-        doc['createdAt'] = _tw_time(doc.get('createdAt'))
-        doc['source_label'] = _TYPE_LABELS.get(doc.get('orderType', ''), '未知')
-        if doc.get('paymentDeadline'):
-            doc['paymentDeadline'] = _tw_time(doc['paymentDeadline'])
-        results.append(doc)
-    return jsonify(results)
-
-
-@admin_bp.route('/api/admin/finance/summary')
-@admin_required(roles=['super_admin', 'finance'])
-def get_finance_summary():
-    """財務摘要：各類別待收款/已收款筆數與金額"""
-    if db is None:
-        return jsonify({})
-
-    pipeline = [
-        {"$group": {
-            "_id": {"type": "$orderType", "status": "$status"},
-            "count": {"$sum": 1},
-            "total": {"$sum": "$total"}
-        }}
-    ]
-    raw = list(db.orders.aggregate(pipeline))
-
-    summary = {}
-    for item in raw:
-        ot = item['_id']['type']
-        st = item['_id']['status']
-        if ot not in summary:
-            summary[ot] = {}
-        summary[ot][st] = {"count": item['count'], "total": item['total']}
-
-    return jsonify(summary)
-
 
 # =========================================================
 # Module 2: 🛠️ 站務作業中樞 (Operations Center)
@@ -331,10 +283,7 @@ def get_data_history():
     date_range = None
     if start and end:
         try:
-            date_range = {
-                "$gte": datetime.strptime(start, '%Y-%m-%d'),
-                "$lt": datetime.strptime(end, '%Y-%m-%d') + timedelta(days=1)
-            }
+            date_range = taipei_date_range_query(start, end)
         except ValueError:
             pass
 
@@ -518,10 +467,7 @@ def export_data_csv():
     end = as_string(request.args.get('end')).strip()
     if start and end:
         try:
-            query['createdAt'] = {
-                "$gte": datetime.strptime(start, '%Y-%m-%d'),
-                "$lt": datetime.strptime(end, '%Y-%m-%d') + timedelta(days=1)
-            }
+            query['createdAt'] = taipei_date_range_query(start, end)
         except ValueError:
             pass
 
