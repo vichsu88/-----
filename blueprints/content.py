@@ -1,3 +1,4 @@
+import random
 import re
 from datetime import datetime, timedelta
 
@@ -60,6 +61,14 @@ def _get_vice_chair_remain():
 
 
 # --- ShipClothes ---
+
+@content_bp.route('/api/captcha', methods=['GET'])
+def get_captcha():
+    a = random.randint(1, 9)
+    b = random.randint(1, 9)
+    session['captcha_answer'] = str(a + b)
+    return jsonify({"question": f"{a} + {b} = ?"})
+
 
 @content_bp.route('/api/shipclothes/calc-date', methods=['GET'])
 def get_pickup_date_preview():

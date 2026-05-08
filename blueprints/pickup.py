@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request, session
+from pymongo.errors import DuplicateKeyError
 import database
 from tasks.notifications import delay_notification, send_line_admin_notification
 from utils.decorators import user_login_required
@@ -40,6 +41,8 @@ def create_pickup_reservation():
     incoming_ids = [c.get('clothId', '').strip() for c in clothes if c.get('clothId')]
     if not incoming_ids:
         return jsonify({"error": "請至少填寫一個衣服編號"}), 400
+    if len(set(incoming_ids)) != len(incoming_ids):
+        return jsonify({"error": "同一張預約單內不可重複填寫衣服編號"}), 400
 
     if database.db is not None:
         today_str = get_tw_now().strftime('%Y-%m-%d')
@@ -67,7 +70,40 @@ def create_pickup_reservation():
     }
 
     if database.db is not None:
-        database.db.pickups.insert_one(new_reservation)
+        now = utc_now()
+        try:
+            expires_at = datetime.strptime(pickup_date, '%Y-%m-%d') + timedelta(days=1)
+        except ValueError:
+            return jsonify({"error": "日期格式錯誤"}), 400
+
+        database.db.pickup_cloth_locks.delete_many({"expiresAt": {"$lt": now}})
+        locked_ids = []
+        try:
+            for cloth_id in incoming_ids:
+                database.db.pickup_cloth_locks.insert_one({
+                    "clothId": cloth_id,
+                    "lineId": line_id,
+                    "pickupDate": pickup_date,
+                    "createdAt": now,
+                    "expiresAt": expires_at,
+                })
+                locked_ids.append(cloth_id)
+        except DuplicateKeyError:
+            if locked_ids:
+                database.db.pickup_cloth_locks.delete_many({
+                    "clothId": {"$in": locked_ids},
+                    "lineId": line_id,
+                })
+            return jsonify({"error": "此衣服編號已被預約"}), 409
+
+        try:
+            database.db.pickups.insert_one(new_reservation)
+        except Exception:
+            database.db.pickup_cloth_locks.delete_many({
+                "clothId": {"$in": incoming_ids},
+                "lineId": line_id,
+            })
+            raise
         cloth_count = len(clothes)
         notify_msg = (
             f"🔔 收到一筆新的寄衣服預約！\n"
@@ -152,5 +188,11 @@ def delete_pickup(pid):
     except Exception:
         return jsonify({"error": "日期資料異常"}), 400
 
+    cloth_ids = [item.get('clothId') for item in pickup.get('clothes', []) if item.get('clothId')]
     database.db.pickups.delete_one({"_id": oid})
+    if cloth_ids:
+        database.db.pickup_cloth_locks.delete_many({
+            "clothId": {"$in": cloth_ids},
+            "lineId": line_id,
+        })
     return jsonify({"success": True})

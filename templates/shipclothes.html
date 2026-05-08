@@ -292,6 +292,7 @@
             <a href="/api/line/login?next=/shipclothes" style="background: #06C755; color: white; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: bold;">使用 LINE 登入</a>
         </div>
 
+        {# TODO: 若此頁改回呼叫 /api/shipclothes，需先 fetch('/api/captcha') 顯示題目，並在 submit payload 帶 captcha。 #}
         <form id="reserve-form" style="display:none;">
             <h2 style="color: #C48945; text-align: center; margin-top: 0; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">填寫預約單</h2>
             

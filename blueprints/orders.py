@@ -25,6 +25,7 @@ from services.order_service import (
     queue_order_shipped_email,
     queue_payment_confirmed_email,
 )
+from services.committee_service import get_default_committee_roles
 from services.sequence_service import (
     generate_order_id,
     write_with_unique_id_retry,
@@ -164,9 +165,10 @@ def _normalize_committee_items(raw_items):
         raise OrderValidationError("委員會每次只能選擇一個護持項目")
 
     setting = database.db.settings.find_one({"type": "committee_quota"}) or {}
+    configured_roles = setting.get('roles') or get_default_committee_roles()
     roles = {
         role.get('name'): role
-        for role in setting.get('roles', [])
+        for role in configured_roles
         if role.get('name')
     }
     if not roles:

@@ -14,6 +14,7 @@ from repositories.committee_quota_repository import (
     release_committee_quota_for_order,
     sync_committee_quota_usages,
 )
+from services.committee_service import get_default_committee_roles, merge_committee_roles
 from utils.decorators import admin_required
 from utils.helpers import get_object_id
 from utils.security import as_string, get_json_object, get_json_value, safe_regex_contains
@@ -340,54 +341,64 @@ def export_data_csv():
     if database.db is None:
         return jsonify({"error": "資料庫未連線"}), 500
 
-    query = {}
     order_type = as_string(request.args.get('type')).strip()
-    if order_type:
-        if order_type not in VALID_ORDER_TYPES:
-            return jsonify({"error": "不支援的查詢類型"}), 400
-        query['orderType'] = order_type
+    order_id = as_string(request.args.get('orderId')).strip()
+    if order_type and order_type not in VALID_HISTORY_TYPES:
+        return jsonify({"error": "不支援的查詢類型"}), 400
     status = as_string(request.args.get('status')).strip()
-    if status:
-        if status not in VALID_STATUSES:
-            return jsonify({"error": "不支援的狀態"}), 400
-        query['status'] = status
+    if status and status not in VALID_STATUSES:
+        return jsonify({"error": "不支援的狀態"}), 400
     name = as_string(request.args.get('name')).strip()
-    if name:
-        query['customer.name'] = {"$regex": safe_regex_contains(name)}
     start = as_string(request.args.get('start')).strip()
     end = as_string(request.args.get('end')).strip()
-    if start and end:
-        try:
-            query['createdAt'] = taipei_date_range_query(start, end)
-        except ValueError:
-            pass
-
-    cursor = database.db.orders.find(query).sort("createdAt", -1).limit(5000)
+    results, _total = fetch_history_data(
+        order_type, order_id, name, status, start, end, 1, 5000
+    )
 
     si = io.StringIO()
     si.write('\ufeff')  # BOM for Excel
     writer = csv.writer(si, lineterminator='\n')
-    writer.writerow(['單號', '類型', '狀態', '姓名', '電話', 'Email', '地址', '項目', '金額', '建立日期', '付款日期'])
+    writer.writerow(['資料類型', '單號', '類型', '狀態', '姓名', '電話', 'Email', '地址', '項目/內容', '金額', '建立日期', '付款/核准日期'])
 
-    for doc in cursor:
+    for doc in results:
+        is_feedback = doc.get('orderType') == 'feedback'
         cust = doc.get('customer', {})
-        # 加上規格名稱的判斷
-        items_str = '；'.join([
-            f"{i.get('name', '')}{'('+i.get('variantName', '')+')' if i.get('variantName') else ''}x{i.get('qty', 1)}"
-            for i in doc.get('items', [])
-        ])
+        if is_feedback:
+            data_type = '回饋'
+            type_label = _TYPE_LABELS['feedback']
+            name_text = doc.get('realName') or doc.get('nickname') or cust.get('name', '')
+            phone = doc.get('phone', '')
+            email = doc.get('email', '')
+            address = doc.get('address', '')
+            items_str = doc.get('content', '')
+            amount = '0'
+            settled_at = doc.get('approvedAt') or doc.get('sentAt') or ''
+        else:
+            data_type = '訂單'
+            type_label = _TYPE_LABELS.get(doc.get('orderType', ''), '')
+            name_text = cust.get('name', '')
+            phone = cust.get('phone', '')
+            email = cust.get('email', '')
+            address = cust.get('address', '')
+            items_str = '；'.join([
+                f"{i.get('name', '')}{'('+i.get('variantName', '')+')' if i.get('variantName') else ''}x{i.get('qty', 1)}"
+                for i in doc.get('items', [])
+            ])
+            amount = str(doc.get('total', 0))
+            settled_at = doc.get('paidAt', '')
         row = [
+            data_type,
             doc.get('orderId', ''),
-            _TYPE_LABELS.get(doc.get('orderType', ''), ''),
+            type_label,
             doc.get('status', ''),
-            cust.get('name', ''),
-            cust.get('phone', ''),
-            cust.get('email', ''),
-            cust.get('address', ''),
+            name_text,
+            phone,
+            email,
+            address,
             items_str,
-            str(doc.get('total', 0)),
-            _tw_time(doc.get('createdAt')),
-            _tw_time(doc.get('paidAt'))
+            amount,
+            doc.get('createdAt', ''),
+            settled_at,
         ]
         writer.writerow([_safe_csv_cell(value) for value in row])
 
@@ -773,18 +784,7 @@ def debug_connection():
 @admin_bp.route('/api/settings/committee-quota', methods=['GET', 'POST'])
 @admin_required(roles=['super_admin', 'cms'])
 def handle_committee_quota():
-    # 完整的 9 個項目預設值
-    default_roles = [
-        {"name": "[建廟] 籌備主委", "limit": 1, "price": 50000},
-        {"name": "[建廟] 籌備副主委", "limit": 10, "price": 36000},
-        {"name": "[建廟] 建廟功德金", "limit": 999, "price": 10000},
-        {"name": "[顧問] 顧問主席", "limit": 1, "price": 50000},
-        {"name": "[顧問] 顧問副主席", "limit": 7, "price": 36000},
-        {"name": "[顧問] 顧問", "limit": 999, "price": 20000},
-        {"name": "[本府] 主委", "limit": 1, "price": 50000},
-        {"name": "[本府] 副主委", "limit": 7, "price": 36000},
-        {"name": "[本府] 委員", "limit": 999, "price": 25000}
-    ]
+    default_roles = get_default_committee_roles()
 
     if database.db is None:
         if request.method == 'GET':
@@ -797,12 +797,7 @@ def handle_committee_quota():
         
         # 💡 強效修復：如果資料庫項目不齊全，則進行合併
         if len(db_roles) < 9:
-            # 以預設值為基底，如果資料庫有同名的就用資料庫的數字
-            db_map = {r['name']: r for r in db_roles}
-            final_roles = []
-            for d in default_roles:
-                final_roles.append(db_map.get(d['name'], d))
-            return jsonify(final_roles)
+            return jsonify(merge_committee_roles(db_roles))
             
         return jsonify(db_roles)
     

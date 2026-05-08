@@ -9,7 +9,7 @@ from utils.timezone import utc_now
 db = None
 _client = None
 logger = logging.getLogger(__name__)
-INDEX_OPTION_KEYS = ('unique', 'sparse', 'partialFilterExpression')
+INDEX_OPTION_KEYS = ('unique', 'sparse', 'partialFilterExpression', 'expireAfterSeconds')
 
 
 def _env_int(name, default):
@@ -146,6 +146,8 @@ INDEX_SPECS = (
     ('pickups', [('pickupDate', ASCENDING)], {'name': 'pickups_pickup_date'}),
     ('pickups', [('lineId', ASCENDING), ('pickupDate', DESCENDING)], {'name': 'pickups_line_pickup_date'}),
     ('pickups', [('clothes.clothId', ASCENDING), ('pickupDate', ASCENDING)], {'name': 'pickups_cloth_pickup_date'}),
+    ('pickup_cloth_locks', [('clothId', ASCENDING)], {'name': 'pickup_cloth_locks_cloth_id', 'unique': True}),
+    ('pickup_cloth_locks', [('expiresAt', ASCENDING)], {'name': 'pickup_cloth_locks_expires_at', 'expireAfterSeconds': 0}),
     ('shipments', [('pickupDate', ASCENDING)], {'name': 'shipments_pickup_date'}),
 
     ('products', [('category', ASCENDING), ('createdAt', DESCENDING)], {'name': 'products_category_created'}),

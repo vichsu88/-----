@@ -63,13 +63,9 @@ def confirm_payment(order_id, admin_user):
     if not oid:
         raise ValidationError("Invalid order id")
 
-    order = database.db.orders.find_one({"_id": oid})
-    if not order:
-        raise NotFoundError("Order not found")
-
     now = utc_now()
-    database.db.orders.update_one(
-        {"_id": oid},
+    result = database.db.orders.update_one(
+        {"_id": oid, "status": "pending"},
         {"$set": {
             "status": "paid",
             "updatedAt": now,
@@ -77,6 +73,12 @@ def confirm_payment(order_id, admin_user):
             "paidBy": admin_user,
         }},
     )
+    if result.matched_count == 0:
+        if not database.db.orders.find_one({"_id": oid}, {"_id": 1}):
+            raise NotFoundError("Order not found")
+        raise ValidationError("只有待付款訂單可以確認收款")
+
+    order = database.db.orders.find_one({"_id": oid})
     database.write_audit_log(admin_user, "confirm_payment", order.get("orderId", order_id), f"${order.get('total', 0)}")
     return order
 
@@ -87,13 +89,9 @@ def mark_shipped(order_id, tracking_number, admin_user):
     if not oid:
         raise ValidationError("Invalid order id")
 
-    order = database.db.orders.find_one({"_id": oid})
-    if not order:
-        raise NotFoundError("Order not found")
-
     now = utc_now()
-    database.db.orders.update_one(
-        {"_id": oid},
+    result = database.db.orders.update_one(
+        {"_id": oid, "status": "paid"},
         {"$set": {
             "status": "shipped",
             "updatedAt": now,
@@ -102,6 +100,12 @@ def mark_shipped(order_id, tracking_number, admin_user):
             "shippedBy": admin_user,
         }},
     )
+    if result.matched_count == 0:
+        if not database.db.orders.find_one({"_id": oid}, {"_id": 1}):
+            raise NotFoundError("Order not found")
+        raise ValidationError("只有已付款訂單可以出貨")
+
+    order = database.db.orders.find_one({"_id": oid})
     database.write_audit_log(admin_user, "ship_order", order.get("orderId", order_id), tracking_number)
     return order
 

@@ -175,13 +175,15 @@ def approve_feedback(fid):
     fb = database.db.feedback.find_one({'_id': oid})
     if not fb:
         return jsonify({"error": "No data"}), 404
+    if fb.get("status") != "pending":
+        return jsonify({"error": "只有待審核回饋可以核准"}), 400
 
     now = utc_now()
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
 
     def approve_with_id(candidate_feedback_id):
         # feedbackId 有 partial unique index，若撞號就重新取下一個 counter 流水號。
-        return database.db.feedback.update_one({'_id': oid}, {'$set': {
+        return database.db.feedback.update_one({'_id': oid, 'status': 'pending'}, {'$set': {
             'status': 'approved',
             'feedbackId': candidate_feedback_id,
             'approvedAt': now,
@@ -189,13 +191,15 @@ def approve_feedback(fid):
         }})
 
     try:
-        fb_id, _ = write_with_unique_id_retry(
+        fb_id, result = write_with_unique_id_retry(
             generate_feedback_id,
             approve_with_id,
             label="feedback",
         )
     except DuplicateKeyError as exc:
         raise ServiceUnavailableError("回饋編號產生重複，請稍後再試") from exc
+    if result.matched_count == 0:
+        return jsonify({"error": "狀態已被其他操作變更"}), 409
     
     database.write_audit_log(admin_user, '核准回饋', fb_id)
 
@@ -216,18 +220,32 @@ def ship_feedback(fid):
     fb = database.db.feedback.find_one({'_id': oid})
     if not fb:
         return jsonify({"error": "No data"}), 404
+    if fb.get("status") != "approved":
+        return jsonify({"error": "只有已核准回饋可以寄送"}), 400
+
+    line_id = fb.get("lineId")
+    if line_id:
+        existing_sent = database.db.feedback.find_one({
+            "lineId": line_id,
+            "status": "sent",
+            "_id": {"$ne": oid},
+        })
+        if existing_sent:
+            return jsonify({"error": "此信徒已領取過回饋禮"}), 400
 
     # 準備好所有變數
     now = utc_now()
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
 
     # ✅ 變數都準備好後，才執行更新
-    database.db.feedback.update_one({'_id': oid}, {'$set': {
+    result = database.db.feedback.update_one({'_id': oid, 'status': 'approved'}, {'$set': {
         'status': 'sent',
         'trackingNumber': tracking,
         'sentAt': now,
         'sentBy': admin_user
     }})
+    if result.matched_count == 0:
+        return jsonify({"error": "狀態已被其他操作變更"}), 409
     
     database.write_audit_log(admin_user, '寄出回饋禮', fb.get('feedbackId', fid), tracking)
 

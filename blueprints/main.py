@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, redirect, render_template, url_for
 
 import database
 from repositories.committee_quota_repository import calculate_committee_usage
+from services.committee_service import get_default_committee_roles
 
 main_bp = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
@@ -87,8 +88,8 @@ def get_public_committee_status():
         return jsonify([])
 
     # 取得後台設定
-    setting = database.db.settings.find_one({"type": "committee_quota"}, {"roles": 1})
-    roles = setting.get("roles", []) if setting else []
+    setting = database.db.settings.find_one({"type": "committee_quota"}, {"roles": 1}) or {}
+    roles = setting.get("roles") or get_default_committee_roles()
     role_names = [role.get('name') for role in roles if role.get('name')]
 
     used_counts = {}
@@ -122,7 +123,10 @@ def feedback_page():
     feedbacks_data = []
     try:
         if database.db is not None:
-            cursor = database.db.feedback.find({"status": "approved"}, FEEDBACK_PROJECTION).sort("approvedAt", -1).limit(20)
+            cursor = database.db.feedback.find(
+                {"status": {"$in": ["approved", "sent"]}},
+                FEEDBACK_PROJECTION,
+            ).sort("approvedAt", -1).limit(20)
             for doc in cursor:
                 feedbacks_data.append({
                     'feedbackId': doc.get('feedbackId', ''),

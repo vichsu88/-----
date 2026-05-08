@@ -594,7 +594,7 @@ async loadFeedbackReview() {
         },
 
         exportCSV() {
-            const idMap = { type: 'hist-type', name: 'hist-name', status: 'hist-status', start: 'hist-start', end: 'hist-end' };
+            const idMap = { type: 'hist-type', orderId: 'hist-id', name: 'hist-name', status: 'hist-status', start: 'hist-start', end: 'hist-end' };
             const params = new URLSearchParams();
             Object.entries(idMap).forEach(([key, id]) => {
                 const v = document.getElementById(id)?.value?.trim();
@@ -828,20 +828,22 @@ async loadFeedbackReview() {
             if (!this.listEl) return;
             try {
                 const products = await Core.apiFetch('/api/admin/products');
+                const displayProducts = products.map(p => ({ raw: p, safe: Core.htmlSafe(p) }));
 
-                const seriesSet = new Set(products.filter(p => p.series).map(p => p.series));
+                const seriesSet = new Set(displayProducts.filter(p => p.safe.series).map(p => p.safe.series));
                 const datalist = document.getElementById('series-list');
                 if (datalist) datalist.innerHTML = [...seriesSet].map(s => `<option value="${s}">`).join('');
 
-                const groups = products.reduce((acc, p) => {
-                    (acc[p.category] = acc[p.category] || []).push(p);
+                const groups = displayProducts.reduce((acc, item) => {
+                    const category = item.safe.category || '未分類';
+                    (acc[category] = acc[category] || []).push(item);
                     return acc;
                 }, {});
 
                 let html = '';
                 for (const [cat, items] of Object.entries(groups)) {
                     html += `<h3 class="category-header">📂 ${cat}</h3>`;
-                    html += items.map(p => {
+                    html += items.map(({ raw, safe: p }) => {
                         const varsHtml = p.variants?.length > 0
                             ? p.variants.map(v => `<small>${v.name}: $${v.price}</small>`).join(' | ')
                             : `<small>單價: $${p.price}</small>`;
@@ -855,7 +857,7 @@ async loadFeedbackReview() {
                                 <small class="${p.isActive ? 'text-success' : 'text-danger'}">${p.isActive ? '● 上架中' : '● 已下架'}</small>
                             </div>
                             <div class="product-actions">
-                                <button class="btn btn--brown edit-prod" data-data='${Core.safeStringify(p)}'>編輯</button>
+                                <button class="btn btn--brown edit-prod" data-data='${Core.safeStringify(raw)}'>編輯</button>
                                 <button class="btn btn--red del-prod" data-id="${p._id}">刪除</button>
                             </div>
                         </div>`;
@@ -907,31 +909,37 @@ async loadFeedbackReview() {
         async fetchAnnouncements() {
             const data = await Core.apiFetch('/api/announcements');
             const el = document.getElementById('announcements-list');
-            if (el) el.innerHTML = data.map(a => `
+            if (el) el.innerHTML = data.map(raw => {
+                const a = Core.htmlSafe(raw);
+                return `
                 <div class="feedback-card">
                     <div><small>${a.date}</small> <b>${a.title}</b> ${a.isPinned ? '<span class="badge-pinned">[置頂]</span>' : ''}</div>
                     <div class="pre-wrap my-5">${a.content}</div>
                     <div class="text-right">
-                        <button class="btn btn--brown" onclick='editAnn(${Core.safeStringify(a)})'>編輯</button>
+                        <button class="btn btn--brown" onclick='editAnn(${Core.safeStringify(raw)})'>編輯</button>
                         <button class="btn btn--red" onclick="delAnn('${a._id}')">刪除</button>
                     </div>
                 </div>
-            `).join('') || '<p class="empty-state">無公告</p>';
+            `;
+            }).join('') || '<p class="empty-state">無公告</p>';
         },
 
         async fetchFaqs() {
             const faqs = await Core.apiFetch('/api/faq');
             const el = document.getElementById('faq-list');
-            if (el) el.innerHTML = faqs.map(f => `
+            if (el) el.innerHTML = faqs.map(raw => {
+                const f = Core.htmlSafe(raw);
+                return `
                 <div class="feedback-card">
                     <div><span class="badge-tag">${f.category}</span> ${f.isPinned ? '<span class="badge-pinned">[置頂]</span>' : ''} <b>${f.question}</b></div>
                     <div class="pre-wrap my-5 text-muted">${f.answer}</div>
                     <div class="text-right">
-                        <button class="btn btn--brown" onclick='editFaq(${Core.safeStringify(f)})'>編輯</button>
+                        <button class="btn btn--brown" onclick='editFaq(${Core.safeStringify(raw)})'>編輯</button>
                         <button class="btn btn--red" onclick="delFaq('${f._id}')">刪除</button>
                     </div>
                 </div>
-            `).join('') || '<p class="empty-state">無問答</p>';
+            `;
+            }).join('') || '<p class="empty-state">無問答</p>';
         }
     };
 
@@ -942,13 +950,16 @@ async loadFeedbackReview() {
         async fetchLinks() {
             const links = await Core.apiFetch('/api/links');
             const el = document.getElementById('links-list');
-            if (el) el.innerHTML = links.map(l => `
+            if (el) el.innerHTML = links.map(raw => {
+                const l = Core.htmlSafe(raw);
+                return `
                 <div class="links-row">
                     <b>${l.name}</b>
                     <input value="${l.url}" readonly class="input-display mb-0">
-                    <button class="btn btn--brown" onclick="updLink('${l._id}', '${l.url}')">修改</button>
+                    <button class="btn btn--brown" onclick='updLink(${Core.safeStringify(raw._id)}, ${Core.safeStringify(raw.url)})'>修改</button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         },
 
         async fetchBankInfo() {
@@ -1510,17 +1521,18 @@ async loadFeedbackReview() {
         tbody.innerHTML = configRoles.map(r => {
             const currentStatus = statusMap[r.name] || { remaining: 0, used: 0 };
             const usedCount = (r.limit - currentStatus.remaining) || 0;
+            const roleName = Core.escapeHTML(r.name);
 
             return `
                 <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
-                    <td style="padding:12px;"><strong>${r.name}</strong></td>
+                    <td style="padding:12px;"><strong>${roleName}</strong></td>
                     <td style="padding:12px;">
                         <input type="number" class="quota-input c-form-input" 
-                               data-name="${r.name}" value="${r.limit}" style="width:80px; margin-bottom:0;" min="0">
+                               data-name="${roleName}" value="${Core.escapeHTML(r.limit)}" style="width:80px; margin-bottom:0;" min="0">
                     </td>
                     <td style="padding:12px;">
                         <input type="number" class="price-input c-form-input" 
-                               data-name="${r.name}" value="${r.price || 0}" style="width:100px; margin-bottom:0;" min="0">
+                               data-name="${roleName}" value="${Core.escapeHTML(r.price || 0)}" style="width:100px; margin-bottom:0;" min="0">
                     </td>
                     <td style="padding:12px;">
                         <span class="fs-13 text-gray">已報名: ${usedCount}</span>
