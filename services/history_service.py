@@ -64,6 +64,8 @@ def fetch_history_data(order_type, order_id, name, status, start, end, page, per
         doc['createdAt'] = format_taipei(doc.get('createdAt'))
         
         if doc['_docType'] == 'order':
+            if doc.get('updatedAt'): doc['updatedAt'] = format_taipei(doc['updatedAt'])
+            if doc.get('paymentDeadline'): doc['paymentDeadline'] = format_taipei(doc['paymentDeadline'])
             doc['source_label'] = _TYPE_LABELS.get(doc.get('orderType', ''), '未知')
             if doc.get('paidAt'): doc['paidAt'] = format_taipei(doc['paidAt'])
             if doc.get('shippedAt'): doc['shippedAt'] = format_taipei(doc['shippedAt'])

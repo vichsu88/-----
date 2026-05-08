@@ -788,6 +788,11 @@ def handle_committee_quota():
         {"name": "[本府] 委員", "limit": 999, "price": 25000}
     ]
 
+    if db is None:
+        if request.method == 'GET':
+            return jsonify(default_roles)
+        return jsonify({"error": "Database unavailable"}), 503
+
     if request.method == 'GET':
         setting = db.settings.find_one({"type": "committee_quota"})
         db_roles = setting.get("roles", []) if setting else []

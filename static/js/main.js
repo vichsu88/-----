@@ -272,11 +272,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!overlay) return;
         
         if (show) {
-            overlay.classList.add('is-visible');
+            overlay.classList.add('is-visible', 'is-open');
             body.classList.add('menu-open'); // 鎖定背景滾動
+            if (menuBtn) menuBtn.setAttribute('aria-expanded', 'true');
         } else {
-            overlay.classList.remove('is-visible');
+            overlay.classList.remove('is-visible', 'is-open');
             body.classList.remove('menu-open'); // 解除鎖定
+            if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
         }
     }
 

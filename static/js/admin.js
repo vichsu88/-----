@@ -563,7 +563,7 @@ async loadFeedbackReview() {
 
                 const displayResults = data.results.map(item => Core.htmlSafe(item));
                 el.innerHTML = displayResults.map((o, index) => {
-                    const isFeedback = o._docType === 'feedback';
+                    const isFeedback = o.orderType === 'feedback';
                     const detailFn = isFeedback ? 'viewFbDetail' : (o.orderType === 'shop' ? 'viewOrderDetails' : 'viewDonationDetail');
                     
                     // 💡 修正：如果單據是回饋且狀態為 pending，強制顯示為「待審核」

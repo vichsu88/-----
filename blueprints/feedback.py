@@ -54,11 +54,11 @@ def enrich_feedback_for_admin(cursor):
         line_id = doc.get('lineId')
         user = users_map.get(line_id, {})
 
-        doc['realName'] = user.get('realName') or doc.get('realName', '未填寫')
-        doc['phone'] = user.get('phone') or doc.get('phone', '未填寫')
-        doc['address'] = user.get('address') or doc.get('address', '未填寫')
-        doc['email'] = user.get('email') or doc.get('email', '')
-        doc['lunarBirthday'] = user.get('lunarBirthday') or '未提供'
+        doc['realName'] = doc.get('realName') or user.get('realName') or '未填寫'
+        doc['phone'] = doc.get('phone') or user.get('phone') or '未填寫'
+        doc['address'] = doc.get('address') or user.get('address') or '未填寫'
+        doc['email'] = doc.get('email') or user.get('email') or ''
+        doc['lunarBirthday'] = doc.get('lunarBirthday') or user.get('lunarBirthday') or '未提供'
         doc['has_received'] = (line_id in sent_set)
         doc['_id'] = str(doc['_id'])
 
@@ -271,11 +271,16 @@ def update_feedback(fid):
     data = get_json_object()
     raw_category = data.get('category', [])
     category = [as_string(item).strip() for item in raw_category if as_string(item).strip()] if isinstance(raw_category, list) else []
-    db.feedback.update_one({'_id': oid}, {'$set': {
+    update_fields = {
         'nickname': as_string(data.get('nickname')).strip(),
         'category': category,
         'content': as_string(data.get('content')).strip()
-    }})
+    }
+    for field in ('realName', 'phone', 'address', 'email', 'lunarBirthday'):
+        if field in data:
+            update_fields[field] = as_string(data.get(field)).strip()
+
+    db.feedback.update_one({'_id': oid}, {'$set': update_fields})
     return jsonify({"success": True})
 
 

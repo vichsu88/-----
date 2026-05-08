@@ -722,6 +722,11 @@ body::before {
     align-items: center;
 }
 
+.announcement-modal.show,
+.announcement-modal.is-visible {
+    display: flex;
+}
+
 .modal-content {
     border-radius: 15px;
     background: rgba(255, 255, 255, 0.8);
