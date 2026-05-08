@@ -24,6 +24,10 @@ def safe_next_url(next_url):
 def build_line_authorize_url(line_channel_id, line_callback_url, state):
     if not line_channel_id:
         raise ServiceUnavailableError("LINE_CHANNEL_ID is not configured")
+    if not line_callback_url:
+        raise ServiceUnavailableError("LINE_CALLBACK_URL is not configured")
+    if not state:
+        raise ValidationError("OAuth state is missing")
     return (
         "https://access.line.me/oauth2/v2.1/authorize?"
         "response_type=code&"
