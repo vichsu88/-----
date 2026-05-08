@@ -200,6 +200,12 @@ def get_client():
     return _client
 
 
+def get_db():
+    if db is None:
+        raise RuntimeError("Database is not initialized")
+    return db
+
+
 def write_audit_log(admin_username, action, target='', details=''):
     """Write an admin audit log entry."""
     if db is None:

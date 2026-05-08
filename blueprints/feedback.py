@@ -3,7 +3,7 @@ import io
 from flask import Blueprint, jsonify, request, session, Response
 from pymongo.errors import DuplicateKeyError
 
-from database import db, write_audit_log
+import database
 from extensions import limiter
 from services.sequence_service import generate_feedback_id, write_with_unique_id_retry
 from tasks.notifications import (
@@ -38,12 +38,12 @@ def enrich_feedback_for_admin(cursor):
             "email": 1,
             "lunarBirthday": 1,
         }
-        for u in db.users.find({"lineId": {"$in": line_ids}}, user_projection):
+        for u in database.db.users.find({"lineId": {"$in": line_ids}}, user_projection):
             users_map[u['lineId']] = u
 
     sent_set = set()
     if line_ids:
-        sent_counts = db.feedback.aggregate([
+        sent_counts = database.db.feedback.aggregate([
             {"$match": {"lineId": {"$in": line_ids}, "status": "sent"}},
             {"$group": {"_id": "$lineId"}}
         ])
@@ -81,7 +81,7 @@ def enrich_feedback_for_admin(cursor):
 @limiter.limit("10 per hour")
 @user_login_required
 def add_feedback():
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "DB Error"}), 500
     line_id = session.get('user_line_id')
 
@@ -93,7 +93,7 @@ def add_feedback():
     category = [as_string(item).strip() for item in raw_category if as_string(item).strip()] if isinstance(raw_category, list) else []
 
     # 🚀 快照核心邏輯：在送出瞬間，立刻去 users 表把當下最新的個資抓出來
-    user_info = db.users.find_one({"lineId": line_id}) or {}
+    user_info = database.db.users.find_one({"lineId": line_id}) or {}
 
     new_feedback = {
         "lineId": line_id,
@@ -112,13 +112,13 @@ def add_feedback():
         "email": user_info.get('email', ''),
         "lunarBirthday": user_info.get('lunarBirthday', '')
     }
-    db.feedback.insert_one(new_feedback)
+    database.db.feedback.insert_one(new_feedback)
     return jsonify({"success": True, "message": "回饋已送出"})
 
 
 @feedback_bp.route('/api/feedback/approved', methods=['GET'])
 def get_public_approved_feedback():
-    if db is None:
+    if database.db is None:
         return jsonify([])
     projection = {
         "feedbackId": 1,
@@ -127,7 +127,7 @@ def get_public_approved_feedback():
         "content": 1,
         "createdAt": 1,
     }
-    cursor = db.feedback.find(
+    cursor = database.db.feedback.find(
         {"status": {"$in": ["approved", "sent"]}},
         projection,
     ).sort("approvedAt", -1)
@@ -147,21 +147,21 @@ def get_public_approved_feedback():
 @feedback_bp.route('/api/feedback/status/pending', methods=['GET'])
 @admin_required(roles=['super_admin', 'ops', 'data'])
 def get_pending_feedback():
-    cursor = db.feedback.find({"status": "pending"}).sort("createdAt", 1)
+    cursor = database.db.feedback.find({"status": "pending"}).sort("createdAt", 1)
     return jsonify(enrich_feedback_for_admin(cursor))
 
 
 @feedback_bp.route('/api/feedback/status/approved', methods=['GET'])
 @admin_required(roles=['super_admin', 'ops', 'data'])
 def get_admin_approved_feedback():
-    cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", -1)
+    cursor = database.db.feedback.find({"status": "approved"}).sort("approvedAt", -1)
     return jsonify(enrich_feedback_for_admin(cursor))
 
 
 @feedback_bp.route('/api/feedback/status/sent', methods=['GET'])
 @admin_required(roles=['super_admin', 'ops', 'data'])
 def get_sent_feedback():
-    cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
+    cursor = database.db.feedback.find({"status": "sent"}).sort("sentAt", -1)
     return jsonify(enrich_feedback_for_admin(cursor))
 
 
@@ -172,7 +172,7 @@ def approve_feedback(fid):
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
         
-    fb = db.feedback.find_one({'_id': oid})
+    fb = database.db.feedback.find_one({'_id': oid})
     if not fb:
         return jsonify({"error": "No data"}), 404
 
@@ -181,7 +181,7 @@ def approve_feedback(fid):
 
     def approve_with_id(candidate_feedback_id):
         # feedbackId 有 partial unique index，若撞號就重新取下一個 counter 流水號。
-        return db.feedback.update_one({'_id': oid}, {'$set': {
+        return database.db.feedback.update_one({'_id': oid}, {'$set': {
             'status': 'approved',
             'feedbackId': candidate_feedback_id,
             'approvedAt': now,
@@ -197,7 +197,7 @@ def approve_feedback(fid):
     except DuplicateKeyError as exc:
         raise ServiceUnavailableError("回饋編號產生重複，請稍後再試") from exc
     
-    write_audit_log(admin_user, '核准回饋', fb_id)
+    database.write_audit_log(admin_user, '核准回饋', fb_id)
 
     delay_notification(send_feedback_status_email, str(oid), 'approved')
     return jsonify({"success": True})
@@ -213,7 +213,7 @@ def ship_feedback(fid):
     data = get_json_object()
     tracking = as_string(data.get('trackingNumber')).strip()
     
-    fb = db.feedback.find_one({'_id': oid})
+    fb = database.db.feedback.find_one({'_id': oid})
     if not fb:
         return jsonify({"error": "No data"}), 404
 
@@ -222,14 +222,14 @@ def ship_feedback(fid):
     admin_user = session.get('admin_username', 'admin') # 取得當下操作員
 
     # ✅ 變數都準備好後，才執行更新
-    db.feedback.update_one({'_id': oid}, {'$set': {
+    database.db.feedback.update_one({'_id': oid}, {'$set': {
         'status': 'sent',
         'trackingNumber': tracking,
         'sentAt': now,
         'sentBy': admin_user
     }})
     
-    write_audit_log(admin_user, '寄出回饋禮', fb.get('feedbackId', fid), tracking)
+    database.write_audit_log(admin_user, '寄出回饋禮', fb.get('feedbackId', fid), tracking)
 
     delay_notification(send_feedback_status_email, str(oid), 'sent', tracking)
     return jsonify({"success": True})
@@ -241,11 +241,11 @@ def delete_feedback(fid):
     oid = get_object_id(fid)
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
-    fb = db.feedback.find_one({'_id': oid})
+    fb = database.db.feedback.find_one({'_id': oid})
     if not fb:
         return jsonify({"error": "No data"}), 404
 
-    user = db.users.find_one({"lineId": fb.get('lineId')}) if fb and fb.get('lineId') else {}
+    user = database.db.users.find_one({"lineId": fb.get('lineId')}) if fb and fb.get('lineId') else {}
     email = user.get('email') or (fb.get('email') if fb else None)
     if email:
         delay_notification(send_feedback_rejected_email, {
@@ -257,8 +257,8 @@ def delete_feedback(fid):
             "realName": user.get('realName') or fb.get('realName') or '信徒',
         })
 
-    write_audit_log(session.get('admin_username', 'admin'), '刪除回饋', fb.get('feedbackId', fid) if fb else fid)
-    db.feedback.delete_one({'_id': oid})
+    database.write_audit_log(session.get('admin_username', 'admin'), '刪除回饋', fb.get('feedbackId', fid) if fb else fid)
+    database.db.feedback.delete_one({'_id': oid})
     return jsonify({"success": True})
 
 
@@ -280,14 +280,14 @@ def update_feedback(fid):
         if field in data:
             update_fields[field] = as_string(data.get(field)).strip()
 
-    db.feedback.update_one({'_id': oid}, {'$set': update_fields})
+    database.db.feedback.update_one({'_id': oid}, {'$set': update_fields})
     return jsonify({"success": True})
 
 
 @feedback_bp.route('/api/feedback/export-sent-txt', methods=['POST'])
 @admin_required(roles=['super_admin', 'ops', 'data'])
 def export_sent_feedback_txt():
-    cursor = db.feedback.find({"status": "sent"}).sort("sentAt", -1)
+    cursor = database.db.feedback.find({"status": "sent"}).sort("sentAt", -1)
     enriched = enrich_feedback_for_admin(cursor)
     if not enriched:
         return jsonify({"error": "無已寄送資料"}), 404
@@ -304,7 +304,7 @@ def export_sent_feedback_txt():
 @feedback_bp.route('/api/feedback/export-txt', methods=['POST'])
 @admin_required(roles=['super_admin', 'ops', 'data'])
 def export_feedback_txt():
-    cursor = db.feedback.find({"status": "approved"}).sort("approvedAt", 1)
+    cursor = database.db.feedback.find({"status": "approved"}).sort("approvedAt", 1)
     enriched = enrich_feedback_for_admin(cursor)
     if not enriched:
         return jsonify({"error": "無資料"}), 404

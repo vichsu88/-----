@@ -1,4 +1,4 @@
-from database import db, write_audit_log
+import database
 from tasks.notifications import (
     delay_notification,
     send_order_created_email,
@@ -11,7 +11,7 @@ from utils.timezone import format_taipei, utc_now
 
 
 def _require_db():
-    if db is None:
+    if database.db is None:
         raise ServiceUnavailableError("Database is not available")
 
 
@@ -35,9 +35,9 @@ def _serialize_order(doc):
 def list_shop_orders(pagination):
     _require_db()
     query = {"orderType": "shop"}
-    total = db.orders.count_documents(query)
+    total = database.db.orders.count_documents(query)
     cursor = (
-        db.orders.find(query)
+        database.db.orders.find(query)
         .sort("createdAt", -1)
         .skip(pagination.skip)
         .limit(pagination.per_page)
@@ -47,9 +47,9 @@ def list_shop_orders(pagination):
 
 def list_admin_donations(query, pagination):
     _require_db()
-    total = db.orders.count_documents(query)
+    total = database.db.orders.count_documents(query)
     cursor = (
-        db.orders.find(query)
+        database.db.orders.find(query)
         .sort([("is_reported", 1), ("createdAt", -1)])
         .skip(pagination.skip)
         .limit(pagination.per_page)
@@ -63,12 +63,12 @@ def confirm_payment(order_id, admin_user):
     if not oid:
         raise ValidationError("Invalid order id")
 
-    order = db.orders.find_one({"_id": oid})
+    order = database.db.orders.find_one({"_id": oid})
     if not order:
         raise NotFoundError("Order not found")
 
     now = utc_now()
-    db.orders.update_one(
+    database.db.orders.update_one(
         {"_id": oid},
         {"$set": {
             "status": "paid",
@@ -77,7 +77,7 @@ def confirm_payment(order_id, admin_user):
             "paidBy": admin_user,
         }},
     )
-    write_audit_log(admin_user, "confirm_payment", order.get("orderId", order_id), f"${order.get('total', 0)}")
+    database.write_audit_log(admin_user, "confirm_payment", order.get("orderId", order_id), f"${order.get('total', 0)}")
     return order
 
 
@@ -87,12 +87,12 @@ def mark_shipped(order_id, tracking_number, admin_user):
     if not oid:
         raise ValidationError("Invalid order id")
 
-    order = db.orders.find_one({"_id": oid})
+    order = database.db.orders.find_one({"_id": oid})
     if not order:
         raise NotFoundError("Order not found")
 
     now = utc_now()
-    db.orders.update_one(
+    database.db.orders.update_one(
         {"_id": oid},
         {"$set": {
             "status": "shipped",
@@ -102,7 +102,7 @@ def mark_shipped(order_id, tracking_number, admin_user):
             "shippedBy": admin_user,
         }},
     )
-    write_audit_log(admin_user, "ship_order", order.get("orderId", order_id), tracking_number)
+    database.write_audit_log(admin_user, "ship_order", order.get("orderId", order_id), tracking_number)
     return order
 
 

@@ -2,7 +2,7 @@ import secrets
 
 from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session
 
-from database import write_audit_log
+import database
 from extensions import limiter
 from schemas.auth import AdminLoginSchema
 from services.auth_service import (
@@ -30,6 +30,8 @@ def line_login():
     line_callback_url = current_app.config['LINE_CALLBACK_URL']
 
     state = secrets.token_hex(16)
+    session.pop('line_state', None)
+    session.pop('line_next_url', None)
     session['line_state'] = state
     next_url = safe_next_url(request.args.get('next', '/'))
     session['line_next_url'] = next_url
@@ -61,11 +63,12 @@ def line_callback():
     except AppError as error:
         return error.message, error.status_code
 
+    next_url = safe_next_url(session.get('line_next_url', '/'))
+    session.clear()
     session['user_line_id'] = user['line_id']
     session['user_display_name'] = user['display_name']
     session.permanent = True
 
-    next_url = safe_next_url(session.pop('line_next_url', '/'))
     return redirect(next_url)
 
 
@@ -105,12 +108,13 @@ def api_login():
     )
 
     if auth_result:
+        session.clear()
         session['admin_logged_in'] = True
         session['admin_username'] = auth_result['username']
         session['admin_role'] = auth_result['role']
         session['admin_permissions'] = auth_result['permissions']
         session.permanent = True
-        write_audit_log(auth_result['audit_label'], '登入系統')
+        database.write_audit_log(auth_result['audit_label'], '登入系統')
         return jsonify({
             "success": True,
             "message": "登入成功",
@@ -125,9 +129,6 @@ def api_login():
 @auth_bp.route('/api/logout', methods=['POST'])
 def api_logout():
     username = session.get('admin_username', 'unknown')
-    write_audit_log(username, '登出系統')
-    session.pop('admin_logged_in', None)
-    session.pop('admin_username', None)
-    session.pop('admin_role', None)
-    session.pop('admin_permissions', None)
+    database.write_audit_log(username, '登出系統')
+    session.clear()
     return jsonify({"success": True})

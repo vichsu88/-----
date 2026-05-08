@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request, session, Response
 
-from database import db
+import database
 from extensions import limiter
 from repositories.committee_quota_repository import calculate_committee_usage
 from utils.decorators import admin_required
@@ -46,7 +46,7 @@ def _clean_variants(variants):
 
 
 def _get_vice_chair_remain():
-    usage = db.committee_quota_usage.find_one(
+    usage = database.db.committee_quota_usage.find_one(
         {"_id": VICE_CHAIR_ROLE_NAME},
         {"used": 1, "limit": 1},
     )
@@ -70,7 +70,7 @@ def get_pickup_date_preview():
 @content_bp.route('/api/shipclothes', methods=['POST'])
 @limiter.limit("10 per hour")
 def submit_ship_clothes():
-    if db is None:
+    if database.db is None:
         return jsonify({"success": False, "message": "資料庫未連線"}), 500
     data = get_json_object()
     user_captcha = as_string(data.get('captcha')).strip()
@@ -97,7 +97,7 @@ def submit_ship_clothes():
     now_tw = get_tw_now()
     pickup_date = calculate_business_d2(now_tw)
 
-    db.shipments.insert_one({
+    database.db.shipments.insert_one({
         "name": as_string(data.get('name')).strip(), "birthYear": as_string(data.get('birthYear')).strip(),
         "lineGroup": as_string(data.get('lineGroup')).strip(), "lineName": as_string(data.get('lineName')).strip(),
         "clothes": clothes, "submitDate": now_tw,
@@ -109,7 +109,7 @@ def submit_ship_clothes():
 
 @content_bp.route('/api/shipclothes/list', methods=['GET'])
 def get_ship_clothes_list():
-    if db is None:
+    if database.db is None:
         return jsonify([]), 500
     today_date = get_tw_now().replace(hour=0, minute=0, second=0, microsecond=0)
     start_date = today_date - timedelta(days=1)
@@ -124,7 +124,7 @@ def get_ship_clothes_list():
         "submitDateStr": 1,
         "pickupDateStr": 1,
     }
-    cursor = db.shipments.find(
+    cursor = database.db.shipments.find(
         {"pickupDate": {"$gte": start_date, "$lte": end_date}},
         projection,
     ).sort("pickupDate", 1)
@@ -142,9 +142,9 @@ def get_ship_clothes_list():
 # --- Products ---
 
 def _serialize_products(query):
-    if db is None:
+    if database.db is None:
         return []
-    products = list(db.products.find(query).sort([("category", 1), ("createdAt", -1)]))
+    products = list(database.db.products.find(query).sort([("category", 1), ("createdAt", -1)]))
     for p in products:
         p['_id'] = str(p['_id'])
     return products
@@ -173,7 +173,7 @@ def get_products():
 @content_bp.route('/api/products', methods=['POST'])
 @admin_required(roles=['super_admin', 'cms'])
 def add_product():
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "Database unavailable"}), 503
     data = get_json_object()
     new_product = {
@@ -184,7 +184,7 @@ def add_product():
         "isDonation": _to_bool(data.get('isDonation'), False), "variants": _clean_variants(data.get('variants', [])),
         "createdAt": utc_now()
     }
-    db.products.insert_one(new_product)
+    database.db.products.insert_one(new_product)
     return jsonify({"success": True})
 
 
@@ -205,7 +205,7 @@ def update_product(pid):
     if 'isActive' in fields: fields['isActive'] = _to_bool(fields['isActive'], True)
     if 'isDonation' in fields: fields['isDonation'] = _to_bool(fields['isDonation'], False)
     if 'variants' in fields: fields['variants'] = _clean_variants(fields['variants'])
-    db.products.update_one({'_id': oid}, {'$set': fields})
+    database.db.products.update_one({'_id': oid}, {'$set': fields})
     return jsonify({"success": True})
 
 
@@ -216,7 +216,7 @@ def delete_product(pid):
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    db.products.delete_one({'_id': oid})
+    database.db.products.delete_one({'_id': oid})
     return jsonify({"success": True})
 
 
@@ -224,9 +224,9 @@ def delete_product(pid):
 
 @content_bp.route('/api/announcements', methods=['GET'])
 def get_announcements():
-    if db is None:
+    if database.db is None:
         return jsonify([])
-    cursor = db.announcements.find(
+    cursor = database.db.announcements.find(
         {},
         {"date": 1, "title": 1, "content": 1, "isPinned": 1, "createdAt": 1},
     ).sort([("isPinned", -1), ("_id", -1)])
@@ -242,7 +242,7 @@ def get_announcements():
 @content_bp.route('/api/announcements', methods=['POST'])
 @admin_required(roles=['super_admin', 'cms'])
 def add_announcement():
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "Database unavailable"}), 503
     data = get_json_object()
     try:
@@ -250,7 +250,7 @@ def add_announcement():
     except ValueError:
         return jsonify({"error": "日期格式錯誤，請使用 YYYY/MM/DD"}), 400
 
-    db.announcements.insert_one({
+    database.db.announcements.insert_one({
         "date": date_obj,
         "title": as_string(data.get('title')).strip(),
         "content": as_string(data.get('content')).strip(),
@@ -273,7 +273,7 @@ def update_announcement(aid):
     except ValueError:
         return jsonify({"error": "日期格式錯誤"}), 400
 
-    db.announcements.update_one({'_id': oid}, {'$set': {
+    database.db.announcements.update_one({'_id': oid}, {'$set': {
         "date": date_obj,
         "title": as_string(data.get('title')).strip(),
         "content": as_string(data.get('content')).strip(),
@@ -289,7 +289,7 @@ def delete_announcement(aid):
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    db.announcements.delete_one({'_id': oid})
+    database.db.announcements.delete_one({'_id': oid})
     return jsonify({"success": True})
 
 
@@ -297,11 +297,11 @@ def delete_announcement(aid):
 
 @content_bp.route('/api/faq', methods=['GET'])
 def get_faqs():
-    if db is None:
+    if database.db is None:
         return jsonify([])
     category = as_string(request.args.get('category')).strip()
     query = {'category': category} if category else {}
-    faqs = db.faq.find(
+    faqs = database.db.faq.find(
         query,
         {"question": 1, "answer": 1, "category": 1, "isPinned": 1, "createdAt": 1},
     ).sort([('isPinned', -1), ('createdAt', -1)])
@@ -310,22 +310,22 @@ def get_faqs():
 
 @content_bp.route('/api/faq/categories', methods=['GET'])
 def get_faq_categories():
-    if db is None:
+    if database.db is None:
         return jsonify([])
-    return jsonify(db.faq.distinct('category'))
+    return jsonify(database.db.faq.distinct('category'))
 
 
 @content_bp.route('/api/faq', methods=['POST'])
 @admin_required(roles=['super_admin', 'cms'])
 def add_faq():
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "Database unavailable"}), 503
     data = get_json_object()
     category = as_string(data.get('category')).strip()
     if not re.match(r'^[\u4e00-\u9fff]+$', category):
         return jsonify({"error": "分類限中文"}), 400
 
-    db.faq.insert_one({
+    database.db.faq.insert_one({
         "question": as_string(data.get('question')).strip(), "answer": as_string(data.get('answer')).strip(), "category": category,
         "isPinned": _to_bool(data.get('isPinned'), False),
         "createdAt": utc_now()
@@ -341,7 +341,7 @@ def update_faq(fid):
         return jsonify({"error": "無效的 ID 格式"}), 400
 
     data = get_json_object()
-    db.faq.update_one({'_id': oid}, {'$set': {
+    database.db.faq.update_one({'_id': oid}, {'$set': {
         "question": as_string(data.get('question')).strip(), "answer": as_string(data.get('answer')).strip(),
         "category": as_string(data.get('category')).strip(), "isPinned": _to_bool(data.get('isPinned'), False)
     }})
@@ -355,7 +355,7 @@ def delete_faq(fid):
     if not oid:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    db.faq.delete_one({'_id': oid})
+    database.db.faq.delete_one({'_id': oid})
     return jsonify({"success": True})
 
 
@@ -363,21 +363,21 @@ def delete_faq(fid):
 
 @content_bp.route('/api/fund-settings', methods=['GET'])
 def get_fund_settings():
-    if db is None:
+    if database.db is None:
         return jsonify({
             "goal_amount": 10000000,
             "current_amount": 0,
             "vice_chair_remain": 7
         })
-    settings = db.temple_fund.find_one({"type": "main_fund"}) or {"goal_amount": 10000000}
+    settings = database.db.temple_fund.find_one({"type": "main_fund"}) or {"goal_amount": 10000000}
 
     pipeline = [
         {"$match": {"status": "paid", "orderType": "fund"}},
         {"$group": {"_id": None, "total_current": {"$sum": "$total"}}}
     ]
 
-    if db is not None:
-        result = list(db.orders.aggregate(pipeline))
+    if database.db is not None:
+        result = list(database.db.orders.aggregate(pipeline))
         calculated_current = result[0]['total_current'] if result else 0
 
         settings['vice_chair_remain'] = _get_vice_chair_remain()
@@ -395,7 +395,7 @@ def get_fund_settings():
 @admin_required(roles=['super_admin', 'finance', 'cms'])
 def update_fund_settings():
     data = get_json_object()
-    db.temple_fund.update_one(
+    database.db.temple_fund.update_one(
         {"type": "main_fund"},
         {"$set": {"goal_amount": _to_int(data.get('goal_amount'), 10000000)}},
         upsert=True
@@ -407,9 +407,9 @@ def update_fund_settings():
 
 @content_bp.route('/api/links', methods=['GET'])
 def get_links():
-    if db is None:
+    if database.db is None:
         return jsonify([])
-    return jsonify([{**l, '_id': str(l['_id'])} for l in db.links.find({})])
+    return jsonify([{**l, '_id': str(l['_id'])} for l in database.db.links.find({})])
 
 
 @content_bp.route('/api/links/<lid>', methods=['PUT'])
@@ -420,5 +420,5 @@ def update_link(lid):
         return jsonify({"error": "無效的 ID 格式"}), 400
 
     data = get_json_object()
-    db.links.update_one({'_id': oid}, {'$set': {'url': as_string(data.get('url')).strip()}})
+    database.db.links.update_one({'_id': oid}, {'$set': {'url': as_string(data.get('url')).strip()}})
     return jsonify({"success": True})

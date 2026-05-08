@@ -39,6 +39,13 @@ def _env_int(name, default):
         return default
 
 
+def _env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ('1', 'true', 'yes', 'on')
+
+
 def _set_default_header(response, name, value):
     if name not in response.headers:
         response.headers[name] = value
@@ -168,6 +175,7 @@ def create_app():
     app.config['LINE_CHANNEL_SECRET'] = os.environ.get('LINE_CHANNEL_SECRET')
     app.config['LINE_CALLBACK_URL'] = os.environ.get('LINE_CALLBACK_URL')
     app.config['ADMIN_PASSWORD_HASH'] = os.environ.get('ADMIN_PASSWORD_HASH')
+    app.config['ALLOW_LEGACY_ADMIN'] = _env_bool('ALLOW_LEGACY_ADMIN', False)
     ratelimit_storage_uri = (
         os.environ.get('RATELIMIT_STORAGE_URI')
         or os.environ.get('REDIS_URL')

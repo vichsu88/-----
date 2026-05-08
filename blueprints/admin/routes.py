@@ -2,7 +2,6 @@ import csv
 import io
 import logging
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from bson import ObjectId
 from flask import Blueprint, Response, jsonify, request, session
@@ -10,7 +9,7 @@ from pymongo import UpdateOne
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
 
-from database import db, write_audit_log
+import database
 from repositories.committee_quota_repository import (
     release_committee_quota_for_order,
     sync_committee_quota_usages,
@@ -26,7 +25,6 @@ admin_bp = Blueprint('admin', __name__)
 logger = logging.getLogger(__name__)
 
 # 過渡期讓既有 blueprints/admin.py 可以逐步拆出 blueprints/admin/*.py 子模組。
-__path__ = [str(Path(__file__).with_suffix(""))]
 
 
 # =========================================================
@@ -189,10 +187,10 @@ def _clean_receipt_update(value, allowed_fields):
 @admin_required(roles=['super_admin', 'ops'])
 def get_print_queue():
     """文書列印排程：已付款但未稟告的捐香訂單"""
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
-    cursor = db.orders.find({
+    cursor = database.db.orders.find({
         "status": "paid",
         "orderType": "donation",
         "is_reported": {"$ne": True}
@@ -211,10 +209,10 @@ def get_print_queue():
 @admin_required(roles=['super_admin', 'ops'])
 def get_ship_queue():
     """出貨物流排程：已付款的結緣品訂單"""
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
-    cursor = db.orders.find({
+    cursor = database.db.orders.find({
         "status": "paid",
         "orderType": "shop"
     }).sort("paidAt", 1)
@@ -232,11 +230,11 @@ def get_ship_queue():
 @admin_required(roles=['super_admin', 'ops'])
 def get_shipped_list():
     """已出貨歷史 (最近 30 天) — 保留 API 供歷史總表使用"""
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
     cutoff = utc_now() - timedelta(days=30)
-    cursor = db.orders.find({
+    cursor = database.db.orders.find({
         "status": "shipped",
         "shippedAt": {"$gte": cutoff}
     }).sort("shippedAt", -1)
@@ -259,7 +257,7 @@ def get_shipped_list():
 @admin_bp.route('/api/admin/data/history')
 @admin_required(roles=['super_admin', 'data', 'finance'])
 def get_data_history():
-    """萬用歷史總表：整併 orders + feedback，支援複合篩選 (已優化為 DB 聚合查詢)"""
+    """萬用歷史總表：整併 orders + feedback，支援複合篩選 (已優化為 database.db 聚合查詢)"""
     order_type = as_string(request.args.get('type')).strip()
     order_id = as_string(request.args.get('orderId')).strip()
     name = as_string(request.args.get('name')).strip()
@@ -294,7 +292,7 @@ def get_data_history():
 @admin_required(roles=['super_admin', 'ops'])
 def mark_donations_reported():
     """批次標記捐香訂單為已稟告"""
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "資料庫未連線"}), 500
 
     data = get_json_object()
@@ -319,7 +317,7 @@ def mark_donations_reported():
     now = utc_now()
 
     # 執行批次更新
-    result = db.orders.update_many(
+    result = database.db.orders.update_many(
         {"_id": {"$in": object_ids}},
         {"$set": {
             "is_reported": True,
@@ -328,7 +326,7 @@ def mark_donations_reported():
         }}
     )
 
-    write_audit_log(admin_name, '批次標記已稟告', f'共 {result.modified_count} 筆')
+    database.write_audit_log(admin_name, '批次標記已稟告', f'共 {result.modified_count} 筆')
     return jsonify({"success": True, "message": f"已成功標記 {result.modified_count} 筆訂單為已稟告"})
 # =========================================================
 # 委員會名額動態管理 (CMS)
@@ -339,7 +337,7 @@ def mark_donations_reported():
 @admin_required(roles=['super_admin', 'data', 'finance'])
 def export_data_csv():
     """匯出歷史資料為 CSV (所見即所得)"""
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "資料庫未連線"}), 500
 
     query = {}
@@ -364,7 +362,7 @@ def export_data_csv():
         except ValueError:
             pass
 
-    cursor = db.orders.find(query).sort("createdAt", -1).limit(5000)
+    cursor = database.db.orders.find(query).sort("createdAt", -1).limit(5000)
 
     si = io.StringIO()
     si.write('\ufeff')  # BOM for Excel
@@ -404,7 +402,7 @@ def export_data_csv():
 @admin_required(roles=['super_admin', 'data', 'finance'])
 def get_data_members():
     """會員資料庫 — 效能極致優化版 (解決 OOM 問題)"""
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
     try:
@@ -416,7 +414,7 @@ def get_data_members():
             "pictureUrl": 1,
             "realName": 1,
         }
-        users = list(db.users.find({}, projection).sort("lastLoginAt", -1).limit(3000))
+        users = list(database.db.users.find({}, projection).sort("lastLoginAt", -1).limit(3000))
         line_ids = [user.get("lineId") for user in users if user.get("lineId")]
 
         order_counts = {}
@@ -432,12 +430,12 @@ def get_data_members():
             ]
             order_counts = {
                 item["_id"]: item["count"]
-                for item in db.orders.aggregate(order_pipeline)
+                for item in database.db.orders.aggregate(order_pipeline)
                 if item.get("_id")
             }
             feedback_counts = {
                 item["_id"]: item["count"]
-                for item in db.feedback.aggregate(feedback_pipeline)
+                for item in database.db.feedback.aggregate(feedback_pipeline)
                 if item.get("_id")
             }
 
@@ -462,11 +460,11 @@ def get_data_members():
 @admin_required(roles=['super_admin', 'data', 'finance'])
 def get_member_history(line_id):
     """會員互動歷程：該會員所有 orders + feedback"""
-    if db is None:
+    if database.db is None:
         return jsonify({"orders": [], "feedback": []})
 
     orders = []
-    for doc in db.orders.find({"lineId": line_id}).sort("createdAt", -1).limit(200):
+    for doc in database.db.orders.find({"lineId": line_id}).sort("createdAt", -1).limit(200):
         doc['_id'] = str(doc['_id'])
         doc['createdAt'] = _tw_time(doc.get('createdAt'))
         doc['source_label'] = _TYPE_LABELS.get(doc.get('orderType', ''), '未知')
@@ -476,7 +474,7 @@ def get_member_history(line_id):
         orders.append(doc)
 
     feedback = []
-    for doc in db.feedback.find({"lineId": line_id}).sort("createdAt", -1).limit(200):
+    for doc in database.db.feedback.find({"lineId": line_id}).sort("createdAt", -1).limit(200):
         doc['_id'] = str(doc['_id'])
         doc['createdAt'] = _tw_time(doc.get('createdAt'))
         if doc.get('approvedAt'):
@@ -499,10 +497,10 @@ def get_member_history(line_id):
 @admin_required(roles=['super_admin'])
 def list_admin_users():
     """列出所有管理員帳號 (不含密碼)"""
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
-    cursor = db.admin_users.find({}, {"password_hash": 0}).sort("createdAt", -1)
+    cursor = database.db.admin_users.find({}, {"password_hash": 0}).sort("createdAt", -1)
     results = []
     for user in cursor:
         user['_id'] = str(user['_id'])
@@ -546,11 +544,11 @@ def create_admin_user():
     if not permissions:
         return jsonify({"error": "請至少選擇一個權限"}), 400
 
-    if db.admin_users.find_one({"username": username}):
+    if database.db.admin_users.find_one({"username": username}):
         return jsonify({"error": "此帳號已存在"}), 400
 
     try:
-        db.admin_users.insert_one({
+        database.db.admin_users.insert_one({
             "username": username,
             "password_hash": generate_password_hash(password),
             "permissions": permissions,
@@ -561,7 +559,7 @@ def create_admin_user():
         return jsonify({"error": "帳號名稱已被使用"}), 400
 
     admin_name = session.get('admin_username', 'admin')
-    write_audit_log(admin_name, '新增管理員帳號', username, f'權限: {", ".join(permissions)}')
+    database.write_audit_log(admin_name, '新增管理員帳號', username, f'權限: {", ".join(permissions)}')
     return jsonify({"success": True, "message": f"已建立帳號 {username}"})
 
 
@@ -573,14 +571,14 @@ def delete_admin_user(uid):
     if not oid:
         return jsonify({"error": "無效的 ID"}), 400
 
-    user = db.admin_users.find_one({"_id": oid})
+    user = database.db.admin_users.find_one({"_id": oid})
     if not user:
         return jsonify({"error": "帳號不存在"}), 404
 
-    db.admin_users.delete_one({"_id": oid})
+    database.db.admin_users.delete_one({"_id": oid})
 
     admin_name = session.get('admin_username', 'admin')
-    write_audit_log(admin_name, '刪除管理員帳號', user.get('username', ''))
+    database.write_audit_log(admin_name, '刪除管理員帳號', user.get('username', ''))
     return jsonify({"success": True})
 
 
@@ -588,14 +586,14 @@ def delete_admin_user(uid):
 @admin_required(roles=['super_admin'])
 def get_audit_log():
     """操作日誌查詢"""
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
     try:
         limit = min(max(int(request.args.get('limit', 200)), 1), 500)
     except (TypeError, ValueError):
         limit = 200
-    cursor = db.audit_log.find({}).sort("timestamp", -1).limit(limit)
+    cursor = database.db.audit_log.find({}).sort("timestamp", -1).limit(limit)
 
     results = []
     for doc in cursor:
@@ -613,8 +611,8 @@ def get_audit_log():
 @admin_required(roles=['super_admin', 'finance'])
 def handle_bank_settings():
     if request.method == 'GET':
-        fund_set = db.settings.find_one({"type": "bank_info"}) or {}
-        shop_set = db.settings.find_one({"type": "bank_info_shop"}) or {}
+        fund_set = database.db.settings.find_one({"type": "bank_info"}) or {}
+        shop_set = database.db.settings.find_one({"type": "bank_info_shop"}) or {}
 
         return jsonify({
             "fund": {
@@ -632,19 +630,19 @@ def handle_bank_settings():
         data = get_json_object()
         if 'fund' in data:
             fund_data = _clean_bank_info(data.get('fund'))
-            db.settings.update_one(
+            database.db.settings.update_one(
                 {"type": "bank_info"},
                 {"$set": fund_data},
                 upsert=True
             )
         if 'shop' in data:
             shop_data = _clean_bank_info(data.get('shop'))
-            db.settings.update_one(
+            database.db.settings.update_one(
                 {"type": "bank_info_shop"},
                 {"$set": shop_data},
                 upsert=True
             )
-        write_audit_log(session.get('admin_username', 'admin'), '更新匯款帳號設定')
+        database.write_audit_log(session.get('admin_username', 'admin'), '更新匯款帳號設定')
         return jsonify({"success": True})
 
 
@@ -661,8 +659,8 @@ def get_public_bank_info():
     }
 
     settings = {}
-    if db is not None:
-        settings = db.settings.find_one({"type": setting_key}) or {}
+    if database.db is not None:
+        settings = database.db.settings.find_one({"type": setting_key}) or {}
 
     return jsonify({
         "bankCode": settings.get('bankCode', defaults[usage]['code']),
@@ -675,15 +673,15 @@ def get_public_bank_info():
 @admin_required(roles=['super_admin', 'finance', 'ops', 'data'])
 def query_receipt(receipt_id):
     """萬能單據查詢"""
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "資料庫未連線"}), 500
 
     clean_id = receipt_id.strip().upper()
 
     if clean_id.startswith('FB'):
-        doc = db.feedback.find_one({"feedbackId": clean_id})
+        doc = database.db.feedback.find_one({"feedbackId": clean_id})
     elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
-        doc = db.orders.find_one({"orderId": clean_id})
+        doc = database.db.orders.find_one({"orderId": clean_id})
     else:
         return jsonify({"error": f"無法識別的單號格式：{clean_id}"}), 400
 
@@ -697,7 +695,7 @@ def query_receipt(receipt_id):
 @admin_required(roles=['super_admin'])
 def update_receipt(receipt_id):
     """萬能單據修改"""
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "資料庫未連線"}), 500
 
     clean_id = receipt_id.strip().upper()
@@ -707,13 +705,13 @@ def update_receipt(receipt_id):
         update_data, ignored_fields = _clean_receipt_update(payload, FEEDBACK_RECEIPT_ALLOWED_FIELDS)
         if not update_data:
             return jsonify({"error": "沒有可更新的合法欄位", "ignoredFields": ignored_fields}), 400
-        result = db.feedback.update_one({"feedbackId": clean_id}, {"$set": update_data})
+        result = database.db.feedback.update_one({"feedbackId": clean_id}, {"$set": update_data})
     elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
         update_data, ignored_fields = _clean_receipt_update(payload, ORDER_RECEIPT_ALLOWED_FIELDS)
         if not update_data:
             return jsonify({"error": "沒有可更新的合法欄位", "ignoredFields": ignored_fields}), 400
         update_data["updatedAt"] = utc_now()
-        result = db.orders.update_one({"orderId": clean_id}, {"$set": update_data})
+        result = database.db.orders.update_one({"orderId": clean_id}, {"$set": update_data})
     else:
         return jsonify({"error": f"無法識別的單號格式：{clean_id}"}), 400
 
@@ -722,7 +720,7 @@ def update_receipt(receipt_id):
 
     admin_name = session.get('admin_username', 'admin')
     ignored_text = f"，忽略欄位：{', '.join(ignored_fields)}" if ignored_fields else ''
-    write_audit_log(admin_name, '修改單據', clean_id, f"欄位：{', '.join(update_data.keys())}{ignored_text}")
+    database.write_audit_log(admin_name, '修改單據', clean_id, f"欄位：{', '.join(update_data.keys())}{ignored_text}")
     return jsonify({
         "success": True,
         "message": f"單據 {clean_id} 已更新成功",
@@ -734,25 +732,25 @@ def update_receipt(receipt_id):
 @admin_required(roles=['super_admin'])
 def force_delete_receipt(receipt_id):
     """強制刪除單據"""
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "資料庫未連線"}), 500
 
     clean_id = receipt_id.strip().upper()
 
     if clean_id.startswith('FB'):
-        result = db.feedback.delete_one({"feedbackId": clean_id})
+        result = database.db.feedback.delete_one({"feedbackId": clean_id})
         if result.deleted_count > 0:
-            write_audit_log(session.get('admin_username', 'admin'), '強制刪除單據', clean_id)
+            database.write_audit_log(session.get('admin_username', 'admin'), '強制刪除單據', clean_id)
             return jsonify({"success": True, "message": f"已成功刪除回饋單：{clean_id}"})
         else:
             return jsonify({"error": f"找不到回饋單號：{clean_id}"}), 404
 
     elif clean_id.startswith(('ORD', 'DON', 'FND', 'COM')):
-        order = db.orders.find_one({"orderId": clean_id})
-        result = db.orders.delete_one({"orderId": clean_id})
+        order = database.db.orders.find_one({"orderId": clean_id})
+        result = database.db.orders.delete_one({"orderId": clean_id})
         if result.deleted_count > 0:
             release_committee_quota_for_order(order)
-            write_audit_log(session.get('admin_username', 'admin'), '強制刪除單據', clean_id)
+            database.write_audit_log(session.get('admin_username', 'admin'), '強制刪除單據', clean_id)
             return jsonify({"success": True, "message": f"已成功刪除單據：{clean_id}"})
         else:
             return jsonify({"error": f"找不到此單號：{clean_id}"}), 404
@@ -766,7 +764,7 @@ def force_delete_receipt(receipt_id):
 def debug_connection():
     status = {}
     try:
-        db.command('ping')
+        database.db.command('ping')
         status['database'] = "✅ MongoDB 連線成功"
     except Exception as e:
         status['database'] = f"❌ MongoDB 連線失敗: {str(e)}"
@@ -788,13 +786,13 @@ def handle_committee_quota():
         {"name": "[本府] 委員", "limit": 999, "price": 25000}
     ]
 
-    if db is None:
+    if database.db is None:
         if request.method == 'GET':
             return jsonify(default_roles)
         return jsonify({"error": "Database unavailable"}), 503
 
     if request.method == 'GET':
-        setting = db.settings.find_one({"type": "committee_quota"})
+        setting = database.db.settings.find_one({"type": "committee_quota"})
         db_roles = setting.get("roles", []) if setting else []
         
         # 💡 強效修復：如果資料庫項目不齊全，則進行合併
@@ -812,14 +810,14 @@ def handle_committee_quota():
     data = _clean_committee_roles(get_json_value([]))
     if not data:
         return jsonify({"error": "未收到有效的委員會設定"}), 400
-    db.settings.update_one(
+    database.db.settings.update_one(
         {"type": "committee_quota"},
         {"$set": {"roles": data}},
         upsert=True
     )
     sync_committee_quota_usages(data)
     # 寫入操作日誌以便追蹤
-    write_audit_log(session.get('admin_username', 'admin'), '更新委員會名額與金額')
+    database.write_audit_log(session.get('admin_username', 'admin'), '更新委員會名額與金額')
     return jsonify({"success": True})
 # =========================================================
 # 臨時工具：歷史回饋單快照修復
@@ -828,17 +826,17 @@ def handle_committee_quota():
 @admin_required(roles=['super_admin'])
 def fix_feedback_snapshots():
     """一次性歷史資料修復：把舊回饋單補上會員個資快照"""
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "資料庫未連線"}), 500
 
-    feedback = list(db.feedback.find(
+    feedback = list(database.db.feedback.find(
         {"$or": [{"realName": {"$exists": False}}, {"realName": ""}]},
         {"lineId": 1},
     ))
     line_ids = list({fb.get('lineId') for fb in feedback if fb.get('lineId')})
     users = {
         user['lineId']: user
-        for user in db.users.find(
+        for user in database.db.users.find(
             {"lineId": {"$in": line_ids}},
             {"lineId": 1, "realName": 1, "phone": 1, "address": 1, "email": 1, "lunarBirthday": 1},
         )
@@ -862,6 +860,6 @@ def fix_feedback_snapshots():
 
     updated_count = 0
     if operations:
-        updated_count = db.feedback.bulk_write(operations, ordered=False).modified_count
+        updated_count = database.db.feedback.bulk_write(operations, ordered=False).modified_count
 
     return jsonify({"success": True, "message": f"已成功為 {updated_count} 筆歷史回饋單補上資料快照"})

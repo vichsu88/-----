@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, redirect, render_template, url_for
 
-from database import db
+import database
 from repositories.committee_quota_repository import calculate_committee_usage
 
 main_bp = Blueprint('main', __name__)
@@ -17,10 +17,10 @@ FAQ_PROJECTION = {"question": 1, "answer": 1, "category": 1, "isPinned": 1, "cre
 
 @main_bp.app_context_processor
 def inject_links():
-    if db is None:
+    if database.db is None:
         return dict(links={})
     try:
-        links_cursor = db.links.find({}, LINK_PROJECTION)
+        links_cursor = database.db.links.find({}, LINK_PROJECTION)
         links_dict = {link['name']: link['url'] for link in links_cursor}
         return dict(links=links_dict)
     except Exception:
@@ -36,8 +36,8 @@ def profile_page():
 def home():
     announcements_data = []
     try:
-        if db is not None:
-            cursor = db.announcements.find(
+        if database.db is not None:
+            cursor = database.db.announcements.find(
                 {},
                 HOME_ANNOUNCEMENT_PROJECTION,
             ).sort([("isPinned", -1), ("date", -1)]).limit(10)
@@ -83,11 +83,11 @@ def committee_page():
 
 @main_bp.route('/api/public/committee-status', methods=['GET'])
 def get_public_committee_status():
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
     # 取得後台設定
-    setting = db.settings.find_one({"type": "committee_quota"}, {"roles": 1})
+    setting = database.db.settings.find_one({"type": "committee_quota"}, {"roles": 1})
     roles = setting.get("roles", []) if setting else []
     role_names = [role.get('name') for role in roles if role.get('name')]
 
@@ -95,7 +95,7 @@ def get_public_committee_status():
     if role_names:
         used_counts = {
             doc["_id"]: doc.get("used", 0)
-            for doc in db.committee_quota_usage.find(
+            for doc in database.db.committee_quota_usage.find(
                 {"_id": {"$in": role_names}},
                 {"used": 1},
             )
@@ -121,8 +121,8 @@ def get_public_committee_status():
 def feedback_page():
     feedbacks_data = []
     try:
-        if db is not None:
-            cursor = db.feedback.find({"status": "approved"}, FEEDBACK_PROJECTION).sort("approvedAt", -1).limit(20)
+        if database.db is not None:
+            cursor = database.db.feedback.find({"status": "approved"}, FEEDBACK_PROJECTION).sort("approvedAt", -1).limit(20)
             for doc in cursor:
                 feedbacks_data.append({
                     'feedbackId': doc.get('feedbackId', ''),
@@ -139,8 +139,8 @@ def feedback_page():
 def faq_page():
     faq_data = []
     try:
-        if db is not None:
-            cursor = db.faq.find({}, FAQ_PROJECTION).sort([('isPinned', -1), ('createdAt', -1)])
+        if database.db is not None:
+            cursor = database.db.faq.find({}, FAQ_PROJECTION).sort([('isPinned', -1), ('createdAt', -1)])
             for doc in cursor:
                 doc['_id'] = str(doc['_id'])
                 faq_data.append(doc)

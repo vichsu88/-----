@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request, session
 
-from database import db
+import database
 from utils.decorators import user_login_required
 from utils.helpers import get_tw_now, validate_real_name
 from utils.security import as_string, get_json_object
@@ -30,17 +30,17 @@ def get_current_user():
     if not line_id:
         return jsonify({"logged_in": False})
 
-    if db is not None:
-        user = db.users.find_one({'lineId': line_id}, {'_id': 0})
+    if database.db is not None:
+        user = database.db.users.find_one({'lineId': line_id}, {'_id': 0})
         if user:
-            has_received = db.feedback.find_one(
+            has_received = database.db.feedback.find_one(
                 {"lineId": line_id, "status": "sent"},
                 {"_id": 1},
             ) is not None
             user['has_received_gift'] = has_received
 
             user['title'] = ""
-            committee_orders = db.orders.find({
+            committee_orders = database.db.orders.find({
                 "lineId": line_id,
                 "orderType": "committee",
                 "status": "paid"
@@ -75,7 +75,7 @@ def update_user_profile():
     if not is_valid:
         return jsonify({"error": error_msg}), 400
 
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "資料庫連線失敗"}), 500
 
     update_data = {
@@ -91,7 +91,7 @@ def update_user_profile():
         "updatedAt": utc_now()
     }
 
-    db.users.update_one(
+    database.db.users.update_one(
         {"lineId": line_id},
         {"$set": update_data}
     )
@@ -102,7 +102,7 @@ def update_user_profile():
 @user_login_required
 def get_user_feedbacks():
     line_id = session.get('user_line_id')
-    if db is not None:
+    if database.db is not None:
         projection = {
             "feedbackId": 1,
             "category": 1,
@@ -111,7 +111,7 @@ def get_user_feedbacks():
             "createdAt": 1,
             "trackingNumber": 1,
         }
-        cursor = db.feedback.find({"lineId": line_id}, projection).sort("createdAt", -1)
+        cursor = database.db.feedback.find({"lineId": line_id}, projection).sort("createdAt", -1)
         results = []
         for doc in cursor:
             content_preview = doc.get('content', '')
@@ -135,7 +135,7 @@ def get_user_feedbacks():
 @user_login_required
 def get_user_pickups():
     line_id = session.get('user_line_id')
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
     projection = {
@@ -144,7 +144,7 @@ def get_user_pickups():
         "clothes": 1,
         "createdAt": 1,
     }
-    cursor = db.pickups.find({"lineId": line_id}, projection).sort("pickupDate", -1)
+    cursor = database.db.pickups.find({"lineId": line_id}, projection).sort("pickupDate", -1)
     results = []
     today = get_tw_now().date()
 
@@ -171,7 +171,7 @@ def get_user_pickups():
 @user_bp.route('/api/user/orders', methods=['GET'])
 def get_user_orders():
     line_id = session.get('user_line_id')
-    if not line_id or db is None:
+    if not line_id or database.db is None:
         return jsonify([])
 
     projection = {
@@ -183,7 +183,7 @@ def get_user_orders():
         "createdAt": 1,
         "paymentDeadline": 1,
     }
-    cursor = db.orders.find({"lineId": line_id, "orderType": "shop"}, projection).sort("createdAt", -1)
+    cursor = database.db.orders.find({"lineId": line_id, "orderType": "shop"}, projection).sort("createdAt", -1)
     results = []
     for doc in cursor:
         formatted_dates = _format_order_dates(doc)
@@ -202,7 +202,7 @@ def get_user_orders():
 @user_bp.route('/api/user/donations', methods=['GET'])
 def get_user_donations():
     line_id = session.get('user_line_id')
-    if not line_id or db is None:
+    if not line_id or database.db is None:
         return jsonify([])
 
     projection = {
@@ -215,7 +215,7 @@ def get_user_donations():
         "createdAt": 1,
         "paymentDeadline": 1,
     }
-    cursor = db.orders.find(
+    cursor = database.db.orders.find(
         {"lineId": line_id, "orderType": {"$in": ["donation", "fund", "committee"]}},
         projection,
     ).sort("createdAt", -1)
@@ -239,10 +239,10 @@ def get_user_donations():
 @user_login_required
 def get_user_fund_summary():
     line_id = session.get('user_line_id')
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
-    cursor = db.orders.find(
+    cursor = database.db.orders.find(
         {"lineId": line_id, "orderType": "fund", "status": "paid"},
         {"customer.name": 1, "total": 1},
     )

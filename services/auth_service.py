@@ -1,10 +1,11 @@
 import urllib.parse
 
 import requests
+from flask import current_app, has_app_context
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import check_password_hash
 
-from database import db
+import database
 from utils.errors import ServiceUnavailableError, ValidationError
 from utils.timezone import utc_now
 
@@ -81,7 +82,7 @@ def upsert_line_user(profile):
     picture_url = profile.get("pictureUrl", "")
     now = utc_now()
 
-    if db is not None:
+    if database.db is not None:
         update_doc = {
             "$set": {
                 "lineId": line_id,
@@ -92,10 +93,10 @@ def upsert_line_user(profile):
             "$setOnInsert": {"createdAt": now},
         }
         try:
-            db.users.update_one({"lineId": line_id}, update_doc, upsert=True)
+            database.db.users.update_one({"lineId": line_id}, update_doc, upsert=True)
         except DuplicateKeyError:
             # unique lineId 在高併發登入時可能剛好由另一個請求建立，改走一般更新即可。
-            db.users.update_one({"lineId": line_id}, {"$set": update_doc["$set"]})
+            database.db.users.update_one({"lineId": line_id}, {"$set": update_doc["$set"]})
 
     return {
         "line_id": line_id,
@@ -115,8 +116,8 @@ def resolve_permissions(admin_user):
 
 
 def authenticate_admin(username, password, admin_password_hash):
-    if username and db is not None:
-        admin_user = db.admin_users.find_one({"username": username})
+    if username and database.db is not None:
+        admin_user = database.db.admin_users.find_one({"username": username})
         if admin_user and check_password_hash(admin_user["password_hash"], password):
             permissions = resolve_permissions(admin_user)
             role = "super_admin" if "super_admin" in permissions else (permissions[0] if permissions else "ops")
@@ -127,7 +128,17 @@ def authenticate_admin(username, password, admin_password_hash):
                 "audit_label": admin_user["username"],
             }
 
-    if admin_password_hash and check_password_hash(admin_password_hash, password):
+    allow_legacy_admin = (
+        current_app.config.get("ALLOW_LEGACY_ADMIN", False)
+        if has_app_context()
+        else False
+    )
+    if (
+        allow_legacy_admin
+        and username == "admin"
+        and admin_password_hash
+        and check_password_hash(admin_password_hash, password)
+    ):
         return {
             "username": "admin",
             "role": "super_admin",

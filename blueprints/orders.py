@@ -4,7 +4,7 @@ from datetime import timedelta
 from flask import Blueprint, jsonify, request, session, Response
 from pymongo.errors import DuplicateKeyError
 
-from database import db, write_audit_log
+import database
 from extensions import limiter
 from repositories.committee_quota_repository import (
     release_committee_quota_for_order,
@@ -98,7 +98,7 @@ def _normalize_product_item(raw_item, order_type, product=None):
         raise OrderValidationError("商品資料格式錯誤，請重新整理頁面")
 
     if product is None:
-        product = db.products.find_one({"_id": product_oid}, PRODUCT_PROJECTION)
+        product = database.db.products.find_one({"_id": product_oid}, PRODUCT_PROJECTION)
     if not product or not product.get('isActive', True):
         raise OrderValidationError("商品已下架，請重新整理頁面")
     if order_type == 'donation' and not product.get('isDonation', False):
@@ -163,7 +163,7 @@ def _normalize_committee_items(raw_items):
     if len(raw_items) != 1:
         raise OrderValidationError("委員會每次只能選擇一個護持項目")
 
-    setting = db.settings.find_one({"type": "committee_quota"}) or {}
+    setting = database.db.settings.find_one({"type": "committee_quota"}) or {}
     roles = {
         role.get('name'): role
         for role in setting.get('roles', [])
@@ -213,7 +213,7 @@ def _normalize_order_payload(data, order_type):
 
         products = {
             product['_id']: product
-            for product in db.products.find(
+            for product in database.db.products.find(
                 {"_id": {"$in": list(set(product_oids))}},
                 PRODUCT_PROJECTION,
             )
@@ -250,7 +250,7 @@ def _normalize_order_payload(data, order_type):
 
 def _insert_order_with_quota(order, quota_checks):
     if not quota_checks:
-        db.orders.insert_one(order)
+        database.db.orders.insert_one(order)
         return
 
     reserved = []
@@ -261,7 +261,7 @@ def _insert_order_with_quota(order, quota_checks):
                 raise OrderValidationError(f"非常抱歉，【{check['name']}】名額已額滿")
             reserved.append(check)
 
-        db.orders.insert_one(order)
+        database.db.orders.insert_one(order)
     except DuplicateKeyError:
         # insert 撞到唯一鍵時會由外層 retry 重新取單號；先補回本次已扣名額。
         for check in reserved:
@@ -283,7 +283,7 @@ def _insert_order_with_quota(order, quota_checks):
 
 @orders_bp.route('/api/donations/public', methods=['GET'])
 def get_public_donations():
-    if db is None:
+    if database.db is None:
         return jsonify([]), 500
 
     target_type = as_string(request.args.get('type'), 'donation')
@@ -302,7 +302,7 @@ def get_public_donations():
         "items.name": 1,
         "items.qty": 1,
     }
-    cursor = db.orders.find(query, projection).sort("updatedAt", -1).limit(1000)
+    cursor = database.db.orders.find(query, projection).sort("updatedAt", -1).limit(1000)
     results = []
     for doc in cursor:
         items_summary = [f"{i['name']} x{i['qty']}" for i in doc.get('items', [])]
@@ -368,7 +368,7 @@ def export_donations_txt():
         except ValueError:
             pass
 
-    cursor = db.orders.find(query).sort("updatedAt", 1)
+    cursor = database.db.orders.find(query).sort("updatedAt", 1)
     orders = list(cursor)
     if not orders:
         return jsonify({"error": "目前無資料"}), 404
@@ -410,7 +410,7 @@ def export_donations_txt():
 def cleanup_unpaid_orders():
     cutoff = utc_now() - timedelta(hours=UNPAID_ORDER_GRACE_HOURS)
     query = {"status": "pending", "createdAt": {"$lt": cutoff}}
-    orders_to_delete = list(db.orders.find(query))
+    orders_to_delete = list(database.db.orders.find(query))
     for order in orders_to_delete:
         if order.get('customer', {}).get('email'):
             delay_notification(send_order_cancelled_email, {
@@ -420,7 +420,7 @@ def cleanup_unpaid_orders():
                 "reason": "expired",
             })
 
-    result = db.orders.delete_many(query)
+    result = database.db.orders.delete_many(query)
     if result.deleted_count:
         for order in orders_to_delete:
             release_committee_quota_for_order(order)
@@ -431,7 +431,7 @@ def cleanup_unpaid_orders():
 @limiter.limit("30 per hour")
 @user_login_required
 def create_order():
-    if db is None:
+    if database.db is None:
         return jsonify({"error": "DB Error"}), 500
     payload = validate_payload(OrderCreateSchema, get_json_object())
     data = payload.model_dump(exclude_none=True)
@@ -503,7 +503,7 @@ def get_orders():
 @admin_required(roles=['super_admin', 'ops'])
 def cleanup_shipped_orders():
     cutoff = utc_now() - timedelta(days=SHIPPED_ORDER_RETENTION_DAYS)
-    result = db.orders.delete_many({"status": "shipped", "shippedAt": {"$lt": cutoff}})
+    result = database.db.orders.delete_many({"status": "shipped", "shippedAt": {"$lt": cutoff}})
     return jsonify({"success": True, "count": result.deleted_count})
 
 
@@ -524,13 +524,13 @@ def resend_order_email(oid):
 
     payload = validate_payload(ResendEmailSchema, get_json_object())
     new_email = payload.email.strip()
-    order = db.orders.find_one({'_id': oid_obj})
+    order = database.db.orders.find_one({'_id': oid_obj})
     if not order:
         return jsonify({"error": "No order"}), 404
 
     target_email = order.get('customer', {}).get('email')
     if new_email and new_email != target_email:
-        db.orders.update_one({'_id': oid_obj}, {'$set': {'customer.email': new_email}})
+        database.db.orders.update_one({'_id': oid_obj}, {'$set': {'customer.email': new_email}})
 
     delay_notification(send_order_resend_email, order.get('orderId'))
     return jsonify({"success": True})
@@ -543,7 +543,7 @@ def delete_order(oid):
     if not oid_obj:
         return jsonify({"error": "無效的 ID 格式"}), 400
 
-    order = db.orders.find_one({'_id': oid_obj})
+    order = database.db.orders.find_one({'_id': oid_obj})
     if order and order.get('customer', {}).get('email'):
         delay_notification(send_order_cancelled_email, {
             "email": order['customer']['email'],
@@ -552,8 +552,8 @@ def delete_order(oid):
             "reason": "manual",
         })
 
-    write_audit_log(session.get('admin_username', 'admin'), '刪除訂單', order.get('orderId', oid) if order else oid)
-    result = db.orders.delete_one({'_id': oid_obj})
+    database.write_audit_log(session.get('admin_username', 'admin'), '刪除訂單', order.get('orderId', oid) if order else oid)
+    result = database.db.orders.delete_one({'_id': oid_obj})
     if result.deleted_count:
         release_committee_quota_for_order(order)
     return jsonify({"success": True})

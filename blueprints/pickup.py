@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request, session
-from database import db
+import database
 from tasks.notifications import delay_notification, send_line_admin_notification
 from utils.decorators import user_login_required
 from utils.helpers import get_tw_now, get_object_id, mask_name
@@ -41,10 +41,10 @@ def create_pickup_reservation():
     if not incoming_ids:
         return jsonify({"error": "請至少填寫一個衣服編號"}), 400
 
-    if db is not None:
+    if database.db is not None:
         today_str = get_tw_now().strftime('%Y-%m-%d')
 
-        duplicate_order = db.pickups.find_one({
+        duplicate_order = database.db.pickups.find_one({
             "clothes.clothId": {"$in": incoming_ids},
             "pickupDate": {"$gte": today_str}
         }, {"clothes.clothId": 1})
@@ -66,8 +66,8 @@ def create_pickup_reservation():
         "createdAt": utc_now()
     }
 
-    if db is not None:
-        db.pickups.insert_one(new_reservation)
+    if database.db is not None:
+        database.db.pickups.insert_one(new_reservation)
         cloth_count = len(clothes)
         notify_msg = (
             f"🔔 收到一筆新的寄衣服預約！\n"
@@ -87,7 +87,7 @@ def create_pickup_reservation():
 
 @pickup_bp.route('/api/pickup/public', methods=['GET'])
 def get_public_pickups():
-    if db is None:
+    if database.db is None:
         return jsonify([])
 
     threshold_date = (get_tw_now() - timedelta(days=1)).strftime('%Y-%m-%d')
@@ -98,7 +98,7 @@ def get_public_pickups():
         "clothes.name": 1,
         "clothes.birthYear": 1,
     }
-    cursor = db.pickups.find(
+    cursor = database.db.pickups.find(
         {"pickupDate": {"$gte": threshold_date}},
         projection,
     ).sort("pickupDate", 1)
@@ -139,7 +139,7 @@ def delete_pickup(pid):
     if not oid:
         return jsonify({"error": "格式錯誤"}), 400
 
-    pickup = db.pickups.find_one({"_id": oid, "lineId": line_id})
+    pickup = database.db.pickups.find_one({"_id": oid, "lineId": line_id})
     if not pickup:
         return jsonify({"error": "找不到預約"}), 404
 
@@ -152,5 +152,5 @@ def delete_pickup(pid):
     except Exception:
         return jsonify({"error": "日期資料異常"}), 400
 
-    db.pickups.delete_one({"_id": oid})
+    database.db.pickups.delete_one({"_id": oid})
     return jsonify({"success": True})
