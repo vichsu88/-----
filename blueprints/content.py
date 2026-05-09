@@ -17,6 +17,25 @@ VICE_CHAIR_ROLE_NAME = "[本府] 副主委"
 VICE_CHAIR_DEFAULT_LIMIT = 7
 
 
+class Core:
+    @staticmethod
+    def htmlSafe(value):
+        if isinstance(value, list):
+            return [Core.htmlSafe(item) for item in value]
+        if isinstance(value, dict):
+            return {key: Core.htmlSafe(item) for key, item in value.items()}
+        if isinstance(value, str):
+            return (
+                value.replace('&', '&amp;')
+                .replace('<', '&lt;')
+                .replace('>', '&gt;')
+                .replace('"', '&quot;')
+                .replace("'", '&#39;')
+                .replace('`', '&#96;')
+            )
+        return value
+
+
 def _to_int(value, default=0):
     try:
         return int(value)
@@ -314,7 +333,11 @@ def get_faqs():
         query,
         {"question": 1, "answer": 1, "category": 1, "isPinned": 1, "createdAt": 1},
     ).sort([('isPinned', -1), ('createdAt', -1)])
-    return jsonify([{**doc, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d')} for doc in faqs])
+    result = []
+    for doc in faqs:
+        safe = Core.htmlSafe(doc)
+        result.append({**safe, '_id': str(doc['_id']), 'createdAt': doc['createdAt'].strftime('%Y-%m-%d')})
+    return jsonify(result)
 
 
 @content_bp.route('/api/faq/categories', methods=['GET'])

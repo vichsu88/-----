@@ -1573,7 +1573,7 @@ window.saveCommitteeQuotas = async () => {
        15. 啟動流程
        ========================================= */
     UI.init();
-    Auth.checkSession();
     ReceiptManager.init();
     ForceDeleteManager.init();
+    Auth.checkSession();
 });
