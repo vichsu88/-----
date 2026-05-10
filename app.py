@@ -25,6 +25,7 @@ BLUEPRINT_IMPORTS = (
     ('blueprints.user', 'user_bp'),
     ('blueprints.pickup', 'pickup_bp'),
     ('blueprints.feedback', 'feedback_bp'),
+    ('blueprints.stores', 'stores_bp'),
     ('blueprints.orders', 'orders_bp'),
     ('blueprints.content', 'content_bp'),
     ('blueprints.admin.finance', 'admin_finance_bp'),

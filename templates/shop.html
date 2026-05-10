@@ -107,6 +107,19 @@
     }
     .shipping-label:hover { background: #fdfdfd; border-color: #C48945; }
     input[type="radio"]:checked + span { font-weight: bold; color: #C48945; }
+    .store-lookup-row { display: flex; gap: 8px; align-items: stretch; }
+    .store-lookup-row .form-control { flex: 1; min-width: 0; }
+    .store-lookup-btn {
+        border: none; border-radius: 6px; background: #333; color: #fff; padding: 0 14px;
+        font-size: 14px; font-weight: bold; cursor: pointer; white-space: nowrap;
+    }
+    .store-lookup-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .store-lookup-result {
+        margin-top: 8px; padding: 9px 10px; border-radius: 6px; font-size: 13px; line-height: 1.5;
+        background: #f8f9fa; border: 1px solid #ddd; color: #555;
+    }
+    .store-lookup-result.ok { background: #edf8ef; border-color: #9dccaa; color: #245d34; }
+    .store-lookup-result.error { background: #fff1f1; border-color: #e0a0a0; color: #8a1f1f; }
     
     @media (max-width: 768px) {
         .products-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -119,6 +132,8 @@
         .add-box { flex-direction: column; gap: 5px; }
         .qty-in { width: 100%; padding: 5px; }
         .add-btn { padding: 6px; font-size: 14px; }
+        .store-lookup-row { flex-direction: column; }
+        .store-lookup-btn { padding: 10px 14px; }
     }
 /* === Refined page polish === */
 #shopping-section {
@@ -296,8 +311,12 @@
                         🔍 點此查詢店號
                     </a>
                 </label>
-                <input type="text" name="storeInfo" class="form-control" placeholder="例: 123456 統一門市 (請填寫6碼店號)">
-                <div style="font-size:12px; color:#666; margin-top:5px;">請務必填寫 <span style="color:#d9534f; font-weight:bold;">6 碼店號</span>，以免無法取貨。</div>
+                <div class="store-lookup-row">
+                    <input type="text" name="storeInfo" id="store-info" class="form-control" inputmode="numeric" maxlength="80" placeholder="請輸入 6 碼店號，例如 993041">
+                    <button type="button" id="store-lookup-btn" class="store-lookup-btn" onclick="lookupSevenStore()">驗證店號</button>
+                </div>
+                <div id="store-lookup-result" class="store-lookup-result">輸入 6 碼店號後，系統會自動帶出門市名稱與地址。</div>
+                <div style="font-size:12px; color:#666; margin-top:5px;">此查詢用來降低填錯風險；實際物流可否收件仍以 7-11/物流建單結果為準。</div>
             </div>
             
             <div class="form-group" style="background:#fff3cd; padding:10px; border-radius:8px; border:1px dashed #E6BA67; margin-top:15px;">
@@ -547,6 +566,82 @@
         });
     }
 
+    let selectedSevenStore = null;
+    let storeLookupTimer = null;
+
+    function extractSevenStoreId(value) {
+        const match = String(value || '').match(/\d{6}/);
+        return match ? match[0] : '';
+    }
+
+    function setStoreLookupMessage(message, state = '') {
+        const el = document.getElementById('store-lookup-result');
+        el.className = `store-lookup-result ${state}`.trim();
+        el.innerHTML = message;
+    }
+
+    window.lookupSevenStore = async (silent = false) => {
+        const input = document.getElementById('store-info');
+        const btn = document.getElementById('store-lookup-btn');
+        const storeId = extractSevenStoreId(input.value);
+
+        if (!storeId) {
+            selectedSevenStore = null;
+            delete input.dataset.verifiedId;
+            setStoreLookupMessage('請輸入 6 碼 7-11 店號。', 'error');
+            if (!silent) input.focus();
+            return null;
+        }
+
+        if (input.dataset.verifiedId === storeId && selectedSevenStore) {
+            return selectedSevenStore;
+        }
+
+        btn.disabled = true;
+        if (!silent) setStoreLookupMessage('正在查詢門市資料...');
+
+        try {
+            const res = await fetch(`/api/stores/711?storeId=${encodeURIComponent(storeId)}`);
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || '查詢失敗，請重新確認店號');
+            }
+
+            selectedSevenStore = data.store;
+            input.dataset.verifiedId = selectedSevenStore.id;
+            input.value = `${selectedSevenStore.id} ${selectedSevenStore.name}門市 - ${selectedSevenStore.address}`;
+            setStoreLookupMessage(
+                `<strong>${selectedSevenStore.id} ${selectedSevenStore.name}門市</strong><br>${selectedSevenStore.address}`,
+                'ok'
+            );
+            return selectedSevenStore;
+        } catch (err) {
+            selectedSevenStore = null;
+            delete input.dataset.verifiedId;
+            setStoreLookupMessage(err.message, 'error');
+            return null;
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    const storeInfoInput = document.getElementById('store-info');
+    if (storeInfoInput) {
+        storeInfoInput.addEventListener('input', () => {
+            selectedSevenStore = null;
+            delete storeInfoInput.dataset.verifiedId;
+            const storeId = extractSevenStoreId(storeInfoInput.value);
+            if (storeId.length === 6) {
+                setStoreLookupMessage('偵測到 6 碼店號，準備查詢...');
+                clearTimeout(storeLookupTimer);
+                storeLookupTimer = setTimeout(() => lookupSevenStore(true), 500);
+            } else {
+                clearTimeout(storeLookupTimer);
+                setStoreLookupMessage('輸入 6 碼店號後，系統會自動帶出門市名稱與地址。');
+            }
+        });
+    }
+
     document.getElementById('order-form').onsubmit = async (e) => {
         e.preventDefault();
         const f = e.target;
@@ -561,18 +656,15 @@
         // 取得配送資訊
         const shippingType = f.querySelector('input[name="shippingType"]:checked').value;
         const totalAmount = parseInt(document.getElementById('final-total').dataset.val);
-        const storeInfoVal = f.storeInfo.value;
+        let storeInfoVal = f.storeInfo.value.trim();
         const addressVal = f.address.value;
 
-        // 新增：7-11 店號檢查邏輯
         if (shippingType === '711') {
-            if (!storeInfoVal || storeInfoVal.length < 6) {
-                return alert('請填寫正確的 7-11 店號與名稱 (至少包含6碼店號)');
+            const store = await lookupSevenStore(true);
+            if (!store) {
+                return alert('請先輸入並驗證正確的 7-11 店號。');
             }
-            // 嘗試檢查是否含有6位數字
-            if (!/\d{6}/.test(storeInfoVal)) {
-                 if(!confirm('系統偵測您未填寫「6碼店號」，這可能導致無法寄送。\n\n請確認是否繼續送出？')) return;
-            }
+            storeInfoVal = f.storeInfo.value.trim();
         }
 
         const payload = {
