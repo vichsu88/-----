@@ -490,7 +490,7 @@
     </div>
 
     <a href="#" class="back-to-top-btn" aria-label="回到頂部">TOP</a>
-    <script src="{{ url_for('static', filename='js/text-renderer.js') }}" defer></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/text-renderer.js', v=config.get('ASSET_VERSION', 'dev')) }}" defer></script>
+    <script src="{{ url_for('static', filename='js/main.js', v=config.get('ASSET_VERSION', 'dev')) }}" defer></script>
 </body>
 </html>

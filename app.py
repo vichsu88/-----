@@ -168,6 +168,11 @@ def create_app():
         'STATIC_CACHE_SECONDS',
         31536000 if is_production else 0,
     )
+    app.config['ASSET_VERSION'] = (
+        os.environ.get('ASSET_VERSION')
+        or os.environ.get('RENDER_GIT_COMMIT')
+        or str(int(time.time()))
+    )
     app.permanent_session_lifetime = timedelta(hours=8)
 
     app.config['SENDGRID_API_KEY'] = os.environ.get('SENDGRID_API_KEY')
