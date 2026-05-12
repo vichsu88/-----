@@ -1,7 +1,7 @@
 (function (window) {
     'use strict';
 
-    const TOKEN_PATTERN = /\[([^\]\r\n]+)\]\(\s*([^)]+?)\s*\)|([^\r\n()[\]]+?)\(\$['’]\s*([^'’]+?)\s*['’]\$\)|(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/gi;
+    const TOKEN_PATTERN = /\[([^\]\r\n]+)\]\(\s*([^)]+?)\s*\)|(^|[\r\n])([^\r\n:：()[\]]{1,40}?)\s*[:：]\s*(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)|([^\r\n()[\]]+?)\(\$['’]\s*([^'’]+?)\s*['’]\$\)|(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/gim;
     const TRAILING_PUNCTUATION = '.,;:!?，。；：！？、)]}';
 
     function normalizeUrl(url) {
@@ -115,14 +115,21 @@
                 } else {
                     appendLink(target, match[1], match[2]);
                 }
-            } else if (match[3] && match[4]) {
-                if (!normalizeUrl(match[4])) {
+            } else if (match[4] && match[5]) {
+                appendPlainText(target, match[3] || '');
+                if (!normalizeUrl(match[5])) {
                     appendPlainText(target, match[0]);
                 } else {
-                    appendLegacyLink(target, match[3], match[4]);
+                    appendLink(target, match[4], match[5]);
                 }
-            } else if (match[5]) {
-                const { cleanUrl, suffix } = splitUrlPunctuation(match[5]);
+            } else if (match[6] && match[7]) {
+                if (!normalizeUrl(match[7])) {
+                    appendPlainText(target, match[0]);
+                } else {
+                    appendLegacyLink(target, match[6], match[7]);
+                }
+            } else if (match[8]) {
+                const { cleanUrl, suffix } = splitUrlPunctuation(match[8]);
                 appendLink(target, cleanUrl, cleanUrl);
                 appendPlainText(target, suffix);
             }
@@ -143,6 +150,7 @@
     function toPlainText(text, maxLength) {
         let value = String(text || '')
             .replace(/\[([^\]\r\n]+)\]\(\s*([^)]+?)\s*\)/g, '$1')
+            .replace(/(^|[\r\n])([^\r\n:：()[\]]{1,40}?)\s*[:：]\s*(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/gim, '$1$2')
             .replace(/([^\r\n()[\]]+?)\(\$['’]\s*([^'’]+?)\s*['’]\$\)/g, function (_, label) {
                 return String(label || '').trim();
             })
