@@ -1,6 +1,6 @@
 import secrets
 
-from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session, url_for
 
 import database
 from extensions import limiter
@@ -9,6 +9,7 @@ from services.auth_service import (
     authenticate_admin,
     build_line_authorize_url,
     fetch_line_profile,
+    resolve_line_callback_url,
     safe_next_url,
     upsert_line_user,
 )
@@ -19,6 +20,14 @@ from utils.validation import validate_payload
 auth_bp = Blueprint('auth', __name__)
 
 
+def _line_callback_url():
+    return resolve_line_callback_url(
+        current_app.config.get('LINE_CALLBACK_URL'),
+        url_for('auth.line_callback', _external=True),
+        request.host,
+    )
+
+
 # =========================================
 # LINE OAuth 登入 (前台使用者)
 # =========================================
@@ -27,14 +36,16 @@ auth_bp = Blueprint('auth', __name__)
 @limiter.limit("20 per minute")
 def line_login():
     line_channel_id = current_app.config['LINE_CHANNEL_ID']
-    line_callback_url = current_app.config['LINE_CALLBACK_URL']
+    line_callback_url = _line_callback_url()
 
     state = secrets.token_hex(16)
     session.pop('line_state', None)
     session.pop('line_next_url', None)
+    session.pop('line_callback_url', None)
     session['line_state'] = state
     next_url = safe_next_url(request.args.get('next', '/'))
     session['line_next_url'] = next_url
+    session['line_callback_url'] = line_callback_url
 
     try:
         url = build_line_authorize_url(line_channel_id, line_callback_url, state)
@@ -47,7 +58,7 @@ def line_login():
 def line_callback():
     line_channel_id = current_app.config['LINE_CHANNEL_ID']
     line_channel_secret = current_app.config['LINE_CHANNEL_SECRET']
-    line_callback_url = current_app.config['LINE_CALLBACK_URL']
+    line_callback_url = session.get('line_callback_url') or _line_callback_url()
 
     code = request.args.get('code')
     state = request.args.get('state')
@@ -55,12 +66,16 @@ def line_callback():
 
     if state != session_state:
         session.pop('line_state', None)
-        return "登入狀態驗證失敗，請重新操作", 400
+        session.pop('line_next_url', None)
+        session.pop('line_callback_url', None)
+        return "LINE 登入狀態驗證失敗，請重新操作", 400
     session.pop('line_state', None)
     try:
         profile = fetch_line_profile(code, line_channel_id, line_channel_secret, line_callback_url)
         user = upsert_line_user(profile)
     except AppError as error:
+        session.pop('line_next_url', None)
+        session.pop('line_callback_url', None)
         return error.message, error.status_code
 
     next_url = safe_next_url(session.get('line_next_url', '/'))

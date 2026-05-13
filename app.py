@@ -8,6 +8,7 @@ from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFError
 from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import database
 from extensions import csrf, limiter
@@ -92,6 +93,8 @@ def create_app():
 
     slow_request_ms = _env_int('SLOW_REQUEST_MS', 750)
     is_production = os.environ.get('RENDER') is not None
+    if is_production or _env_bool('TRUST_PROXY_HEADERS', False):
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
     secure_headers = _security_headers(is_production)
 
     @app.errorhandler(AppError)

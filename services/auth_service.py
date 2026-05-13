@@ -10,6 +10,35 @@ from utils.errors import ServiceUnavailableError, ValidationError
 from utils.timezone import utc_now
 
 
+LOCAL_CALLBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def _normalized_hostname(host):
+    if not host:
+        return ""
+    if "://" in host:
+        return urllib.parse.urlparse(host).hostname or ""
+    host = host.rsplit("@", 1)[-1]
+    if host.startswith("["):
+        return host[1:].split("]", 1)[0].lower()
+    return host.split(":", 1)[0].lower()
+
+
+def _is_local_hostname(host):
+    return _normalized_hostname(host) in LOCAL_CALLBACK_HOSTS
+
+
+def resolve_line_callback_url(configured_callback_url, request_callback_url, request_host):
+    if not configured_callback_url:
+        return request_callback_url
+
+    configured_host = urllib.parse.urlparse(configured_callback_url).hostname
+    if _is_local_hostname(configured_host) and request_host and not _is_local_hostname(request_host):
+        return request_callback_url
+
+    return configured_callback_url
+
+
 def safe_next_url(next_url):
     if not next_url:
         return "/"
@@ -41,6 +70,12 @@ def build_line_authorize_url(line_channel_id, line_callback_url, state):
 def fetch_line_profile(code, line_channel_id, line_channel_secret, line_callback_url):
     if not code:
         raise ValidationError("LINE login code is missing")
+    if not line_channel_id:
+        raise ServiceUnavailableError("LINE_CHANNEL_ID is not configured")
+    if not line_channel_secret:
+        raise ServiceUnavailableError("LINE_CHANNEL_SECRET is not configured")
+    if not line_callback_url:
+        raise ServiceUnavailableError("LINE_CALLBACK_URL is not configured")
 
     token_url = "https://api.line.me/oauth2/v2.1/token"
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
