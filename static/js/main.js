@@ -170,33 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /* ==============================
-       3. 進場動畫 (Intro Overlay)
-       ============================== */
-    const introOverlay = document.getElementById('intro-overlay');
-    // 使用 try-catch 包裹 localStorage/sessionStorage 避免隱私模式報錯
-    try {
-        if (introOverlay) {
-            if (sessionStorage.getItem('hasSeenIntro')) {
-                introOverlay.style.display = 'none';
-            } else {
-                setTimeout(() => {
-                    introOverlay.classList.add('fade-out');
-                    sessionStorage.setItem('hasSeenIntro', 'true');
-                }, 1000);
-            }
-        }
-    } catch (e) {
-        console.warn('Storage access failed (likely private mode):', e);
-        if (introOverlay) {
-             // 如果 storage 失敗，至少確保動畫會跑完並消失，不擋住畫面
-             setTimeout(() => {
-                introOverlay.classList.add('fade-out');
-            }, 1000);
-        }
-    }
-
-    /* ==============================
-       4. 最新消息 (Fetch API)
+       3. 最新消息 (Fetch API)
        ============================== */
     if (newsList && !newsList.querySelector('[data-news]')) {
         fetch('/api/announcements')

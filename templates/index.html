@@ -2,10 +2,24 @@
 
 {% block title %}承天中承府 - 嘉義中壇煙島元帥 | 免費收驚問事、補財庫{% endblock %}
 
-{% block content %}
+{% block resource_hints %}
+<link rel="preload"
+      as="image"
+      href="{{ url_for('static', filename='images/pages/index/banner_mobile-720.webp') }}"
+      imagesrcset="{{ url_for('static', filename='images/pages/index/banner_mobile-480.webp') }} 480w, {{ url_for('static', filename='images/pages/index/banner_mobile-720.webp') }} 720w"
+      imagesizes="100vw"
+      media="(max-width: 768px)"
+      fetchpriority="high">
+<link rel="preload"
+      as="image"
+      href="{{ url_for('static', filename='images/pages/index/banner_PC-1280.webp') }}"
+      imagesrcset="{{ url_for('static', filename='images/pages/index/banner_PC-960.webp') }} 960w, {{ url_for('static', filename='images/pages/index/banner_PC-1280.webp') }} 1280w, {{ url_for('static', filename='images/pages/index/banner_PC-1920.webp') }} 1920w"
+      imagesizes="100vw"
+      media="(min-width: 769px)"
+      fetchpriority="high">
+{% endblock %}
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet">
+{% block content %}
 
 <style>
 
@@ -140,17 +154,6 @@
     height: 100%;
     object-fit: cover;
     object-position: center center;
-}
-
-#intro-overlay {
-    width: 100%;
-    line-height: 0;
-    font-size: 0;
-}
-#intro-overlay img {
-    display: block;
-    width: 100%;
-    height: auto;
 }
 
 /* =============================================
@@ -325,6 +328,43 @@
 }
 .video-wrap::before { content: ''; display: block; padding-bottom: 56.25%; }
 .video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+.video-wrap.lazy-video {
+    background: var(--ink);
+}
+.video-poster {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    background: var(--ink);
+}
+.video-poster img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.74);
+}
+.video-play-icon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 64px;
+    height: 64px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(255, 253, 248, 0.92);
+    color: var(--gold-rich);
+    display: grid;
+    place-items: center;
+    font-size: 1.9rem;
+    line-height: 1;
+    box-shadow: var(--shadow-gold);
+}
 
 /* Photo Gallery — 統一高度 */
 .gallery-grid {
@@ -333,6 +373,10 @@
     gap: 14px;
     max-width: var(--content-width);
     margin: 0 auto 58px;
+}
+.gallery-grid picture {
+    display: block;
+    min-width: 0;
 }
 .gallery-grid img {
     width: 100%;
@@ -775,23 +819,25 @@
 
 <div class="temple-index">
 
-    {# ─── Intro Overlay ─── #}
-    <div id="intro-overlay" class="reveal">
-        <img src="{{ url_for('static', filename='images/pages/index/banner.jpg') }}"
-             alt="承天中承府"
-             fetchpriority="high"
-             loading="eager">
-    </div>
-
     {# ─── Hero Banner — 靜態圖片 ─── #}
     <section class="hero-section" aria-label="承天中承府主視覺">
         <picture>
+            <source type="image/webp"
+                    media="(max-width: 768px)"
+                    srcset="{{ url_for('static', filename='images/pages/index/banner_mobile-480.webp') }} 480w, {{ url_for('static', filename='images/pages/index/banner_mobile-720.webp') }} 720w"
+                    sizes="100vw">
+            <source type="image/webp"
+                    srcset="{{ url_for('static', filename='images/pages/index/banner_PC-960.webp') }} 960w, {{ url_for('static', filename='images/pages/index/banner_PC-1280.webp') }} 1280w, {{ url_for('static', filename='images/pages/index/banner_PC-1920.webp') }} 1920w"
+                    sizes="100vw">
             <source media="(max-width: 768px)" srcset="{{ url_for('static', filename='images/pages/index/banner_mobile.jpg') }}">
             <img src="{{ url_for('static', filename='images/pages/index/banner_PC.jpg') }}"
                  alt="承天中承府眾神-中壇煙島元帥與眾神尊"
                  class="responsive-banner"
+                 width="1920"
+                 height="600"
                  fetchpriority="high"
-                 loading="eager">
+                 loading="eager"
+                 decoding="async">
         </picture>
     </section>
 
@@ -799,12 +845,16 @@
     <section class="news-section reveal">
         <div class="news-header">
             <div class="section-heading" style="margin-bottom:0;">
-                <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
-                <h3>最新消息</h3>
-                <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
+                <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left-96.webp') }}" class="yuanbao-icon" alt="元寶" width="42" height="39" loading="lazy" decoding="async">
+                <h2>最新消息</h2>
+                <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right-96.webp') }}" class="yuanbao-icon" alt="元寶" width="31" height="40" loading="lazy" decoding="async">
             </div>
             <img class="news-mascot"
-                 src="{{ url_for('static', filename='images/pages/index/news-avator.png') }}"
+                 src="{{ url_for('static', filename='images/pages/index/news-avator-150.webp') }}"
+                 width="75"
+                 height="91"
+                 loading="lazy"
+                 decoding="async"
                  alt="帥府小編報報">
         </div>
 
@@ -849,29 +899,50 @@
     {# ─── 關於帥府 ─── #}
     <section class="about-section reveal">
         <div class="section-heading">
-            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left-96.webp') }}" class="yuanbao-icon" alt="元寶" width="42" height="39" loading="lazy" decoding="async">
             <h2>關於帥府</h2>
-            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right-96.webp') }}" class="yuanbao-icon" alt="元寶" width="31" height="40" loading="lazy" decoding="async">
         </div>
 
-        <div class="video-wrap">
-            <iframe src="https://www.youtube.com/embed/odpTDkvJBpw?autoplay=1&mute=1&loop=1&playlist=odpTDkvJBpw"
-                    title="承天中承府-中壇元帥紀錄片"
-                    frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowfullscreen></iframe>
+        <div class="video-wrap lazy-video"
+             data-video-src="https://www.youtube-nocookie.com/embed/odpTDkvJBpw?autoplay=1&mute=1&loop=1&playlist=odpTDkvJBpw&playsinline=1"
+             data-video-title="承天中承府-中壇元帥紀錄片">
+            <button class="video-poster" type="button" aria-label="播放承天中承府中壇元帥紀錄片">
+                <img src="{{ url_for('static', filename='images/pages/index/video-poster-640.webp') }}"
+                     alt=""
+                     width="640"
+                     height="360"
+                     loading="lazy"
+                     decoding="async">
+                <span class="video-play-icon" aria-hidden="true">▶</span>
+            </button>
         </div>
 
+        {% set activity_images = [
+            {'name': 'activity1', 'width': 1477, 'height': 1108, 'alt': '承天中承府-中壇煙島元帥聖誕祝壽大典'},
+            {'name': 'activity2', 'width': 1477, 'height': 1108, 'alt': '嘉義免費收驚問事-信徒虔誠參拜現場'},
+            {'name': 'activity3', 'width': 1477, 'height': 1108, 'alt': '承天中承府進香活動-傳統信仰與文化傳承'},
+            {'name': 'activity4', 'width': 1477, 'height': 1108, 'alt': '元帥娘發願濟世-癌症祈福與神蹟見證'},
+            {'name': 'activity5', 'width': 1477, 'height': 1108, 'alt': '承天中承府公益活動-關懷社會弱勢'},
+            {'name': 'activity6', 'width': 1280, 'height': 1280, 'alt': '嘉義補財庫推薦-公司行號招財科儀'},
+            {'name': 'activity7', 'width': 1280, 'height': 960, 'alt': '點龍柱祈福法會-祈求元帥庇佑闔家平安'},
+            {'name': 'activity8', 'width': 1108, 'height': 1476, 'alt': '煙島元帥指定供品-金莎巧克力與奧利多水'},
+            {'name': 'activity9', 'width': 1705, 'height': 960, 'alt': '承天中承府-嘉義市東區新生路337號參拜人潮'}
+        ] %}
         <div class="gallery-grid">
-            <img src="{{ url_for('static', filename='images/pages/index/activity1.jpg') }}" alt="承天中承府-中壇煙島元帥聖誕祝壽大典" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity2.jpg') }}" alt="嘉義免費收驚問事-信徒虔誠參拜現場" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity3.jpg') }}" alt="承天中承府進香活動-傳統信仰與文化傳承" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity4.jpg') }}" alt="元帥娘發願濟世-癌症祈福與神蹟見證" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity5.jpg') }}" alt="承天中承府公益活動-關懷社會弱勢" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity6.jpg') }}" alt="嘉義補財庫推薦-公司行號招財科儀" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity7.jpg') }}" alt="點龍柱祈福法會-祈求元帥庇佑闔家平安" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity8.jpg') }}" alt="煙島元帥指定供品-金莎巧克力與奧利多水" loading="lazy">
-            <img src="{{ url_for('static', filename='images/pages/index/activity9.jpg') }}" alt="承天中承府-嘉義市東區新生路337號參拜人潮" loading="lazy">
+            {% for activity in activity_images %}
+            <picture>
+                <source type="image/webp"
+                        srcset="{{ url_for('static', filename='images/pages/index/' ~ activity.name ~ '-360.webp') }} 360w, {{ url_for('static', filename='images/pages/index/' ~ activity.name ~ '-720.webp') }} 720w"
+                        sizes="(max-width: 768px) 50vw, 33vw">
+                <img src="{{ url_for('static', filename='images/pages/index/' ~ activity.name ~ '.jpg') }}"
+                     alt="{{ activity.alt }}"
+                     width="{{ activity.width }}"
+                     height="{{ activity.height }}"
+                     loading="lazy"
+                     decoding="async">
+            </picture>
+            {% endfor %}
         </div>
 
         <div class="gold-divider"><span>◆</span></div>
@@ -902,7 +973,14 @@
                     <div class="deity-carousel-set"{% if repeat == 1 %} aria-hidden="true"{% endif %}>
                         {% for deity in deity_cards %}
                         <div class="deity-card">
-                            <img src="{{ url_for('static', filename=deity.image) }}" alt="{{ deity.alt }}" loading="lazy">
+                            <img src="{{ url_for('static', filename=deity.image|replace('.jpg', '-160.webp')) }}"
+                                 srcset="{{ url_for('static', filename=deity.image|replace('.jpg', '-160.webp')) }} 160w, {{ url_for('static', filename=deity.image|replace('.jpg', '-320.webp')) }} 320w"
+                                 sizes="160px"
+                                 alt="{{ deity.alt }}"
+                                 width="160"
+                                 height="160"
+                                 loading="lazy"
+                                 decoding="async">
                             <div class="deity-info">
                                 <p class="temple-name">{{ deity.temple }}</p>
                                 <p class="deity-name">{{ deity.name }}</p>
@@ -919,14 +997,22 @@
     {# ─── 服務項目 ─── #}
     <section class="services-section reveal" id="services-section">
         <div class="section-heading">
-            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left-96.webp') }}" class="yuanbao-icon" alt="元寶" width="42" height="39" loading="lazy" decoding="async">
             <h2>服務項目</h2>
-            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right-96.webp') }}" class="yuanbao-icon" alt="元寶" width="31" height="40" loading="lazy" decoding="async">
         </div>
 
         <div class="services-grid">
             <div class="service-item">
-                <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon1.png') }}" alt="問事收驚服務">
+                <img class="service-bg"
+                     src="{{ url_for('static', filename='images/pages/index/service-icon1-420.webp') }}"
+                     srcset="{{ url_for('static', filename='images/pages/index/service-icon1-420.webp') }} 420w, {{ url_for('static', filename='images/pages/index/service-icon1-600.webp') }} 600w"
+                     sizes="(max-width: 768px) 100vw, 33vw"
+                     width="600"
+                     height="960"
+                     loading="lazy"
+                     decoding="async"
+                     alt="問事收驚服務">
                 <div class="service-overlay">
                     <div class="service-buttons btn-grid-2x2">
                         <a href="{{ url_for('main.services_page') }}" class="glow-btn is-primary">問事收驚</a>
@@ -938,7 +1024,15 @@
             </div>
 
             <div class="service-item">
-                <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon2.png') }}" alt="結緣品與賣場">
+                <img class="service-bg"
+                     src="{{ url_for('static', filename='images/pages/index/service-icon2-420.webp') }}"
+                     srcset="{{ url_for('static', filename='images/pages/index/service-icon2-420.webp') }} 420w, {{ url_for('static', filename='images/pages/index/service-icon2-600.webp') }} 600w"
+                     sizes="(max-width: 768px) 100vw, 33vw"
+                     width="600"
+                     height="960"
+                     loading="lazy"
+                     decoding="async"
+                     alt="結緣品與賣場">
                 <div class="service-overlay">
                     <div class="service-buttons">
                         <a href="{{ url_for('main.shop_page') }}" class="glow-btn is-primary">帥府賣場</a>
@@ -948,7 +1042,15 @@
             </div>
 
             <div class="service-item">
-                <img class="service-bg" src="{{ url_for('static', filename='images/pages/index/service-icon3.png') }}" alt="建廟護持">
+                <img class="service-bg"
+                     src="{{ url_for('static', filename='images/pages/index/service-icon3-420.webp') }}"
+                     srcset="{{ url_for('static', filename='images/pages/index/service-icon3-420.webp') }} 420w, {{ url_for('static', filename='images/pages/index/service-icon3-600.webp') }} 600w"
+                     sizes="(max-width: 768px) 100vw, 33vw"
+                     width="600"
+                     height="960"
+                     loading="lazy"
+                     decoding="async"
+                     alt="建廟護持">
                 <div class="service-overlay">
                     <div class="service-buttons">
                         <a href="{{ url_for('main.fund_page') }}" class="glow-btn is-primary">建廟護持</a>
@@ -962,9 +1064,9 @@
     {# ─── 帥府聲明 ─── #}
     <section class="declaration-section reveal">
         <div class="section-heading">
-            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left.png') }}" class="yuanbao-icon" alt="元寶">
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-left-96.webp') }}" class="yuanbao-icon" alt="元寶" width="42" height="39" loading="lazy" decoding="async">
             <h2>帥府聲明</h2>
-            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right.png') }}" class="yuanbao-icon" alt="元寶">
+            <img src="{{ url_for('static', filename='images/pages/index/title-yuanbao-right-96.webp') }}" class="yuanbao-icon" alt="元寶" width="31" height="40" loading="lazy" decoding="async">
         </div>
 
         <div class="declaration-card">
@@ -976,7 +1078,11 @@
                 </ol>
             </div>
             <img class="declaration-avatar"
-                 src="{{ url_for('static', filename='images/common/declare-avator.png') }}"
+                 src="{{ url_for('static', filename='images/common/declare-avator-216.webp') }}"
+                 width="108"
+                 height="271"
+                 loading="lazy"
+                 decoding="async"
                  alt="帥府聲明代表圖">
         </div>
     </section>
@@ -1051,8 +1157,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    closeBtn.onclick = hideModal;
-    window.onclick = (e) => { if (e.target === modal) hideModal(); };
+    if (closeBtn) closeBtn.addEventListener('click', hideModal);
+    window.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+    const mountVideo = (container) => {
+        if (!container || container.dataset.loaded === 'true') return;
+
+        const iframe = document.createElement('iframe');
+        iframe.src = container.dataset.videoSrc;
+        iframe.title = container.dataset.videoTitle || '影片';
+        iframe.loading = 'lazy';
+        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+        iframe.allowFullscreen = true;
+        container.dataset.loaded = 'true';
+        container.replaceChildren(iframe);
+    };
+
+    document.querySelectorAll('.lazy-video').forEach((container) => {
+        const poster = container.querySelector('.video-poster');
+        if (poster) poster.addEventListener('click', () => mountVideo(container), { once: true });
+
+        if ('IntersectionObserver' in window) {
+            const videoObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        mountVideo(entry.target);
+                        videoObserver.unobserve(entry.target);
+                    }
+                });
+            }, { rootMargin: '200px 0px' });
+            videoObserver.observe(container);
+        }
+    });
 
     /* 查看所有公告 toggle */
     const toggleBtn = document.getElementById('btn-toggle-news');
@@ -1061,9 +1198,13 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleBtn.addEventListener('click', () => {
             expanded = !expanded;
             newsList.classList.toggle('show-all', expanded);
-            toggleBtn.innerHTML = expanded
-                ? '收起公告 <span class="arrow">↑</span>'
-                : '查看所有公告 <span class="arrow">→</span>';
+            toggleBtn.replaceChildren(
+                document.createTextNode(expanded ? '收起公告 ' : '查看所有公告 '),
+                Object.assign(document.createElement('span'), {
+                    className: 'arrow',
+                    textContent: expanded ? '↑' : '→'
+                })
+            );
         });
     }
 

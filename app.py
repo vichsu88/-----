@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+import mimetypes
 from datetime import timedelta
 
 from dotenv import load_dotenv
@@ -18,6 +19,8 @@ from utils.security import validate_request_input
 
 
 logger = logging.getLogger(__name__)
+
+mimetypes.add_type('image/webp', '.webp')
 
 
 BLUEPRINT_IMPORTS = (
@@ -54,6 +57,7 @@ def _set_default_header(response, name, value):
 
 
 def _security_headers(is_production):
+    upgrade_directive = "upgrade-insecure-requests; " if is_production else ""
     csp = (
         "default-src 'self'; "
         "base-uri 'self'; "
@@ -65,10 +69,19 @@ def _security_headers(is_production):
         "font-src 'self' https://fonts.gstatic.com data:; "
         "img-src 'self' data: https:; "
         "connect-src 'self' https://api.cloudinary.com; "
-        "frame-src https://www.youtube.com https://www.youtube-nocookie.com"
+        "frame-src https://www.youtube.com https://www.youtube-nocookie.com; "
+        "child-src https://www.youtube.com https://www.youtube-nocookie.com; "
+        "media-src 'self'; "
+        "worker-src 'self' blob:; "
+        "manifest-src 'self'; "
+        f"{upgrade_directive}"
     )
     headers = {
         "Content-Security-Policy": csp,
+        "Content-Security-Policy-Report-Only": (
+            "require-trusted-types-for 'script'; "
+            "trusted-types default chentienPolicy"
+        ),
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
         "Referrer-Policy": "strict-origin-when-cross-origin",

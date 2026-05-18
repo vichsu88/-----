@@ -56,6 +56,7 @@ body {
 body::before {
     content: '';
     position: fixed;
+    display: none;
     width: 90vw;
     height: 90vh;
     top: 50%;
@@ -63,7 +64,6 @@ body::before {
     transform: translate(-50%, -50%);
     z-index: -1;
     opacity: 0.25;
-    background-image: url('../images/common/BG-cloud.png');
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
@@ -71,12 +71,13 @@ body::before {
 
 @media (min-width: 1024px) {
     body::before {
+        display: block;
         top: 0;
         left: 0;
         transform: none;
         width: 100%;
         height: 100%;
-        background-image: url('../images/common/BG-cloud.png'), url('../images/common/BG-cloud.png');
+        background-image: url('../images/common/BG-cloud-650.webp'), url('../images/common/BG-cloud-650.webp');
         background-repeat: no-repeat, no-repeat;
         background-position: center left, center right;
         background-size: 650px auto, 650px auto;
@@ -113,7 +114,7 @@ body::before {
 }
 .nav-logo img {
     width: 84px;
-    height: 84px;
+    height: auto;
     display: block;
 }
 
@@ -1201,48 +1202,6 @@ body.menu-open {
   margin: 40px auto; /* 上下保留 40px 間距，並水平置中 */
   border-radius: 8px;  /* 加上一點圓角讓視覺更柔和 */
   overflow: hidden;    /* 確保內容不會超出圓角範圍 */
-}
-/* === 進場動畫遮罩層樣式 (擴散版) === */
-#intro-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: #F3F0EC;
-    z-index: 99999;
-    
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    /* 設定遮罩層(背景)的轉場：1.5秒內慢慢變透明 */
-    transition: opacity 1.5s ease-in-out, visibility 1.5s ease-in-out;
-}
-
-#intro-overlay img {
-    width: 80%;
-    max-width: 500px;
-    height: auto;
-    object-fit: contain;
-    
-    /* 這裡設定圖片的轉場：1.5秒內變形(變大) */
-    transition: transform 1.5s ease-in-out;
-    
-    /* 初始狀態：正常大小 (scale 1) */
-    transform: scale(1);
-}
-
-/* === 當 JS 加上 fade-out 這個 class 時觸發的動畫 === */
-#intro-overlay.fade-out {
-    opacity: 0;             /* 背景變透明 */
-    visibility: hidden;     /* 隱藏 */
-    pointer-events: none;   /* 滑鼠穿透 */
-}
-
-#intro-overlay.fade-out img {
-    /* 關鍵在這裡：讓圖片放大 25 倍！(看起來就像擴散到全螢幕) */
-    transform: scale(25);   
 }
 /* === FAQ 搜尋框樣式 === */
 .search-container {
