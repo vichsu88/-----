@@ -2,6 +2,23 @@
 
 {% block title %}承天中承府 - 建廟基金{% endblock %}
 
+{% block resource_hints %}
+<link rel="preload"
+      as="image"
+      href="{{ url_for('static', filename='images/pages/index/fund_banner-960.webp') }}"
+      imagesrcset="{{ url_for('static', filename='images/pages/index/fund_banner-640.webp') }} 640w, {{ url_for('static', filename='images/pages/index/fund_banner-960.webp') }} 960w"
+      imagesizes="100vw"
+      media="(max-width: 768px)"
+      fetchpriority="high">
+<link rel="preload"
+      as="image"
+      href="{{ url_for('static', filename='images/pages/index/fund_banner-1280.webp') }}"
+      imagesrcset="{{ url_for('static', filename='images/pages/index/fund_banner-960.webp') }} 960w, {{ url_for('static', filename='images/pages/index/fund_banner-1280.webp') }} 1280w"
+      imagesizes="100vw"
+      media="(min-width: 769px)"
+      fetchpriority="high">
+{% endblock %}
+
 {% block content %}
 <style>
 /* =============================================
@@ -116,9 +133,28 @@ button, input, .btn-action, .qty-btn, .form-control {
     justify-content: center;
     align-items: center;
     padding: 60px 20px;
-    background:
-        linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, var(--bg-deep) 95%),
-        url('{{ url_for("static", filename="images/pages/index/fund_banner.png") }}') no-repeat center center / cover;
+    background: var(--bg-deep);
+    isolation: isolate;
+    overflow: hidden;
+}
+.fund-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, var(--bg-deep) 95%);
+    z-index: -1;
+}
+.fund-hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+}
+.fund-hero-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
 }
 
 /* SVG 進度環容器 */
@@ -277,6 +313,7 @@ button, input, .btn-action, .qty-btn, .form-control {
     overflow: hidden;
     border: 2px solid var(--gold-border-strong);
     box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    background: #100606;
 }
 .video-frame iframe {
     position: absolute;
@@ -284,6 +321,38 @@ button, input, .btn-action, .qty-btn, .form-control {
     width: 100%;
     height: 100%;
     border: 0;
+}
+.video-poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    background: #100606;
+}
+.video-poster img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.72);
+}
+.video-play-icon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 64px;
+    height: 64px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(252, 246, 186, 0.94);
+    color: var(--crimson-deep);
+    font-size: 1.8rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 
 /* =============================================
@@ -672,17 +741,17 @@ button, input, .btn-action, .qty-btn, .form-control {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
+    left: 0;
     width: 50%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-    transform: skewX(-20deg);
+    transform: translateX(-220%) skewX(-20deg);
     animation: btn-sheen 4.5s infinite;
 }
 @keyframes btn-sheen {
-    0% { left: -100%; }
-    15% { left: 200%; }
-    100% { left: 200%; }
+    0% { transform: translateX(-220%) skewX(-20deg); }
+    15% { transform: translateX(420%) skewX(-20deg); }
+    100% { transform: translateX(420%) skewX(-20deg); }
 }
 
 .btn-gold-outline {
@@ -978,11 +1047,11 @@ button, input, .btn-action, .qty-btn, .form-control {
 
 .btn-gold::after {
     animation: none;
-    transition: left 0.65s ease;
+    transition: transform 0.65s ease;
 }
 
 .btn-gold:hover::after {
-    left: 170%;
+    transform: translateX(420%) skewX(-20deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1020,6 +1089,22 @@ button, input, .btn-action, .qty-btn, .form-control {
     </svg>
 
     <header class="fund-hero">
+        <picture class="fund-hero-bg" aria-hidden="true">
+            <source type="image/webp"
+                    media="(max-width: 768px)"
+                    srcset="{{ url_for('static', filename='images/pages/index/fund_banner-640.webp') }} 640w, {{ url_for('static', filename='images/pages/index/fund_banner-960.webp') }} 960w"
+                    sizes="100vw">
+            <source type="image/webp"
+                    srcset="{{ url_for('static', filename='images/pages/index/fund_banner-960.webp') }} 960w, {{ url_for('static', filename='images/pages/index/fund_banner-1280.webp') }} 1280w"
+                    sizes="100vw">
+            <img src="{{ url_for('static', filename='images/pages/index/fund_banner.png') }}"
+                 alt=""
+                 width="1920"
+                 height="1080"
+                 loading="eager"
+                 fetchpriority="high"
+                 decoding="async">
+        </picture>
         <div class="progress-ring-wrap">
             <svg class="progress-ring-svg" viewBox="0 0 260 260">
                 <defs>
@@ -1068,8 +1153,18 @@ button, input, .btn-action, .qty-btn, .form-control {
                     點擊播放，聆聽建廟緣起
                 </div>
             </div>
-            <div class="video-frame">
-                <iframe src="https://www.youtube.com/embed/pqMRa8OWBvM" title="建廟影片" allowfullscreen></iframe>
+            <div class="video-frame"
+                 data-video-src="https://www.youtube-nocookie.com/embed/pqMRa8OWBvM?autoplay=1&playsinline=1"
+                 data-video-title="建廟影片">
+                <button class="video-poster" type="button" aria-label="播放建廟影片">
+                    <img src="{{ url_for('static', filename='images/pages/index/fund_banner-640.webp') }}"
+                         alt=""
+                         width="640"
+                         height="360"
+                         loading="lazy"
+                         decoding="async">
+                    <span class="video-play-icon" aria-hidden="true">▶</span>
+                </button>
             </div>
         </div>
     </section>
@@ -1086,7 +1181,17 @@ button, input, .btn-action, .qty-btn, .form-control {
             <article class="timeline-node">
                 <div class="timeline-dot"></div>
                 <div class="timeline-img">
-                    <img src="{{ url_for('static', filename='images/pages/index/fund1.png') }}" alt="願景1" loading="lazy">
+                    <picture>
+                        <source type="image/webp"
+                                srcset="{{ url_for('static', filename='images/pages/index/fund1-360.webp') }} 360w, {{ url_for('static', filename='images/pages/index/fund1-720.webp') }} 720w"
+                                sizes="(max-width: 768px) 100vw, 45vw">
+                        <img src="{{ url_for('static', filename='images/pages/index/fund1.png') }}"
+                             alt="小空間裡服務信眾的建廟緣起"
+                             width="900"
+                             height="600"
+                             loading="lazy"
+                             decoding="async">
+                    </picture>
                 </div>
                 <div class="timeline-content">
                     <h3>緣起：小空間裡的大慈悲</h3>
@@ -1097,7 +1202,17 @@ button, input, .btn-action, .qty-btn, .form-control {
             <article class="timeline-node">
                 <div class="timeline-dot"></div>
                 <div class="timeline-img">
-                    <img src="{{ url_for('static', filename='images/pages/index/fund2.png') }}" alt="願景2" loading="lazy">
+                    <picture>
+                        <source type="image/webp"
+                                srcset="{{ url_for('static', filename='images/pages/index/fund2-360.webp') }} 360w, {{ url_for('static', filename='images/pages/index/fund2-720.webp') }} 720w"
+                                sizes="(max-width: 768px) 100vw, 45vw">
+                        <img src="{{ url_for('static', filename='images/pages/index/fund2.png') }}"
+                             alt="善信參與法會與建廟使命"
+                             width="900"
+                             height="600"
+                             loading="lazy"
+                             decoding="async">
+                    </picture>
                 </div>
                 <div class="timeline-content">
                     <h3>責任：我們需要一個更穩定的家</h3>
@@ -1108,7 +1223,17 @@ button, input, .btn-action, .qty-btn, .form-control {
             <article class="timeline-node">
                 <div class="timeline-dot"></div>
                 <div class="timeline-img">
-                    <img src="{{ url_for('static', filename='images/pages/index/fund3.png') }}" alt="願景3" loading="lazy">
+                    <picture>
+                        <source type="image/webp"
+                                srcset="{{ url_for('static', filename='images/pages/index/fund3-360.webp') }} 360w, {{ url_for('static', filename='images/pages/index/fund3-720.webp') }} 720w"
+                                sizes="(max-width: 768px) 100vw, 45vw">
+                        <img src="{{ url_for('static', filename='images/pages/index/fund3.png') }}"
+                             alt="未來帥府文化基地藍圖"
+                             width="2528"
+                             height="1696"
+                             loading="lazy"
+                             decoding="async">
+                    </picture>
                 </div>
                 <div class="timeline-content">
                     <h3>藍圖：不只是一座廟</h3>
@@ -1119,7 +1244,17 @@ button, input, .btn-action, .qty-btn, .form-control {
             <article class="timeline-node">
                 <div class="timeline-dot"></div>
                 <div class="timeline-img">
-                    <img src="{{ url_for('static', filename='images/pages/index/fund4.png') }}" alt="願景4" loading="lazy">
+                    <picture>
+                        <source type="image/webp"
+                                srcset="{{ url_for('static', filename='images/pages/index/fund4-360.webp') }} 360w, {{ url_for('static', filename='images/pages/index/fund4-720.webp') }} 720w"
+                                sizes="(max-width: 768px) 100vw, 45vw">
+                        <img src="{{ url_for('static', filename='images/pages/index/fund4.png') }}"
+                             alt="邀請善信一同護持建廟"
+                             width="900"
+                             height="600"
+                             loading="lazy"
+                             decoding="async">
+                    </picture>
                 </div>
                 <div class="timeline-content">
                     <h3>邀請：萬丈高樓，起於您的一份心意</h3>
@@ -1345,6 +1480,62 @@ const GlobalConfig = {
         pillar: { name: '龍柱認捐', price: 10000, qty: 0 }
     }
 };
+let donorData = [];
+let fullHonorRendered = false;
+
+const runWhenIdle = (callback) => {
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(callback, { timeout: 1200 });
+        return;
+    }
+    window.setTimeout(callback, 350);
+};
+
+function createMessage(text) {
+    const div = document.createElement('div');
+    div.style.padding = '40px';
+    div.style.textAlign = 'center';
+    div.textContent = text;
+    return div;
+}
+
+function createDonorRow(donor) {
+    const row = document.createElement('div');
+    row.className = 'donor-row';
+
+    const name = document.createElement('span');
+    name.className = 'donor-name';
+    name.textContent = donor.name || '善信大德';
+
+    const items = document.createElement('span');
+    items.className = 'donor-items';
+    String(donor.items || '').split(/,\s*/).filter(Boolean).forEach((item, index) => {
+        if (index > 0) items.appendChild(document.createElement('br'));
+        items.appendChild(document.createTextNode(item));
+    });
+
+    row.append(name, items);
+    return row;
+}
+
+function renderDonorRows(target, rows) {
+    const fragment = document.createDocumentFragment();
+    rows.forEach((donor) => fragment.appendChild(createDonorRow(donor)));
+    target.replaceChildren(fragment);
+}
+
+function renderFullHonorList() {
+    if (fullHonorRendered) return;
+    const fullList = document.getElementById('full-honor-list');
+    if (!fullList) return;
+
+    if (!donorData.length) {
+        fullList.replaceChildren(createMessage('期待首位護持大德'));
+    } else {
+        renderDonorRows(fullList, donorData);
+    }
+    fullHonorRendered = true;
+}
 
 /* === Cart === */
 const Cart = {
@@ -1411,6 +1602,7 @@ const ModalLogic = {
         this.open('fund-form-modal');
     },
     openScroll() {
+        renderFullHonorList();
         document.getElementById('scroll-modal-overlay').style.display = 'flex';
         setTimeout(() => document.getElementById('scroll-wrapper').classList.add('unrolled'), 50);
     },
@@ -1423,9 +1615,24 @@ const ModalLogic = {
 
 /* === Init === */
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.video-frame[data-video-src]').forEach((frame) => {
+        const poster = frame.querySelector('.video-poster');
+        if (!poster) return;
+
+        poster.addEventListener('click', () => {
+            const iframe = document.createElement('iframe');
+            iframe.src = frame.dataset.videoSrc;
+            iframe.title = frame.dataset.videoTitle || '影片';
+            iframe.loading = 'lazy';
+            iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+            iframe.allowFullscreen = true;
+            frame.replaceChildren(iframe);
+        }, { once: true });
+    });
 
     /* 1. 進度環 */
-    (async () => {
+    runWhenIdle(async () => {
         try {
             const res = await fetch('/api/fund-settings');
             const data = await res.json();
@@ -1436,45 +1643,46 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('goal-text').textContent = `$${goal.toLocaleString()}`;
             document.getElementById('current-text').textContent = `$${current.toLocaleString()}`;
 
-            // countUp 動畫
             const el = document.getElementById('percent-text');
-            let count = 0;
-            const step = Math.max(1, Math.ceil(pct / 60));
-            const timer = setInterval(() => {
-                count = Math.min(count + step, pct);
-                el.textContent = count + '%';
-                if (count >= pct) clearInterval(timer);
-            }, 30);
-
-            // SVG stroke
             const circumference = 2 * Math.PI * 120; // r=120
             const arc = document.getElementById('ring-arc');
             arc.style.strokeDasharray = circumference;
-            setTimeout(() => {
+
+            const startedAt = performance.now();
+            const animate = (now) => {
+                const progress = Math.min((now - startedAt) / 700, 1);
+                const value = Math.round(pct * progress);
+                el.textContent = value + '%';
+                if (progress < 1) requestAnimationFrame(animate);
+            };
+
+            requestAnimationFrame(animate);
+            requestAnimationFrame(() => {
                 arc.style.strokeDashoffset = circumference - (circumference * pct / 100);
-            }, 200);
+            });
         } catch (e) { console.error('Setting Load Failed', e); }
-    })();
+    });
 
     /* 2. 芳名錄 */
-    (async () => {
+    runWhenIdle(async () => {
         const list = document.getElementById('honor-list');
-        const fullList = document.getElementById('full-honor-list');
         try {
             const res = await fetch('/api/donations/public?type=fund');
             const data = await res.json();
-            if (!data.length) { list.innerHTML = '<div style="padding:40px;text-align:center;">🙏 期待首位護持大德</div>'; return; }
+            donorData = Array.isArray(data) ? data : [];
+            if (!donorData.length) {
+                list.replaceChildren(createMessage('期待首位護持大德'));
+                return;
+            }
 
-            const toHtml = d => `<div class="donor-row"><span class="donor-name">${d.name}</span><span class="donor-items">${d.items.replace(/, /g,'<br>')}</span></div>`;
-            fullList.innerHTML = data.map(toHtml).join('');
-
-            let mq = [...data];
-            while (mq.length < 6) mq = mq.concat(data);
-            const html = mq.map(toHtml).join('');
-            list.innerHTML = html + html;
+            let mq = donorData.slice(0, 12);
+            while (mq.length < 6) mq = mq.concat(donorData).slice(0, 12);
+            renderDonorRows(list, mq.concat(mq));
             list.style.animation = `seamlessScroll ${Math.max(20, mq.length * 3)}s linear infinite`;
-        } catch (e) { list.innerHTML = '<div style="padding:40px;text-align:center;">讀取失敗</div>'; }
-    })();
+        } catch (e) {
+            list.replaceChildren(createMessage('讀取失敗'));
+        }
+    });
 
     /* 3. 輸入遮罩 */
     const masks = {
@@ -1498,9 +1706,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         document.getElementById('conf-name').innerText = form.name.value;
         document.getElementById('conf-total').innerText = 'NT$ ' + document.getElementById('total-amount').innerText;
-        let desc = '';
-        Object.values(GlobalConfig.items).forEach(i => { if (i.qty > 0) desc += `${i.name} × ${i.qty}<br>`; });
-        document.getElementById('conf-items').innerHTML = desc;
+        const confItems = document.getElementById('conf-items');
+        const fragment = document.createDocumentFragment();
+        Object.values(GlobalConfig.items).forEach((item) => {
+            if (item.qty <= 0) return;
+            if (fragment.childNodes.length) fragment.appendChild(document.createElement('br'));
+            fragment.appendChild(document.createTextNode(`${item.name} × ${item.qty}`));
+        });
+        confItems.replaceChildren(fragment);
         ModalLogic.close('fund-form-modal');
         ModalLogic.open('confirm-modal');
     });
@@ -1551,4 +1764,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 </script>
+{% endblock %}
+
+{% block footer_scripts %}
+<script src="{{ url_for('static', filename='js/nav.js', v=config.get('ASSET_VERSION', 'dev')) }}" defer></script>
 {% endblock %}

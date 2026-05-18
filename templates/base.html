@@ -367,7 +367,12 @@
             filter: drop-shadow(0 4px 8px rgba(209, 172, 43, 0.5));
         }
 
-        .footer-copyright { color: var(--gold-deep); opacity: 0.85; }
+        .footer-title,
+        .custom-link-title,
+        .footer-copyright {
+            color: #F2D99B !important;
+            opacity: 1;
+        }
 
         /* ============================================
            Back-to-Top
@@ -488,7 +493,9 @@
     </div>
 
     <a href="#" class="back-to-top-btn" aria-label="回到頂部">TOP</a>
+    {% block footer_scripts %}
     <script src="{{ url_for('static', filename='js/text-renderer.js', v=config.get('ASSET_VERSION', 'dev')) }}" defer></script>
     <script src="{{ url_for('static', filename='js/main.js', v=config.get('ASSET_VERSION', 'dev')) }}" defer></script>
+    {% endblock %}
 </body>
 </html>
